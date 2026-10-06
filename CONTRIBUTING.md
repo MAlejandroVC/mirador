@@ -2,6 +2,8 @@
 
 This guide is how we build Mirador: the tools, where code goes, and how work moves from an issue to a release. It is written so a contributor with a few free hours can pick up an issue and ship it without asking. This file is the source of truth; change it with a pull request like any other file.
 
+Mirador is **end-to-end encrypted**. The browser holds the keys and does all the work on the data; the server only stores and syncs ciphertext. Most of the rules below follow from that.
+
 | What | Where |
 | --- | --- |
 | Repository | [github.com/MAlejandroVC/mirador](https://github.com/MAlejandroVC/mirador) |
@@ -43,7 +45,7 @@ cd mirador
 pnpm install
 cp .env.example .env          # local settings; never commit .env
 pnpm db:up                    # starts PostgreSQL in Docker
-pnpm db:migrate && pnpm seed  # creates tables and a demo account with fake data
+pnpm db:migrate && pnpm seed  # creates tables and a demo account with encrypted fake data
 pnpm dev                      # web app and server together
 ```
 
@@ -55,8 +57,9 @@ pnpm dev                      # web app and server together
 | `pnpm test:watch` | Re-runs tests as you edit |
 | `pnpm lint` / `pnpm typecheck` | The same checks CI runs |
 | `pnpm e2e` | Playwright on phone and desktop sizes |
-| `pnpm db:generate` | Creates a migration after a schema change |
-| `pnpm db:studio` | Drizzle Studio, a browser view of the dev database |
+| `pnpm db:generate` | Creates a local-data migration after a schema change |
+| `pnpm server:db:generate` | Creates a migration for the server's own tables |
+| `pnpm db:studio` | Drizzle Studio on the dev server database (you will see only ciphertext, which is the point) |
 | `pnpm docker:build` | Builds the release image locally |
 
 Open the app on your phone while you work, not just in a narrow desktop window: most people will use it there. **Never use your own bank statements or real financial data while developing.** `pnpm seed` and the files in `fixtures/` are there for that.
@@ -80,7 +83,7 @@ The repo's `.editorconfig` sets 2-space indentation, LF line endings and UTF-8, 
 
 ## Repository layout
 
-One pnpm workspace with Turborepo: two apps in `apps/` (the web app and the server), shared code in `packages/`. Business rules live in packages, never in screens or route handlers.
+One pnpm workspace with Turborepo: two apps in `apps/` (the web app and the server), shared code in `packages/`. Business rules live in packages that run in the browser, never in screens and never on the server, which can't read the data.
 
 ```text
 mirador/
@@ -90,32 +93,36 @@ mirador/
 │   │       ├── routes/           TanStack Router routes (one file per screen)
 │   │       ├── features/         UI by epic: wallets, transactions, import,
 │   │       │                     categories, analysis, budget, dashboard,
-│   │       │                     quick-add, data, settings
+│   │       │                     quick-add, data, settings, security
 │   │       ├── components/ui/    shadcn/ui components, owned by us
-│   │       ├── offline/          Service worker setup and the quick-add queue
+│   │       ├── worker/           Web Worker: keys, local SQLite, sync (Comlink)
+│   │       ├── offline/          Service worker setup and the encrypted quick-add queue
 │   │       └── lib/              API client, i18n setup, helpers
-│   └── server/                   Hono API server
+│   └── server/                   Hono API server: stores ciphertext, never decrypts
 │       └── src/
-│           ├── routes/           One file per resource (wallets, transactions, ...)
-│           ├── auth/             Better Auth setup, sharing permissions
-│           ├── jobs/             pg-boss jobs: import, OCR, backups, period close
-│           └── models/           OCR and embedding model files (Git LFS)
+│           ├── routes/           auth, keys, sync, files, ocr, push, admin
+│           ├── auth/             Better Auth setup, invites, recovery
+│           ├── store/            Drizzle schema and migrations for PostgreSQL
+│           ├── ocr/              In-memory OCR worker; model files (Git LFS)
+│           └── tasks/            Scheduled backups, purges, push sends (Croner)
 ├── packages/
 │   ├── core/                     Pure logic: money, periods, ledger, analysis, budget
+│   ├── crypto/                   Key derivation, wrapping, record and file encryption
+│   ├── db/                       Local SQLite schema (Drizzle), migrations, queries
+│   ├── sync/                     Sync client and the shared sync protocol types
 │   ├── api/                      Zod schemas for every request and response; OpenAPI
-│   ├── db/                       Drizzle schema, migrations, repositories, access checks
-│   ├── import/                   CSV, OFX, PDF and OCR pipeline, matching, rules, suggestions
+│   ├── import/                   CSV, OFX, PDF parsing, OCR result parsing, matching, rules
 │   ├── archive/                  Export and import format, JSON Schema, version upgrades
 │   ├── i18n/                     en/ and es/ translation files
 │   └── config/                   Shared ESLint, TypeScript and Prettier config
 ├── docker/                       Dockerfile, docker-compose.yml, Caddyfile
-├── fixtures/                     Fake statements, tickets and datasets for tests
+├── fixtures/                     Fake statements, receipts and datasets for tests
 ├── e2e/                          Playwright flows (phone and desktop)
 ├── docs/                         Architecture decisions (adr/), admin and hosting guide, archive schema
 └── .github/                      Workflows, issue and PR templates, CODEOWNERS
 ```
 
-**Dependency direction.** `apps/server` may use any package. `apps/web` may use `core`, `api` and `i18n`, never `db` or `import`. `import`, `archive` and `db` may use `core`. `core` uses nothing but small pure libraries (decimal.js, date-fns): no React, no database, no files. A lint rule enforces this.
+**Dependency direction.** `apps/web` may use every package. `apps/server` may use `api`, `sync` (protocol types only) and `i18n`, never `core`, `db`, `import`, `archive` or `crypto`: it has no keys and no business logic. `db`, `import`, `archive` and `sync` may use `core` and `crypto`. `core` and `crypto` use nothing but small pure libraries (decimal.js, date-fns, hash-wasm): no React, no network, no storage. A lint rule enforces this.
 
 Inside a feature folder (`apps/web/src/features/budget/`): `components/`, `hooks/`, `screens/`, and an `index.ts` that is the only thing other features import.
 
@@ -140,12 +147,16 @@ Use the glossary words from the spec everywhere: code, UI and database say **wal
 TypeScript runs in strict mode, Prettier decides formatting, and ESLint enforces most of the rules below, so reviews can focus on behaviour. These are the rules a linter cannot fully check.
 
 - **Phone first.** Build and check every screen at 375 pixels wide before the desktop layout. Touch targets at least 44 by 44 pixels, nothing that only works on hover, and forms that open the right phone keyboard (`inputmode="decimal"` for amounts).
+- **Nothing readable leaves the browser.** Every record and file is encrypted through `@repo/crypto` before it is stored or sent. The only plaintext the server ever receives is an image or scanned PDF sent for OCR, which it keeps in memory only (SEC-01, SEC-05).
+- **All cryptography goes through `@repo/crypto`.** No other package calls WebCrypto or hash-wasm, no custom algorithms, no keys in localStorage, IndexedDB or logs. Keys stay non-extractable in the worker (SEC-13).
+- **Plaintext never touches the device's disk.** Decrypted data lives in the worker's in-memory SQLite; IndexedDB holds only ciphertext. Locking clears both keys and data (SEC-11, SEC-12).
+- **The server stays dumb.** It stores, syncs and authenticates; it never parses a record, adds business rules or needs a key. If a feature seems to need the server to read data, open a decision issue.
 - **Money is never a float.** Amounts are integers in minor units with a currency code, created and combined only through the Money helpers in `@repo/core`. Rates and interest go through decimal.js and round once, half to even (NFR-03).
 - **Dates are calendar dates.** A transaction date is a `YYYY-MM-DD` string with an optional local time. Period math goes through `@repo/core/periods`, never hand-rolled `new Date()` arithmetic.
-- **The browser talks only to its own server, and the server talks to no one.** No third-party scripts, fonts, analytics, crash reporting or remote services, and no dependency that adds them (NFR-01).
+- **The browser talks only to its own server, and the server talks to no one except push services.** No third-party scripts, fonts, analytics, crash reporting or remote services, and no dependency that adds them (NFR-05).
 - **No text in components.** Every string the user sees comes from `packages/i18n`, in English and Spanish, in the same pull request (SYS-10).
 - **No hard-coded categories or tags.** Logic never checks for a category by name; system categories are referenced by their fixed `system_key` (CAT-05, CAT-10).
-- **All writes go through `@repo/db` repositories**, inside a database transaction and with the access check for the current user; route handlers never run SQL (NFR-08).
+- **All local writes go through `@repo/db`**, inside one SQLite transaction, and reach the server only through `@repo/sync` (NFR-08).
 - **Every API change starts in `@repo/api`.** Change the Zod schema first; the server, the typed client and the OpenAPI file follow from it.
 - **Same input, same output.** Analysis and budget functions are pure: no clock, no randomness; the caller passes "today" in (NFR-11).
 - **Accessible by default.** Every control has an accessible name and role, text scales with the browser's font size, and color is never the only signal (NFR-07).
@@ -252,23 +263,29 @@ describe('BUD-35 close the gap', () => {
 | Test kind | Where | Runner |
 | --- | --- | --- |
 | Logic | Next to the code in `packages/*`, `*.test.ts` | Vitest |
-| Server routes and access control | `apps/server`, against a real PostgreSQL | Vitest with Testcontainers |
+| Crypto | `packages/crypto`: known-answer vectors, wrap and unwrap, recovery, tampered records rejected | Vitest |
+| Sync | `packages/sync` and `apps/server`: revisions, batches, conflicts, retries | Vitest with Testcontainers |
+| Server routes and isolation | `apps/server`, against a real PostgreSQL | Vitest with Testcontainers |
+| Zero knowledge | Seeds marker strings, then scans the database, files, backups and logs for them | Vitest and Playwright |
 | Components and screens | Next to the component, `*.test.tsx` | Vitest with React Testing Library |
 | Import accuracy | `packages/import`, reading `fixtures/statements/` | Vitest; fails under the spec's accuracy targets |
 | End to end | `e2e/`, on iPhone-sized, Android-sized and desktop viewports | Playwright (WebKit, Chromium, Firefox) |
 
-- Every feature that can expose data gets a test where a second user tries to read or change it and is refused.
+- Every feature that stores or sends data gets two checks: a second user is refused (SEC-09), and the zero-knowledge test finds none of its plaintext on the server (SEC-04).
 - Acceptance examples in the spec (WAL-20, IMP-21, BUD-35, BUD-61 to BUD-63, DAT-04) become tests with the same numbers.
 - Fixtures are fake or fully anonymized. A donated statement has names, account numbers and addresses replaced before it is committed, and the pull request says so.
 - Bug fixes start with a failing test that reproduces the bug.
 
 ## Database changes
 
-1. Edit the schema in `packages/db/src/schema/`.
-2. Run `pnpm db:generate`; commit the generated migration with the schema change.
-3. Never edit a migration that has been released; add a new one.
-4. If the change affects exported data, bump the archive schema version in `packages/archive`, add an upgrader from the previous version, and extend the round-trip test (DAT-04, DAT-06).
-5. Follow the schema rules in the stack document: UUIDv7 ids, `created_at`, `updated_at`, soft deletes, snake_case.
+There are two databases, and most changes touch only the first.
+
+1. **Local data** (wallets, transactions, budgets and so on): edit the SQLite schema in `packages/db/src/schema/` and the Zod record schema in `packages/api`. Run `pnpm db:generate` and commit the migration. It runs in the browser after unlock.
+2. **Server tables** (accounts, keys, records, files, push, invites): edit `apps/server/src/store/schema/`, run `pnpm server:db:generate`, and commit. It runs at server start after a backup (DAT-10). The server never gets a column for something inside a record.
+3. Never edit a released migration; add a new one.
+4. A change to a record's shape bumps its schema version, and the client upgrades old records as it decrypts them.
+5. If the change affects exported data, bump the archive schema version in `packages/archive`, add an upgrader, and extend the round-trip test (DAT-04, DAT-06).
+6. Ids are UUIDv7 made in the browser; tables and columns are snake_case.
 
 ## Translations
 
@@ -296,14 +313,16 @@ Using Claude Code, Copilot or similar tools is welcome; the author of the pull r
 - The repo's [CLAUDE.md](CLAUDE.md) (and [AGENTS.md](AGENTS.md) for other tools) gives assistants the layout, the code rules and the commands, so their output follows this guide.
 - Review and run what an assistant writes before you open the PR; say in the PR description if a large part was generated.
 - Never paste real financial data, statements or user files into an assistant. Use the fixtures.
-- The app itself never uses remote AI (IMP-11). An assistant helping write code is fine; code that calls an AI service is not.
+- The app itself never uses remote AI (NFR-05). An assistant helping write code is fine; code that calls an AI service is not.
 
 ## Security and privacy
 
 - Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md), never in a public issue.
+- Changes to `packages/crypto`, the sync protocol or sign-in need a second reviewer once there is one, and a note in the PR on what an attacker with the server's database could learn.
 - No secrets in the repo. Local settings live in `.env` (ignored by Git, with `.env.example` committed); the release workflow uses only GitHub's built-in token.
-- Logs never include amounts, descriptions, file contents or session tokens, even in debug builds.
-- Treat every request as possibly from another user: check access in the repository layer, never only in the UI.
+- The server never logs request bodies, and the browser never logs decrypted data or keys, even in debug builds.
+- Treat the server as untrusted: the browser checks every response against its Zod schema, and the server checks access on every request (SEC-09).
+- Keep what the server can see in line with SEC-10. A change that adds metadata (a new plaintext column, a new header, a new log field) needs a decision issue.
 
 ## Getting help
 
