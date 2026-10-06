@@ -1,0 +1,38 @@
+name: Bug
+description: Something does not work as the spec or the docs say.
+labels: ["type:bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Never paste real financial data, statements or screenshots with real amounts. Use made-up values.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Wallets
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Mirador version
+      placeholder: 0.3.1, or a commit
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: iPhone 15, Safari 18
+  - type: input
+    id: requirement
+    attributes:
+      label: Requirement ID, if you know it
+      placeholder: IMP-21

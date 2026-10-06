@@ -1,0 +1,32 @@
+name: Story
+description: One requirement from the spec. The title starts with its ID.
+title: "<ID> <short summary>"
+labels: ["type:story"]
+body:
+  - type: markdown
+    attributes:
+      value: The spec is the source of truth. If the requirement itself should change, change the spec first, then this issue.
+  - type: textarea
+    id: requirement
+    attributes:
+      label: Requirement
+      description: The EARS sentence, copied from the spec.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance
+      description: The acceptance example from the spec, or Given/When/Then criteria.
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options: [Must, Should, Could]
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Design notes, links, open points.
