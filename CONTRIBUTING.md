@@ -30,7 +30,7 @@ All of them are free; there is no Jira, Slack or other tracker.
 
 ## Set up your machine
 
-> The app code is not scaffolded yet; these steps describe the setup once it is.
+> The workspace is scaffolded: `pnpm dev`, `test`, `lint`, `typecheck`, `build` and `db:up` work today on an empty app. `db:migrate`, `seed`, `e2e`, the Drizzle commands and `docker:build` arrive with the features that need them.
 
 Everything runs on macOS, Linux or Windows (with WSL 2). No Mac or Xcode is needed.
 
@@ -61,6 +61,8 @@ pnpm dev                      # web app and server together
 | `pnpm server:db:generate` | Creates a migration for the server's own tables |
 | `pnpm db:studio` | Drizzle Studio on the dev server database (you will see only ciphertext, which is the point) |
 | `pnpm docker:build` | Builds the release image locally |
+
+Turborepo sends anonymous usage data unless you turn it off once per machine with `pnpm exec turbo telemetry disable`; CI turns it off for every run.
 
 Open the app on your phone while you work, not just in a narrow desktop window: most people will use it there. **Never use your own bank statements or real financial data while developing.** `pnpm seed` and the files in `fixtures/` are there for that.
 
@@ -298,9 +300,12 @@ There are two databases, and most changes touch only the first.
 | Workflow (`.github/workflows/`) | Runs on | Does |
 | --- | --- | --- |
 | `ci.yml` | Every pull request and push to `main` | Lint, typecheck, all Vitest suites (with PostgreSQL), license and dependency checks, web build, Playwright on phone and desktop sizes, Docker image build |
+| `pr-checks.yml` | Every pull request | Conventional Commit title and DCO sign-off |
 | `release-please.yml` | Push to `main` | Keeps a release PR open with the next version and changelog |
 | `release.yml` | Merging the release PR | Tags the version, builds the Docker image for Intel and ARM, signs it and publishes it to GitHub Container Registry |
 | `codeql.yml`, Dependabot | Weekly and on PRs | Security scanning and dependency updates |
+
+Today `ci.yml` runs lint, typecheck, the Vitest suites and the web build; the PostgreSQL, license, Playwright and Docker steps are added as those parts land.
 
 Versions follow SemVer (`1.4.0`): `feat` bumps the minor, `fix` the patch, a `!` the major. While below 1.0, breaking changes bump the minor. The image is tagged with the exact version, the minor (`1.4`) and `latest`.
 

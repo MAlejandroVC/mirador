@@ -1,0 +1,11 @@
+{
+  "app": {
+    "name": "Mirador",
+    "tagline": "Your money, private and in your hands."
+  },
+  "health": {
+    "checking": "Checking the server…",
+    "ok": "Server connected",
+    "unreachable": "Can't reach the server"
+  }
+}

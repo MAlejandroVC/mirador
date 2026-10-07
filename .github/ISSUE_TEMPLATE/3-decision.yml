@@ -1,7 +1,7 @@
 name: Decision
 description: An open question that blocks or shapes work.
-title: "[Decision] <question>"
-labels: ["type:decision"]
+title: '[Decision] <question>'
+labels: ['type:decision']
 body:
   - type: textarea
     id: question

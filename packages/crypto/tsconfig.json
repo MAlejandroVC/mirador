@@ -1,0 +1,8 @@
+{
+  "extends": "@repo/config/tsconfig/library.json",
+  "compilerOptions": {
+    // WebCrypto types; the package runs in the browser's worker (SEC-13).
+    "lib": ["ES2023", "DOM"]
+  },
+  "include": ["src"]
+}
