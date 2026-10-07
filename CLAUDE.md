@@ -40,6 +40,6 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing anything; it is the full
 ## Workflow
 
 - Branch `<type>/<ID or issue>-<few-words>`, Conventional Commit messages with `Refs: <ID>` and a DCO sign-off (`git commit -s`), one issue per pull request, squash merge.
-- Every commit an AI assistant makes for a person credits that person too: end the message with a `Co-authored-by:` trailer for the person who asked for the work, using their GitHub noreply address so GitHub links it to their profile. For the maintainer that is `Co-authored-by: Alejandro Villalobos <77853523+MAlejandroVC@users.noreply.github.com>`. The assistant stays the author and signs off as itself; it never adds a `Signed-off-by` for the person, because the DCO is a statement only they can make.
+- Commits an AI assistant makes for a person are authored by that person, with the assistant as co-author. Set the author to the person's GitHub noreply address so GitHub links the commit to their profile, sign off as them (not with `-s`, which signs as the assistant's git identity) and add a `Co-authored-by:` trailer for the assistant. For the maintainer: `git commit --author="Alejandro Villalobos <77853523+MAlejandroVC@users.noreply.github.com>"`, ending the message with `Signed-off-by: Alejandro Villalobos <77853523+MAlejandroVC@users.noreply.github.com>` and `Co-authored-by: Claude <noreply@anthropic.com>`.
 - Run `pnpm lint`, `pnpm typecheck` and `pnpm test` before opening a pull request.
 - Never use real financial data; use `fixtures/` and `pnpm seed`.
