@@ -20,14 +20,14 @@ A *mirador* is a lookout: the spot on a trail where you stop and see the whole p
 
 ## Principles
 
-- **Private by default.** Your data lives on a server you control, and the app talks to nothing else: no bank credentials, no telemetry, no remote AI.
+- **Private by default.** Your data is end-to-end encrypted: only your devices can read it, not even the server that stores it. The app talks to nothing else: no bank credentials, no telemetry, no remote AI.
 - **Habits before targets.** Every budget number starts from observed behaviour.
 - **Capture must be near-free.** Import does the bulk; manual entry covers the gaps in seconds.
 - **You own the taxonomy and the data.** Everything goes in and out in open formats.
 
 ## How it runs
 
-Mirador is a phone-first web app (installable as a PWA) talking to a server you host yourself: a TypeScript server with PostgreSQL, shipped as one Docker image. Run it on a cheap web host, a VPS or a home machine; every device you sign in from shows the same data. Native apps may follow later if there is interest.
+Mirador is a phone-first web app (installable as a PWA) talking to a server you host yourself: a TypeScript server with PostgreSQL, shipped as one Docker image. Run it on a cheap web host, a VPS or a home machine; every device you sign in from shows the same data. The server only ever stores encrypted data, and a recovery key shown once at sign-up is the only way back in if you forget your password. Native apps may follow later if there is interest.
 
 Installation instructions will arrive with the first release.
 
