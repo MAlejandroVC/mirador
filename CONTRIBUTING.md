@@ -238,6 +238,7 @@ Signed-off-by: Your Name <you@example.com>
 | `!` after the scope | Breaking change, for example to the archive format: `feat(archive)!: ...` |
 | Refs | The requirement IDs the commit implements |
 | Signed-off-by | Required on every commit: `git commit -s` adds it. It is the [Developer Certificate of Origin](https://developercertificate.org/), your statement that you have the right to contribute the code |
+| Co-authored-by | Credits everyone else who wrote the change, as `Name <email>`. Use the GitHub noreply address (`<id>+<login>@users.noreply.github.com`, shown under GitHub email settings) so the commit appears on that person's profile. When an AI assistant commits for you, it commits with your git identity (you are author and committer) and adds itself here (CLAUDE.md has the exact setup) |
 
 Example: `feat(bud): cap suggested cuts at the proven level` with `Refs: BUD-35`.
 

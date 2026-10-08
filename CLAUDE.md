@@ -40,5 +40,6 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing anything; it is the full
 ## Workflow
 
 - Branch `<type>/<ID or issue>-<few-words>`, Conventional Commit messages with `Refs: <ID>` and a DCO sign-off (`git commit -s`), one issue per pull request, squash merge.
+- Commits an AI assistant makes for a person use that person's git identity, so they are both author and committer, and credit the assistant with a `Co-authored-by:` trailer. Use their GitHub noreply address so GitHub links the commit to their account. Before the first commit in a cloud session, set it in the repository (for the maintainer: `git config user.name "Alejandro Villalobos"` and `git config user.email "77853523+MAlejandroVC@users.noreply.github.com"`), then commit with `git commit -s` as usual and end the message with `Co-authored-by: Claude <noreply@anthropic.com>`. A local Claude Code session already uses the person's own git identity.
 - Run `pnpm lint`, `pnpm typecheck` and `pnpm test` before opening a pull request.
 - Never use real financial data; use `fixtures/` and `pnpm seed`.
