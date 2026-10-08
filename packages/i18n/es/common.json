@@ -1,0 +1,11 @@
+{
+  "app": {
+    "name": "Mirador",
+    "tagline": "Tu dinero, privado y en tus manos."
+  },
+  "health": {
+    "checking": "Comprobando el servidor…",
+    "ok": "Servidor conectado",
+    "unreachable": "No se puede conectar con el servidor"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "mirador",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "packageManager": "pnpm@12.10.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "turbo run dev --",
+    "build": "turbo run build",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:watch": "vitest",
+    "db:up": "docker compose -f docker/compose.dev.yml up -d --wait",
+    "db:down": "docker compose -f docker/compose.dev.yml down"
+  },
+  "devDependencies": {
+    "@repo/config": "workspace:*",
+    "eslint": "^10.12.0",
+    "prettier": "^3.9.9",
+    "turbo": "^2.11.7",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

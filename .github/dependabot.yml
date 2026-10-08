@@ -6,3 +6,15 @@ updates:
       interval: weekly
     commit-message:
       prefix: ci
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    # One pull request a week for the small updates; majors arrive one by one.
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]

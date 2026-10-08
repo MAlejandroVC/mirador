@@ -1,6 +1,6 @@
 name: Chore
 description: Tooling, refactoring, documentation or dependency work.
-labels: ["type:chore"]
+labels: ['type:chore']
 body:
   - type: textarea
     id: what

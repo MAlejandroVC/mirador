@@ -1,0 +1,15 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Dependencies allowed to run install scripts. Add one only with a reason in the pull request.
+allowBuilds:
+  esbuild: true
+
+# One version of each shared dev tool for every package.
+catalog:
+  '@types/node': ^24.19.1
+  # TypeScript 7 waits until typescript-eslint supports it (it allows <6.1 today).
+  typescript: ~6.0.3
+  vitest: ^5.0.3
+  zod: ^4.6.5

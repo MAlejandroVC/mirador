@@ -1,0 +1,24 @@
+# PostgreSQL for local development and tests only. The release image and its
+# docker-compose.yml come with the releases chore (#20).
+name: mirador-dev
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: mirador
+      POSTGRES_PASSWORD: mirador
+      POSTGRES_DB: mirador
+    ports:
+      - '5432:5432'
+    volumes:
+      # PostgreSQL 18 images keep their data under a versioned folder inside /var/lib/postgresql.
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U mirador -d mirador']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  postgres-data:
