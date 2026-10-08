@@ -1,0 +1,5 @@
+pnpm-lock.yaml
+**/*.gen.ts
+# Hand-written documents keep their own line wrapping.
+*.md
+LICENSE

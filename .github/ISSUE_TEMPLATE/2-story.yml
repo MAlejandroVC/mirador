@@ -1,7 +1,7 @@
 name: Story
 description: One requirement from the spec. The title starts with its ID.
-title: "<ID> <short summary>"
-labels: ["type:story"]
+title: '<ID> <short summary>'
+labels: ['type:story']
 body:
   - type: markdown
     attributes:
