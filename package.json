@@ -1,6 +1,7 @@
 {
   "name": "mirador",
   "private": true,
+  "version": "0.0.0",
   "license": "AGPL-3.0-only",
   "type": "module",
   "packageManager": "pnpm@12.10.1",
@@ -16,7 +17,8 @@
     "test": "turbo run test",
     "test:watch": "vitest",
     "db:up": "docker compose -f docker/compose.dev.yml up -d --wait",
-    "db:down": "docker compose -f docker/compose.dev.yml down"
+    "db:down": "docker compose -f docker/compose.dev.yml down",
+    "docker:build": "docker build -f docker/Dockerfile -t mirador:dev ."
   },
   "devDependencies": {
     "@repo/config": "workspace:*",

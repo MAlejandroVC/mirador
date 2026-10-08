@@ -30,7 +30,7 @@ All of them are free; there is no Jira, Slack or other tracker.
 
 ## Set up your machine
 
-> The workspace is scaffolded: `pnpm dev`, `test`, `lint`, `typecheck`, `build` and `db:up` work today on an empty app. `db:migrate`, `seed`, `e2e`, the Drizzle commands and `docker:build` arrive with the features that need them.
+> The workspace is scaffolded: `pnpm dev`, `test`, `lint`, `typecheck`, `build` and `db:up` and `docker:build` work today on an empty app. `db:migrate`, `seed`, `e2e` and the Drizzle commands arrive with the features that need them.
 
 Everything runs on macOS, Linux or Windows (with WSL 2). No Mac or Xcode is needed.
 
@@ -117,7 +117,7 @@ mirador/
 │   ├── archive/                  Export and import format, JSON Schema, version upgrades
 │   ├── i18n/                     en/ and es/ translation files
 │   └── config/                   Shared ESLint, TypeScript and Prettier config
-├── docker/                       Dockerfile, docker-compose.yml, Caddyfile
+├── docker/                       Dockerfile, docker-compose.yml (release) and compose.dev.yml
 ├── fixtures/                     Fake statements, receipts and datasets for tests
 ├── e2e/                          Playwright flows (phone and desktop)
 ├── docs/                         Architecture decisions (adr/), admin and hosting guide, archive schema
@@ -302,15 +302,25 @@ There are two databases, and most changes touch only the first.
 | --- | --- | --- |
 | `ci.yml` | Every pull request and push to `main` | Lint, typecheck, all Vitest suites (with PostgreSQL), license and dependency checks, web build, Playwright on phone and desktop sizes, Docker image build |
 | `pr-checks.yml` | Every pull request | Conventional Commit title and DCO sign-off |
-| `release-please.yml` | Push to `main` | Keeps a release PR open with the next version and changelog |
-| `release.yml` | Merging the release PR | Tags the version, builds the Docker image for Intel and ARM, signs it and publishes it to GitHub Container Registry |
+| `release-please.yml` | Push to `main` | Keeps a release PR open with the next version and changelog; when the release PR is merged, tags the version and creates the GitHub release. Then runs `release.yml` |
+| `release.yml` | Called by `release-please.yml`, or by hand | Builds the Docker image for Intel and ARM, publishes it to GitHub Container Registry with a signed build provenance attestation |
 | `codeql.yml`, Dependabot | Weekly and on PRs | Security scanning and dependency updates |
 
-Today `ci.yml` runs lint, typecheck, the Vitest suites and the web build; the PostgreSQL, license, Playwright and Docker steps are added as those parts land.
+Today `ci.yml` runs lint, typecheck, the Vitest suites, the web build, and builds the Docker image and starts it with `docker/docker-compose.yml`; the PostgreSQL, license and Playwright steps are added as those parts land.
 
-Versions follow SemVer (`1.4.0`): `feat` bumps the minor, `fix` the patch, a `!` the major. While below 1.0, breaking changes bump the minor. The image is tagged with the exact version, the minor (`1.4`) and `latest`.
+Versions follow SemVer (`1.4.0`): `feat` bumps the minor, `fix` the patch, a `!` the major. While below 1.0, breaking changes bump the minor. Only `feat`, `fix`, `perf` and `revert` commits start a new release and appear in the changelog; `docs`, `chore` and the rest ride along with the next one.
 
-Releasing is merging the release PR. The release notes say whether the upgrade runs a migration and anything an admin must do. Before tagging, a maintainer checks the release build on a real iPhone and Android phone.
+Images go to `ghcr.io/malejandrovc/mirador` with these tags:
+
+| Tag | Updated | Use it for |
+| --- | --- | --- |
+| `latest`, `1.4`, `1.4.0` | When a release PR is merged | Real instances. `latest` follows every release, `1.4` only its patches, `1.4.0` never moves |
+| `main` | Every merge to `main` | A preview instance with throwaway data. A merge can change the encrypted record format before the release that upgrades it is ready, so never point real data at `main` |
+| `sha-<commit>` | Every build | Going back to an exact build |
+
+Releasing is merging the release PR. The release notes say whether the upgrade runs a migration and anything an admin must do. Before merging it, a maintainer checks the `main` build on a real iPhone and Android phone (the preview instance runs exactly that code).
+
+The release PR is opened by release-please. A pull request opened with GitHub's built-in token doesn't start other workflows, so its required checks would never run and it couldn't be merged. The workflow therefore uses a repository secret, `RELEASE_PLEASE_TOKEN`: a fine-grained personal access token from a maintainer, limited to this repository, with read and write access to Contents and Pull requests and nothing else. When it expires, create a new one and replace the secret; until then release PRs stop appearing. The image itself is published with the built-in token.
 
 ## AI coding assistants
 
@@ -325,7 +335,7 @@ Using Claude Code, Copilot or similar tools is welcome; the author of the pull r
 
 - Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md), never in a public issue.
 - Changes to `packages/crypto`, the sync protocol or sign-in need a second reviewer once there is one, and a note in the PR on what an attacker with the server's database could learn.
-- No secrets in the repo. Local settings live in `.env` (ignored by Git, with `.env.example` committed); the release workflow uses only GitHub's built-in token.
+- No secrets in the repo. Local settings live in `.env` (ignored by Git, with `.env.example` committed); the release workflows use GitHub's built-in token, plus `RELEASE_PLEASE_TOKEN` for opening the release PR (see [CI and releases](#ci-and-releases)).
 - The server never logs request bodies, and the browser never logs decrypted data or keys, even in debug builds.
 - Treat the server as untrusted: the browser checks every response against its Zod schema, and the server checks access on every request (SEC-09).
 - Keep what the server can see in line with SEC-10. A change that adds metadata (a new plaintext column, a new header, a new log field) needs a decision issue.

@@ -6,6 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node24 --outfile=dist/index.js",
+    "start": "node dist/index.js",
     "typecheck": "tsc",
     "test": "vitest run"
   },
@@ -17,6 +19,7 @@
   "devDependencies": {
     "@repo/config": "workspace:*",
     "@types/node": "catalog:",
+    "esbuild": "^0.28.2",
     "tsx": "^4.23.15",
     "typescript": "catalog:",
     "vitest": "catalog:"
