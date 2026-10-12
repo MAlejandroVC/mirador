@@ -41,7 +41,7 @@ Then Compute → Instances → Create instance:
 
 If it says "Out of capacity", try another availability domain, or again later.
 
-When it's running, give it an address that survives the server being stopped: the instance → Attached VNICs → the VNIC → IPv4 addresses → Edit → Reserved public IP → create one. That replaces the first address, so note the **new public IP** and use it from here on.
+When it's running, give it an address that outlives the server, so a replacement server (after a rebuild, or if Oracle reclaims this one) can take the same address and the domain keeps working: the instance → Attached VNICs → the VNIC → IPv4 addresses → ⋯ → Edit → No public IP → Update; then Edit again → Reserved public IP → create one. That replaces the first address, so note the **new public IP** and use it from here on.
 
 ## 3. Open the web ports
 
