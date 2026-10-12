@@ -27,14 +27,16 @@ Two things can take the server away, so the backups below are not optional:
 
 ## 2. Create the server
 
-Compute → Instances → Create instance:
+Create the network first; the instance form can't give a public address to a network it creates itself. Networking → Virtual cloud networks → Start VCN Wizard → "Create VCN with Internet Connectivity", name it `mirador-vcn`, keep the defaults.
+
+Then Compute → Instances → Create instance:
 
 | Setting | Value |
 | --- | --- |
 | Image | Canonical Ubuntu 24.04 (the aarch64 build is picked for you with an ARM shape) |
 | Shape | Ampere → `VM.Standard.A1.Flex`, 2 OCPUs, 12 GB memory |
-| Networking | Create a new virtual cloud network with a public subnet; assign a public IPv4 address |
-| SSH keys | Upload your public key (or let Oracle generate a pair and keep the private key safe) |
+| Networking | Select existing virtual cloud network `mirador-vcn` and its public subnet; turn on "Automatically assign public IPv4 address" |
+| SSH keys | Upload your public key, or let Oracle generate a pair and download the private key before pressing Create (it isn't shown again) |
 | Boot volume | 100 GB |
 
 If it says "Out of capacity", try another availability domain, or again later.
@@ -43,7 +45,7 @@ When it's running, give it an address that survives the server being stopped: th
 
 ## 3. Open the web ports
 
-Networking → Virtual cloud networks → your network → Security → the default security list → Add ingress rules, with source `0.0.0.0/0`:
+Networking → Virtual cloud networks → `mirador-vcn` → Security → the default security list → Add ingress rules, with source `0.0.0.0/0`:
 
 | Protocol | Destination port |
 | --- | --- |
