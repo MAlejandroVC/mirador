@@ -3,3 +3,5 @@ pnpm-lock.yaml
 # Hand-written documents keep their own line wrapping.
 *.md
 LICENSE
+# release-please rewrites it in its own compact style on every release PR.
+.release-please-manifest.json
