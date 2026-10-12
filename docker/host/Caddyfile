@@ -1,0 +1,27 @@
+# HTTPS for both instances. Caddy gets and renews the certificates on its own.
+# The browser's encryption only works on HTTPS pages (NFR-09).
+{
+	email {$ACME_EMAIL}
+}
+
+(common) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+}
+
+{$MIRADOR_DOMAIN} {
+	import common
+	reverse_proxy app:3000
+}
+
+{$PREVIEW_DOMAIN} {
+	import common
+	header X-Robots-Tag "noindex, nofollow"
+	reverse_proxy preview-app:3000
+}

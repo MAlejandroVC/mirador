@@ -4,6 +4,8 @@ Mirador ships as one Docker image, `ghcr.io/malejandrovc/mirador`, that serves b
 
 > Mirador is early: the image starts and serves the app, but there are no accounts or data yet. This guide grows with it (NFR-15).
 
+For a step-by-step setup on a free cloud server, with a preview instance and encrypted off-site backups, see [hosting-oracle.md](hosting-oracle.md). The files it installs are in `docker/host/` and work on any Ubuntu 24.04 server.
+
 ## What you need
 
 - A machine with Docker and Docker Compose, Intel/AMD or ARM (a small VPS, a home server, a Raspberry Pi 4 or newer).

@@ -117,7 +117,7 @@ mirador/
 │   ├── archive/                  Export and import format, JSON Schema, version upgrades
 │   ├── i18n/                     en/ and es/ translation files
 │   └── config/                   Shared ESLint, TypeScript and Prettier config
-├── docker/                       Dockerfile, docker-compose.yml (release) and compose.dev.yml
+├── docker/                       Dockerfile, docker-compose.yml (release), compose.dev.yml, host/ (server setup)
 ├── fixtures/                     Fake statements, receipts and datasets for tests
 ├── e2e/                          Playwright flows (phone and desktop)
 ├── docs/                         Architecture decisions (adr/), admin and hosting guide, archive schema
