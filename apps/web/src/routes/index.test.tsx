@@ -1,47 +1,70 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { createMemoryHistory, RouterProvider } from '@tanstack/react-router'
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../lib/i18n'
-import { createAppRouter } from '../router'
-
-function renderHome() {
-  const queryClient = new QueryClient()
-  const router = createAppRouter(queryClient, createMemoryHistory({ initialEntries: ['/'] }))
-  render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>,
-  )
-}
+import { fakeVault, type FakeServer, renderApp, stubServer, unlockedVault } from '../test-utils'
 
 describe('home page', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })
 
-  it('shows the app name and that the server is connected', async () => {
+  it('shows who is signed in and that the server is connected', async () => {
     await i18n.changeLanguage('en')
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(() => Promise.resolve(Response.json({ status: 'ok' }))),
-    )
+    const server: FakeServer = { signedIn: 'ana@example.com' }
+    stubServer(server)
 
-    renderHome()
+    renderApp('/', unlockedVault(server))
 
     expect(await screen.findByRole('heading', { name: 'Mirador' })).toBeInTheDocument()
+    expect(await screen.findByText('Signed in as ana@example.com')).toBeInTheDocument()
     expect(await screen.findByText('Server connected')).toBeInTheDocument()
   })
 
   it('says so in Spanish when the server cannot be reached', async () => {
     await i18n.changeLanguage('es')
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(() => Promise.resolve(new Response(null, { status: 503 }))),
-    )
+    const server: FakeServer = { signedIn: 'ana@example.com', healthy: false }
+    stubServer(server)
 
-    renderHome()
+    renderApp('/', unlockedVault(server))
 
     expect(await screen.findByText('No se puede conectar con el servidor')).toBeInTheDocument()
+  })
+
+  it('SYS-06: sends someone who is signed out to sign in', async () => {
+    await i18n.changeLanguage('en')
+    const server: FakeServer = { signedIn: null }
+    stubServer(server)
+
+    renderApp('/', fakeVault(server))
+
+    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
+  })
+
+  it('SEC-12: asks for the password when signed in but locked, as after a reload', async () => {
+    await i18n.changeLanguage('en')
+    const server: FakeServer = { signedIn: 'ana@example.com' }
+    stubServer(server)
+
+    renderApp('/', fakeVault(server))
+
+    expect(await screen.findByRole('heading', { name: 'Unlock Mirador' })).toBeInTheDocument()
+  })
+
+  it('SEC-12: locking drops to the unlock screen; signing out to sign in', async () => {
+    await i18n.changeLanguage('en')
+    const user = userEvent.setup()
+    const server: FakeServer = { signedIn: 'ana@example.com' }
+    stubServer(server)
+    const vault = unlockedVault(server)
+    renderApp('/', vault)
+
+    await user.click(await screen.findByRole('button', { name: 'Lock' }))
+    expect(await screen.findByRole('heading', { name: 'Unlock Mirador' })).toBeInTheDocument()
+    expect(vault.lock).toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: 'Sign out' }))
+    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
+    expect(vault.signOut).toHaveBeenCalled()
   })
 })

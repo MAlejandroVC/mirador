@@ -1,0 +1,13 @@
+import { wrap } from 'comlink'
+import type { Vault } from '../worker/vault'
+
+// What the screens use: the vault's methods, all asynchronous. In the app they run
+// in the worker; tests pass a stand-in.
+export type VaultClient = Pick<
+  Vault,
+  'status' | 'signUp' | 'signIn' | 'unlock' | 'lock' | 'signOut'
+>
+
+export function startVault(): VaultClient {
+  return wrap<Vault>(new Worker(new URL('../worker/index.ts', import.meta.url), { type: 'module' }))
+}

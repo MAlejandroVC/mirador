@@ -25,10 +25,13 @@ const restrictedImports = (patterns, paths = []) => ({
   'no-restricted-imports': ['error', { patterns, paths }],
 })
 
-const hashWasm = {
-  group: ['hash-wasm', 'node:crypto', 'crypto'],
+// Exact module names: a pattern such as `crypto` would also catch @repo/crypto itself.
+// Better Auth's own helpers (better-auth/crypto) stay allowed on the server: they hash
+// sign-in secrets, which is sign-in, not user data.
+const rawCrypto = ['hash-wasm', 'node:crypto', 'crypto'].map((name) => ({
+  name,
   message: 'All cryptography goes through @repo/crypto (SEC-13).',
-}
+}))
 
 export default tseslint.config(
   {
@@ -69,6 +72,16 @@ export default tseslint.config(
     languageOptions: { globals: globals.browser },
   },
   {
+    files: ['apps/web/**/*.{ts,tsx}'],
+    rules: {
+      // TanStack Router redirects by throwing redirect(), which is a Response.
+      '@typescript-eslint/only-throw-error': [
+        'error',
+        { allow: [{ from: 'package', package: '@tanstack/router-core', name: 'Redirect' }] },
+      ],
+    },
+  },
+  {
     files: ['apps/web/src/routes/**/*.tsx'],
     // TanStack Router route files export a Route object next to the component.
     rules: { 'react-refresh/only-export-components': 'off' },
@@ -88,13 +101,13 @@ export default tseslint.config(
             group: ['@repo/sync/*', '!@repo/sync/protocol'],
             message: 'The server may use only the sync protocol types: @repo/sync/protocol.',
           },
-          hashWasm,
         ],
         [
           {
             name: '@repo/sync',
             message: 'The server may use only the sync protocol types: @repo/sync/protocol.',
           },
+          ...rawCrypto,
         ],
       ),
     },
@@ -103,13 +116,16 @@ export default tseslint.config(
     files: ['packages/core/**/*.ts'],
     rules: {
       ...cryptoOutsideCryptoPackage,
-      ...restrictedImports([
-        {
-          group: ['@repo/*', 'react', 'react-dom'],
-          message: '@repo/core is pure logic: no other packages, no React, no network, no storage.',
-        },
-        hashWasm,
-      ]),
+      ...restrictedImports(
+        [
+          {
+            group: ['@repo/*', 'react', 'react-dom'],
+            message:
+              '@repo/core is pure logic: no other packages, no React, no network, no storage.',
+          },
+        ],
+        rawCrypto,
+      ),
     },
   },
   {
@@ -125,7 +141,7 @@ export default tseslint.config(
     files: ['apps/web/**/*.{ts,tsx}', 'packages/!(crypto|core)/**/*.ts'],
     rules: {
       ...cryptoOutsideCryptoPackage,
-      ...restrictedImports([hashWasm]),
+      ...restrictedImports([], rawCrypto),
     },
   },
   {

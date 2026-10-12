@@ -30,7 +30,7 @@ All of them are free; there is no Jira, Slack or other tracker.
 
 ## Set up your machine
 
-> The workspace is scaffolded: `pnpm dev`, `test`, `lint`, `typecheck`, `build` and `db:up` and `docker:build` work today on an empty app. `db:migrate`, `seed`, `e2e` and the Drizzle commands arrive with the features that need them.
+> `pnpm dev`, `test`, `lint`, `typecheck`, `build`, `db:up`, `server:db:generate` and `docker:build` work today. The server migrates its database at start, so there is no separate migrate step; `seed`, `e2e` and the local-data Drizzle commands arrive with the features that need them. A fresh database prints a setup code in the server's output: enter it on the sign-up screen to create your first account.
 
 Everything runs on macOS, Linux or Windows (with WSL 2). No Mac or Xcode is needed.
 
@@ -53,7 +53,7 @@ pnpm dev                      # web app and server together
 | --- | --- |
 | `pnpm dev` | Web app at localhost:5173 and the API at localhost:3000, both reloading on save |
 | `pnpm dev --host` | Same, reachable from a phone on your Wi-Fi at your computer's address |
-| `pnpm test` | All unit, component and server tests (server tests start their own PostgreSQL) |
+| `pnpm test` | All unit, component and server tests (server tests run PostgreSQL in memory with PGlite, so they need no Docker) |
 | `pnpm test:watch` | Re-runs tests as you edit |
 | `pnpm lint` / `pnpm typecheck` | The same checks CI runs |
 | `pnpm e2e` | Playwright on phone and desktop sizes |
@@ -284,7 +284,7 @@ describe('BUD-35 close the gap', () => {
 There are two databases, and most changes touch only the first.
 
 1. **Local data** (wallets, transactions, budgets and so on): edit the SQLite schema in `packages/db/src/schema/` and the Zod record schema in `packages/api`. Run `pnpm db:generate` and commit the migration. It runs in the browser after unlock.
-2. **Server tables** (accounts, keys, records, files, push, invites): edit `apps/server/src/store/schema/`, run `pnpm server:db:generate`, and commit. It runs at server start after a backup (DAT-10). The server never gets a column for something inside a record.
+2. **Server tables** (accounts, keys, records, files, push, invites): edit `apps/server/src/store/schema.ts`, run `pnpm server:db:generate`, and commit. It runs at server start after a backup (DAT-10). The server never gets a column for something inside a record.
 3. Never edit a released migration; add a new one.
 4. A change to a record's shape bumps its schema version, and the client upgrades old records as it decrypts them.
 5. If the change affects exported data, bump the archive schema version in `packages/archive`, add an upgrader, and extend the round-trip test (DAT-04, DAT-06).

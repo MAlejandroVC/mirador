@@ -7,5 +7,77 @@
     "checking": "Checking the server…",
     "ok": "Server connected",
     "unreachable": "Can't reach the server"
+  },
+  "form": {
+    "email": "Email",
+    "password": "Password",
+    "show": "Show password",
+    "hide": "Hide password"
+  },
+  "security": {
+    "signIn": {
+      "title": "Sign in",
+      "intro": "Your password unlocks your data on this device. It never leaves it.",
+      "submit": "Sign in",
+      "working": "Signing in and unlocking…",
+      "noAccount": "New here?",
+      "createAccount": "Create an account"
+    },
+    "signUp": {
+      "title": "Create your account",
+      "intro": "Your password encrypts your data on this device. The server never sees it, so nobody can reset it for you.",
+      "passwordHint": "At least {{count}} characters. A few unrelated words are easy to remember.",
+      "confirm": "Repeat password",
+      "setupCode": "Setup code",
+      "setupCodeHint": "This server has no accounts yet. The person who runs it finds the setup code in the server's log.",
+      "submit": "Create account",
+      "working": "Making your encryption keys…",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "closed": "This server isn't taking new accounts. Ask the person who runs it for one."
+    },
+    "recoveryKey": {
+      "title": "Save your recovery key",
+      "intro": "If you forget your password, this key is the only way back into your data. It's shown only this once.",
+      "warning": "If you lose both your password and this key, your data is gone for good. Nobody can recover it, not even the person who runs the server.",
+      "label": "Recovery key",
+      "copy": "Copy",
+      "copied": "Copied",
+      "download": "Download",
+      "fileName": "mirador-recovery-key.txt",
+      "fileText": "Mirador recovery key for {{email}}\n\n{{key}}\n\nKeep it somewhere safe and private. With it you can get back into your data if you forget your password.\n",
+      "confirm": "I saved my recovery key somewhere safe",
+      "continue": "Continue"
+    },
+    "unlock": {
+      "title": "Unlock Mirador",
+      "intro": "Your data is encrypted. Enter your password to open it on this device.",
+      "signedInAs": "Signed in as {{email}}",
+      "submit": "Unlock",
+      "working": "Unlocking…",
+      "signOut": "Sign out"
+    },
+    "home": {
+      "signedInAs": "Signed in as {{email}}",
+      "encrypted": "Your data is end-to-end encrypted. Only this device can read it while it's unlocked.",
+      "lock": "Lock",
+      "signOut": "Sign out"
+    },
+    "errors": {
+      "wrong-credentials": "Wrong email or password.",
+      "wrong-password": "Wrong password.",
+      "email-taken": "That email already has an account. Sign in instead.",
+      "sign-up-closed": "This server isn't taking new accounts.",
+      "wrong-setup-code": "That setup code is wrong. Check the server's log for the current one.",
+      "signed-out": "You were signed out. Sign in again.",
+      "too-many-attempts": "Too many attempts. Wait a minute and try again.",
+      "unsafe-server": "The server sent keys or settings that aren't safe, so Mirador stopped. Your password was not sent.",
+      "network": "Can't reach the server. Check your connection and try again.",
+      "unknown": "Something went wrong. Try again.",
+      "invalidEmail": "Enter an email address.",
+      "passwordTooShort": "Use at least {{count}} characters.",
+      "passwordsDontMatch": "The passwords don't match.",
+      "setupCodeMissing": "Enter the setup code."
+    }
   }
 }

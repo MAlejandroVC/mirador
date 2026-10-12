@@ -18,6 +18,7 @@
     "test:watch": "vitest",
     "db:up": "docker compose -f docker/compose.dev.yml up -d --wait",
     "db:down": "docker compose -f docker/compose.dev.yml down",
+    "server:db:generate": "pnpm --filter @repo/server db:generate",
     "docker:build": "docker build -f docker/Dockerfile -t mirador:dev ."
   },
   "devDependencies": {
