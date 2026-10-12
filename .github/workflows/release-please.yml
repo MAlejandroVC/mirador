@@ -39,7 +39,9 @@ jobs:
     name: Docker image
     needs: release-please
     # Every push to main publishes the `main` (preview) tag; a release also publishes
-    # its version tags and `latest`.
+    # its version tags and `latest`. The preview is built even when the release PR step
+    # fails (an expired RELEASE_PLEASE_TOKEN, say): its outputs are then empty.
+    if: ${{ !cancelled() }}
     uses: ./.github/workflows/release.yml
     permissions:
       contents: read
