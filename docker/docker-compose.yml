@@ -1,0 +1,39 @@
+# Runs a released Mirador image with its database. See docs/self-hosting.md.
+#
+#   echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)" > .env
+#   docker compose up -d
+#
+# The app listens on 127.0.0.1:3000 only. Put an HTTPS proxy (such as Caddy) in front of it:
+# the browser's encryption needs HTTPS on any address but localhost (NFR-09).
+name: mirador
+
+services:
+  app:
+    image: ${MIRADOR_IMAGE:-ghcr.io/malejandrovc/mirador}:${MIRADOR_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://mirador:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/mirador
+    ports:
+      - '127.0.0.1:${MIRADOR_PORT:-3000}:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mirador
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: mirador
+    volumes:
+      # PostgreSQL 18 images keep their data under a versioned folder inside /var/lib/postgresql.
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U mirador -d mirador']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  postgres-data:

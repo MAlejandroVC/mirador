@@ -1,0 +1,10 @@
+# Keep the build context small and free of local files.
+**/node_modules
+**/dist
+**/.turbo
+**/coverage
+.git
+.env
+.env.*
+!.env.example
+*.log

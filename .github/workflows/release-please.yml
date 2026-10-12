@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Never cancel a run halfway through publishing; queue the next push instead.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Release PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      # Keeps one release PR open with the next version and changelog. Merging it tags
+      # the release, and the job below publishes the image for that version.
+      - uses: googleapis/release-please-action@v5
+        id: release
+        with:
+          # A release PR opened with the built-in token doesn't start the required checks,
+          # so it couldn't be merged. RELEASE_PLEASE_TOKEN is a fine-grained token limited
+          # to this repository (see "CI and releases" in CONTRIBUTING.md).
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  image:
+    name: Docker image
+    needs: release-please
+    # Every push to main publishes the `main` (preview) tag; a release also publishes
+    # its version tags and `latest`.
+    uses: ./.github/workflows/release.yml
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    with:
+      version: ${{ needs.release-please.outputs.release_created == 'true' && needs.release-please.outputs.version || '' }}

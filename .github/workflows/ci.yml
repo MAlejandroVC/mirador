@@ -33,3 +33,33 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Build the release image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          load: true
+          tags: mirador:ci
+          cache-from: type=gha
+      - name: Start it with Docker Compose
+        env:
+          MIRADOR_IMAGE: mirador
+          MIRADOR_TAG: ci
+          POSTGRES_PASSWORD: ci-only-password
+        run: docker compose -f docker/docker-compose.yml up -d --wait
+      - name: Check the API and the web app answer
+        run: |
+          curl --fail --silent --show-error http://127.0.0.1:3000/api/health
+          curl --fail --silent --show-error http://127.0.0.1:3000/ | grep -q '<title>Mirador</title>'
+      - name: Show the logs
+        if: failure()
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+        run: docker compose -f docker/docker-compose.yml logs

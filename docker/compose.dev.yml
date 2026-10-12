@@ -1,5 +1,5 @@
-# PostgreSQL for local development and tests only. The release image and its
-# docker-compose.yml come with the releases chore (#20).
+# PostgreSQL for local development and tests only. The release image runs with
+# docker-compose.yml next to this file.
 name: mirador-dev
 
 services:

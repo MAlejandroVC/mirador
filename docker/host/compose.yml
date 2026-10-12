@@ -1,0 +1,79 @@
+# A Mirador server on one machine: the real instance, a preview instance and Caddy for
+# HTTPS. docker/host/setup.sh installs it in /opt/mirador; see docs/hosting-oracle.md.
+#
+# Settings come from /opt/mirador/.env, which setup.sh creates.
+name: mirador
+
+x-postgres: &postgres
+  image: postgres:18-alpine
+  restart: unless-stopped
+  environment: &postgres-env
+    POSTGRES_USER: mirador
+    POSTGRES_DB: mirador
+  healthcheck:
+    test: ['CMD-SHELL', 'pg_isready -U mirador -d mirador']
+    interval: 5s
+    timeout: 5s
+    retries: 20
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      MIRADOR_DOMAIN: ${MIRADOR_DOMAIN:?Set MIRADOR_DOMAIN in .env}
+      PREVIEW_DOMAIN: ${PREVIEW_DOMAIN:?Set PREVIEW_DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+  # The real instance follows releases only (`latest` by default).
+  app:
+    image: ghcr.io/malejandrovc/mirador:${MIRADOR_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://mirador:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/mirador
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    <<: *postgres
+    environment:
+      <<: *postgres-env
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      # PostgreSQL 18 images keep their data under a versioned folder inside /var/lib/postgresql.
+      - db-data:/var/lib/postgresql
+
+  # The preview instance runs every merge to main, with its own database. A merge can
+  # change the encrypted record format before the release that upgrades it, so it only
+  # ever holds throwaway data.
+  preview-app:
+    image: ghcr.io/malejandrovc/mirador:main
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://mirador:${PREVIEW_POSTGRES_PASSWORD:?Set PREVIEW_POSTGRES_PASSWORD in .env}@preview-db:5432/mirador
+    depends_on:
+      preview-db:
+        condition: service_healthy
+
+  preview-db:
+    <<: *postgres
+    environment:
+      <<: *postgres-env
+      POSTGRES_PASSWORD: ${PREVIEW_POSTGRES_PASSWORD:?Set PREVIEW_POSTGRES_PASSWORD in .env}
+    volumes:
+      - preview-db-data:/var/lib/postgresql
+
+volumes:
+  caddy-data:
+  caddy-config:
+  db-data:
+  preview-db-data:
