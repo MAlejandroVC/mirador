@@ -34,6 +34,29 @@ describe('invites', () => {
     expect(await screen.findByText(/^Waiting, expires/)).toBeInTheDocument()
   })
 
+  it('SYS-13: shares the invite link with a line about what Mirador is', async () => {
+    const user = userEvent.setup()
+    const share = vi.fn(() => Promise.resolve())
+    Object.defineProperty(navigator, 'share', { value: share, configurable: true })
+    try {
+      const server: FakeServer = { signedIn: 'ana', operator: true }
+      stubServer(server)
+      renderApp('/invites', unlockedVault(server))
+
+      await user.click(await screen.findByRole('button', { name: 'Make an invite link' }))
+      const made = within(await screen.findByRole('region', { name: 'New invite link' }))
+      await user.click(made.getByRole('button', { name: 'Share' }))
+
+      expect(share).toHaveBeenCalledWith({
+        title: 'Mirador',
+        text: 'Track your expenses and plan your future with Mirador Budget:',
+        url: `${window.location.origin}/sign-up?invite=ABCD-EFGH-JKMN-PQRS-TV23`,
+      })
+    } finally {
+      Reflect.deleteProperty(navigator, 'share')
+    }
+  })
+
   it('SYS-13: shows who used an invite, and withdraws one still waiting', async () => {
     const user = userEvent.setup()
     const server: FakeServer = {
