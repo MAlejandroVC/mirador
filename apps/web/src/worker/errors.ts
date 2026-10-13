@@ -6,7 +6,7 @@ export const vaultErrorCodes = [
   'wrong-recovery-key',
   'recovery-key-typo',
   'username-taken',
-  'sign-up-closed',
+  'wrong-invite',
   'wrong-setup-code',
   'signed-out',
   'locked',

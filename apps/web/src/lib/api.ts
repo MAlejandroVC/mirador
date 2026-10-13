@@ -9,6 +9,8 @@ import {
   recoveryKeyResponse,
   type ReplaceRecoveryKeyRequest,
   healthResponse,
+  invitesResponse,
+  newInviteResponse,
   keysResponse,
   preloginResponse,
   sessionResponse,
@@ -93,6 +95,17 @@ export function createApi(fetchFn: Fetch = (...args) => globalThis.fetch(...args
       return signOutOthersResponse.parse(
         await (await request('/api/session/others', { method: 'DELETE' })).json(),
       )
+    },
+    // SYS-13: the operator's invites. The page calls these itself: nothing here is
+    // encrypted, so the worker isn't needed.
+    async invites() {
+      return invitesResponse.parse(await (await request('/api/invites')).json()).invites
+    },
+    async createInvite() {
+      return newInviteResponse.parse(await (await post('/api/invites', {})).json())
+    },
+    async withdrawInvite(id: string) {
+      await request(`/api/invites/${encodeURIComponent(id)}`, { method: 'DELETE' })
     },
     async signOut() {
       await request('/api/session', { method: 'DELETE' })

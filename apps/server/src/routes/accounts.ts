@@ -7,12 +7,12 @@ import {
   signUpRequest,
   type SignUpStatus,
 } from '@repo/api'
-import { count, eq } from 'drizzle-orm'
+import { and, count, eq, gt, isNull, TransactionRollbackError } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { type AttemptLimits, limitAddress } from '../auth/guard.ts'
-import { hashSecret, randomToken, sameText, steadyBytes } from '../auth/secrets.ts'
+import { hashSecret, hashToken, randomToken, sameText, steadyBytes } from '../auth/secrets.ts'
 import { requireUser, type SessionStore, type SessionVariables } from '../auth/sessions.ts'
-import { normalizeSetupCode } from '../settings.ts'
+import { normalizeCode } from '../settings.ts'
 import { type Database, schema } from '../store/db.ts'
 import { jsonBody } from './json-body.ts'
 
@@ -43,7 +43,7 @@ export function accountRoutes({
   async function signUpMode(): Promise<SignUpStatus['mode']> {
     const [row] = await db.select({ users: count() }).from(schema.users)
     if (!row?.users) return 'setup'
-    return openSignUp ? 'open' : 'closed'
+    return openSignUp ? 'open' : 'invite'
   }
 
   routes.get('/accounts/sign-up', async (c) => {
@@ -58,10 +58,10 @@ export function accountRoutes({
     const refuse = (error: SignUpError['error'], status: 403 | 409) =>
       c.json({ error } satisfies SignUpError, status)
 
-    if (mode === 'closed') return refuse('sign-up-closed', 403)
+    if (mode === 'invite' && !body.inviteCode) return refuse('wrong-invite', 403)
     if (
       mode === 'setup' &&
-      !sameText(normalizeSetupCode(body.setupCode ?? ''), normalizeSetupCode(setupCode))
+      !sameText(normalizeCode(body.setupCode ?? ''), normalizeCode(setupCode))
     ) {
       return refuse('wrong-setup-code', 403)
     }
@@ -71,28 +71,58 @@ export function accountRoutes({
       hashSecret(body.recoverySecret),
     ])
     const userId = randomToken()
-    // Both rows or neither: an account without key material could never be unlocked.
-    const created = await db.transaction(async (tx) => {
-      const inserted = await tx
-        .insert(schema.users)
-        .values({ id: userId, username: body.username, loginSecretHash })
-        .onConflictDoNothing({ target: schema.users.username })
-        .returning({ id: schema.users.id })
-      if (inserted.length === 0) return false
-      await tx.insert(schema.keyMaterial).values({
-        userId,
-        kdfAlgorithm: body.kdf.algorithm,
-        kdfSalt: body.kdf.salt,
-        kdfMemoryKib: body.kdf.memoryKiB,
-        kdfIterations: body.kdf.iterations,
-        kdfParallelism: body.kdf.parallelism,
-        wrappedKeyPassword: body.wrappedAccountKey.password,
-        wrappedKeyRecovery: body.wrappedAccountKey.recovery,
-        recoverySecretHash,
+    // All rows or none: an account without key material could never be unlocked, and
+    // an invite is used up only by an account that was created.
+    const created = await db
+      .transaction(async (tx) => {
+        const inserted = await tx
+          .insert(schema.users)
+          // SYS-13: whoever creates the first account runs the server.
+          .values({
+            id: userId,
+            username: body.username,
+            loginSecretHash,
+            operator: mode === 'setup',
+          })
+          .onConflictDoNothing({ target: schema.users.username })
+          .returning({ id: schema.users.id })
+        if (inserted.length === 0) return 'username-taken' as const
+        if (mode === 'invite') {
+          // Claimed in one statement, so two sign-ups can't both use the same invite.
+          const claimed = await tx
+            .update(schema.invites)
+            .set({ usedBy: userId, usedAt: new Date() })
+            .where(
+              and(
+                eq(schema.invites.codeHash, hashToken(normalizeCode(body.inviteCode ?? ''))),
+                isNull(schema.invites.usedAt),
+                gt(schema.invites.expiresAt, new Date()),
+              ),
+            )
+            .returning({ id: schema.invites.id })
+          if (claimed.length === 0) {
+            tx.rollback()
+          }
+        }
+        await tx.insert(schema.keyMaterial).values({
+          userId,
+          kdfAlgorithm: body.kdf.algorithm,
+          kdfSalt: body.kdf.salt,
+          kdfMemoryKib: body.kdf.memoryKiB,
+          kdfIterations: body.kdf.iterations,
+          kdfParallelism: body.kdf.parallelism,
+          wrappedKeyPassword: body.wrappedAccountKey.password,
+          wrappedKeyRecovery: body.wrappedAccountKey.recovery,
+          recoverySecretHash,
+        })
+        return 'created' as const
       })
-      return true
-    })
-    if (!created) return refuse('username-taken', 409)
+      .catch((error: unknown) => {
+        if (error instanceof TransactionRollbackError) return 'wrong-invite' as const
+        throw error
+      })
+    if (created === 'username-taken') return refuse('username-taken', 409)
+    if (created === 'wrong-invite') return refuse('wrong-invite', 403)
 
     await sessions.start(c, userId)
     return c.body(null, 201)

@@ -1,4 +1,13 @@
-import { bigint, index, integer, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
+import {
+  bigint,
+  boolean,
+  index,
+  integer,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+} from 'drizzle-orm/pg-core'
 
 // The server's own tables. None of them holds anything it can read about a user's
 // money: sign-in data, and key material that only the browser can use (SEC-04).
@@ -17,6 +26,8 @@ export const users = pgTable('users', {
   loginSecretHash: text('login_secret_hash').notNull(),
   // The last revision given to one of this user's records (see records).
   recordRevision: bigint('record_revision', { mode: 'number' }).notNull().default(0),
+  // SYS-13: whoever created the server's first account runs it and can invite people.
+  operator: boolean('operator').notNull().default(false),
   createdAt,
   updatedAt,
 })
@@ -54,6 +65,24 @@ export const keyMaterial = pgTable('key_material', {
   createdAt,
   updatedAt,
 })
+
+// SYS-13: invites the operator made. The code is in the link the operator shares; the
+// table keeps only its hash, so a copy of it can't be used to sign up.
+export const invites = pgTable(
+  'invites',
+  {
+    id: text('id').primaryKey(),
+    codeHash: text('code_hash').notNull().unique(),
+    createdBy: text('created_by')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    usedBy: text('used_by').references(() => users.id, { onDelete: 'set null' }),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    createdAt,
+  },
+  (table) => [index('invites_created_by_idx').on(table.createdBy)],
+)
 
 // Values the server makes for itself on first start, so an operator has nothing extra
 // to configure.

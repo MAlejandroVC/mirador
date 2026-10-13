@@ -27,6 +27,7 @@ export interface SignUpInput {
   username: string
   password: string
   setupCode?: string
+  inviteCode?: string
 }
 
 // Holds the account key and the decrypted records. It runs in a Web Worker, so
@@ -81,7 +82,7 @@ export class Vault {
   // SEC-02, SEC-07: everything is made here; the server gets the login secret, the
   // wrapped account key and a recovery secret, none of which can decrypt anything.
   // Returns the recovery key to show once.
-  async signUp({ username, password, setupCode }: SignUpInput) {
+  async signUp({ username, password, setupCode, inviteCode }: SignUpInput) {
     username = normalizeUsername(username)
     return guard(async () => {
       const kdf = newKdfParams()
@@ -99,6 +100,7 @@ export class Vault {
         wrappedAccountKey: { password: wrappedByPassword, recovery: wrappedByRecovery },
         recoverySecret,
         ...(setupCode ? { setupCode } : {}),
+        ...(inviteCode ? { inviteCode } : {}),
       })
       await this.#open(accountKey)
       const shown = await formatRecoveryKey(recoveryKey)

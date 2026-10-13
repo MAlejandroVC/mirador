@@ -23,7 +23,7 @@ export async function createTestApp(options: Partial<AppOptions> = {}) {
   }
   const db = shared
   await db.execute(
-    sql.raw('truncate users, sessions, key_material, records, server_settings cascade'),
+    sql.raw('truncate users, sessions, key_material, records, invites, server_settings cascade'),
   )
   const app = createApp({
     db,

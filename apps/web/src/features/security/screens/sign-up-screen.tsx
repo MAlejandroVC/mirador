@@ -1,9 +1,8 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { type SubmitEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usernamePattern } from '@repo/api'
-import { Alert } from '../../../components/ui/alert'
 import { Button } from '../../../components/ui/button'
 import { TextField } from '../../../components/ui/text-field'
 import { vaultErrorCode } from '../../../worker/errors'
@@ -19,6 +18,7 @@ interface Problems {
   password?: string
   confirm?: string
   setupCode?: string
+  inviteCode?: string
 }
 
 // SYS-06, SYS-13, SEC-07: create an account, then show the recovery key once.
@@ -32,6 +32,8 @@ export function SignUpScreen() {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [setupCode, setSetupCode] = useState('')
+  const { invite } = useSearch({ from: '/sign-up' })
+  const [inviteCode, setInviteCode] = useState(invite ?? '')
   const [problems, setProblems] = useState<Problems>({})
 
   const signUp = useMutation({
@@ -40,6 +42,7 @@ export function SignUpScreen() {
         username,
         password,
         ...(status.mode === 'setup' ? { setupCode: setupCode.trim() } : {}),
+        ...(status.mode === 'invite' ? { inviteCode: inviteCode.trim() } : {}),
       }),
   })
 
@@ -56,6 +59,9 @@ export function SignUpScreen() {
     }
     if (status.mode === 'setup' && !setupCode.trim()) {
       found.setupCode = t('security.errors.setupCodeMissing')
+    }
+    if (status.mode === 'invite' && !inviteCode.trim()) {
+      found.inviteCode = t('security.errors.inviteCodeMissing')
     }
     setProblems(found)
     if (Object.keys(found).length === 0) signUp.mutate()
@@ -86,15 +92,6 @@ export function SignUpScreen() {
     </p>
   )
 
-  if (status.mode === 'closed') {
-    return (
-      <AuthLayout title={t('security.signUp.title')}>
-        <Alert tone="warning">{t('security.signUp.closed')}</Alert>
-        {signInLink}
-      </AuthLayout>
-    )
-  }
-
   return (
     <AuthLayout title={t('security.signUp.title')} intro={t('security.signUp.intro')}>
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
@@ -109,6 +106,20 @@ export function SignUpScreen() {
             value={setupCode}
             onChange={(event) => {
               setSetupCode(event.target.value)
+            }}
+          />
+        )}
+        {status.mode === 'invite' && (
+          <TextField
+            label={t('security.signUp.inviteCode')}
+            hint={t('security.signUp.inviteCodeHint')}
+            error={problems.inviteCode}
+            autoComplete="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            value={inviteCode}
+            onChange={(event) => {
+              setInviteCode(event.target.value)
             }}
           />
         )}

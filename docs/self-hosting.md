@@ -28,7 +28,7 @@ The app listens on `127.0.0.1:3000`, so only the machine itself can reach it. Se
 | `POSTGRES_PASSWORD` | (required) | Database password. Keep it in `.env` only |
 | `MIRADOR_TAG` | `latest` | Image tag to run (see below) |
 | `MIRADOR_PORT` | `3000` | Port on 127.0.0.1 the app listens on |
-| `MIRADOR_OPEN_SIGNUP` | `false` | `true` lets anyone who can open the app create an account. Leave it off and create accounts yourself (SYS-13) |
+| `MIRADOR_OPEN_SIGNUP` | `false` | `true` lets anyone who can open the app create an account. Leave it off and invite people instead (SYS-13) |
 | `MIRADOR_TRUST_PROXY` | `true` | Sign-in attempt limits count by the visitor's address from the proxy's `X-Forwarded-For` header. Set `false` only if nothing sits in front of the app |
 
 ## Create the first account
@@ -42,7 +42,13 @@ docker compose logs app | grep "setup code"
 
 Open the app, choose **Create an account** and enter that code with a username and password. The username can be anything; Mirador never asks for an email. The app then shows your **recovery key** once: save it somewhere safe. Your password and recovery key never reach the server, so nobody, including you as the server's operator, can reset them. Lose both and the data is gone for good.
 
-After that, sign-up is closed. Invites for more people come in a later release; until then, set `MIRADOR_OPEN_SIGNUP=true` in `.env`, run `docker compose up -d`, let them sign up, and turn it off again.
+That first account runs the server. On a server that already had accounts before invites existed, the oldest account does.
+
+## Invite people
+
+After the first account, only invited people can sign up. Signed in with the first account, choose **Invite someone** on the home screen, then **Make an invite link**, and send the link to the person yourself (Mirador sends no email or messages). Each link works for one account, for 7 days. The app shows it only once, because the server keeps only a hash of it; if you lose it, withdraw the invite and make another. The same screen lists your invites and who used each one.
+
+To let anyone who can reach the app sign up instead, set `MIRADOR_OPEN_SIGNUP=true` in `.env` and run `docker compose up -d`.
 
 ## Add HTTPS
 

@@ -97,13 +97,46 @@ describe('sign-up', () => {
     expect(await screen.findByText('Signed in as ana')).toBeInTheDocument()
   })
 
-  it('SYS-13: says so when the server takes no new accounts', async () => {
-    const server: FakeServer = { signUpMode: 'closed' }
+  it('SYS-13: asks for an invite code, and an invite link fills it in', async () => {
+    const user = userEvent.setup()
+    const server: FakeServer = { signUpMode: 'invite' }
     stubServer(server)
-    renderApp('/sign-up', fakeVault(server))
+    const vault = fakeVault(server)
+    renderApp('/sign-up?invite=ABCD-EFGH-JKMN-PQRS-TV23', vault)
 
-    expect(await screen.findByText(/isn't taking new accounts/)).toBeInTheDocument()
-    expect(screen.queryByLabelText('Username')).not.toBeInTheDocument()
+    expect(await screen.findByLabelText('Invite code')).toHaveValue('ABCD-EFGH-JKMN-PQRS-TV23')
+    await user.type(screen.getByLabelText('Username'), 'ben')
+    await user.type(screen.getByLabelText('Password'), password)
+    await user.type(screen.getByLabelText('Repeat password'), password)
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+
+    expect(vault.signUp).toHaveBeenCalledWith({
+      username: 'ben',
+      password,
+      inviteCode: 'ABCD-EFGH-JKMN-PQRS-TV23',
+    })
+  })
+
+  it('SYS-13: without an invite, says how to get one', async () => {
+    const user = userEvent.setup()
+    const server: FakeServer = { signUpMode: 'invite' }
+    stubServer(server)
+    const vault = fakeVault(server, {
+      signUp: vi.fn(() => Promise.reject(new VaultError('wrong-invite'))),
+    })
+    renderApp('/sign-up', vault)
+
+    expect(await screen.findByText(/takes new accounts by invite only/)).toBeInTheDocument()
+    await user.type(screen.getByLabelText('Username'), 'ben')
+    await user.type(screen.getByLabelText('Password'), password)
+    await user.type(screen.getByLabelText('Repeat password'), password)
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+    expect(screen.getByText('Enter your invite code.')).toBeInTheDocument()
+    expect(vault.signUp).not.toHaveBeenCalled()
+
+    await user.type(screen.getByLabelText('Invite code'), 'used-code')
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('already used or expired')
   })
 
   it('SYS-06: explains a username that is already taken, in Spanish too', async () => {

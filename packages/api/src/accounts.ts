@@ -29,11 +29,12 @@ export const kdfParams = z.object({
 })
 export type KdfParamsBody = z.infer<typeof kdfParams>
 
-// GET /api/accounts/sign-up. Whether this server takes new accounts right now
-// (SYS-13): `setup` before the first account exists, which needs the setup code from
-// the server's log; `open` when the operator turned open sign-up on; `closed` otherwise.
+// GET /api/accounts/sign-up. How this server takes new accounts right now (SYS-13):
+// `setup` before the first account exists, which needs the setup code from the
+// server's log; `open` when the operator turned open sign-up on; `invite` otherwise,
+// which needs an invite code from the operator.
 export const signUpStatus = z.object({
-  mode: z.enum(['setup', 'open', 'closed']),
+  mode: z.enum(['setup', 'open', 'invite']),
 })
 export type SignUpStatus = z.infer<typeof signUpStatus>
 
@@ -48,11 +49,12 @@ export const signUpRequest = z.object({
   }),
   recoverySecret: secret,
   setupCode: z.string().trim().max(64).optional(),
+  inviteCode: z.string().trim().max(64).optional(),
 })
 export type SignUpRequest = z.infer<typeof signUpRequest>
 
 export const signUpError = z.object({
-  error: z.enum(['sign-up-closed', 'wrong-setup-code', 'username-taken']),
+  error: z.enum(['wrong-invite', 'wrong-setup-code', 'username-taken']),
 })
 export type SignUpError = z.infer<typeof signUpError>
 
@@ -119,10 +121,11 @@ export type SignOutOthersResponse = z.infer<typeof signOutOthersResponse>
 export const signInRequest = z.object({ username, loginSecret: secret })
 export type SignInRequest = z.infer<typeof signInRequest>
 
-// GET /api/session. The signed-in user, or null.
+// GET /api/session. The signed-in user, or null. `operator` marks whoever created the
+// server's first account, who can invite people (SYS-13).
 export const sessionResponse = z
   .object({
-    user: z.object({ id: z.string(), username: z.string() }),
+    user: z.object({ id: z.string(), username: z.string(), operator: z.boolean() }),
   })
   .nullable()
 export type SessionResponse = z.infer<typeof sessionResponse>

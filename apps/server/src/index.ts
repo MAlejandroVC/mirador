@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
 import { createApp } from './app.ts'
-import { loadSecret, newSetupCode } from './settings.ts'
+import { loadSecret, newCode } from './settings.ts'
 import { migrationsFolder, schema } from './store/db.ts'
 
 const port = Number(process.env.PORT ?? 3000)
@@ -16,7 +16,7 @@ const db = drizzle(sql, { schema })
 await migrate(db, { migrationsFolder })
 
 const secret = await loadSecret(db)
-const setupCode = newSetupCode()
+const setupCode = newCode()
 const [users] = await db.select({ count: count() }).from(schema.users)
 if (!users?.count) {
   console.log(`No accounts yet. Create the first one in the app with this setup code: ${setupCode}`)

@@ -52,7 +52,11 @@ function fakeServer() {
       }
       case '/api/session': {
         if (!init?.method || init.method === 'GET') {
-          return json(signedIn ? { user: { id: `id-${signedIn}`, username: signedIn } } : null)
+          return json(
+            signedIn
+              ? { user: { id: `id-${signedIn}`, username: signedIn, operator: false } }
+              : null,
+          )
         }
         if (init.method === 'DELETE') {
           signedIn = null
@@ -358,17 +362,19 @@ describe('vault', () => {
     expect(await phone.status()).toBe('locked')
   })
 
-  it('SYS-06: explains a taken username, a closed server, too many attempts and no connection', async () => {
+  it('SYS-06: explains a taken username, a wrong invite, too many attempts and no connection', async () => {
     const server = fakeServer()
     await new Vault(server.api).signUp({ username: 'ana', password })
 
     expect(await failure(new Vault(server.api).signUp({ username: 'ana', password }))).toBe(
       'username-taken',
     )
-    const closed = new Vault(
-      createApi(() => Promise.resolve(Response.json({ error: 'sign-up-closed' }, { status: 403 }))),
+    const uninvited = new Vault(
+      createApi(() => Promise.resolve(Response.json({ error: 'wrong-invite' }, { status: 403 }))),
     )
-    expect(await failure(closed.signUp({ username: 'ben', password }))).toBe('sign-up-closed')
+    expect(
+      await failure(uninvited.signUp({ username: 'ben', password, inviteCode: 'USED-CODE' })),
+    ).toBe('wrong-invite')
     const limited = new Vault(createApi(() => Promise.resolve(new Response(null, { status: 429 }))))
     expect(await failure(limited.signIn('ana', password))).toBe('too-many-attempts')
     const offline = new Vault(createApi(() => Promise.reject(new TypeError('Failed to fetch'))))

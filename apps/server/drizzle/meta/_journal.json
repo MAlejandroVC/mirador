@@ -15,6 +15,13 @@
       "when": 1791869324203,
       "tag": "0001_records",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791904976612,
+      "tag": "0002_operator_and_invites",
+      "breakpoints": true
     }
   ]
 }

@@ -1,3 +1,4 @@
+import type { Invite } from '@repo/api'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryHistory, RouterProvider } from '@tanstack/react-router'
 import { render } from '@testing-library/react'
@@ -59,15 +60,18 @@ export function unlockedVault(server: FakeServer) {
 
 export interface FakeServer {
   signedIn?: string | null
-  signUpMode?: 'setup' | 'open' | 'closed'
+  signUpMode?: 'setup' | 'open' | 'invite'
   healthy?: boolean
+  // SYS-13: whether the signed-in user runs the server, and their invites.
+  operator?: boolean
+  invites?: Invite[]
 }
 
 // Answers the page's own requests (the vault's go through the fake vault).
 export function stubServer(server: FakeServer) {
   vi.stubGlobal(
     'fetch',
-    vi.fn((input: RequestInfo | URL) => {
+    vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const path = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
       switch (path) {
         case '/api/health':
@@ -79,13 +83,44 @@ export function stubServer(server: FakeServer) {
         case '/api/session':
           return Promise.resolve(
             Response.json(
-              server.signedIn ? { user: { id: '1', username: server.signedIn } } : null,
+              server.signedIn
+                ? {
+                    user: {
+                      id: '1',
+                      username: server.signedIn,
+                      operator: server.operator ?? false,
+                    },
+                  }
+                : null,
             ),
           )
         case '/api/accounts/sign-up':
           return Promise.resolve(Response.json({ mode: server.signUpMode ?? 'open' }))
-        default:
+        case '/api/invites': {
+          server.invites ??= []
+          if (init?.method === 'POST') {
+            const invite: Invite = {
+              id: `invite-${server.invites.length + 1}`,
+              createdAt: '2026-10-13T12:00:00.000Z',
+              expiresAt: '2099-10-20T12:00:00.000Z',
+              usedAt: null,
+              usedBy: null,
+            }
+            server.invites.unshift(invite)
+            return Promise.resolve(
+              Response.json({ invite, code: 'ABCD-EFGH-JKMN-PQRS-TV23' }, { status: 201 }),
+            )
+          }
+          return Promise.resolve(Response.json({ invites: server.invites }))
+        }
+        default: {
+          const withdrawn = /^\/api\/invites\/(.+)$/.exec(path)?.[1]
+          if (withdrawn && init?.method === 'DELETE') {
+            server.invites = server.invites?.filter((invite) => invite.id !== withdrawn) ?? []
+            return Promise.resolve(new Response(null, { status: 204 }))
+          }
           return Promise.resolve(new Response(null, { status: 404 }))
+        }
       }
     }),
   )
