@@ -1,4 +1,4 @@
-import { index, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { bigint, index, integer, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
 
 // The server's own tables. None of them holds anything it can read about a user's
 // money: sign-in data, and key material that only the browser can use (SEC-04).
@@ -15,6 +15,8 @@ export const users = pgTable('users', {
   // The server's hash of the login secret the browser derived, never of the password
   // itself (SEC-03).
   loginSecretHash: text('login_secret_hash').notNull(),
+  // The last revision given to one of this user's records (see records).
+  recordRevision: bigint('record_revision', { mode: 'number' }).notNull().default(0),
   createdAt,
   updatedAt,
 })
@@ -60,3 +62,25 @@ export const serverSettings = pgTable('server_settings', {
   value: text('value').notNull(),
   createdAt,
 })
+
+// SEC-01, SEC-04: a user's data, one row per record, as ciphertext only. The server
+// knows each record's id, revision, size and when it last changed (SEC-10), and
+// nothing else: not its type, its contents or whether it was deleted.
+export const records = pgTable(
+  'records',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    // A UUIDv7 made in the browser.
+    id: text('id').notNull(),
+    revision: bigint('revision', { mode: 'number' }).notNull(),
+    ciphertext: text('ciphertext').notNull(),
+    updatedAt,
+  },
+  (table) => [
+    // SEC-09: ids are per user, so one user's id can never reach another's row.
+    primaryKey({ columns: [table.userId, table.id] }),
+    index('records_user_id_revision_idx').on(table.userId, table.revision),
+  ],
+)

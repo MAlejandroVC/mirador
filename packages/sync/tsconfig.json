@@ -1,4 +1,8 @@
 {
   "extends": "@repo/config/tsconfig/library.json",
+  "compilerOptions": {
+    // WebCrypto types; sync runs in the browser's worker with @repo/crypto.
+    "lib": ["ES2023", "DOM"]
+  },
   "include": ["src"]
 }

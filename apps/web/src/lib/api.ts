@@ -1,5 +1,9 @@
 import {
   errorResponse,
+  pullResponse,
+  pushConflict,
+  type PushRequest,
+  pushResponse,
   healthResponse,
   keysResponse,
   preloginResponse,
@@ -15,6 +19,7 @@ export class ApiError extends Error {
   constructor(
     readonly status: number,
     readonly code?: string,
+    readonly body?: unknown,
   ) {
     super(code ?? `Request failed with ${status}`)
     this.name = 'ApiError'
@@ -33,7 +38,7 @@ export function createApi(fetchFn: Fetch = (...args) => globalThis.fetch(...args
     if (!response.ok) {
       const body: unknown = await response.json().catch(() => null)
       const parsed = errorResponse.safeParse(body)
-      throw new ApiError(response.status, parsed.success ? parsed.data.error : undefined)
+      throw new ApiError(response.status, parsed.success ? parsed.data.error : undefined, body)
     }
     return response
   }
@@ -68,6 +73,20 @@ export function createApi(fetchFn: Fetch = (...args) => globalThis.fetch(...args
     },
     async keys() {
       return keysResponse.parse(await (await request('/api/keys')).json())
+    },
+    async pullRecords(after: number) {
+      return pullResponse.parse(await (await request(`/api/records?after=${after}`)).json())
+    },
+    // A 409 isn't a failure: nothing was saved, and these records changed elsewhere.
+    async pushRecords(changes: PushRequest['changes']) {
+      try {
+        return pushResponse.parse(await (await post('/api/records', { changes })).json())
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 409 && error.body) {
+          return { conflicts: pushConflict.parse(error.body).conflicts }
+        }
+        throw error
+      }
     },
   }
 }
