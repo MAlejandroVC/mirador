@@ -63,6 +63,14 @@ export function SignInScreen() {
           {signIn.isPending ? t('security.signIn.working') : t('security.signIn.submit')}
         </Button>
       </form>
+      <p className="text-center text-sm">
+        <Link
+          to="/recover"
+          className="inline-flex min-h-11 items-center font-medium text-slate-900 underline"
+        >
+          {t('security.signIn.forgot')}
+        </Link>
+      </p>
       <p className="text-center text-sm text-slate-600">
         {t('security.signIn.noAccount')}{' '}
         <Link

@@ -161,6 +161,34 @@ export async function createAccountKey(
   return { accountKey, wrappedByPassword, wrappedByRecovery }
 }
 
+// SEC-07: a forgotten password. The recovery wrapping key opens the account key, which
+// is wrapped again under the new password's key. Like createAccountKey, the extractable
+// copy WebCrypto needs for wrapping exists only inside this function. A wrong recovery
+// key or an altered wrapped key fails here (WrongKeyError).
+export async function rewrapAccountKey(
+  wrapped: string,
+  unwrappingKey: CryptoKey,
+  newKeyEncryptionKey: CryptoKey,
+): Promise<{ accountKey: CryptoKey; wrappedByPassword: string }> {
+  let extractable: CryptoKey
+  try {
+    extractable = await subtle.unwrapKey(
+      'raw',
+      fromBase64Url(wrapped),
+      unwrappingKey,
+      'AES-KW',
+      accountKeyAlgorithm,
+      true,
+      accountKeyUsages,
+    )
+  } catch {
+    throw new WrongKeyError()
+  }
+  const wrappedByPassword = await wrap(extractable, newKeyEncryptionKey)
+  const accountKey = await unwrapAccountKey(wrappedByPassword, newKeyEncryptionKey)
+  return { accountKey, wrappedByPassword }
+}
+
 async function wrap(key: CryptoKey, wrappingKey: CryptoKey) {
   return toBase64Url(new Uint8Array(await subtle.wrapKey('raw', key, wrappingKey, 'AES-KW')))
 }

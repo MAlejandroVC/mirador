@@ -198,3 +198,67 @@ describe('unlock', () => {
     expect(await screen.findByRole('button', { name: 'Lock' })).toBeInTheDocument()
   })
 })
+
+describe('recover', () => {
+  const shownKey = 'ABCD-EFGH-JKMN-PQRS-TVWX-YZ01-2345-6789-ABCD-EFGH-JKMN-PQRS-TVWX-YZ01'
+
+  it('SEC-07: is one tap away from sign-in and from unlock', async () => {
+    const user = userEvent.setup()
+    stubServer({ signedIn: null })
+    const { router } = renderApp('/sign-in', fakeVault({ signedIn: null }))
+
+    await user.click(await screen.findByRole('link', { name: 'Forgot your password?' }))
+    expect(router.state.location.pathname).toBe('/recover')
+  })
+
+  it('SEC-07: sets a new password with the recovery key and opens the app', async () => {
+    const user = userEvent.setup()
+    const server: FakeServer = { signedIn: null }
+    stubServer(server)
+    const vault = fakeVault(server)
+    renderApp('/recover', vault)
+
+    await user.type(await screen.findByLabelText('Username'), 'ana')
+    await user.type(screen.getByLabelText('Recovery key'), shownKey)
+    await user.type(screen.getByLabelText('New password'), 'short')
+    await user.click(screen.getByRole('button', { name: 'Set new password' }))
+    expect(await screen.findByText('Use at least 12 characters.')).toBeInTheDocument()
+    expect(vault.recover).not.toHaveBeenCalled()
+
+    await user.clear(screen.getByLabelText('New password'))
+    await user.type(screen.getByLabelText('New password'), password)
+    await user.type(screen.getByLabelText('Repeat new password'), password)
+    await user.click(screen.getByRole('button', { name: 'Set new password' }))
+
+    expect(await screen.findByText('Signed in as ana')).toBeInTheDocument()
+    expect(vault.recover).toHaveBeenCalledWith({
+      username: 'ana',
+      recoveryKey: shownKey,
+      newPassword: password,
+    })
+  })
+
+  it('SEC-07: explains a wrong key and a typo, in Spanish too', async () => {
+    await i18n.changeLanguage('es')
+    const user = userEvent.setup()
+    const server: FakeServer = { signedIn: null }
+    stubServer(server)
+    const recover = vi
+      .fn()
+      .mockRejectedValueOnce(new VaultError('recovery-key-typo'))
+      .mockRejectedValueOnce(new VaultError('wrong-recovery-key'))
+    renderApp('/recover', fakeVault(server, { recover }))
+
+    await user.type(await screen.findByLabelText('Nombre de usuario'), 'ana')
+    await user.type(screen.getByLabelText('Clave de recuperación'), shownKey)
+    await user.type(screen.getByLabelText('Contraseña nueva'), password)
+    await user.type(screen.getByLabelText('Repite la contraseña nueva'), password)
+    await user.click(screen.getByRole('button', { name: 'Guardar contraseña nueva' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('tiene un error')
+
+    await user.click(screen.getByRole('button', { name: 'Guardar contraseña nueva' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Usuario o clave de recuperación incorrectos.',
+    )
+  })
+})

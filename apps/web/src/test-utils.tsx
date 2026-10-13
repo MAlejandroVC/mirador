@@ -3,7 +3,7 @@ import { createMemoryHistory, RouterProvider } from '@tanstack/react-router'
 import { render } from '@testing-library/react'
 import { vi } from 'vitest'
 import type { VaultClient } from './lib/vault'
-import type { SignUpInput } from './worker/vault'
+import type { RecoverInput, SignUpInput } from './worker/vault'
 import { createAppRouter } from './router'
 
 export const shownRecoveryKey =
@@ -21,6 +21,11 @@ export function fakeVault(server: FakeServer, overrides: Partial<VaultClient> = 
       return Promise.resolve({ recoveryKey: shownRecoveryKey })
     }),
     signIn: vi.fn((username: string) => {
+      unlocked = true
+      server.signedIn = username
+      return Promise.resolve()
+    }),
+    recover: vi.fn(({ username }: RecoverInput) => {
       unlocked = true
       server.signedIn = username
       return Promise.resolve()

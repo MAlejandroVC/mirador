@@ -4,6 +4,8 @@ import {
   pushConflict,
   type PushRequest,
   pushResponse,
+  type RecoverRequest,
+  recoveryKeyResponse,
   healthResponse,
   keysResponse,
   preloginResponse,
@@ -67,6 +69,15 @@ export function createApi(fetchFn: Fetch = (...args) => globalThis.fetch(...args
     // SEC-03: the login secret, never the password.
     async signIn(username: string, loginSecret: string) {
       await post('/api/session', { username, loginSecret })
+    },
+    // SEC-07: the recovery secret, never the recovery key.
+    async recoveryKey(username: string, recoverySecret: string) {
+      return recoveryKeyResponse.parse(
+        await (await post('/api/accounts/recovery/key', { username, recoverySecret })).json(),
+      )
+    },
+    async recover(body: RecoverRequest) {
+      await post('/api/accounts/recovery', body)
     },
     async signOut() {
       await request('/api/session', { method: 'DELETE' })

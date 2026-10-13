@@ -21,7 +21,8 @@
       "submit": "Sign in",
       "working": "Signing in and unlocking…",
       "noAccount": "New here?",
-      "createAccount": "Create an account"
+      "createAccount": "Create an account",
+      "forgot": "Forgot your password?"
     },
     "signUp": {
       "title": "Create your account",
@@ -58,6 +59,17 @@
       "working": "Unlocking…",
       "signOut": "Sign out"
     },
+    "recover": {
+      "title": "Recover your account",
+      "intro": "Your recovery key opens your data and sets a new password. Every other device will be signed out.",
+      "recoveryKey": "Recovery key",
+      "recoveryKeyHint": "The key you saved when you created your account. Spaces and dashes don't matter.",
+      "newPassword": "New password",
+      "confirm": "Repeat new password",
+      "submit": "Set new password",
+      "working": "Opening your data with the recovery key…",
+      "back": "Back to sign in"
+    },
     "home": {
       "signedInAs": "Signed in as {{username}}",
       "encrypted": "Your data is end-to-end encrypted. Only this device can read it while it's unlocked.",
@@ -79,7 +91,10 @@
       "invalidUsername": "Use 3 to 32 letters, numbers, dots, dashes or underscores, with no spaces.",
       "passwordTooShort": "Use at least {{count}} characters.",
       "passwordsDontMatch": "The passwords don't match.",
-      "setupCodeMissing": "Enter the setup code."
+      "setupCodeMissing": "Enter the setup code.",
+      "wrong-recovery-key": "Wrong username or recovery key.",
+      "recovery-key-typo": "That recovery key has a typo. Check each group of four characters.",
+      "recoveryKeyMissing": "Enter your recovery key."
     }
   }
 }
