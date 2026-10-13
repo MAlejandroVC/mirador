@@ -1,4 +1,5 @@
 // The security feature: accounts, keys and locking (SYS-06, SEC epic).
+export { AutoLock } from './components/auto-lock'
 export { sessionQuery } from './hooks/session'
 export { useVault } from './hooks/vault'
 export { RecoverScreen } from './screens/recover-screen'

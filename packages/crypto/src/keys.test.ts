@@ -3,6 +3,7 @@ import { fromBase64Url, toBase64Url } from './encoding.ts'
 import {
   checkKdfParams,
   createAccountKey,
+  derivePasskeyKey,
   defaultKdfCost,
   deriveRecoveryKeys,
   derivePasswordKeys,
@@ -164,6 +165,31 @@ describe('account key', () => {
     await expect(unwrapAccountKey(rewrapped, old.recoveryWrappingKey)).rejects.toThrow(
       WrongKeyError,
     )
+  })
+
+  it('SYS-06: a passkey opens the same account key, and another passkey does not', async () => {
+    const { keyEncryptionKey } = await derivePasswordKeys('a long password', cheap, unsafe)
+    const { recoveryWrappingKey } = await deriveRecoveryKeys(newRecoveryKey())
+    const created = await createAccountKey(keyEncryptionKey, recoveryWrappingKey)
+    const passkey = await derivePasskeyKey(new Uint8Array(32).fill(3))
+    const other = await derivePasskeyKey(new Uint8Array(32).fill(4))
+
+    const { rewrapped } = await rewrapAccountKey(
+      created.wrappedByPassword,
+      keyEncryptionKey,
+      passkey,
+    )
+
+    expect(passkey.extractable).toBe(false)
+    const { iv, sealed } = await roundTrip(created.accountKey)
+    const opened = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      await unwrapAccountKey(rewrapped, passkey),
+      sealed,
+    )
+    expect(new Uint8Array(opened)).toEqual(new Uint8Array([1, 2, 3]))
+    await expect(unwrapAccountKey(rewrapped, other)).rejects.toThrow(WrongKeyError)
+    await expect(derivePasskeyKey(new Uint8Array(8))).rejects.toThrow(WrongKeyError)
   })
 
   it('SEC-07: a wrong recovery key opens nothing', async () => {

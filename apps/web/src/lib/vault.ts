@@ -15,6 +15,10 @@ export type VaultClient = Pick<
   | 'changePassword'
   | 'replaceRecoveryKey'
   | 'signOutOthers'
+  | 'startAddingPasskey'
+  | 'addPasskey'
+  | 'passkeySignInOptions'
+  | 'openWithPasskey'
 >
 
 export function startVault(): VaultClient {

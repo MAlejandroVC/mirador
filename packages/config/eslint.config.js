@@ -52,6 +52,12 @@ const rawCrypto = ['hash-wasm', 'node:crypto', 'crypto'].map((name) => ({
   message: 'All cryptography goes through @repo/crypto (SEC-13).',
 }))
 
+// SYS-06: passkey checks stay in one server file, like sign-in hashing.
+const webauthn = ['@simplewebauthn/server', '@simplewebauthn/server/helpers'].map((name) => ({
+  name,
+  message: 'Passkey checks live in apps/server/src/auth/webauthn.ts (SYS-06).',
+}))
+
 export default tseslint.config(
   {
     ignores: [
@@ -110,7 +116,7 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
     rules: {
       ...cryptoOutsideCryptoPackage,
-      ...serverImports(rawCrypto),
+      ...serverImports([...rawCrypto, ...webauthn]),
     },
   },
   {
@@ -118,7 +124,17 @@ export default tseslint.config(
     // browser sends to sign in and makes session tokens. That is sign-in, not user
     // data, and it all stays in this one file.
     files: ['apps/server/src/auth/secrets.ts'],
-    rules: serverImports([]),
+    rules: serverImports(webauthn),
+  },
+  {
+    // SYS-06: checking passkey signatures, also sign-in and not user data.
+    files: ['apps/server/src/auth/webauthn.ts'],
+    rules: serverImports(rawCrypto),
+  },
+  {
+    // A stand-in passkey for tests signs like a real authenticator.
+    files: ['apps/server/src/test-passkey.ts'],
+    rules: { 'no-restricted-properties': 'off', ...serverImports(rawCrypto) },
   },
   {
     files: ['packages/core/**/*.ts'],

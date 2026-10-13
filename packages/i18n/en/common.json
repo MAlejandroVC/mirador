@@ -22,7 +22,10 @@
       "working": "Signing in and unlocking…",
       "noAccount": "New here?",
       "createAccount": "Create an account",
-      "forgot": "Forgot your password?"
+      "forgot": "Forgot your password?",
+      "passkey": "Sign in with Face ID or a passkey",
+      "passkeyWorking": "Signing in…",
+      "or": "or"
     },
     "signUp": {
       "title": "Create your account",
@@ -55,10 +58,14 @@
     "unlock": {
       "title": "Unlock Mirador",
       "intro": "Your data is encrypted. Enter your password to open it on this device.",
+      "introPasskey": "Your data is encrypted. Use Face ID, a passkey or your password to open it on this device.",
       "signedInAs": "Signed in as {{username}}",
       "submit": "Unlock",
       "working": "Unlocking…",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "passkey": "Unlock with Face ID or a passkey",
+      "passkeyWorking": "Unlocking…",
+      "or": "or use your password"
     },
     "recover": {
       "title": "Recover your account",
@@ -108,6 +115,30 @@
         "done_zero": "No other devices were signed in.",
         "done_one": "Signed out {{count}} other device.",
         "done_other": "Signed out {{count}} other devices."
+      },
+      "passkeys": {
+        "title": "Passkeys and Face ID",
+        "intro": "Unlock and sign in with Face ID, a fingerprint or your device's PIN instead of typing your password. Your password keeps working.",
+        "none": "No passkeys yet.",
+        "name": "Passkey {{number}}",
+        "added": "Added on {{date}}",
+        "lastUsed": "last used on {{date}}",
+        "remove": "Remove",
+        "removeLabel": "Remove passkey {{number}}",
+        "password": "Current password",
+        "submit": "Add a passkey",
+        "working": "Adding the passkey…",
+        "done": "Passkey added. Next time, unlock with it.",
+        "unsupported": "This browser can't use passkeys. Try Safari on an iPhone or Chrome on Android."
+      },
+      "autoLock": {
+        "title": "Lock automatically",
+        "intro": "Mirador locks itself when you stop using it, and asks for your password, Face ID or passkey again. This setting is for this device only.",
+        "label": "Lock",
+        "leave": "As soon as I leave the app",
+        "minutes_one": "After {{count}} minute without use",
+        "minutes_other": "After {{count}} minutes without use",
+        "done": "Saved for this device."
       }
     },
     "invites": {
@@ -148,7 +179,11 @@
       "recoveryKeyMissing": "Enter your recovery key.",
       "passwordMissing": "Enter your current password.",
       "wrong-invite": "That invite code is wrong, already used or expired. Ask for a new one.",
-      "inviteCodeMissing": "Enter your invite code."
+      "inviteCodeMissing": "Enter your invite code.",
+      "wrong-passkey": "That passkey isn't one of this account's, or it was removed. Use your password instead.",
+      "passkey-unsupported": "This passkey can't unlock encrypted data. Use one saved in iCloud Keychain, Google Password Manager or another passkey app that supports it.",
+      "passkey-cancelled": "The passkey wasn't used. Try again when you're ready.",
+      "too-many-passkeys": "This account already has as many passkeys as it can. Remove one first."
     }
   }
 }
