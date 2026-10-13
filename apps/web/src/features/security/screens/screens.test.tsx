@@ -11,7 +11,7 @@ import {
 } from '../../../test-utils'
 import { VaultError } from '../../../worker/errors'
 
-const password = 'a sunny day in Monterrey'
+const password = 'A sunny day in Monterrey 2026'
 
 beforeEach(async () => {
   await i18n.changeLanguage('en')
@@ -45,7 +45,7 @@ describe('sign-up', () => {
     })
   })
 
-  it('SYS-06: checks the username, the password length and the repeat before anything else', async () => {
+  it('SYS-06: checks the username, the password rules and the repeat before anything else', async () => {
     const user = userEvent.setup()
     const server: FakeServer = { signUpMode: 'open' }
     stubServer(server)
@@ -59,7 +59,11 @@ describe('sign-up', () => {
     expect(
       await screen.findByText(/Use 3 to 32 letters, numbers, dots, dashes or underscores/),
     ).toBeInTheDocument()
-    expect(screen.getByText('Use at least 12 characters.')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Use at least 8 characters, with an uppercase letter, a lowercase letter, a number and a symbol.',
+      ),
+    ).toBeInTheDocument()
 
     await user.clear(screen.getByLabelText('Username'))
     await user.type(screen.getByLabelText('Username'), 'Ana.Maria')
@@ -255,7 +259,11 @@ describe('recover', () => {
     await user.type(screen.getByLabelText('Recovery key'), shownKey)
     await user.type(screen.getByLabelText('New password'), 'short')
     await user.click(screen.getByRole('button', { name: 'Set new password' }))
-    expect(await screen.findByText('Use at least 12 characters.')).toBeInTheDocument()
+    expect(
+      await screen.findByText(
+        'Use at least 8 characters, with an uppercase letter, a lowercase letter, a number and a symbol.',
+      ),
+    ).toBeInTheDocument()
     expect(vault.recover).not.toHaveBeenCalled()
 
     await user.clear(screen.getByLabelText('New password'))

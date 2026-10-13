@@ -63,11 +63,11 @@ describe('password and security', () => {
     expect(vault.changePassword).not.toHaveBeenCalled()
 
     await user.type(form.getByLabelText('Current password'), password)
-    await user.type(form.getByLabelText('New password'), 'a brand new password')
-    await user.type(form.getByLabelText('Repeat new password'), 'a brand new password')
+    await user.type(form.getByLabelText('New password'), 'A brand new password 2')
+    await user.type(form.getByLabelText('Repeat new password'), 'A brand new password 2')
     await user.click(form.getByRole('button', { name: 'Change password' }))
 
-    expect(vault.changePassword).toHaveBeenCalledWith(password, 'a brand new password')
+    expect(vault.changePassword).toHaveBeenCalledWith(password, 'A brand new password 2')
     expect(
       await form.findByText('Password changed. Your other devices were signed out.'),
     ).toBeInTheDocument()
@@ -87,8 +87,8 @@ describe('password and security', () => {
     await screen.findByRole('heading', { name: 'Password and security' })
     const form = section('Password')
     await user.type(form.getByLabelText('Current password'), 'not my password')
-    await user.type(form.getByLabelText('New password'), 'a brand new password')
-    await user.type(form.getByLabelText('Repeat new password'), 'a brand new password')
+    await user.type(form.getByLabelText('New password'), 'A brand new password 2')
+    await user.type(form.getByLabelText('Repeat new password'), 'A brand new password 2')
     await user.click(form.getByRole('button', { name: 'Change password' }))
 
     expect(await form.findByRole('alert')).toHaveTextContent('Wrong password.')

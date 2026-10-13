@@ -10,7 +10,8 @@ import { AuthLayout } from '../components/auth-layout'
 import { ErrorMessage } from '../components/error-message'
 import { RecoveryKeyStep } from '../components/recovery-key-step'
 import { sessionQuery } from '../hooks/session'
-import { minimumPasswordLength, signUpStatusQuery } from '../hooks/sign-up'
+import { signUpStatusQuery } from '../hooks/sign-up'
+import { minimumPasswordLength, passwordFollowsRules } from '../lib/password'
 import { useVault } from '../hooks/vault'
 
 interface Problems {
@@ -52,8 +53,8 @@ export function SignUpScreen() {
     if (!usernamePattern.test(username.trim().toLowerCase())) {
       found.username = t('security.errors.invalidUsername')
     }
-    if (password.length < minimumPasswordLength) {
-      found.password = t('security.errors.passwordTooShort', { count: minimumPasswordLength })
+    if (!passwordFollowsRules(password)) {
+      found.password = t('security.errors.passwordRules', { count: minimumPasswordLength })
     } else if (confirm !== password) {
       found.confirm = t('security.errors.passwordsDontMatch')
     }

@@ -8,7 +8,7 @@ import { vaultErrorCode } from '../../../worker/errors'
 import { AuthLayout } from '../components/auth-layout'
 import { ErrorMessage } from '../components/error-message'
 import { sessionQuery } from '../hooks/session'
-import { minimumPasswordLength } from '../hooks/sign-up'
+import { minimumPasswordLength, passwordFollowsRules } from '../lib/password'
 import { useVault } from '../hooks/vault'
 
 interface Problems {
@@ -42,8 +42,8 @@ export function RecoverScreen() {
     event.preventDefault()
     const found: Problems = {}
     if (!recoveryKey.trim()) found.recoveryKey = t('security.errors.recoveryKeyMissing')
-    if (password.length < minimumPasswordLength) {
-      found.password = t('security.errors.passwordTooShort', { count: minimumPasswordLength })
+    if (!passwordFollowsRules(password)) {
+      found.password = t('security.errors.passwordRules', { count: minimumPasswordLength })
     } else if (confirm !== password) {
       found.confirm = t('security.errors.passwordsDontMatch')
     }

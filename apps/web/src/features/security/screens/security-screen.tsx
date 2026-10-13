@@ -10,7 +10,7 @@ import { vaultErrorCode } from '../../../worker/errors'
 import { ErrorMessage } from '../components/error-message'
 import { RecoveryKeyStep } from '../components/recovery-key-step'
 import { sessionQuery } from '../hooks/session'
-import { minimumPasswordLength } from '../hooks/sign-up'
+import { minimumPasswordLength, passwordFollowsRules } from '../lib/password'
 import { useVault } from '../hooks/vault'
 import { addPasskey, passkeysQuery } from '../hooks/passkeys'
 import { type AutoLockChoice, autoLockChoices, readAutoLock, saveAutoLock } from '../lib/auto-lock'
@@ -126,8 +126,8 @@ function ChangePassword({ username }: { username: string }) {
     event.preventDefault()
     const found: PasswordProblems = {}
     if (!current) found.current = t('security.errors.passwordMissing')
-    if (password.length < minimumPasswordLength) {
-      found.password = t('security.errors.passwordTooShort', { count: minimumPasswordLength })
+    if (!passwordFollowsRules(password)) {
+      found.password = t('security.errors.passwordRules', { count: minimumPasswordLength })
     } else if (confirm !== password) {
       found.confirm = t('security.errors.passwordsDontMatch')
     }
