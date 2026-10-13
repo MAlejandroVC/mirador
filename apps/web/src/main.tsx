@@ -4,10 +4,11 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import './lib/i18n'
+import { startVault } from './lib/vault'
 import { createAppRouter } from './router'
 
 const queryClient = new QueryClient()
-const router = createAppRouter(queryClient)
+const router = createAppRouter(queryClient, startVault())
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Missing #root element')

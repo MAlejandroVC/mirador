@@ -2,7 +2,7 @@
 
 Mirador ships as one Docker image, `ghcr.io/malejandrovc/mirador`, that serves both the web app and its API. It needs PostgreSQL next to it and HTTPS in front of it. Everything it stores is encrypted in the browser first, so the server and its backups only ever hold ciphertext.
 
-> Mirador is early: the image starts and serves the app, but there are no accounts or data yet. This guide grows with it (NFR-15).
+> Mirador is early: you can create accounts and sign in, but there is no data to keep yet. This guide grows with it (NFR-15).
 
 For a step-by-step setup on a free cloud server, with a preview instance and encrypted off-site backups, see [hosting-oracle.md](hosting-oracle.md). The files it installs are in `docker/host/` and work on any Ubuntu 24.04 server.
 
@@ -28,10 +28,25 @@ The app listens on `127.0.0.1:3000`, so only the machine itself can reach it. Se
 | `POSTGRES_PASSWORD` | (required) | Database password. Keep it in `.env` only |
 | `MIRADOR_TAG` | `latest` | Image tag to run (see below) |
 | `MIRADOR_PORT` | `3000` | Port on 127.0.0.1 the app listens on |
+| `MIRADOR_OPEN_SIGNUP` | `false` | `true` lets anyone who can open the app create an account. Leave it off and create accounts yourself (SYS-13) |
+| `MIRADOR_TRUST_PROXY` | `true` | Sign-in attempt limits count by the visitor's address from the proxy's `X-Forwarded-For` header. Set `false` only if nothing sits in front of the app |
+
+## Create the first account
+
+A new server has no accounts, and it won't let just anyone who finds its address create the first one. At every start it prints a setup code in its log while no account exists:
+
+```bash
+docker compose logs app | grep "setup code"
+# No accounts yet. Create the first one in the app with this setup code: 7KQ2-…
+```
+
+Open the app, choose **Create an account** and enter that code with a username and password. The username can be anything; Mirador never asks for an email. The app then shows your **recovery key** once: save it somewhere safe. Your password and recovery key never reach the server, so nobody, including you as the server's operator, can reset them. Lose both and the data is gone for good.
+
+After that, sign-up is closed. Invites for more people come in a later release; until then, set `MIRADOR_OPEN_SIGNUP=true` in `.env`, run `docker compose up -d`, let them sign up, and turn it off again.
 
 ## Add HTTPS
 
-Any reverse proxy works. With [Caddy](https://caddyserver.com) installed on the same machine, this `Caddyfile` gets and renews a certificate on its own:
+Any reverse proxy that serves HTTPS and adds the `X-Forwarded-For` header works. With [Caddy](https://caddyserver.com) installed on the same machine, this `Caddyfile` gets and renews a certificate on its own:
 
 ```text
 mirador.example.com {

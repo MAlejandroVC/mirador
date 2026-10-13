@@ -5,3 +5,5 @@ pnpm-lock.yaml
 LICENSE
 # release-please rewrites it in its own compact style on every release PR.
 .release-please-manifest.json
+# drizzle-kit writes these; keep them as generated.
+apps/server/drizzle/

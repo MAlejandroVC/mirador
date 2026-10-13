@@ -7,5 +7,78 @@
     "checking": "Comprobando el servidor…",
     "ok": "Servidor conectado",
     "unreachable": "No se puede conectar con el servidor"
+  },
+  "form": {
+    "username": "Nombre de usuario",
+    "password": "Contraseña",
+    "show": "Mostrar contraseña",
+    "hide": "Ocultar contraseña"
+  },
+  "security": {
+    "signIn": {
+      "title": "Iniciar sesión",
+      "intro": "Tu contraseña desbloquea tus datos en este dispositivo. Nunca sale de él.",
+      "submit": "Iniciar sesión",
+      "working": "Iniciando sesión y desbloqueando…",
+      "noAccount": "¿Eres nuevo?",
+      "createAccount": "Crear una cuenta"
+    },
+    "signUp": {
+      "title": "Crea tu cuenta",
+      "intro": "Tu contraseña cifra tus datos en este dispositivo. El servidor nunca la ve, así que nadie puede restablecerla por ti.",
+      "usernameHint": "De 3 a 32 letras, números, puntos, guiones o guiones bajos. No tiene que ser tu nombre real.",
+      "passwordHint": "Al menos {{count}} caracteres. Unas cuantas palabras sin relación son fáciles de recordar.",
+      "confirm": "Repite la contraseña",
+      "setupCode": "Código de configuración",
+      "setupCodeHint": "Este servidor aún no tiene cuentas. Quien lo administra encuentra el código de configuración en el registro del servidor.",
+      "submit": "Crear cuenta",
+      "working": "Creando tus claves de cifrado…",
+      "haveAccount": "¿Ya tienes una cuenta?",
+      "signIn": "Iniciar sesión",
+      "closed": "Este servidor no acepta cuentas nuevas. Pídele una a quien lo administra."
+    },
+    "recoveryKey": {
+      "title": "Guarda tu clave de recuperación",
+      "intro": "Si olvidas tu contraseña, esta clave es la única forma de volver a tus datos. Solo se muestra esta vez.",
+      "warning": "Si pierdes tu contraseña y esta clave, tus datos se pierden para siempre. Nadie puede recuperarlos, ni siquiera quien administra el servidor.",
+      "label": "Clave de recuperación",
+      "copy": "Copiar",
+      "copied": "Copiada",
+      "download": "Descargar",
+      "fileName": "mirador-clave-de-recuperacion.txt",
+      "fileText": "Clave de recuperación de Mirador para {{username}}\n\n{{key}}\n\nGuárdala en un lugar seguro y privado. Con ella puedes volver a tus datos si olvidas tu contraseña.\n",
+      "confirm": "Guardé mi clave de recuperación en un lugar seguro",
+      "continue": "Continuar"
+    },
+    "unlock": {
+      "title": "Desbloquear Mirador",
+      "intro": "Tus datos están cifrados. Escribe tu contraseña para abrirlos en este dispositivo.",
+      "signedInAs": "Sesión iniciada como {{username}}",
+      "submit": "Desbloquear",
+      "working": "Desbloqueando…",
+      "signOut": "Cerrar sesión"
+    },
+    "home": {
+      "signedInAs": "Sesión iniciada como {{username}}",
+      "encrypted": "Tus datos están cifrados de extremo a extremo. Solo este dispositivo puede leerlos mientras está desbloqueado.",
+      "lock": "Bloquear",
+      "signOut": "Cerrar sesión"
+    },
+    "errors": {
+      "wrong-credentials": "Usuario o contraseña incorrectos.",
+      "wrong-password": "Contraseña incorrecta.",
+      "username-taken": "Ese nombre de usuario ya existe. Elige otro o inicia sesión.",
+      "sign-up-closed": "Este servidor no acepta cuentas nuevas.",
+      "wrong-setup-code": "Ese código de configuración no es correcto. Busca el actual en el registro del servidor.",
+      "signed-out": "Se cerró tu sesión. Vuelve a iniciarla.",
+      "too-many-attempts": "Demasiados intentos. Espera un minuto e inténtalo de nuevo.",
+      "unsafe-server": "El servidor envió claves o ajustes que no son seguros, así que Mirador se detuvo. Tu contraseña no se envió.",
+      "network": "No se puede conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.",
+      "unknown": "Algo salió mal. Inténtalo de nuevo.",
+      "invalidUsername": "Usa de 3 a 32 letras, números, puntos, guiones o guiones bajos, sin espacios.",
+      "passwordTooShort": "Usa al menos {{count}} caracteres.",
+      "passwordsDontMatch": "Las contraseñas no coinciden.",
+      "setupCodeMissing": "Escribe el código de configuración."
+    }
   }
 }

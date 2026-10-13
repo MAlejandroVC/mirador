@@ -13,6 +13,9 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgres://mirador:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/mirador
+      MIRADOR_OPEN_SIGNUP: ${MIRADOR_OPEN_SIGNUP:-false}
+      # The app only listens on 127.0.0.1, so requests come through your HTTPS proxy.
+      MIRADOR_TRUST_PROXY: ${MIRADOR_TRUST_PROXY:-true}
     ports:
       - '127.0.0.1:${MIRADOR_PORT:-3000}:3000'
     depends_on:

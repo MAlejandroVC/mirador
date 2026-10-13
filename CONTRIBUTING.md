@@ -30,7 +30,7 @@ All of them are free; there is no Jira, Slack or other tracker.
 
 ## Set up your machine
 
-> The workspace is scaffolded: `pnpm dev`, `test`, `lint`, `typecheck`, `build` and `db:up` and `docker:build` work today on an empty app. `db:migrate`, `seed`, `e2e` and the Drizzle commands arrive with the features that need them.
+> `pnpm dev`, `test`, `lint`, `typecheck`, `build`, `db:up`, `server:db:generate` and `docker:build` work today. The server migrates its database at start, so there is no separate migrate step; `seed`, `e2e` and the local-data Drizzle commands arrive with the features that need them. A fresh database prints a setup code in the server's output: enter it on the sign-up screen to create your first account.
 
 Everything runs on macOS, Linux or Windows (with WSL 2). No Mac or Xcode is needed.
 
@@ -53,7 +53,7 @@ pnpm dev                      # web app and server together
 | --- | --- |
 | `pnpm dev` | Web app at localhost:5173 and the API at localhost:3000, both reloading on save |
 | `pnpm dev --host` | Same, reachable from a phone on your Wi-Fi at your computer's address |
-| `pnpm test` | All unit, component and server tests (server tests start their own PostgreSQL) |
+| `pnpm test` | All unit, component and server tests (server tests run PostgreSQL in memory with PGlite, so they need no Docker) |
 | `pnpm test:watch` | Re-runs tests as you edit |
 | `pnpm lint` / `pnpm typecheck` | The same checks CI runs |
 | `pnpm e2e` | Playwright on phone and desktop sizes |
@@ -103,7 +103,7 @@ mirador/
 │   └── server/                   Hono API server: stores ciphertext, never decrypts
 │       └── src/
 │           ├── routes/           auth, keys, sync, files, ocr, push, admin
-│           ├── auth/             Better Auth setup, invites, recovery
+│           ├── auth/             Sign-in, sessions, attempt limits, invites, recovery
 │           ├── store/            Drizzle schema and migrations for PostgreSQL
 │           ├── ocr/              In-memory OCR worker; model files (Git LFS)
 │           └── tasks/            Scheduled backups, purges, push sends (Croner)
@@ -150,7 +150,7 @@ TypeScript runs in strict mode, Prettier decides formatting, and ESLint enforces
 
 - **Phone first.** Build and check every screen at 375 pixels wide before the desktop layout. Touch targets at least 44 by 44 pixels, nothing that only works on hover, and forms that open the right phone keyboard (`inputmode="decimal"` for amounts).
 - **Nothing readable leaves the browser.** Every record and file is encrypted through `@repo/crypto` before it is stored or sent. The only plaintext the server ever receives is an image or scanned PDF sent for OCR, which it keeps in memory only (SEC-01, SEC-05).
-- **All cryptography goes through `@repo/crypto`.** No other package calls WebCrypto or hash-wasm, no custom algorithms, no keys in localStorage, IndexedDB or logs. Keys stay non-extractable in the worker (SEC-13).
+- **All cryptography goes through `@repo/crypto`.** No other package calls WebCrypto or hash-wasm, no custom algorithms, no keys in localStorage, IndexedDB or logs. Keys stay non-extractable in the worker (SEC-13). The one exception is the server's sign-in hashing and session tokens, all in `apps/server/src/auth/secrets.ts`; the server holds no keys.
 - **Plaintext never touches the device's disk.** Decrypted data lives in the worker's in-memory SQLite; IndexedDB holds only ciphertext. Locking clears both keys and data (SEC-11, SEC-12).
 - **The server stays dumb.** It stores, syncs and authenticates; it never parses a record, adds business rules or needs a key. If a feature seems to need the server to read data, open a decision issue.
 - **Money is never a float.** Amounts are integers in minor units with a currency code, created and combined only through the Money helpers in `@repo/core`. Rates and interest go through decimal.js and round once, half to even (NFR-03).
@@ -284,7 +284,7 @@ describe('BUD-35 close the gap', () => {
 There are two databases, and most changes touch only the first.
 
 1. **Local data** (wallets, transactions, budgets and so on): edit the SQLite schema in `packages/db/src/schema/` and the Zod record schema in `packages/api`. Run `pnpm db:generate` and commit the migration. It runs in the browser after unlock.
-2. **Server tables** (accounts, keys, records, files, push, invites): edit `apps/server/src/store/schema/`, run `pnpm server:db:generate`, and commit. It runs at server start after a backup (DAT-10). The server never gets a column for something inside a record.
+2. **Server tables** (accounts, keys, records, files, push, invites): edit `apps/server/src/store/schema.ts`, run `pnpm server:db:generate`, and commit. It runs at server start after a backup (DAT-10). The server never gets a column for something inside a record.
 3. Never edit a released migration; add a new one.
 4. A change to a record's shape bumps its schema version, and the client upgrades old records as it decrypts them.
 5. If the change affects exported data, bump the archive schema version in `packages/archive`, add an upgrader, and extend the round-trip test (DAT-04, DAT-06).

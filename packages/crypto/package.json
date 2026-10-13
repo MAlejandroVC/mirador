@@ -15,5 +15,8 @@
     "@repo/config": "workspace:*",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "dependencies": {
+    "hash-wasm": "^4.12.0"
   }
 }

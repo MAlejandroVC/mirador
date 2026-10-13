@@ -1,7 +1,13 @@
 import { type QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
+import type { VaultClient } from '../lib/vault'
 
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+export interface RouterContext {
+  queryClient: QueryClient
+  vault: VaultClient
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootLayout,
 })
 

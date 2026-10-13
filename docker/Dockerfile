@@ -15,10 +15,12 @@ COPY . .
 RUN pnpm install --frozen-lockfile --offline && pnpm build
 
 FROM node:24-alpine
-ENV NODE_ENV=production PORT=3000 WEB_ROOT=/app/web
+ENV NODE_ENV=production PORT=3000 WEB_ROOT=/app/web MIGRATIONS_DIR=/app/migrations
 WORKDIR /app
 # The server is bundled into one file with its dependencies; nothing is installed here.
 COPY --from=build /src/apps/server/dist/index.js ./server.mjs
+# It brings its database up to date at every start.
+COPY --from=build /src/apps/server/drizzle ./migrations
 COPY --from=build /src/apps/web/dist ./web
 COPY LICENSE ./
 USER node
