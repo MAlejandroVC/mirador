@@ -1,10 +1,17 @@
-import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import {
+  skipToken,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { type SubmitEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usernamePattern } from '@repo/api'
 import { Button } from '../../../components/ui/button'
 import { TextField } from '../../../components/ui/text-field'
+import { api } from '../../../lib/api'
 import { vaultErrorCode } from '../../../worker/errors'
 import { AuthLayout } from '../components/auth-layout'
 import { ErrorMessage } from '../components/error-message'
@@ -15,7 +22,7 @@ import { minimumPasswordLength, passwordFollowsRules } from '../lib/password'
 import { useVault } from '../hooks/vault'
 
 interface Problems {
-  username?: string
+  username?: string | undefined
   password?: string
   confirm?: string
   setupCode?: string
@@ -36,6 +43,23 @@ export function SignUpScreen() {
   const { invite } = useSearch({ from: '/sign-up' })
   const [inviteCode, setInviteCode] = useState(invite ?? '')
   const [problems, setProblems] = useState<Problems>({})
+  const wanted = username.trim().toLowerCase()
+  // SYS-06: checked when the person leaves the field, so a taken username shows up
+  // before the keys are made. The answer counts only until the name is edited again.
+  const [checked, setChecked] = useState<string | null>(null)
+  const sentInvite = status.mode === 'invite' ? inviteCode.trim() : ''
+  const availability = useQuery({
+    queryKey: ['username-check', checked, sentInvite],
+    queryFn: checked
+      ? () =>
+          api.checkUsername({
+            username: checked,
+            ...(sentInvite ? { inviteCode: sentInvite } : {}),
+          })
+      : skipToken,
+    retry: false,
+  })
+  const available = checked === wanted ? availability.data : undefined
 
   const signUp = useMutation({
     mutationFn: () =>
@@ -50,8 +74,10 @@ export function SignUpScreen() {
   function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     const found: Problems = {}
-    if (!usernamePattern.test(username.trim().toLowerCase())) {
+    if (!usernamePattern.test(wanted)) {
       found.username = t('security.errors.invalidUsername')
+    } else if (available === false) {
+      found.username = t('security.errors.username-taken')
     }
     if (!passwordFollowsRules(password)) {
       found.password = t('security.errors.passwordRules', { count: minimumPasswordLength })
@@ -131,10 +157,20 @@ export function SignUpScreen() {
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
-          error={problems.username}
+          error={
+            problems.username ??
+            (available === false ? t('security.errors.username-taken') : undefined)
+          }
+          success={
+            available ? t('security.signUp.usernameAvailable', { username: wanted }) : undefined
+          }
           value={username}
           onChange={(event) => {
             setUsername(event.target.value)
+            setProblems((found) => ({ ...found, username: undefined }))
+          }}
+          onBlur={() => {
+            setChecked(usernamePattern.test(wanted) ? wanted : null)
           }}
         />
         <TextField

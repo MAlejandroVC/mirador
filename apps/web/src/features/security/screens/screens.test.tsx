@@ -143,6 +143,32 @@ describe('sign-up', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('already used or expired')
   })
 
+  it('SYS-06: says whether the username is free when leaving the field', async () => {
+    const user = userEvent.setup()
+    const server: FakeServer = { signUpMode: 'open', takenUsernames: ['ana'] }
+    stubServer(server)
+    const vault = fakeVault(server)
+    renderApp('/sign-up', vault)
+
+    await user.type(await screen.findByLabelText('Username'), ' Ana ')
+    await user.tab()
+    expect(await screen.findByText('That username is taken. Pick another.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Username')).toHaveAttribute('aria-invalid', 'true')
+
+    await user.type(screen.getByLabelText('Password'), password)
+    await user.type(screen.getByLabelText('Repeat password'), password)
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+    expect(vault.signUp).not.toHaveBeenCalled()
+
+    await user.clear(screen.getByLabelText('Username'))
+    expect(screen.queryByText(/is taken/)).not.toBeInTheDocument()
+    await user.type(screen.getByLabelText('Username'), 'Ana.Maria')
+    await user.tab()
+    expect(await screen.findByRole('status')).toHaveTextContent('ana.maria is available.')
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+    expect(vault.signUp).toHaveBeenCalledWith({ username: 'Ana.Maria', password })
+  })
+
   it('SYS-06: explains a username that is already taken, in Spanish too', async () => {
     await i18n.changeLanguage('es')
     const user = userEvent.setup()

@@ -5,6 +5,7 @@ import {
   sessionError,
   signUpError,
   signUpStatus,
+  usernameCheckResponse,
 } from '@repo/api'
 import { sql } from 'drizzle-orm'
 import { schema } from '../store/db.ts'
@@ -99,6 +100,22 @@ describe('sign-up', () => {
     const again = await post(server, '/api/accounts', newAccount(' Ana '))
     expect(again.status).toBe(409)
     expect(signUpError.parse(await again.json()).error).toBe('username-taken')
+  })
+
+  it('SYS-06: says whether a username is free before signing up', async () => {
+    server = await createTestApp({ openSignUp: true })
+    const check = async (username: string) => {
+      const response = await post(server, '/api/accounts/username-check', { username })
+      expect(response.status).toBe(200)
+      return usernameCheckResponse.parse(await response.json()).available
+    }
+
+    expect(await check('ana')).toBe(true)
+    await signUp(server, newAccount('ana', { setupCode: testSetupCode }))
+    expect(await check(' Ana ')).toBe(false)
+    expect(await check('ben')).toBe(true)
+    const invalid = await post(server, '/api/accounts/username-check', { username: 'a b' })
+    expect(invalid.status).toBe(400)
   })
 
   it('SEC-03: rejects anything that is not a well-formed login secret and wrapped key', async () => {

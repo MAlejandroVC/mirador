@@ -6,6 +6,8 @@ import {
   type SignUpError,
   signUpRequest,
   type SignUpStatus,
+  usernameCheckRequest,
+  type UsernameCheckResponse,
 } from '@repo/api'
 import { and, count, eq, gt, isNull, TransactionRollbackError } from 'drizzle-orm'
 import { Hono } from 'hono'
@@ -127,6 +129,37 @@ export function accountRoutes({
     await sessions.start(c, userId)
     return c.body(null, 201)
   })
+
+  // Lets the sign-up screen say a username is taken before the keys are made. It tells
+  // no more than signing up would: with open sign-up anyone could try the name, and on
+  // an invite-only server it needs an invite code that still works. Counted per
+  // address like sign-ups.
+  routes.post(
+    '/accounts/username-check',
+    limitAddress(limits),
+    jsonBody(usernameCheckRequest),
+    async (c) => {
+      const body = c.req.valid('json')
+      if ((await signUpMode()) === 'invite') {
+        const [invite] = await db
+          .select({ id: schema.invites.id })
+          .from(schema.invites)
+          .where(
+            and(
+              eq(schema.invites.codeHash, hashToken(normalizeCode(body.inviteCode ?? ''))),
+              isNull(schema.invites.usedAt),
+              gt(schema.invites.expiresAt, new Date()),
+            ),
+          )
+        if (!invite) return c.json({ error: 'wrong-invite' } satisfies SignUpError, 403)
+      }
+      const [taken] = await db
+        .select({ id: schema.users.id })
+        .from(schema.users)
+        .where(eq(schema.users.username, body.username))
+      return c.json({ available: !taken } satisfies UsernameCheckResponse)
+    },
+  )
 
   // Salt and cost for deriving the login secret before signing in. POST so the
   // username stays out of URLs and access logs.

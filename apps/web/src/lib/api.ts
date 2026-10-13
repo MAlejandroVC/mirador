@@ -25,6 +25,8 @@ import {
   signOutOthersResponse,
   type SignUpRequest,
   signUpStatus,
+  type UsernameCheckRequest,
+  usernameCheckResponse,
 } from '@repo/api'
 
 // The server is untrusted: every response is checked against its schema. Works on
@@ -73,6 +75,12 @@ export function createApi(fetchFn: Fetch = (...args) => globalThis.fetch(...args
     },
     async signUp(body: SignUpRequest) {
       await post('/api/accounts', body)
+    },
+    // SYS-06: whether a username is free, before the keys are made.
+    async checkUsername(body: UsernameCheckRequest) {
+      return usernameCheckResponse.parse(
+        await (await post('/api/accounts/username-check', body)).json(),
+      ).available
     },
     async prelogin(username: string) {
       return preloginResponse.parse(

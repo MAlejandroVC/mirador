@@ -77,6 +77,29 @@ describe('invites', () => {
     expect(users.rows).toEqual([{ username: 'ana' }])
   })
 
+  it('SYS-06: on an invite-only server, only a waiting invite can check a username', async () => {
+    const { code } = await invite(server, operator)
+    const { code: withdrawnCode, invite: withdrawn } = await invite(server, operator)
+    expect((await del(server, `/api/invites/${withdrawn.id}`, operator)).status).toBe(204)
+    const check = (username: string, inviteCode?: string) =>
+      post(server, '/api/accounts/username-check', {
+        username,
+        ...(inviteCode ? { inviteCode } : {}),
+      })
+
+    // Otherwise anyone could find out who has an account here.
+    for (const inviteCode of [undefined, 'NOTA-REAL-INVI-TECO-DE00', withdrawnCode]) {
+      const refused = await check('ana', inviteCode)
+      expect(refused.status).toBe(403)
+      expect(await refused.json()).toEqual({ error: 'wrong-invite' })
+    }
+    expect(await (await check('ana', code)).json()).toEqual({ available: false })
+    expect(await (await check('ben', code.toLowerCase())).json()).toEqual({ available: true })
+
+    await signUp(server, newAccount('ben', { inviteCode: code }))
+    expect((await check('cleo', code)).status).toBe(403)
+  })
+
   it('SYS-13: a username already taken leaves the invite unused', async () => {
     const { code } = await invite(server, operator)
 

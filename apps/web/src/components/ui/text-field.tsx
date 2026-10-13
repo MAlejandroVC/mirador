@@ -5,14 +5,25 @@ interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string
   hint?: string
   error?: string | undefined
+  // A good outcome to announce, such as a username that is free.
+  success?: string | undefined
 }
 
-export function TextField({ label, hint, error, type = 'text', ...props }: TextFieldProps) {
+export function TextField({
+  label,
+  hint,
+  error,
+  success,
+  type = 'text',
+  ...props
+}: TextFieldProps) {
   const { t } = useTranslation()
   const id = useId()
   const [revealed, setRevealed] = useState(false)
   const isPassword = type === 'password'
-  const describedBy = [hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(' ')
+  const describedBy = [hint && `${id}-hint`, error && `${id}-error`, success && `${id}-success`]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <div className="flex flex-col gap-1">
@@ -50,6 +61,11 @@ export function TextField({ label, hint, error, type = 'text', ...props }: TextF
       {error && (
         <p id={`${id}-error`} className="text-sm text-red-700">
           {error}
+        </p>
+      )}
+      {success && !error && (
+        <p id={`${id}-success`} role="status" className="text-sm text-emerald-700">
+          {success}
         </p>
       )}
     </div>
