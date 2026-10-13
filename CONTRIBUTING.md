@@ -338,7 +338,7 @@ Using Claude Code, Copilot or similar tools is welcome; the author of the pull r
 - No secrets in the repo. Local settings live in `.env` (ignored by Git, with `.env.example` committed); the release workflows use GitHub's built-in token, plus `RELEASE_PLEASE_TOKEN` for opening the release PR (see [CI and releases](#ci-and-releases)).
 - The server never logs request bodies, and the browser never logs decrypted data or keys, even in debug builds.
 - Treat the server as untrusted: the browser checks every response against its Zod schema, and the server checks access on every request (SEC-09).
-- Keep what the server can see in line with SEC-10. A change that adds metadata (a new plaintext column, a new header, a new log field) needs a decision issue.
+- Keep what the server can see in line with SEC-10. A change that adds metadata (a new plaintext column, a new header, a new log field) needs a decision issue, and updates [docs/what-the-server-sees.md](docs/what-the-server-sees.md) in the same pull request. A test fails when a table or column is missing from that page.
 
 ## Getting help
 
