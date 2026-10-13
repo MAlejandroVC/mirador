@@ -1,4 +1,4 @@
-import { and, eq, gt, lt } from 'drizzle-orm'
+import { and, eq, gt, lt, ne } from 'drizzle-orm'
 import type { Context } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import { createMiddleware } from 'hono/factory'
@@ -78,6 +78,18 @@ export function sessionStore(db: Database, now: () => number = Date.now) {
         writeCookie(c, token)
       }
       return { userId: row.userId, username: row.username }
+    },
+
+    // SEC-08: signs the user out everywhere but this device. Returns how many devices.
+    async endOthers(c: Context, userId: string) {
+      const token = getCookie(c, sessionCookie)
+      if (!token) return 0
+      const ended = await db
+        .delete(schema.sessions)
+        .where(and(eq(schema.sessions.userId, userId), ne(schema.sessions.id, hashToken(token))))
+        .returning({ expiresAt: schema.sessions.expiresAt })
+      // Sessions that had already expired were no device anyone was using.
+      return ended.filter((session) => session.expiresAt.getTime() > now()).length
     },
 
     async end(c: Context) {

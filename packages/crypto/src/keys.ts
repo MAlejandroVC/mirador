@@ -161,15 +161,17 @@ export async function createAccountKey(
   return { accountKey, wrappedByPassword, wrappedByRecovery }
 }
 
-// SEC-07: a forgotten password. The recovery wrapping key opens the account key, which
-// is wrapped again under the new password's key. Like createAccountKey, the extractable
-// copy WebCrypto needs for wrapping exists only inside this function. A wrong recovery
-// key or an altered wrapped key fails here (WrongKeyError).
+// SEC-07, SEC-08: wraps the account key under a new key. A forgotten password opens it
+// with the recovery wrapping key and wraps it for the new password; changing the
+// password or the recovery key opens it with the current password's key and wraps it
+// for the new one. Like createAccountKey, the extractable copy WebCrypto needs for
+// wrapping exists only inside this function. A wrong key or an altered wrapped key
+// fails here (WrongKeyError).
 export async function rewrapAccountKey(
   wrapped: string,
   unwrappingKey: CryptoKey,
-  newKeyEncryptionKey: CryptoKey,
-): Promise<{ accountKey: CryptoKey; wrappedByPassword: string }> {
+  newWrappingKey: CryptoKey,
+): Promise<{ accountKey: CryptoKey; rewrapped: string }> {
   let extractable: CryptoKey
   try {
     extractable = await subtle.unwrapKey(
@@ -184,9 +186,9 @@ export async function rewrapAccountKey(
   } catch {
     throw new WrongKeyError()
   }
-  const wrappedByPassword = await wrap(extractable, newKeyEncryptionKey)
-  const accountKey = await unwrapAccountKey(wrappedByPassword, newKeyEncryptionKey)
-  return { accountKey, wrappedByPassword }
+  const rewrapped = await wrap(extractable, newWrappingKey)
+  const accountKey = await unwrapAccountKey(rewrapped, newWrappingKey)
+  return { accountKey, rewrapped }
 }
 
 async function wrap(key: CryptoKey, wrappingKey: CryptoKey) {

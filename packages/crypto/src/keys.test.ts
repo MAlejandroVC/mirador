@@ -138,14 +138,32 @@ describe('account key', () => {
 
     expect(rewrapped.accountKey.extractable).toBe(false)
     const { iv, sealed } = await roundTrip(created.accountKey)
-    const viaNewPassword = await unwrapAccountKey(
-      rewrapped.wrappedByPassword,
-      fresh.keyEncryptionKey,
-    )
+    const viaNewPassword = await unwrapAccountKey(rewrapped.rewrapped, fresh.keyEncryptionKey)
     for (const key of [rewrapped.accountKey, viaNewPassword]) {
       const opened = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, sealed)
       expect(new Uint8Array(opened)).toEqual(new Uint8Array([1, 2, 3]))
     }
+  })
+
+  it('SEC-08: a new recovery key opens the same account key, and the old one no longer does', async () => {
+    const { keyEncryptionKey } = await derivePasswordKeys('a long password', cheap, unsafe)
+    const old = await deriveRecoveryKeys(newRecoveryKey())
+    const created = await createAccountKey(keyEncryptionKey, old.recoveryWrappingKey)
+    const replacement = await deriveRecoveryKeys(newRecoveryKey())
+
+    const { rewrapped } = await rewrapAccountKey(
+      created.wrappedByPassword,
+      keyEncryptionKey,
+      replacement.recoveryWrappingKey,
+    )
+
+    const { iv, sealed } = await roundTrip(created.accountKey)
+    const viaNewKey = await unwrapAccountKey(rewrapped, replacement.recoveryWrappingKey)
+    const opened = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, viaNewKey, sealed)
+    expect(new Uint8Array(opened)).toEqual(new Uint8Array([1, 2, 3]))
+    await expect(unwrapAccountKey(rewrapped, old.recoveryWrappingKey)).rejects.toThrow(
+      WrongKeyError,
+    )
   })
 
   it('SEC-07: a wrong recovery key opens nothing', async () => {

@@ -1,19 +1,12 @@
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../components/ui/button'
-import { sessionQuery, useVault } from '../features/security'
+import { requireUnlocked, sessionQuery, useVault } from '../features/security'
 import { api } from '../lib/api'
 
-// Screens behind sign-in check the same two things: a session with the server, and
-// keys in the worker's memory (SEC-12).
 export const Route = createFileRoute('/')({
-  beforeLoad: async ({ context }) => {
-    if (!(await context.queryClient.query(sessionQuery))) {
-      throw redirect({ to: '/sign-in' })
-    }
-    if ((await context.vault.status()) === 'locked') throw redirect({ to: '/unlock' })
-  },
+  beforeLoad: requireUnlocked,
   component: Home,
 })
 
@@ -60,6 +53,12 @@ function Home() {
           {status}
         </p>
       </div>
+      <Link
+        to="/security"
+        className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 font-medium text-slate-900 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+      >
+        {t('security.home.security')}
+      </Link>
       <div className="grid grid-cols-2 gap-3">
         <Button
           variant="secondary"

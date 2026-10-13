@@ -2,6 +2,8 @@
 export { sessionQuery } from './hooks/session'
 export { useVault } from './hooks/vault'
 export { RecoverScreen } from './screens/recover-screen'
+export { requireUnlocked } from './hooks/require-unlocked'
+export { SecurityScreen } from './screens/security-screen'
 export { SignInScreen } from './screens/sign-in-screen'
 export { signUpStatusQuery } from './hooks/sign-up'
 export { SignUpScreen } from './screens/sign-up-screen'

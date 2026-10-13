@@ -6,17 +6,16 @@ export function Alert({
   tone = 'error',
 }: {
   children: ReactNode
-  tone?: 'error' | 'warning'
+  tone?: 'error' | 'warning' | 'success'
 }) {
-  const colors =
-    tone === 'error'
-      ? 'border-red-200 bg-red-50 text-red-800'
-      : 'border-amber-200 bg-amber-50 text-amber-900'
+  const colors = {
+    error: 'border-red-200 bg-red-50 text-red-800',
+    warning: 'border-amber-200 bg-amber-50 text-amber-900',
+    success: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+  }[tone]
+  const role = { error: 'alert', warning: 'note', success: 'status' }[tone]
   return (
-    <div
-      role={tone === 'error' ? 'alert' : 'note'}
-      className={`rounded-lg border px-3 py-2 text-sm ${colors}`}
-    >
+    <div role={role} className={`rounded-lg border px-3 py-2 text-sm ${colors}`}>
       {children}
     </div>
   )

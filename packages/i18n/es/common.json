@@ -74,7 +74,39 @@
       "signedInAs": "Sesión iniciada como {{username}}",
       "encrypted": "Tus datos están cifrados de extremo a extremo. Solo este dispositivo puede leerlos mientras está desbloqueado.",
       "lock": "Bloquear",
-      "signOut": "Cerrar sesión"
+      "signOut": "Cerrar sesión",
+      "security": "Contraseña y seguridad"
+    },
+    "settings": {
+      "title": "Contraseña y seguridad",
+      "back": "Volver",
+      "password": {
+        "title": "Contraseña",
+        "intro": "Tu contraseña abre tus datos. Al cambiarla se cierra la sesión en tus otros dispositivos, y tus datos quedan como están.",
+        "current": "Contraseña actual",
+        "new": "Contraseña nueva",
+        "confirm": "Repite la contraseña nueva",
+        "submit": "Cambiar contraseña",
+        "working": "Cambiando tu contraseña…",
+        "done": "Contraseña cambiada. Se cerró la sesión en tus otros dispositivos."
+      },
+      "recoveryKey": {
+        "title": "Clave de recuperación",
+        "intro": "Crea una clave de recuperación nueva si perdiste la tuya o alguien más pudo verla. La anterior deja de funcionar en ese momento.",
+        "password": "Contraseña actual",
+        "submit": "Crear clave de recuperación nueva",
+        "working": "Creando la clave de recuperación nueva…",
+        "done": "Tu clave de recuperación nueva está guardada. La anterior ya no funciona."
+      },
+      "devices": {
+        "title": "Otros dispositivos",
+        "intro": "Cierra la sesión en todos tus otros teléfonos, tabletas y computadoras. Este dispositivo sigue con la sesión iniciada.",
+        "submit": "Cerrar sesión en otros dispositivos",
+        "working": "Cerrando sesiones…",
+        "done_zero": "No había otros dispositivos con la sesión iniciada.",
+        "done_one": "Se cerró la sesión en {{count}} dispositivo más.",
+        "done_other": "Se cerró la sesión en {{count}} dispositivos más."
+      }
     },
     "errors": {
       "wrong-credentials": "Usuario o contraseña incorrectos.",
@@ -94,7 +126,8 @@
       "setupCodeMissing": "Escribe el código de configuración.",
       "wrong-recovery-key": "Usuario o clave de recuperación incorrectos.",
       "recovery-key-typo": "Esa clave de recuperación tiene un error. Revisa cada grupo de cuatro caracteres.",
-      "recoveryKeyMissing": "Escribe tu clave de recuperación."
+      "recoveryKeyMissing": "Escribe tu clave de recuperación.",
+      "passwordMissing": "Escribe tu contraseña actual."
     }
   }
 }

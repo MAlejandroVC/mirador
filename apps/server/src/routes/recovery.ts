@@ -8,9 +8,10 @@ import { eq } from 'drizzle-orm'
 import type { Context } from 'hono'
 import { Hono } from 'hono'
 import { type AttemptLimits, limitAddress, tooManyAttempts, usernameKey } from '../auth/guard.ts'
-import { hashSecret, verifyAgainstDecoy, verifySecret } from '../auth/secrets.ts'
+import { verifyAgainstDecoy, verifySecret } from '../auth/secrets.ts'
 import type { SessionStore } from '../auth/sessions.ts'
 import { type Database, schema } from '../store/db.ts'
+import { setPassword } from './credentials.ts'
 import { jsonBody } from './json-body.ts'
 
 export interface RecoveryRoutesOptions {
@@ -69,27 +70,8 @@ export function recoveryRoutes({ db, sessions, limits }: RecoveryRoutesOptions) 
     const material = await check(c, body.username, body.recoverySecret)
     if (typeof material === 'string') return refuse(c, material)
 
-    const loginSecretHash = await hashSecret(body.loginSecret)
-    await db.transaction(async (tx) => {
-      await tx
-        .update(schema.users)
-        .set({ loginSecretHash, updatedAt: new Date() })
-        .where(eq(schema.users.id, material.userId))
-      await tx
-        .update(schema.keyMaterial)
-        .set({
-          kdfAlgorithm: body.kdf.algorithm,
-          kdfSalt: body.kdf.salt,
-          kdfMemoryKib: body.kdf.memoryKiB,
-          kdfIterations: body.kdf.iterations,
-          kdfParallelism: body.kdf.parallelism,
-          wrappedKeyPassword: body.wrappedAccountKey,
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.keyMaterial.userId, material.userId))
-      // Whoever had the old password, on any device, is signed out.
-      await tx.delete(schema.sessions).where(eq(schema.sessions.userId, material.userId))
-    })
+    // Whoever had the old password, on any device, is signed out.
+    await setPassword(db, material.userId, body)
     await sessions.start(c, material.userId)
     return c.body(null, 204)
   })

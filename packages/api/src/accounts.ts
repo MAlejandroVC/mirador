@@ -89,6 +89,32 @@ export const recoverRequest = z.object({
 })
 export type RecoverRequest = z.infer<typeof recoverRequest>
 
+// SEC-08: changing what protects the account while signed in. Each change proves the
+// current password with its login secret, so a device that was only left signed in
+// can't do it. The account key stays the same, so no data is encrypted again.
+
+// POST /api/accounts/password. Sets the new password's login secret, salt and wrapped
+// key, signs every other device out and gives this one a new session.
+export const changePasswordRequest = z.object({
+  loginSecret: secret,
+  newLoginSecret: secret,
+  kdf: kdfParams,
+  wrappedAccountKey: wrappedKey,
+})
+export type ChangePasswordRequest = z.infer<typeof changePasswordRequest>
+
+// POST /api/accounts/recovery-key. The old recovery key stops working at once.
+export const replaceRecoveryKeyRequest = z.object({
+  loginSecret: secret,
+  recoverySecret: secret,
+  wrappedAccountKey: wrappedKey,
+})
+export type ReplaceRecoveryKeyRequest = z.infer<typeof replaceRecoveryKeyRequest>
+
+// DELETE /api/session/others. How many other devices were signed out.
+export const signOutOthersResponse = z.object({ signedOut: z.int().nonnegative() })
+export type SignOutOthersResponse = z.infer<typeof signOutOthersResponse>
+
 // POST /api/session. Signs in with the login secret, never the password (SEC-03).
 export const signInRequest = z.object({ username, loginSecret: secret })
 export type SignInRequest = z.infer<typeof signInRequest>
@@ -104,7 +130,13 @@ export type SessionResponse = z.infer<typeof sessionResponse>
 // What every sign-in route can refuse with, besides a malformed request (400).
 // A wrong login secret and an unknown username get the same answer.
 export const sessionError = z.object({
-  error: z.enum(['wrong-credentials', 'wrong-recovery-key', 'too-many-attempts', 'signed-out']),
+  error: z.enum([
+    'wrong-credentials',
+    'wrong-password',
+    'wrong-recovery-key',
+    'too-many-attempts',
+    'signed-out',
+  ]),
 })
 export type SessionError = z.infer<typeof sessionError>
 
