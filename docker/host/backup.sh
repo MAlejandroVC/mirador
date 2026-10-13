@@ -2,7 +2,8 @@
 # Nightly backup of the real instance's database (never the preview). Run by
 # mirador-backup.timer; see docs/hosting-oracle.md for restoring.
 #
-# The database holds encrypted records, but also sign-in data such as email addresses,
+# The database holds encrypted records, but also readable sign-in data such as usernames
+# (see docs/what-the-server-sees.md),
 # so a backup is encrypted with age before it leaves the server (BACKUP_AGE_RECIPIENT),
 # and is only copied off the server when it is (BACKUP_RCLONE_REMOTE).
 set -euo pipefail

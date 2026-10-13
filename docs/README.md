@@ -2,6 +2,7 @@
 
 - [adr/](adr/): architecture decision records, one per bigger design choice.
 - [self-hosting.md](self-hosting.md): running the Docker image with PostgreSQL and HTTPS, and keeping it updated (NFR-15).
+- [what-the-server-sees.md](what-the-server-sees.md): everything a Mirador server stores or sees about its users, and what it can never read (SEC-10).
 - [hosting-oracle.md](hosting-oracle.md): a free Oracle Cloud server with HTTPS, a preview instance, automatic updates and encrypted backups.
 - The archive schema (DAT-08) will live here when it is written.
 
