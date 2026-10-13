@@ -1,3 +1,4 @@
+import { usernamePattern } from '@repo/api'
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { type ReactNode, type SubmitEvent, useId, useState } from 'react'
@@ -14,11 +15,11 @@ import { minimumPasswordLength, passwordFollowsRules } from '../lib/password'
 import { useVault } from '../hooks/vault'
 import { addPasskey, passkeysQuery } from '../hooks/passkeys'
 import { type AutoLockChoice, autoLockChoices, readAutoLock, saveAutoLock } from '../lib/auto-lock'
-import { passkeysSupported } from '../lib/passkey'
+import { passkeysSupported, renamePasskeys } from '../lib/passkey'
 
 // SEC-08: change the password, replace the recovery key and sign out other devices,
 // all without touching the data: the account key stays the same. SYS-06, SEC-12:
-// passkeys (Face ID) and when this device locks itself.
+// the username, passkeys (Face ID) and when this device locks itself.
 export function SecurityScreen() {
   const { t } = useTranslation()
   const { data: session } = useSuspenseQuery(sessionQuery)
@@ -52,6 +53,7 @@ export function SecurityScreen() {
         </Link>
         <h1 className="text-2xl font-semibold text-slate-900">{t('security.settings.title')}</h1>
       </div>
+      <ChangeUsername username={username} />
       <Passkeys username={username} />
       <AutoLockSetting />
       <ChangePassword username={username} />
@@ -97,6 +99,84 @@ function Section({
 // Lets a password manager tie the new password to the right account.
 function UsernameForPasswordManagers({ username }: { username: string }) {
   return <input type="text" autoComplete="username" value={username} readOnly hidden />
+}
+
+interface UsernameProblems {
+  username?: string
+  password?: string
+}
+
+// SYS-06: the keys don't depend on the username, so changing it touches nothing else.
+function ChangeUsername({ username }: { username: string }) {
+  const { t } = useTranslation()
+  const vault = useVault()
+  const queryClient = useQueryClient()
+  const [newUsername, setNewUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [problems, setProblems] = useState<UsernameProblems>({})
+  const wanted = newUsername.trim().toLowerCase()
+
+  const change = useMutation({
+    mutationFn: () => vault.changeUsername(wanted, password),
+    onSuccess: async () => {
+      setNewUsername('')
+      setPassword('')
+      const session = await queryClient.query({ ...sessionQuery, staleTime: 0 })
+      if (session) await renamePasskeys(session.user.id, session.user.username)
+    },
+  })
+
+  function submit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const found: UsernameProblems = {}
+    if (!usernamePattern.test(wanted)) found.username = t('security.errors.invalidUsername')
+    else if (wanted === username) found.username = t('security.errors.sameUsername')
+    if (!password) found.password = t('security.errors.passwordMissing')
+    setProblems(found)
+    if (Object.keys(found).length === 0) change.mutate()
+  }
+
+  return (
+    <Section
+      title={t('security.settings.username.title')}
+      intro={t('security.settings.username.intro', { username })}
+    >
+      <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
+        <TextField
+          label={t('security.settings.username.new')}
+          hint={t('security.signUp.usernameHint')}
+          autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          error={problems.username}
+          value={newUsername}
+          onChange={(event) => {
+            setNewUsername(event.target.value)
+          }}
+        />
+        <TextField
+          label={t('security.settings.username.password')}
+          type="password"
+          autoComplete="current-password"
+          error={problems.password}
+          value={password}
+          onChange={(event) => {
+            setPassword(event.target.value)
+          }}
+        />
+        <ErrorMessage code={change.isError ? vaultErrorCode(change.error) : null} />
+        {change.isSuccess && (
+          <Alert tone="success">{t('security.settings.username.done', { username })}</Alert>
+        )}
+        <Button type="submit" variant="secondary" disabled={change.isPending}>
+          {change.isPending
+            ? t('security.settings.username.working')
+            : t('security.settings.username.submit')}
+        </Button>
+      </form>
+    </Section>
+  )
 }
 
 interface PasswordProblems {

@@ -240,6 +240,17 @@ export class Vault {
     })
   }
 
+  // SYS-06: a new username. The keys don't depend on it, so only the name changes; the
+  // current password is checked here first, then proven to the server.
+  async changeUsername(newUsername: string, password: string) {
+    newUsername = normalizeUsername(newUsername)
+    return guard(async () => {
+      this.#sync()
+      const { current } = await this.#currentPassword(password)
+      await this.api.changeUsername({ username: newUsername, loginSecret: current.loginSecret })
+    })
+  }
+
   // SEC-08: ends every session but this device's. Returns how many devices.
   async signOutOthers() {
     return guard(async () => (await this.api.signOutOthers()).signedOut)

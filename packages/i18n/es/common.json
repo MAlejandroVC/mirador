@@ -89,6 +89,15 @@
     "settings": {
       "title": "Contraseña y seguridad",
       "back": "Volver",
+      "username": {
+        "title": "Nombre de usuario",
+        "intro": "Inicias sesión como {{username}}. Con un nombre de usuario nuevo, tu contraseña, tus llaves de acceso y tus datos siguen igual.",
+        "new": "Nombre de usuario nuevo",
+        "password": "Contraseña actual",
+        "submit": "Cambiar nombre de usuario",
+        "working": "Cambiando tu nombre de usuario…",
+        "done": "Nombre de usuario cambiado. A partir de ahora, inicia sesión como {{username}}."
+      },
       "password": {
         "title": "Contraseña",
         "intro": "Tu contraseña abre tus datos. Al cambiarla se cierra la sesión en tus otros dispositivos, y tus datos quedan como están.",
@@ -162,7 +171,7 @@
     "errors": {
       "wrong-credentials": "Usuario o contraseña incorrectos.",
       "wrong-password": "Contraseña incorrecta.",
-      "username-taken": "Ese nombre de usuario ya existe. Elige otro o inicia sesión.",
+      "username-taken": "Ese nombre de usuario ya existe. Elige otro.",
       "wrong-setup-code": "Ese código de configuración no es correcto. Busca el actual en el registro del servidor.",
       "signed-out": "Se cerró tu sesión. Vuelve a iniciarla.",
       "locked": "Mirador está bloqueado. Desbloquéalo con tu contraseña.",
@@ -171,6 +180,7 @@
       "network": "No se puede conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.",
       "unknown": "Algo salió mal. Inténtalo de nuevo.",
       "invalidUsername": "Usa de 3 a 32 letras, números, puntos, guiones o guiones bajos, sin espacios.",
+      "sameUsername": "Ese ya es tu nombre de usuario.",
       "passwordRules": "Usa al menos {{count}} caracteres, con una mayúscula, una minúscula, un número y un símbolo.",
       "passwordsDontMatch": "Las contraseñas no coinciden.",
       "setupCodeMissing": "Escribe el código de configuración.",

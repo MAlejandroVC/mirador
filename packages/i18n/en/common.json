@@ -89,6 +89,15 @@
     "settings": {
       "title": "Password and security",
       "back": "Back",
+      "username": {
+        "title": "Username",
+        "intro": "You sign in as {{username}}. A new username keeps your password, passkeys and data as they are.",
+        "new": "New username",
+        "password": "Current password",
+        "submit": "Change username",
+        "working": "Changing your username…",
+        "done": "Username changed. Sign in as {{username}} from now on."
+      },
       "password": {
         "title": "Password",
         "intro": "Your password unlocks your data. Changing it signs out your other devices, and your data stays as it is.",
@@ -162,7 +171,7 @@
     "errors": {
       "wrong-credentials": "Wrong username or password.",
       "wrong-password": "Wrong password.",
-      "username-taken": "That username is taken. Pick another, or sign in.",
+      "username-taken": "That username is taken. Pick another.",
       "wrong-setup-code": "That setup code is wrong. Check the server's log for the current one.",
       "signed-out": "You were signed out. Sign in again.",
       "locked": "Mirador is locked. Unlock it with your password.",
@@ -171,6 +180,7 @@
       "network": "Can't reach the server. Check your connection and try again.",
       "unknown": "Something went wrong. Try again.",
       "invalidUsername": "Use 3 to 32 letters, numbers, dots, dashes or underscores, with no spaces.",
+      "sameUsername": "That's already your username.",
       "passwordRules": "Use at least {{count}} characters, with an uppercase letter, a lowercase letter, a number and a symbol.",
       "passwordsDontMatch": "The passwords don't match.",
       "setupCodeMissing": "Enter the setup code.",

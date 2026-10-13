@@ -1,6 +1,7 @@
 import {
   type AddPasskeyRequest,
   type ChangePasswordRequest,
+  type ChangeUsernameRequest,
   errorResponse,
   pullResponse,
   pushConflict,
@@ -97,6 +98,10 @@ export function createApi(fetchFn: Fetch = (...args) => globalThis.fetch(...args
     },
     async replaceRecoveryKey(body: ReplaceRecoveryKeyRequest) {
       await post('/api/accounts/recovery-key', body)
+    },
+    // SYS-06: a new username, proven with the current password.
+    async changeUsername(body: ChangeUsernameRequest) {
+      await post('/api/accounts/username', body)
     },
     async signOutOthers() {
       return signOutOthersResponse.parse(

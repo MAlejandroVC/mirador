@@ -113,6 +113,14 @@ export const replaceRecoveryKeyRequest = z.object({
 })
 export type ReplaceRecoveryKeyRequest = z.infer<typeof replaceRecoveryKeyRequest>
 
+// POST /api/accounts/username. A new name to sign in with. The keys don't depend on
+// it, so nothing is wrapped again; the old name is free for anyone at once.
+export const changeUsernameRequest = z.object({ username, loginSecret: secret })
+export type ChangeUsernameRequest = z.infer<typeof changeUsernameRequest>
+
+export const changeUsernameError = z.object({ error: z.enum(['username-taken']) })
+export type ChangeUsernameError = z.infer<typeof changeUsernameError>
+
 // DELETE /api/session/others. How many other devices were signed out.
 export const signOutOthersResponse = z.object({ signedOut: z.int().nonnegative() })
 export type SignOutOthersResponse = z.infer<typeof signOutOthersResponse>
