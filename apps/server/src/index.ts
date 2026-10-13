@@ -17,15 +17,17 @@ await migrate(db, { migrationsFolder })
 
 const secret = await loadSecret(db)
 const setupCode = newCode()
-const [users] = await db.select({ count: count() }).from(schema.users)
-if (!users?.count) {
+function announceSetupCode() {
   console.log(`No accounts yet. Create the first one in the app with this setup code: ${setupCode}`)
 }
+const [users] = await db.select({ count: count() }).from(schema.users)
+if (!users?.count) announceSetupCode()
 
 const app = createApp({
   db,
   secret,
   setupCode,
+  onNoAccounts: announceSetupCode,
   openSignUp: process.env.MIRADOR_OPEN_SIGNUP === 'true',
   trustProxy: process.env.MIRADOR_TRUST_PROXY === 'true',
   ...(process.env.WEB_ROOT ? { webRoot: process.env.WEB_ROOT } : {}),

@@ -25,7 +25,8 @@
       "forgot": "Forgot your password?",
       "passkey": "Sign in with Face ID or a passkey",
       "passkeyWorking": "Signing in…",
-      "or": "or"
+      "or": "or",
+      "deleted": "Your account and all its data were deleted from this server."
     },
     "signUp": {
       "title": "Create your account",
@@ -149,6 +150,15 @@
         "minutes_one": "After {{count}} minute without use",
         "minutes_other": "After {{count}} minutes without use",
         "done": "Saved for this device."
+      },
+      "delete": {
+        "title": "Delete account",
+        "intro": "Deletes your account and all your data from this server for good. Nobody can undo it, not even the person who runs the server. Server backups may keep a copy until they expire.",
+        "operator": "You run this server. The oldest other account will run it after you. With no other accounts, the server waits for a new first account.",
+        "username": "Type your username, {{username}}, to confirm",
+        "password": "Current password",
+        "submit": "Delete my account for good",
+        "working": "Deleting your account…"
       }
     },
     "invites": {
@@ -182,6 +192,7 @@
       "unknown": "Something went wrong. Try again.",
       "invalidUsername": "Use 3 to 32 letters, numbers, dots, dashes or underscores, with no spaces.",
       "sameUsername": "That's already your username.",
+      "usernameMismatch": "Type your username exactly as shown.",
       "passwordRules": "Use at least {{count}} characters, with an uppercase letter, a lowercase letter, a number and a symbol.",
       "passwordsDontMatch": "The passwords don't match.",
       "setupCodeMissing": "Enter the setup code.",

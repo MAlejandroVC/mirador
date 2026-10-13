@@ -2,6 +2,7 @@ import {
   type AddPasskeyRequest,
   type ChangePasswordRequest,
   type ChangeUsernameRequest,
+  type DeleteAccountRequest,
   errorResponse,
   pullResponse,
   pushConflict,
@@ -110,6 +111,10 @@ export function createApi(fetchFn: Fetch = (...args) => globalThis.fetch(...args
     // SYS-06: a new username, proven with the current password.
     async changeUsername(body: ChangeUsernameRequest) {
       await post('/api/accounts/username', body)
+    },
+    // Deletes the account and everything the server keeps for it.
+    async deleteAccount(body: DeleteAccountRequest) {
+      await post('/api/accounts/delete', body)
     },
     async signOutOthers() {
       return signOutOthersResponse.parse(

@@ -42,6 +42,11 @@ export function fakeVault(server: FakeServer, overrides: Partial<VaultClient> = 
     changePassword: vi.fn(() => Promise.resolve()),
     replaceRecoveryKey: vi.fn(() => Promise.resolve({ recoveryKey: shownRecoveryKey })),
     signOutOthers: vi.fn(() => Promise.resolve(2)),
+    deleteAccount: vi.fn(() => {
+      unlocked = false
+      server.signedIn = null
+      return Promise.resolve()
+    }),
     changeUsername: vi.fn((username: string) => {
       server.signedIn = username.trim().toLowerCase()
       return Promise.resolve()

@@ -251,6 +251,18 @@ export class Vault {
     })
   }
 
+  // Deletes the account for good. The password is checked here first, then proven to
+  // the server; the key and the records leave this worker's memory too.
+  async deleteAccount(password: string) {
+    return guard(async () => {
+      this.#sync()
+      const { current } = await this.#currentPassword(password)
+      await this.api.deleteAccount({ loginSecret: current.loginSecret })
+      this.#records = null
+      this.#passkeyPassword = null
+    })
+  }
+
   // SEC-08: ends every session but this device's. Returns how many devices.
   async signOutOthers() {
     return guard(async () => (await this.api.signOutOthers()).signedOut)

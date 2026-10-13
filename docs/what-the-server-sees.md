@@ -21,6 +21,8 @@ It covers everything that exists in this version. Whenever the server starts sto
 
 Every table and column the server keeps, from `apps/server/src/store/schema.ts`. Backups hold the same tables.
 
+Deleting your account deletes all of its rows from every table at once. Backups made before keep them until they expire (14 days with the built-in nightly backup).
+
 ### `users`
 
 One row per account.
@@ -101,7 +103,7 @@ Invites the operator made (SYS-13).
 | `code_hash`  | A hash of the invite code, so this table can't be used to sign up.                  |
 | `created_by` | Which account made it.                                                              |
 | `expires_at` | When it stops working, 7 days after it was made.                                    |
-| `used_by`    | Which account signed up with it.                                                    |
+| `used_by`    | Which account signed up with it. Emptied if that account is deleted.                |
 | `used_at`    | When it was used.                                                                   |
 | `created_at` | When it was made.                                                                   |
 
@@ -124,7 +126,7 @@ The server's own settings. Nothing about any user.
 
 ## Logs
 
-The server prints only two things when it starts: the setup code while the server has no accounts yet, and the port it listens on.
+The server prints only two things when it starts: the setup code while the server has no accounts yet, and the port it listens on. It prints the setup code again if the last account is deleted.
 
 ## Backups
 

@@ -3,6 +3,7 @@ import {
   addPasskeyRequest,
   changePasswordRequest,
   changeUsernameRequest,
+  deleteAccountRequest,
   passkeySignInRequest,
   keysResponse,
   preloginRequest,
@@ -146,6 +147,18 @@ function fakeServer() {
         records.set(request.username, records.get(signedIn) ?? [])
         records.delete(signedIn)
         signedIn = request.username
+        return new Response(null, { status: 204 })
+      }
+      case '/api/accounts/delete': {
+        const request = deleteAccountRequest.parse(body)
+        const account = signedIn ? accounts.get(signedIn) : undefined
+        if (!signedIn || !account) return json({ error: 'signed-out' }, 401)
+        if (account.loginSecret !== request.loginSecret) {
+          return json({ error: 'wrong-password' }, 401)
+        }
+        accounts.delete(signedIn)
+        records.delete(signedIn)
+        signedIn = null
         return new Response(null, { status: 204 })
       }
       case '/api/passkeys/registration':
@@ -422,6 +435,24 @@ describe('vault', () => {
     const laptop = new Vault(server.api)
     await laptop.signIn('ana.maria', password)
     expect((await laptop.listRecords()).map((record) => record.id)).toEqual([id])
+  })
+
+  it('SYS-06: deleting the account needs the password, which never leaves the browser', async () => {
+    const server = fakeServer()
+    const vault = new Vault(server.api)
+    await vault.signUp({ username: 'ana', password })
+    server.sent.length = 0
+
+    expect(await failure(vault.deleteAccount('not my password'))).toBe('wrong-password')
+    expect(server.sent.join('\n')).not.toContain('/api/accounts/')
+    expect(server.accounts.has('ana')).toBe(true)
+
+    await vault.deleteAccount(password)
+
+    expect(server.accounts.has('ana')).toBe(false)
+    expect(await vault.status()).toBe('locked')
+    expect(server.sent.join('\n')).not.toContain(password)
+    expect(await failure(vault.listRecords())).toBe('locked')
   })
 
   it('SEC-12: locking forgets the key, and only the right password unlocks again', async () => {

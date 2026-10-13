@@ -157,6 +157,65 @@ describe('password and security', () => {
     )
   })
 
+  it('SYS-06: deletes the account after the username is typed and the password given', async () => {
+    const user = userEvent.setup()
+    const signalAllAcceptedCredentials = vi.fn(() => Promise.resolve())
+    vi.stubGlobal('PublicKeyCredential', { signalAllAcceptedCredentials })
+    const server: FakeServer = { signedIn: 'ana' }
+    stubServer(server)
+    const vault = unlockedVault(server)
+    const { router } = renderApp('/security', vault)
+
+    await screen.findByRole('heading', { name: 'Password and security' })
+    const form = section('Delete account')
+    expect(form.getByText(/backups may keep a copy until they expire/)).toBeInTheDocument()
+    expect(form.queryByText(/You run this server/)).not.toBeInTheDocument()
+    await user.type(form.getByLabelText('Type your username, ana, to confirm'), 'anna')
+    await user.click(form.getByRole('button', { name: 'Delete my account for good' }))
+    expect(form.getByText('Type your username exactly as shown.')).toBeInTheDocument()
+    expect(form.getByText('Enter your current password.')).toBeInTheDocument()
+    expect(vault.deleteAccount).not.toHaveBeenCalled()
+
+    await user.clear(form.getByLabelText('Type your username, ana, to confirm'))
+    await user.type(form.getByLabelText('Type your username, ana, to confirm'), 'Ana')
+    await user.type(form.getByLabelText('Current password'), password)
+    await user.click(form.getByRole('button', { name: 'Delete my account for good' }))
+
+    expect(vault.deleteAccount).toHaveBeenCalledWith(password)
+    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/sign-in')
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Your account and all its data were deleted from this server.',
+    )
+    expect(signalAllAcceptedCredentials).toHaveBeenCalledWith({
+      rpId: 'localhost',
+      userId: 'MQ',
+      allAcceptedCredentialIds: [],
+    })
+  })
+
+  it('SYS-13: tells the operator who runs the server next, and explains a wrong password', async () => {
+    await i18n.changeLanguage('es')
+    const user = userEvent.setup()
+    const server: FakeServer = { signedIn: 'ana', operator: true }
+    stubServer(server)
+    const vault = fakeVault(server, {
+      deleteAccount: vi.fn(() => Promise.reject(new VaultError('wrong-password'))),
+    })
+    await vault.unlock('')
+    renderApp('/security', vault)
+
+    await screen.findByRole('heading', { name: 'Contraseña y seguridad' })
+    const form = section('Borrar cuenta')
+    expect(form.getByText(/Tú administras este servidor/)).toBeInTheDocument()
+    await user.type(form.getByLabelText(/Escribe tu nombre de usuario, ana/), 'ana')
+    await user.type(form.getByLabelText('Contraseña actual'), 'not my password')
+    await user.click(form.getByRole('button', { name: 'Borrar mi cuenta para siempre' }))
+
+    expect(await form.findByRole('alert')).toHaveTextContent('Contraseña incorrecta.')
+    expect(screen.getByRole('heading', { name: 'Contraseña y seguridad' })).toBeInTheDocument()
+  })
+
   it('SEC-08: shows a new recovery key once, then confirms the old one stopped working', async () => {
     const user = userEvent.setup()
     const server: FakeServer = { signedIn: 'ana' }

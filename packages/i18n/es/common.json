@@ -25,7 +25,8 @@
       "forgot": "¿Olvidaste tu contraseña?",
       "passkey": "Iniciar sesión con Face ID o una llave de acceso",
       "passkeyWorking": "Iniciando sesión…",
-      "or": "o"
+      "or": "o",
+      "deleted": "Tu cuenta y todos sus datos se borraron de este servidor."
     },
     "signUp": {
       "title": "Crea tu cuenta",
@@ -149,6 +150,15 @@
         "minutes_one": "Después de {{count}} minuto sin uso",
         "minutes_other": "Después de {{count}} minutos sin uso",
         "done": "Guardado en este dispositivo."
+      },
+      "delete": {
+        "title": "Borrar cuenta",
+        "intro": "Borra tu cuenta y todos tus datos de este servidor para siempre. Nadie puede deshacerlo, ni siquiera la persona que administra el servidor. Las copias de seguridad del servidor pueden conservar una copia hasta que venzan.",
+        "operator": "Tú administras este servidor. La cuenta más antigua que quede lo administrará después de ti. Si no queda ninguna, el servidor esperará una nueva primera cuenta.",
+        "username": "Escribe tu nombre de usuario, {{username}}, para confirmar",
+        "password": "Contraseña actual",
+        "submit": "Borrar mi cuenta para siempre",
+        "working": "Borrando tu cuenta…"
       }
     },
     "invites": {
@@ -182,6 +192,7 @@
       "unknown": "Algo salió mal. Inténtalo de nuevo.",
       "invalidUsername": "Usa de 3 a 32 letras, números, puntos, guiones o guiones bajos, sin espacios.",
       "sameUsername": "Ese ya es tu nombre de usuario.",
+      "usernameMismatch": "Escribe tu nombre de usuario tal como aparece.",
       "passwordRules": "Usa al menos {{count}} caracteres, con una mayúscula, una minúscula, un número y un símbolo.",
       "passwordsDontMatch": "Las contraseñas no coinciden.",
       "setupCodeMissing": "Escribe el código de configuración.",

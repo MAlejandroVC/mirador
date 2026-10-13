@@ -171,6 +171,27 @@ export async function renamePasskeys(userId: string, username: string) {
   }).catch(() => undefined)
 }
 
+// After the account is deleted, asks the device to drop its passkeys for it, where
+// browsers allow it: they could never sign in again.
+export async function forgetAllPasskeys(userId: string) {
+  if (!passkeysSupported()) return
+  const signal = (
+    PublicKeyCredential as unknown as {
+      signalAllAcceptedCredentials?: (options: {
+        rpId: string
+        userId: string
+        allAcceptedCredentialIds: string[]
+      }) => Promise<void>
+    }
+  ).signalAllAcceptedCredentials
+  if (!signal) return
+  await signal({
+    rpId: location.hostname,
+    userId: toBase64Url(new TextEncoder().encode(userId).buffer),
+    allAcceptedCredentialIds: [],
+  }).catch(() => undefined)
+}
+
 function descriptor({ id, transports }: { id: string; transports?: string[] }) {
   return {
     type: 'public-key' as const,

@@ -132,6 +132,11 @@ export type ChangeUsernameRequest = z.infer<typeof changeUsernameRequest>
 export const changeUsernameError = z.object({ error: z.enum(['username-taken']) })
 export type ChangeUsernameError = z.infer<typeof changeUsernameError>
 
+// POST /api/accounts/delete. Deletes the account and everything the server keeps for it,
+// for good. The current password confirms it, like the changes above.
+export const deleteAccountRequest = z.object({ loginSecret: secret })
+export type DeleteAccountRequest = z.infer<typeof deleteAccountRequest>
+
 // DELETE /api/session/others. How many other devices were signed out.
 export const signOutOthersResponse = z.object({ signedOut: z.int().nonnegative() })
 export type SignOutOthersResponse = z.infer<typeof signOutOthersResponse>
