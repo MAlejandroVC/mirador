@@ -1,4 +1,4 @@
-import type { Invite } from '@repo/api'
+import type { CreationOptions, Invite, Passkey } from '@repo/api'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryHistory, RouterProvider } from '@tanstack/react-router'
 import { render } from '@testing-library/react'
@@ -42,6 +42,28 @@ export function fakeVault(server: FakeServer, overrides: Partial<VaultClient> = 
     changePassword: vi.fn(() => Promise.resolve()),
     replaceRecoveryKey: vi.fn(() => Promise.resolve({ recoveryKey: shownRecoveryKey })),
     signOutOthers: vi.fn(() => Promise.resolve(2)),
+    startAddingPasskey: vi.fn(() =>
+      Promise.resolve({ challengeId: 'registration', options: fakeCreationOptions }),
+    ),
+    addPasskey: vi.fn(() => {
+      server.passkeys = [
+        ...(server.passkeys ?? []),
+        {
+          id: `passkey-${(server.passkeys?.length ?? 0) + 1}`,
+          createdAt: '2026-10-13T12:00:00.000Z',
+          lastUsedAt: null,
+        },
+      ]
+      return Promise.resolve()
+    }),
+    passkeySignInOptions: vi.fn(() =>
+      Promise.resolve({ challengeId: 'sign-in', options: { challenge: 'AAAA' } }),
+    ),
+    openWithPasskey: vi.fn(() => {
+      unlocked = true
+      server.signedIn ??= 'ana'
+      return Promise.resolve()
+    }),
     signOut: vi.fn(() => {
       unlocked = false
       server.signedIn = null
@@ -50,6 +72,13 @@ export function fakeVault(server: FakeServer, overrides: Partial<VaultClient> = 
     ...overrides,
   }
   return vault
+}
+
+export const fakeCreationOptions: CreationOptions = {
+  challenge: 'AAAA',
+  rp: { id: 'localhost', name: 'Mirador' },
+  user: { id: 'MQ', name: 'ana', displayName: 'ana' },
+  pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
 }
 
 export function unlockedVault(server: FakeServer) {
@@ -65,6 +94,8 @@ export interface FakeServer {
   // SYS-13: whether the signed-in user runs the server, and their invites.
   operator?: boolean
   invites?: Invite[]
+  // SYS-06: the signed-in user's passkeys.
+  passkeys?: Passkey[]
 }
 
 // Answers the page's own requests (the vault's go through the fake vault).
@@ -113,7 +144,14 @@ export function stubServer(server: FakeServer) {
           }
           return Promise.resolve(Response.json({ invites: server.invites }))
         }
+        case '/api/passkeys':
+          return Promise.resolve(Response.json({ passkeys: server.passkeys ?? [] }))
         default: {
+          const removed = /^\/api\/passkeys\/(.+)$/.exec(path)?.[1]
+          if (removed && init?.method === 'DELETE') {
+            server.passkeys = server.passkeys?.filter((passkey) => passkey.id !== removed) ?? []
+            return Promise.resolve(new Response(null, { status: 204 }))
+          }
           const withdrawn = /^\/api\/invites\/(.+)$/.exec(path)?.[1]
           if (withdrawn && init?.method === 'DELETE') {
             server.invites = server.invites?.filter((invite) => invite.id !== withdrawn) ?? []

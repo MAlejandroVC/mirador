@@ -1,5 +1,6 @@
 import {
   createAccountKey,
+  derivePasskeyKey,
   deriveRecoveryKeys,
   derivePasswordKeys,
   formatRecoveryKey,
@@ -12,7 +13,12 @@ import {
   WeakKdfParamsError,
   WrongKeyError,
 } from '@repo/crypto'
-import type { RecordBody } from '@repo/api'
+import type {
+  AuthenticationResponse,
+  KeysResponse,
+  RecordBody,
+  RegistrationResponse,
+} from '@repo/api'
 import { RecordsAltered, RecordSync } from '@repo/sync'
 import { type Api, ApiError } from '../lib/api'
 import { VaultError, vaultErrorCodes } from './errors'
@@ -21,6 +27,14 @@ export interface RecoverInput {
   username: string
   recoveryKey: string
   newPassword: string
+}
+
+// What the page brings back from the passkey (SYS-06): its answer for the server, and
+// the PRF secret, which stays in this worker.
+export interface PasskeyAnswer<Response> {
+  challengeId: string
+  response: Response
+  prfOutput: Uint8Array
 }
 
 export interface SignUpInput {
@@ -37,6 +51,12 @@ export class Vault {
   // Holds the account key and the decrypted records, in this worker's memory only
   // (SEC-01); null while locked.
   #records: RecordSync | null = null
+  // SYS-06: the checked password's keys, between asking for it and the passkey's answer.
+  #passkeyPassword: {
+    loginSecret: string
+    keyEncryptionKey: CryptoKey
+    keys: KeysResponse
+  } | null = null
 
   constructor(private readonly api: Api) {}
 
@@ -225,6 +245,71 @@ export class Vault {
     return guard(async () => (await this.api.signOutOthers()).signedOut)
   }
 
+  // SYS-06: the first half of adding a passkey. The password is checked here before
+  // the browser makes the passkey, so a typo doesn't leave a passkey on the device
+  // that this account never saved. Returns the server's options for the passkey.
+  async startAddingPasskey(password: string) {
+    this.#passkeyPassword = null
+    return guard(async () => {
+      this.#sync()
+      const { current, keys } = await this.#currentPassword(password)
+      const options = await this.api.passkeyRegistration()
+      this.#passkeyPassword = { ...current, keys }
+      return options
+    })
+  }
+
+  // SYS-06: the passkey's PRF secret wraps the same account key the password does, so
+  // either opens the data. The server gets that wrapped key and the passkey's public
+  // half, never the secret, and checks the current password once more.
+  async addPasskey({ challengeId, response, prfOutput }: PasskeyAnswer<RegistrationResponse>) {
+    const password = this.#passkeyPassword
+    this.#passkeyPassword = null
+    return guard(async () => {
+      this.#sync()
+      if (!password) throw new VaultError('unknown')
+      const passkeyKey = await derivePasskeyKey(prfOutput)
+      prfOutput.fill(0)
+      const { rewrapped } = await rewrapAccountKey(
+        password.keys.wrappedAccountKey,
+        password.keyEncryptionKey,
+        passkeyKey,
+      )
+      await this.api.addPasskey({
+        challengeId,
+        response,
+        loginSecret: password.loginSecret,
+        wrappedAccountKey: rewrapped,
+      })
+    })
+  }
+
+  // The server's challenge for signing in or unlocking with a passkey.
+  async passkeySignInOptions() {
+    return guard(() => this.api.passkeySignInOptions())
+  }
+
+  // SYS-06, SEC-12: signs in, or unlocks while signed in, with a passkey instead of the
+  // password. The server checks the passkey's signature and returns the account key
+  // wrapped by its secret, which only this passkey's PRF secret can open.
+  async openWithPasskey({
+    challengeId,
+    response,
+    prfOutput,
+  }: PasskeyAnswer<AuthenticationResponse>) {
+    return guard(async () => {
+      const passkeyKey = await derivePasskeyKey(prfOutput)
+      prfOutput.fill(0)
+      const { wrappedAccountKey } = await this.api.passkeySignIn({ challengeId, response })
+      // The server accepted the passkey, so a key that won't open with it was altered there.
+      await this.#open(
+        await unwrapAccountKey(wrappedAccountKey, passkeyKey).catch(() => {
+          throw new VaultError('unsafe-server')
+        }),
+      )
+    })
+  }
+
   // The current password's keys, checked against the wrapped key before anything is
   // sent, so a typo is caught here (WrongKeyError) rather than counted by the server.
   async #currentPassword(password: string) {
@@ -244,11 +329,13 @@ export class Vault {
 
   lock() {
     this.#records = null
+    this.#passkeyPassword = null
     return Promise.resolve()
   }
 
   async signOut() {
     this.#records = null
+    this.#passkeyPassword = null
     await guard(() => this.api.signOut())
   }
 }

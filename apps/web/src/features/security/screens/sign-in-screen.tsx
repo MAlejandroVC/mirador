@@ -7,11 +7,13 @@ import { TextField } from '../../../components/ui/text-field'
 import { vaultErrorCode } from '../../../worker/errors'
 import { AuthLayout } from '../components/auth-layout'
 import { ErrorMessage } from '../components/error-message'
+import { OrDivider, PasskeyButton } from '../components/passkey-button'
 import { sessionQuery } from '../hooks/session'
+import { passkeysSupported } from '../lib/passkey'
 import { useVault } from '../hooks/vault'
 
-// SYS-06: sign in with username and password. The password stays in the browser
-// (SEC-03) and also unlocks the data on this device.
+// SYS-06: sign in with username and password, or with a passkey. The password stays in
+// the browser (SEC-03) and also unlocks the data on this device; so does a passkey.
 export function SignInScreen() {
   const { t } = useTranslation()
   const vault = useVault()
@@ -20,12 +22,14 @@ export function SignInScreen() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
+  async function signedIn() {
+    queryClient.removeQueries(sessionQuery)
+    await navigate({ to: '/' })
+  }
+
   const signIn = useMutation({
     mutationFn: () => vault.signIn(username, password),
-    onSuccess: async () => {
-      queryClient.removeQueries(sessionQuery)
-      await navigate({ to: '/' })
-    },
+    onSuccess: signedIn,
   })
 
   function submit(event: SubmitEvent<HTMLFormElement>) {
@@ -63,6 +67,17 @@ export function SignInScreen() {
           {signIn.isPending ? t('security.signIn.working') : t('security.signIn.submit')}
         </Button>
       </form>
+      {passkeysSupported() && (
+        <>
+          <OrDivider label={t('security.signIn.or')} />
+          <PasskeyButton
+            variant="secondary"
+            label={t('security.signIn.passkey')}
+            working={t('security.signIn.passkeyWorking')}
+            onOpened={signedIn}
+          />
+        </>
+      )}
       <p className="text-center text-sm">
         <Link
           to="/recover"

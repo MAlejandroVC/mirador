@@ -137,6 +137,7 @@ export const sessionError = z.object({
     'wrong-credentials',
     'wrong-password',
     'wrong-recovery-key',
+    'wrong-passkey',
     'too-many-attempts',
     'signed-out',
   ]),

@@ -11,6 +11,7 @@ import {
   unlockedVault,
 } from '../../../test-utils'
 import { VaultError } from '../../../worker/errors'
+import { readAutoLock } from '../lib/auto-lock'
 
 const password = 'a sunny day in Monterrey'
 
@@ -131,5 +132,23 @@ describe('password and security', () => {
 
     expect(vault.signOutOthers).toHaveBeenCalled()
     expect(await screen.findByText('Se cerró la sesión en 2 dispositivos más.')).toBeInTheDocument()
+  })
+
+  it('SEC-12: picks when this device locks itself, five minutes until changed', async () => {
+    const user = userEvent.setup()
+    const server: FakeServer = { signedIn: 'ana' }
+    stubServer(server)
+    renderApp('/security', unlockedVault(server))
+
+    await screen.findByRole('heading', { name: 'Password and security' })
+    const autoLock = section('Lock automatically')
+    const choice = autoLock.getByLabelText('Lock')
+    expect(choice).toHaveDisplayValue('After 5 minutes without use')
+
+    await user.selectOptions(choice, 'As soon as I leave the app')
+
+    expect(autoLock.getByRole('status')).toHaveTextContent('Saved for this device.')
+    expect(readAutoLock()).toBe('leave')
+    localStorage.clear()
   })
 })

@@ -7,8 +7,9 @@ import { fromBase64Url, toBase64Url, utf8 } from './encoding.ts'
 //                                   \-----> key-encryption key (never leaves the browser)
 //   recovery key --HKDF--> recovery secret (the server keeps only a hash)
 //                   \----> recovery wrapping key
+//   passkey PRF output --HKDF--> passkey wrapping key (one per passkey, SYS-06)
 //   account key (random) encrypts the data, and the server stores it only wrapped by
-//   the key-encryption key and by the recovery wrapping key.
+//   the key-encryption key, the recovery wrapping key and each passkey's wrapping key.
 //
 // Every key the browser keeps is a non-extractable WebCrypto key (SEC-13).
 
@@ -136,6 +137,24 @@ export async function deriveRecoveryKeys(recoveryKey: Uint8Array): Promise<Recov
   return { recoverySecret: loginSecret, recoveryWrappingKey: keyEncryptionKey }
 }
 
+// SYS-06, SEC-12: a passkey that supports the WebAuthn PRF extension returns 32 secret
+// bytes that only that passkey can produce, after Face ID, a fingerprint or the
+// device's PIN. They wrap the account key like a password does, so the passkey can
+// unlock the data without the password; the server stores only the wrapped key.
+export async function derivePasskeyKey(prfOutput: Uint8Array): Promise<CryptoKey> {
+  if (prfOutput.length < 32) throw new WrongKeyError()
+  const base = await subtle.importKey('raw', new Uint8Array(prfOutput), 'HKDF', false, [
+    'deriveKey',
+  ])
+  return subtle.deriveKey(
+    hkdf('passkey wrapping key'),
+    base,
+    { name: 'AES-KW', length: 256 },
+    false,
+    ['wrapKey', 'unwrapKey'],
+  )
+}
+
 const accountKeyAlgorithm = { name: 'AES-GCM', length: 256 } as const
 const accountKeyUsages: KeyUsage[] = ['encrypt', 'decrypt']
 
@@ -161,7 +180,7 @@ export async function createAccountKey(
   return { accountKey, wrappedByPassword, wrappedByRecovery }
 }
 
-// SEC-07, SEC-08: wraps the account key under a new key. A forgotten password opens it
+// SEC-07, SEC-08, SYS-06: wraps the account key under a new key. A forgotten password opens it
 // with the recovery wrapping key and wraps it for the new password; changing the
 // password or the recovery key opens it with the current password's key and wraps it
 // for the new one. Like createAccountKey, the extractable copy WebCrypto needs for

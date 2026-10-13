@@ -22,7 +22,10 @@
       "working": "Iniciando sesión y desbloqueando…",
       "noAccount": "¿Eres nuevo?",
       "createAccount": "Crear una cuenta",
-      "forgot": "¿Olvidaste tu contraseña?"
+      "forgot": "¿Olvidaste tu contraseña?",
+      "passkey": "Iniciar sesión con Face ID o una llave de acceso",
+      "passkeyWorking": "Iniciando sesión…",
+      "or": "o"
     },
     "signUp": {
       "title": "Crea tu cuenta",
@@ -55,10 +58,14 @@
     "unlock": {
       "title": "Desbloquear Mirador",
       "intro": "Tus datos están cifrados. Escribe tu contraseña para abrirlos en este dispositivo.",
+      "introPasskey": "Tus datos están cifrados. Usa Face ID, una llave de acceso o tu contraseña para abrirlos en este dispositivo.",
       "signedInAs": "Sesión iniciada como {{username}}",
       "submit": "Desbloquear",
       "working": "Desbloqueando…",
-      "signOut": "Cerrar sesión"
+      "signOut": "Cerrar sesión",
+      "passkey": "Desbloquear con Face ID o una llave de acceso",
+      "passkeyWorking": "Desbloqueando…",
+      "or": "o usa tu contraseña"
     },
     "recover": {
       "title": "Recupera tu cuenta",
@@ -108,6 +115,30 @@
         "done_zero": "No había otros dispositivos con la sesión iniciada.",
         "done_one": "Se cerró la sesión en {{count}} dispositivo más.",
         "done_other": "Se cerró la sesión en {{count}} dispositivos más."
+      },
+      "passkeys": {
+        "title": "Llaves de acceso y Face ID",
+        "intro": "Desbloquea e inicia sesión con Face ID, tu huella o el PIN de tu dispositivo en lugar de escribir tu contraseña. Tu contraseña sigue funcionando.",
+        "none": "Todavía no tienes llaves de acceso.",
+        "name": "Llave de acceso {{number}}",
+        "added": "Agregada el {{date}}",
+        "lastUsed": "usada por última vez el {{date}}",
+        "remove": "Quitar",
+        "removeLabel": "Quitar la llave de acceso {{number}}",
+        "password": "Contraseña actual",
+        "submit": "Agregar una llave de acceso",
+        "working": "Agregando la llave de acceso…",
+        "done": "Llave de acceso agregada. La próxima vez, desbloquea con ella.",
+        "unsupported": "Este navegador no puede usar llaves de acceso. Prueba Safari en un iPhone o Chrome en Android."
+      },
+      "autoLock": {
+        "title": "Bloqueo automático",
+        "intro": "Mirador se bloquea cuando dejas de usarlo y vuelve a pedirte tu contraseña, Face ID o llave de acceso. Este ajuste es solo para este dispositivo.",
+        "label": "Bloquear",
+        "leave": "En cuanto salga de la app",
+        "minutes_one": "Después de {{count}} minuto sin uso",
+        "minutes_other": "Después de {{count}} minutos sin uso",
+        "done": "Guardado en este dispositivo."
       }
     },
     "invites": {
@@ -148,7 +179,11 @@
       "recoveryKeyMissing": "Escribe tu clave de recuperación.",
       "passwordMissing": "Escribe tu contraseña actual.",
       "wrong-invite": "Ese código de invitación es incorrecto, ya se usó o venció. Pide uno nuevo.",
-      "inviteCodeMissing": "Escribe tu código de invitación."
+      "inviteCodeMissing": "Escribe tu código de invitación.",
+      "wrong-passkey": "Esa llave de acceso no es de esta cuenta o se quitó. Usa tu contraseña.",
+      "passkey-unsupported": "Esta llave de acceso no puede desbloquear datos cifrados. Usa una guardada en el llavero de iCloud, el Gestor de contraseñas de Google u otra app de llaves de acceso que lo permita.",
+      "passkey-cancelled": "No se usó la llave de acceso. Inténtalo de nuevo cuando quieras.",
+      "too-many-passkeys": "Esta cuenta ya tiene todas las llaves de acceso que puede tener. Quita una primero."
     }
   }
 }

@@ -52,18 +52,11 @@ export async function setPassword(db: Database, userId: string, password: NewPas
   })
 }
 
-// SEC-08: changing the password or the recovery key, and signing out other devices,
-// while signed in. The first two need the current password too, so a device someone
-// left signed in (or a stolen session cookie) isn't enough to take the account over.
-export function credentialRoutes({ db, sessions, limits }: CredentialRoutesOptions) {
-  const routes = new Hono<{ Variables: SessionVariables }>()
-  for (const path of ['/accounts/password', '/accounts/recovery-key', '/session/others']) {
-    routes.use(path, requireUser(sessions))
-  }
-
-  // Checks the current password's login secret like a sign-in, counted before checking.
-  // Keyed by the user alone: only someone already signed in as them can try.
-  async function checkPassword(c: Context<{ Variables: SessionVariables }>, loginSecret: string) {
+// SEC-08, SYS-06: checks the current password's login secret like a sign-in, counted
+// before checking. Keyed by the user alone: only someone already signed in as them can
+// try. Returns the response to refuse with, or null when it is right.
+export function passwordCheck({ db, limits }: Pick<CredentialRoutesOptions, 'db' | 'limits'>) {
+  return async (c: Context<{ Variables: SessionVariables }>, loginSecret: string) => {
     const key = `password ${c.var.userId}`
     if (limits.perUsername.blocked(key)) return tooManyAttempts(c)
     limits.perUsername.hit(key)
@@ -77,6 +70,18 @@ export function credentialRoutes({ db, sessions, limits }: CredentialRoutesOptio
     limits.perUsername.clear(key)
     return null
   }
+}
+
+// SEC-08: changing the password or the recovery key, and signing out other devices,
+// while signed in. The first two need the current password too, so a device someone
+// left signed in (or a stolen session cookie) isn't enough to take the account over.
+export function credentialRoutes({ db, sessions, limits }: CredentialRoutesOptions) {
+  const routes = new Hono<{ Variables: SessionVariables }>()
+  for (const path of ['/accounts/password', '/accounts/recovery-key', '/session/others']) {
+    routes.use(path, requireUser(sessions))
+  }
+
+  const checkPassword = passwordCheck({ db, limits })
 
   routes.post(
     '/accounts/password',

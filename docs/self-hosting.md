@@ -62,6 +62,8 @@ mirador.example.com {
 }
 ```
 
+Passkeys and Face ID unlock belong to the address people use, such as `mirador.example.com`. If that address changes, passkeys made for the old one stop working; everyone can still sign in with their password and add a passkey again.
+
 ## Choose what to run
 
 | `MIRADOR_TAG` | You get |

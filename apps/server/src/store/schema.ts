@@ -84,6 +84,27 @@ export const invites = pgTable(
   (table) => [index('invites_created_by_idx').on(table.createdBy)],
 )
 
+// SYS-06: passkeys a user added. Each one keeps its own copy of the account key,
+// wrapped by a key only that passkey can produce in the browser (its PRF output, which
+// the server never receives). The public key only checks sign-ins.
+export const passkeys = pgTable(
+  'passkeys',
+  {
+    // The credential id, base64url.
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    publicKey: text('public_key').notNull(),
+    counter: bigint('counter', { mode: 'number' }).notNull().default(0),
+    transports: text('transports').array().notNull().default([]),
+    wrappedAccountKey: text('wrapped_account_key').notNull(),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    createdAt,
+  },
+  (table) => [index('passkeys_user_id_idx').on(table.userId)],
+)
+
 // Values the server makes for itself on first start, so an operator has nothing extra
 // to configure.
 export const serverSettings = pgTable('server_settings', {

@@ -1,4 +1,5 @@
 import {
+  type AddPasskeyRequest,
   type ChangePasswordRequest,
   errorResponse,
   pullResponse,
@@ -12,6 +13,12 @@ import {
   invitesResponse,
   newInviteResponse,
   keysResponse,
+  passkey,
+  type PasskeySignInRequest,
+  passkeySignInResponse,
+  passkeysResponse,
+  registrationOptionsResponse,
+  signInOptionsResponse,
   preloginResponse,
   sessionResponse,
   signOutOthersResponse,
@@ -106,6 +113,29 @@ export function createApi(fetchFn: Fetch = (...args) => globalThis.fetch(...args
     },
     async withdrawInvite(id: string) {
       await request(`/api/invites/${encodeURIComponent(id)}`, { method: 'DELETE' })
+    },
+    // SYS-06: passkeys. The PRF secret never goes in these; only the key it wrapped.
+    async passkeyRegistration() {
+      return registrationOptionsResponse.parse(
+        await (await post('/api/passkeys/registration', {})).json(),
+      )
+    },
+    async addPasskey(body: AddPasskeyRequest) {
+      return passkey.parse(await (await post('/api/passkeys', body)).json())
+    },
+    async passkeys() {
+      return passkeysResponse.parse(await (await request('/api/passkeys')).json()).passkeys
+    },
+    async removePasskey(id: string) {
+      await request(`/api/passkeys/${encodeURIComponent(id)}`, { method: 'DELETE' })
+    },
+    async passkeySignInOptions() {
+      return signInOptionsResponse.parse(
+        await (await post('/api/passkeys/sign-in/options', {})).json(),
+      )
+    },
+    async passkeySignIn(body: PasskeySignInRequest) {
+      return passkeySignInResponse.parse(await (await post('/api/passkeys/sign-in', body)).json())
     },
     async signOut() {
       await request('/api/session', { method: 'DELETE' })

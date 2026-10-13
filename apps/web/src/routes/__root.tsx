@@ -1,5 +1,6 @@
 import { type QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
+import { AutoLock } from '../features/security'
 import type { VaultClient } from '../lib/vault'
 
 export interface RouterContext {
@@ -14,6 +15,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 function RootLayout() {
   return (
     <div className="min-h-dvh bg-slate-50 text-slate-900">
+      <AutoLock />
       <Outlet />
     </div>
   )

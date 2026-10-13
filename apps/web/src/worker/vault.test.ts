@@ -1,6 +1,8 @@
 // @vitest-environment node
 import {
+  addPasskeyRequest,
   changePasswordRequest,
+  passkeySignInRequest,
   keysResponse,
   preloginRequest,
   pushRequest,
@@ -26,6 +28,8 @@ function fakeServer() {
   // Per user, like apps/server/src/routes/records.ts (without conflict checks).
   const records = new Map<string, { id: string; revision: number; ciphertext: string }[]>()
   const sent: string[] = []
+  // SYS-06: what the server keeps per passkey: whose it is and the key it wrapped.
+  const passkeys = new Map<string, { username: string; wrappedAccountKey: string }>()
   let signedIn: string | null = null
   let tamper: ((keys: { kdf: SignUpRequest['kdf']; wrappedAccountKey: string }) => void) | null =
     null
@@ -119,6 +123,33 @@ function fakeServer() {
         account.wrappedAccountKey.recovery = request.wrappedAccountKey
         return new Response(null, { status: 204 })
       }
+      case '/api/passkeys/registration':
+        return json({ challengeId: 'registration', options: passkeyOptions })
+      case '/api/passkeys': {
+        const request = addPasskeyRequest.parse(body)
+        const account = signedIn ? accounts.get(signedIn) : undefined
+        if (!signedIn || !account) return json({ error: 'signed-out' }, 401)
+        if (account.loginSecret !== request.loginSecret) {
+          return json({ error: 'wrong-password' }, 401)
+        }
+        passkeys.set(request.response.id, {
+          username: signedIn,
+          wrappedAccountKey: request.wrappedAccountKey,
+        })
+        return json(
+          { id: request.response.id, createdAt: new Date().toISOString(), lastUsedAt: null },
+          201,
+        )
+      }
+      case '/api/passkeys/sign-in/options':
+        return json({ challengeId: 'sign-in', options: { challenge: 'AAAA' } })
+      case '/api/passkeys/sign-in': {
+        const { response } = passkeySignInRequest.parse(body)
+        const passkey = passkeys.get(response.id)
+        if (!passkey) return json({ error: 'wrong-passkey' }, 401)
+        signedIn = passkey.username
+        return json({ wrappedAccountKey: passkey.wrappedAccountKey })
+      }
       case '/api/records': {
         if (!signedIn) return json({ error: 'signed-out' }, 401)
         const mine = records.get(signedIn) ?? []
@@ -149,10 +180,41 @@ function fakeServer() {
   return {
     api: createApi(fetch),
     accounts,
+    passkeys,
     sent,
     tamperWithKeys(change: typeof tamper) {
       tamper = change
     },
+  }
+}
+
+const passkeyOptions = {
+  challenge: 'AAAA',
+  rp: { id: 'localhost', name: 'Mirador' },
+  user: { id: 'MQ', name: 'ana', displayName: 'ana' },
+  pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+}
+
+// What the page brings back from the device (SYS-06): the passkey's answer, which the
+// server checks (not this fake), and the PRF secret only that passkey produces.
+function fakePasskey(id: string, seed: number) {
+  const prf = () => new Uint8Array(32).fill(seed)
+  const base = { id, rawId: id, type: 'public-key' as const, clientExtensionResults: {} }
+  return {
+    secret: Buffer.from(prf()).toString('base64url'),
+    made: (challengeId = 'registration') => ({
+      challengeId,
+      prfOutput: prf(),
+      response: { ...base, response: { clientDataJSON: 'e30', attestationObject: 'oA' } },
+    }),
+    used: (challengeId = 'sign-in') => ({
+      challengeId,
+      prfOutput: prf(),
+      response: {
+        ...base,
+        response: { clientDataJSON: 'e30', authenticatorData: 'AA', signature: 'AA' },
+      },
+    }),
   }
 }
 
@@ -321,6 +383,80 @@ describe('vault', () => {
     expect(await vault.status()).toBe('locked')
     await vault.unlock(password)
     expect(await vault.status()).toBe('unlocked')
+  })
+
+  it('SYS-06: a passkey signs in on another device and opens the same data', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    await phone.signUp({ username: 'ana', password })
+    const id = newRecordId()
+    await phone.saveRecords([
+      { id, body: { deleted: false, type: 'note', schema: 1, data: { text: 'kept' } } },
+    ])
+    const faceId = fakePasskey('face-id', 7)
+    server.sent.length = 0
+
+    await phone.startAddingPasskey(password)
+    await phone.addPasskey(faceId.made())
+
+    const laptop = new Vault(server.api)
+    await laptop.openWithPasskey(faceId.used())
+    expect((await laptop.listRecords()).map((record) => record.id)).toEqual([id])
+    // SEC-02: the server got the wrapped key, never the passkey's secret or the password.
+    const everything = server.sent.join('\n')
+    expect(everything).toContain('/api/passkeys')
+    expect(everything).not.toContain(faceId.secret)
+    expect(everything).not.toContain(password)
+  })
+
+  it('SEC-12: a passkey unlocks after locking, and only the right one', async () => {
+    const server = fakeServer()
+    const vault = new Vault(server.api)
+    await vault.signUp({ username: 'ana', password })
+    const faceId = fakePasskey('face-id', 7)
+    await vault.startAddingPasskey(password)
+    await vault.addPasskey(faceId.made())
+
+    await vault.lock()
+    expect(await failure(vault.openWithPasskey(fakePasskey('stranger', 9).used()))).toBe(
+      'wrong-passkey',
+    )
+    expect(await vault.status()).toBe('locked')
+    await vault.openWithPasskey(faceId.used())
+    expect(await vault.status()).toBe('unlocked')
+  })
+
+  it('SYS-06: a wrong password is caught before the device makes a passkey', async () => {
+    const server = fakeServer()
+    const vault = new Vault(server.api)
+    await vault.signUp({ username: 'ana', password })
+    server.sent.length = 0
+
+    expect(await failure(vault.startAddingPasskey('not my password'))).toBe('wrong-password')
+    expect(server.sent.join('\n')).not.toContain('/api/passkeys')
+    // Without a checked password first, nothing is added.
+    expect(await failure(vault.addPasskey(fakePasskey('face-id', 7).made()))).toBe('unknown')
+    // Locking in between forgets the checked password.
+    await vault.startAddingPasskey(password)
+    await vault.lock()
+    await vault.unlock(password)
+    expect(await failure(vault.addPasskey(fakePasskey('face-id', 7).made()))).toBe('unknown')
+    expect(server.passkeys.size).toBe(0)
+  })
+
+  it('SEC-04: refuses a passkey-wrapped key the server altered', async () => {
+    const server = fakeServer()
+    const vault = new Vault(server.api)
+    await vault.signUp({ username: 'ana', password })
+    const faceId = fakePasskey('face-id', 7)
+    await vault.startAddingPasskey(password)
+    await vault.addPasskey(faceId.made())
+    const stored = server.passkeys.get('face-id')!
+    stored.wrappedAccountKey = server.accounts.get('ana')!.wrappedAccountKey.recovery
+
+    await vault.lock()
+    expect(await failure(vault.openWithPasskey(faceId.used()))).toBe('unsafe-server')
+    expect(await vault.status()).toBe('locked')
   })
 
   it('SYS-06: signs in on another device with the same username and password', async () => {
