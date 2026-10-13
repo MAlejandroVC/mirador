@@ -9,6 +9,7 @@ import { AuthLayout } from '../components/auth-layout'
 import { ErrorMessage } from '../components/error-message'
 import { sessionQuery } from '../hooks/session'
 import { minimumPasswordLength, passwordFollowsRules } from '../lib/password'
+import { usePasswordChecks, useRepeatChecks } from '../hooks/field-checks'
 import { useVault } from '../hooks/vault'
 
 interface Problems {
@@ -29,6 +30,8 @@ export function RecoverScreen() {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [problems, setProblems] = useState<Problems>({})
+  const passwordRules = usePasswordChecks(password)
+  const repeatRules = useRepeatChecks(password, confirm)
 
   const recover = useMutation({
     mutationFn: () => vault.recover({ username, recoveryKey, newPassword: password }),
@@ -82,7 +85,8 @@ export function RecoverScreen() {
           label={t('security.recover.newPassword')}
           type="password"
           autoComplete="new-password"
-          hint={t('security.signUp.passwordHint', { count: minimumPasswordLength })}
+          info={t('security.signUp.passwordHint', { count: minimumPasswordLength })}
+          checks={passwordRules}
           error={problems.password}
           value={password}
           onChange={(event) => {
@@ -93,6 +97,7 @@ export function RecoverScreen() {
           label={t('security.recover.confirm')}
           type="password"
           autoComplete="new-password"
+          checks={repeatRules}
           error={problems.confirm}
           value={confirm}
           onChange={(event) => {

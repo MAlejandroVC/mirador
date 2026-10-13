@@ -19,6 +19,7 @@ import { RecoveryKeyStep } from '../components/recovery-key-step'
 import { sessionQuery } from '../hooks/session'
 import { signUpStatusQuery } from '../hooks/sign-up'
 import { minimumPasswordLength, passwordFollowsRules } from '../lib/password'
+import { usePasswordChecks, useRepeatChecks, useUsernameChecks } from '../hooks/field-checks'
 import { useVault } from '../hooks/vault'
 
 interface Problems {
@@ -43,6 +44,9 @@ export function SignUpScreen() {
   const { invite } = useSearch({ from: '/sign-up' })
   const [inviteCode, setInviteCode] = useState(invite ?? '')
   const [problems, setProblems] = useState<Problems>({})
+  const usernameRules = useUsernameChecks(username)
+  const passwordRules = usePasswordChecks(password)
+  const repeatRules = useRepeatChecks(password, confirm)
   const wanted = username.trim().toLowerCase()
   // SYS-06: checked when the person leaves the field, so a taken username shows up
   // before the keys are made. The answer counts only until the name is edited again.
@@ -152,7 +156,8 @@ export function SignUpScreen() {
         )}
         <TextField
           label={t('form.username')}
-          hint={t('security.signUp.usernameHint')}
+          info={t('security.signUp.usernameHint')}
+          checks={usernameRules}
           autoComplete="username"
           autoCapitalize="none"
           autoCorrect="off"
@@ -177,7 +182,8 @@ export function SignUpScreen() {
           label={t('form.password')}
           type="password"
           autoComplete="new-password"
-          hint={t('security.signUp.passwordHint', { count: minimumPasswordLength })}
+          info={t('security.signUp.passwordHint', { count: minimumPasswordLength })}
+          checks={passwordRules}
           error={problems.password}
           value={password}
           onChange={(event) => {
@@ -188,6 +194,7 @@ export function SignUpScreen() {
           label={t('security.signUp.confirm')}
           type="password"
           autoComplete="new-password"
+          checks={repeatRules}
           error={problems.confirm}
           value={confirm}
           onChange={(event) => {

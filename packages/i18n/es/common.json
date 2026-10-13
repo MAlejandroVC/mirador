@@ -12,7 +12,10 @@
     "username": "Nombre de usuario",
     "password": "Contraseña",
     "show": "Mostrar contraseña",
-    "hide": "Ocultar contraseña"
+    "hide": "Ocultar contraseña",
+    "info": "Información sobre {{label}}",
+    "checkMet": "cumplido",
+    "checkNotMet": "pendiente"
   },
   "security": {
     "signIn": {
@@ -178,6 +181,17 @@
       "expired": "Venció el {{date}}",
       "made": "Creada el {{date}}",
       "withdraw": "Retirar"
+    },
+    "checks": {
+      "length_one": "Al menos {{count}} carácter",
+      "length_other": "Al menos {{count}} caracteres",
+      "uppercase": "Una mayúscula",
+      "lowercase": "Una minúscula",
+      "number": "Un número",
+      "symbol": "Un símbolo, como ! o #",
+      "matches": "Coincide con la contraseña",
+      "usernameLength": "De 3 a 32 caracteres",
+      "usernameCharacters": "Solo letras, números, puntos, guiones o guiones bajos"
     },
     "errors": {
       "wrong-credentials": "Usuario o contraseña incorrectos.",

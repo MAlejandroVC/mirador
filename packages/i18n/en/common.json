@@ -12,7 +12,10 @@
     "username": "Username",
     "password": "Password",
     "show": "Show password",
-    "hide": "Hide password"
+    "hide": "Hide password",
+    "info": "About {{label}}",
+    "checkMet": "done",
+    "checkNotMet": "not yet"
   },
   "security": {
     "signIn": {
@@ -178,6 +181,17 @@
       "expired": "Expired on {{date}}",
       "made": "Made on {{date}}",
       "withdraw": "Withdraw"
+    },
+    "checks": {
+      "length_one": "At least {{count}} character",
+      "length_other": "At least {{count}} characters",
+      "uppercase": "An uppercase letter",
+      "lowercase": "A lowercase letter",
+      "number": "A number",
+      "symbol": "A symbol, like ! or #",
+      "matches": "Matches the password",
+      "usernameLength": "3 to 32 characters",
+      "usernameCharacters": "Only letters, numbers, dots, dashes or underscores"
     },
     "errors": {
       "wrong-credentials": "Wrong username or password.",

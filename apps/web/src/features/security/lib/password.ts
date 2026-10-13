@@ -15,9 +15,17 @@ const rules = {
 // Counted as people see characters, so an emoji or an accented letter is one.
 const characters = new Intl.Segmenter()
 
+// Each rule on its own, to tick them off while the password is typed.
+export function passwordChecks(password: string) {
+  return {
+    length: [...characters.segment(password)].length >= minimumPasswordLength,
+    uppercase: rules.uppercase.test(password),
+    lowercase: rules.lowercase.test(password),
+    number: rules.number.test(password),
+    symbol: rules.symbol.test(password),
+  }
+}
+
 export function passwordFollowsRules(password: string) {
-  return (
-    [...characters.segment(password)].length >= minimumPasswordLength &&
-    Object.values(rules).every((rule) => rule.test(password))
-  )
+  return Object.values(passwordChecks(password)).every(Boolean)
 }

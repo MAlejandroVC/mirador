@@ -12,6 +12,7 @@ import { ErrorMessage } from '../components/error-message'
 import { RecoveryKeyStep } from '../components/recovery-key-step'
 import { sessionQuery } from '../hooks/session'
 import { minimumPasswordLength, passwordFollowsRules } from '../lib/password'
+import { usePasswordChecks, useRepeatChecks, useUsernameChecks } from '../hooks/field-checks'
 import { useVault } from '../hooks/vault'
 import { addPasskey, passkeysQuery } from '../hooks/passkeys'
 import { type AutoLockChoice, autoLockChoices, readAutoLock, saveAutoLock } from '../lib/auto-lock'
@@ -116,6 +117,7 @@ function ChangeUsername({ username }: { username: string }) {
   const [newUsername, setNewUsername] = useState('')
   const [password, setPassword] = useState('')
   const [problems, setProblems] = useState<UsernameProblems>({})
+  const usernameRules = useUsernameChecks(newUsername)
   const wanted = newUsername.trim().toLowerCase()
 
   const change = useMutation({
@@ -146,7 +148,8 @@ function ChangeUsername({ username }: { username: string }) {
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
         <TextField
           label={t('security.settings.username.new')}
-          hint={t('security.signUp.usernameHint')}
+          info={t('security.signUp.usernameHint')}
+          checks={usernameRules}
           autoComplete="off"
           autoCapitalize="none"
           autoCorrect="off"
@@ -194,6 +197,8 @@ function ChangePassword({ username }: { username: string }) {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [problems, setProblems] = useState<PasswordProblems>({})
+  const passwordRules = usePasswordChecks(password)
+  const repeatRules = useRepeatChecks(password, confirm)
 
   const change = useMutation({
     mutationFn: () => vault.changePassword(current, password),
@@ -238,7 +243,8 @@ function ChangePassword({ username }: { username: string }) {
           label={t('security.settings.password.new')}
           type="password"
           autoComplete="new-password"
-          hint={t('security.signUp.passwordHint', { count: minimumPasswordLength })}
+          info={t('security.signUp.passwordHint', { count: minimumPasswordLength })}
+          checks={passwordRules}
           error={problems.password}
           value={password}
           onChange={(event) => {
@@ -249,6 +255,7 @@ function ChangePassword({ username }: { username: string }) {
           label={t('security.settings.password.confirm')}
           type="password"
           autoComplete="new-password"
+          checks={repeatRules}
           error={problems.confirm}
           value={confirm}
           onChange={(event) => {

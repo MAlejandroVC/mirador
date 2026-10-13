@@ -143,6 +143,39 @@ describe('sign-up', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('already used or expired')
   })
 
+  it('SYS-06: ticks off the username and password rules while typing, and keeps the hints behind (i)', async () => {
+    const user = userEvent.setup()
+    const server: FakeServer = { signUpMode: 'open' }
+    stubServer(server)
+    renderApp('/sign-up', fakeVault(server))
+
+    const username = await screen.findByLabelText('Username')
+    expect(screen.queryByText(/It doesn't need to be your real name/)).not.toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'About Username' }))
+    expect(screen.getByText(/It doesn't need to be your real name/)).toBeVisible()
+
+    await user.type(username, 'ana maría')
+    expect(screen.getByText('3 to 32 characters')).toHaveTextContent('(done)')
+    expect(screen.getByText(/^Only letters, numbers/)).toHaveTextContent('(not yet)')
+
+    await user.type(screen.getByLabelText('Password'), 'monte 2')
+    expect(screen.queryByText('3 to 32 characters')).not.toBeInTheDocument()
+    expect(screen.getByText('At least 8 characters')).toHaveTextContent('(not yet)')
+    expect(screen.getByText('An uppercase letter')).toHaveTextContent('(not yet)')
+    expect(screen.getByText('A lowercase letter')).toHaveTextContent('(done)')
+    expect(screen.getByText('A number')).toHaveTextContent('(done)')
+    expect(screen.getByText('A symbol, like ! or #')).toHaveTextContent('(done)')
+    await user.type(screen.getByLabelText('Password'), 'X')
+    expect(screen.getByText('At least 8 characters')).toHaveTextContent('(done)')
+    expect(screen.getByText('An uppercase letter')).toHaveTextContent('(done)')
+
+    await user.type(screen.getByLabelText('Repeat password'), 'monte 2')
+    expect(screen.queryByText('A number')).not.toBeInTheDocument()
+    expect(screen.getByText('Matches the password')).toHaveTextContent('(not yet)')
+    await user.type(screen.getByLabelText('Repeat password'), 'X')
+    expect(screen.getByText('Matches the password')).toHaveTextContent('(done)')
+  })
+
   it('SYS-06: says whether the username is free when leaving the field', async () => {
     const user = userEvent.setup()
     const server: FakeServer = { signUpMode: 'open', takenUsernames: ['ana'] }

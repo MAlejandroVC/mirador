@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { passwordFollowsRules } from './password'
+import { passwordChecks, passwordFollowsRules } from './password'
 
 describe('password rules', () => {
   it('SYS-06: needs 8 characters with a lowercase and an uppercase letter, a number and a symbol', () => {
@@ -16,5 +16,23 @@ describe('password rules', () => {
     expect(passwordFollowsRules('ÑANDÚ¿24ñ')).toBe(true)
     // Eight characters, even when some take two code units.
     expect(passwordFollowsRules('Aa1!😀😀😀😀')).toBe(true)
+  })
+
+  it('SYS-06: says which rules a password already meets, to tick them off while typing', () => {
+    expect(passwordChecks('')).toEqual({
+      length: false,
+      uppercase: false,
+      lowercase: false,
+      number: false,
+      symbol: false,
+    })
+    expect(passwordChecks('monte 2')).toEqual({
+      length: false,
+      uppercase: false,
+      lowercase: true,
+      number: true,
+      symbol: true,
+    })
+    expect(Object.values(passwordChecks('Monte-24')).every(Boolean)).toBe(true)
   })
 })
