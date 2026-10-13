@@ -74,6 +74,16 @@ sudo MIRADOR_DOMAIN=mirador.example.com PREVIEW_DOMAIN=preview.example.com \
 
 It installs Docker, writes `/opt/mirador` (settings in `/opt/mirador/.env`), and starts both instances behind Caddy. Open both addresses; the first visit can take a minute while the certificates are issued.
 
+Then create the first account on each instance with the setup code from its log, as in [Create the first account](self-hosting.md#create-the-first-account):
+
+```bash
+cd /opt/mirador
+sudo docker compose logs app | grep "setup code" | tail -1          # the real instance
+sudo docker compose logs preview-app | grep "setup code" | tail -1  # the preview
+```
+
+Each restart prints a new code and only the newest works. The preview restarts after every update (up to 15 minutes after each merge), so take the code right before you sign up.
+
 ## 6. Turn on encrypted backups
 
 Every night at 03:30 (server time) the real instance's database is dumped to `/opt/mirador/backups` and kept for 14 days. To encrypt it and keep a copy away from Oracle:
@@ -104,6 +114,7 @@ Every night at 03:30 (server time) the real instance's database is dumped to `/o
 | --- | --- |
 | See what's running | `cd /opt/mirador && sudo docker compose ps` |
 | Logs | `sudo docker compose logs --tail 100 app` (or `preview-app`, `caddy`) |
+| Invite someone | Sign in with the first account, then **Invite someone** on the home screen |
 | Update now instead of waiting up to 15 minutes | `sudo systemctl start mirador-update` |
 | When updates and backups run next | `systemctl list-timers 'mirador-*'` |
 | Update these server files | Run `setup.sh` again; it keeps `.env` and the data |

@@ -33,12 +33,14 @@ The app listens on `127.0.0.1:3000`, so only the machine itself can reach it. Se
 
 ## Create the first account
 
-A new server has no accounts, and it won't let just anyone who finds its address create the first one. At every start it prints a setup code in its log while no account exists:
+A new server has no accounts, and it won't let just anyone who finds its address create the first one. At every start it prints a setup code in its log while no account exists. From the folder with `docker-compose.yml`:
 
 ```bash
-docker compose logs app | grep "setup code"
+sudo docker compose logs app | grep "setup code" | tail -1
 # No accounts yet. Create the first one in the app with this setup code: 7KQ2-…
 ```
+
+Every restart (an update, a reboot) prints a new code, and only the newest one works, hence `tail -1`.
 
 Open the app, choose **Create an account** and enter that code with a username and password. The username can be anything; Mirador never asks for an email. The app then shows your **recovery key** once: save it somewhere safe. Your password and recovery key never reach the server, so nobody, including you as the server's operator, can reset them. Lose both and the data is gone for good.
 
