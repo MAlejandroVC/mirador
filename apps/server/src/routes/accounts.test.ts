@@ -193,7 +193,7 @@ describe('sign-in', () => {
   const ana = newAccount('ana', { setupCode: testSetupCode })
 
   beforeEach(async () => {
-    server = await createTestApp()
+    server = await createTestApp({ trustProxy: true })
     await signUp(server, ana)
   })
 
@@ -216,17 +216,27 @@ describe('sign-in', () => {
   })
 
   it('SEC-09: the session cookie is out of reach of scripts and other sites', async () => {
-    const plain = (await signIn(server, 'ana', ana.loginSecret)).headers.get('set-cookie')
-    expect(plain).toMatch(/^mirador_session=[A-Za-z0-9_-]{43};/)
-    expect(plain).toMatch(/HttpOnly/)
-    expect(plain).toMatch(/SameSite=Strict/)
-    expect(plain).toMatch(/Max-Age=5184000/)
-    expect(plain).not.toMatch(/Secure/)
+    const cookie = (await signIn(server, 'ana', ana.loginSecret)).headers.get('set-cookie')
 
-    const behindHttps = await signIn(server, 'ana', ana.loginSecret, {
-      'X-Forwarded-Proto': 'https',
-    })
-    expect(behindHttps.headers.get('set-cookie')).toMatch(/Secure/)
+    expect(cookie).toMatch(/^__Host-mirador_session=[A-Za-z0-9_-]{43};/)
+    for (const attribute of [
+      'HttpOnly',
+      'Secure',
+      'SameSite=Strict',
+      'Path=/',
+      'Max-Age=5184000',
+    ]) {
+      expect(cookie).toContain(attribute)
+    }
+    expect(cookie).not.toMatch(/Domain/i)
+  })
+
+  it('SYS-06: signing in again on a device replaces its session', async () => {
+    const first = cookieOf(await signIn(server, 'ana', ana.loginSecret))
+    const second = cookieOf(await signIn(server, 'ana', ana.loginSecret, { Cookie: first }))
+
+    expect(await sessionOf(server, first)).toBeNull()
+    expect((await sessionOf(server, second))?.user.username).toBe('ana')
   })
 
   it('SYS-06: a session ends after 60 unused days, and each day of use extends it', async () => {
@@ -255,7 +265,7 @@ describe('sign-in', () => {
 
     const dump = JSON.stringify(await server.db.select().from(schema.sessions))
     expect(dump).not.toContain(token)
-    expect(await sessionOf(server, `mirador_session=${token}x`)).toBeNull()
+    expect(await sessionOf(server, `__Host-mirador_session=${token}x`)).toBeNull()
   })
 
   it('SEC-03: a wrong login secret or unknown username is refused the same way', async () => {
@@ -268,17 +278,65 @@ describe('sign-in', () => {
     expect(wrong.headers.get('set-cookie')).toBeNull()
   })
 
-  it('SEC-03: after ten wrong guesses a username waits, even with the right secret', async () => {
+  it('SEC-03: after ten wrong guesses from one address, that address waits for the username', async () => {
+    const attacker = { 'X-Forwarded-For': '198.51.100.9' }
     for (let guess = 0; guess < 10; guess += 1) {
-      const address = { 'X-Forwarded-For': `10.0.0.${guess}` }
-      expect((await signIn(server, 'ana', base64Url(43, `guess ${guess}`), address)).status).toBe(
-        401,
-      )
+      const response = await signIn(server, 'ana', base64Url(43, `guess ${guess}`), attacker)
+      expect(response.status).toBe(401)
     }
 
-    const right = await signIn(server, 'ana', ana.loginSecret, { 'X-Forwarded-For': '10.0.1.1' })
-    expect(right.status).toBe(429)
-    expect(sessionError.parse(await right.json()).error).toBe('too-many-attempts')
+    const blocked = await signIn(server, 'ana', ana.loginSecret, attacker)
+    expect(blocked.status).toBe(429)
+    expect(sessionError.parse(await blocked.json()).error).toBe('too-many-attempts')
+    // Guessing wrong on purpose can't lock Ana out of her own devices.
+    const own = await signIn(server, 'ana', ana.loginSecret, { 'X-Forwarded-For': '10.0.1.1' })
+    expect(own.status).toBe(204)
+  })
+
+  it('SEC-03: guesses sent all at once count too', async () => {
+    const attacker = { 'X-Forwarded-For': '198.51.100.10' }
+    const statuses = await Promise.all(
+      Array.from({ length: 15 }, (_, guess) =>
+        Promise.resolve(signIn(server, 'ana', base64Url(43, `guess ${guess}`), attacker)).then(
+          (response) => response.status,
+        ),
+      ),
+    )
+
+    expect(statuses.filter((status) => status === 401)).toHaveLength(10)
+    expect(statuses.filter((status) => status === 429)).toHaveLength(5)
+  })
+
+  it('SEC-03: X-Forwarded-For counts only when a proxy is said to be in front', async () => {
+    server = await createTestApp()
+    await signUp(server, ana)
+    const statuses = []
+    for (let attempt = 0; attempt < 31; attempt += 1) {
+      const madeUp = { 'X-Forwarded-For': `192.0.2.${attempt}` }
+      statuses.push((await signIn(server, `user${attempt}`, ana.loginSecret, madeUp)).status)
+    }
+
+    expect(statuses.at(-1)).toBe(429)
+  })
+
+  it('SEC-03: an IPv6 /64 counts as one address', async () => {
+    const statuses = []
+    for (let attempt = 0; attempt < 31; attempt += 1) {
+      const address = { 'X-Forwarded-For': `2001:db8:1:2::${attempt.toString(16)}` }
+      statuses.push((await signIn(server, `user${attempt}`, ana.loginSecret, address)).status)
+    }
+
+    expect(statuses.at(-1)).toBe(429)
+  })
+
+  it('refuses a request body far larger than any real one', async () => {
+    const response = await post(server, '/api/session', {
+      username: 'ana',
+      loginSecret: ana.loginSecret,
+      padding: 'x'.repeat(100 * 1024),
+    })
+
+    expect(response.status).toBe(413)
   })
 
   it('SEC-03: one address gets a limited number of attempts a minute', async () => {

@@ -1,7 +1,7 @@
 import { type SessionError, type SessionResponse, signInRequest } from '@repo/api'
 import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
-import { type AttemptLimits, limitAddress, tooManyAttempts } from '../auth/guard.ts'
+import { type AttemptLimits, limitAddress, tooManyAttempts, usernameKey } from '../auth/guard.ts'
 import { verifyAgainstDecoy, verifySecret } from '../auth/secrets.ts'
 import type { SessionStore } from '../auth/sessions.ts'
 import { type Database, schema } from '../store/db.ts'
@@ -29,7 +29,10 @@ export function sessionRoutes({ db, sessions, limits }: SessionRoutesOptions) {
   // SEC-03: the browser sends the login secret it derived, never the password.
   routes.post('/session', limitAddress(limits), jsonBody(signInRequest), async (c) => {
     const { username, loginSecret } = c.req.valid('json')
-    if (limits.perUsername.blocked(username)) return tooManyAttempts(c)
+    const key = usernameKey(c, limits, username)
+    if (limits.perUsername.blocked(key)) return tooManyAttempts(c)
+    // Counted before the slow check, so guesses sent all at once still count.
+    limits.perUsername.hit(key)
 
     const [user] = await db
       .select({ id: schema.users.id, loginSecretHash: schema.users.loginSecretHash })
@@ -40,11 +43,10 @@ export function sessionRoutes({ db, sessions, limits }: SessionRoutesOptions) {
       ? await verifySecret(loginSecret, user.loginSecretHash)
       : await verifyAgainstDecoy(loginSecret)
     if (!user || !valid) {
-      limits.perUsername.hit(username)
       return c.json({ error: 'wrong-credentials' } satisfies SessionError, 401)
     }
 
-    limits.perUsername.clear(username)
+    limits.perUsername.clear(key)
     await sessions.start(c, user.id)
     return c.body(null, 204)
   })

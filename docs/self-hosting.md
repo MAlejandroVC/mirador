@@ -29,6 +29,7 @@ The app listens on `127.0.0.1:3000`, so only the machine itself can reach it. Se
 | `MIRADOR_TAG` | `latest` | Image tag to run (see below) |
 | `MIRADOR_PORT` | `3000` | Port on 127.0.0.1 the app listens on |
 | `MIRADOR_OPEN_SIGNUP` | `false` | `true` lets anyone who can open the app create an account. Leave it off and create accounts yourself (SYS-13) |
+| `MIRADOR_TRUST_PROXY` | `true` | Sign-in attempt limits count by the visitor's address from the proxy's `X-Forwarded-For` header. Set `false` only if nothing sits in front of the app |
 
 ## Create the first account
 
@@ -45,7 +46,7 @@ After that, sign-up is closed. Invites for more people come in a later release; 
 
 ## Add HTTPS
 
-Any reverse proxy works. With [Caddy](https://caddyserver.com) installed on the same machine, this `Caddyfile` gets and renews a certificate on its own:
+Any reverse proxy that serves HTTPS and adds the `X-Forwarded-For` header works. With [Caddy](https://caddyserver.com) installed on the same machine, this `Caddyfile` gets and renews a certificate on its own:
 
 ```text
 mirador.example.com {

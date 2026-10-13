@@ -27,6 +27,7 @@ const app = createApp({
   secret,
   setupCode,
   openSignUp: process.env.MIRADOR_OPEN_SIGNUP === 'true',
+  trustProxy: process.env.MIRADOR_TRUST_PROXY === 'true',
   ...(process.env.WEB_ROOT ? { webRoot: process.env.WEB_ROOT } : {}),
 })
 

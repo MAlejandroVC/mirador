@@ -11,7 +11,10 @@ const day = 24 * 60 * 60 * 1000
 export const sessionLifetime = 60 * day
 const refreshAfter = day
 
-export const sessionCookie = 'mirador_session'
+// __Host- makes the browser refuse this cookie unless it is Secure, for this exact
+// host and path /, so another site on the same domain (such as a preview) can't set
+// it. Browsers treat http://localhost as secure, so development still works.
+export const sessionCookie = '__Host-mirador_session'
 
 export interface SignedIn {
   userId: string
@@ -27,13 +30,18 @@ export function sessionStore(db: Database, now: () => number = Date.now) {
       // Never readable by scripts, and never sent with a request another site starts.
       httpOnly: true,
       sameSite: 'Strict',
-      secure: isHttps(c),
+      secure: true,
       maxAge: sessionLifetime / 1000,
     })
   }
 
   return {
     async start(c: Context, userId: string) {
+      // Signing in again on a device replaces its session rather than adding one.
+      const previous = getCookie(c, sessionCookie)
+      if (previous) {
+        await db.delete(schema.sessions).where(eq(schema.sessions.id, hashToken(previous)))
+      }
       const token = randomToken()
       await db
         .delete(schema.sessions)
@@ -75,7 +83,7 @@ export function sessionStore(db: Database, now: () => number = Date.now) {
     async end(c: Context) {
       const token = getCookie(c, sessionCookie)
       if (token) await db.delete(schema.sessions).where(eq(schema.sessions.id, hashToken(token)))
-      deleteCookie(c, sessionCookie, { path: '/', secure: isHttps(c) })
+      deleteCookie(c, sessionCookie, { path: '/', secure: true })
     },
   }
 }
@@ -92,9 +100,4 @@ export function requireUser(sessions: SessionStore) {
     c.set('username', signedIn.username)
     await next()
   })
-}
-
-// The release image runs behind an HTTPS proxy (Caddy), which says so in this header.
-function isHttps(c: Context) {
-  return new URL(c.req.url).protocol === 'https:' || c.req.header('x-forwarded-proto') === 'https'
 }

@@ -39,6 +39,8 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgres://mirador:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/mirador
+      # Caddy, in front, sets the visitor's address; attempt limits count by it.
+      MIRADOR_TRUST_PROXY: 'true'
     depends_on:
       db:
         condition: service_healthy
@@ -60,6 +62,7 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgres://mirador:${PREVIEW_POSTGRES_PASSWORD:?Set PREVIEW_POSTGRES_PASSWORD in .env}@preview-db:5432/mirador
+      MIRADOR_TRUST_PROXY: 'true'
     depends_on:
       preview-db:
         condition: service_healthy

@@ -1,6 +1,7 @@
 import { type HealthResponse } from '@repo/api'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
 import { attemptLimits, sameOrigin } from './auth/guard.ts'
 import { sessionStore } from './auth/sessions.ts'
 import { accountRoutes } from './routes/accounts.ts'
@@ -15,6 +16,8 @@ export interface AppOptions {
   setupCode: string
   // SYS-13: open sign-up stays off unless the operator turns it on.
   openSignUp?: boolean
+  // An HTTPS proxy in front sets X-Forwarded-For (see auth/guard.ts).
+  trustProxy?: boolean
   // Folder holding the built web app. The release image serves it from the same origin
   // as the API, so the browser only ever talks to its own server (NFR-05).
   webRoot?: string
@@ -22,11 +25,20 @@ export interface AppOptions {
 
 // The server stores and syncs ciphertext and handles sign-in; it never reads user
 // data. Routes are mounted under /api so the web app can be served from the same origin.
-export function createApp({ db, secret, setupCode, openSignUp = false, webRoot }: AppOptions) {
+export function createApp({
+  db,
+  secret,
+  setupCode,
+  openSignUp = false,
+  trustProxy = false,
+  webRoot,
+}: AppOptions) {
   const sessions = sessionStore(db)
-  const limits = attemptLimits()
+  const limits = attemptLimits(trustProxy)
   const api = new Hono()
 
+  // Every request body here is a few hundred bytes; refuse big ones before reading them.
+  api.use(bodyLimit({ maxSize: 64 * 1024 }))
   api.use(sameOrigin)
 
   api.get('/health', (c) => c.json({ status: 'ok' } satisfies HealthResponse))
