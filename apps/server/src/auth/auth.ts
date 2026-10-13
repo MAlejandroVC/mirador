@@ -1,5 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { username } from 'better-auth/plugins'
+import { usernamePattern } from '@repo/api'
 import type { Database } from '../store/db.ts'
 import { schema } from '../store/db.ts'
 
@@ -58,6 +60,15 @@ export function createAuth({ db, secret, baseURL, rateLimit = false }: AuthOptio
       // The release image runs behind an HTTPS proxy (Caddy) that sets these.
       trustedProxyHeaders: true,
     },
+    // People sign in with a username, not an email (see @repo/api).
+    plugins: [
+      username({
+        displayUsername: false,
+        minUsernameLength: 3,
+        maxUsernameLength: 32,
+        usernameValidator: (name) => usernamePattern.test(name),
+      }),
+    ],
     // NFR-05: no telemetry. Better Auth sends none unless asked to; say so anyway.
     telemetry: { enabled: false },
   })

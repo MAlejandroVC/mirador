@@ -5,14 +5,14 @@ import { Button } from '../../../components/ui/button'
 import { AuthLayout } from './auth-layout'
 
 interface RecoveryKeyStepProps {
-  email: string
+  username: string
   recoveryKey: string
   onDone: () => Promise<void>
 }
 
 // SEC-07: the recovery key is shown once, with a way to copy or download it, and the
 // warning that losing both it and the password loses the data.
-export function RecoveryKeyStep({ email, recoveryKey, onDone }: RecoveryKeyStepProps) {
+export function RecoveryKeyStep({ username, recoveryKey, onDone }: RecoveryKeyStepProps) {
   const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -25,7 +25,7 @@ export function RecoveryKeyStep({ email, recoveryKey, onDone }: RecoveryKeyStepP
   }
 
   function download() {
-    const file = new Blob([t('security.recoveryKey.fileText', { email, key: recoveryKey })], {
+    const file = new Blob([t('security.recoveryKey.fileText', { username, key: recoveryKey })], {
       type: 'text/plain',
     })
     const link = document.createElement('a')

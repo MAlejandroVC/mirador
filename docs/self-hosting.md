@@ -39,7 +39,7 @@ docker compose logs app | grep "setup code"
 # No accounts yet. Create the first one in the app with this setup code: 7KQ2-…
 ```
 
-Open the app, choose **Create an account** and enter that code with your email and password. The app then shows your **recovery key** once: save it somewhere safe. Your password and recovery key never reach the server, so nobody, including you as the server's operator, can reset them. Lose both and the data is gone for good.
+Open the app, choose **Create an account** and enter that code with a username and password. The username can be anything; Mirador never asks for an email. The app then shows your **recovery key** once: save it somewhere safe. Your password and recovery key never reach the server, so nobody, including you as the server's operator, can reset them. Lose both and the data is gone for good.
 
 After that, sign-up is closed. Invites for more people come in a later release; until then, set `MIRADOR_OPEN_SIGNUP=true` in `.env`, run `docker compose up -d`, let them sign up, and turn it off again.
 

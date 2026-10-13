@@ -2,6 +2,7 @@ import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-q
 import { Link, useNavigate } from '@tanstack/react-router'
 import { type SubmitEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { usernamePattern } from '@repo/api'
 import { Alert } from '../../../components/ui/alert'
 import { Button } from '../../../components/ui/button'
 import { TextField } from '../../../components/ui/text-field'
@@ -14,7 +15,7 @@ import { minimumPasswordLength, signUpStatusQuery } from '../hooks/sign-up'
 import { useVault } from '../hooks/vault'
 
 interface Problems {
-  email?: string
+  username?: string
   password?: string
   confirm?: string
   setupCode?: string
@@ -27,7 +28,7 @@ export function SignUpScreen() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { data: status } = useSuspenseQuery(signUpStatusQuery)
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [setupCode, setSetupCode] = useState('')
@@ -36,7 +37,7 @@ export function SignUpScreen() {
   const signUp = useMutation({
     mutationFn: () =>
       vault.signUp({
-        email,
+        username,
         password,
         ...(status.mode === 'setup' ? { setupCode: setupCode.trim() } : {}),
       }),
@@ -45,7 +46,9 @@ export function SignUpScreen() {
   function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     const found: Problems = {}
-    if (!/^\S+@\S+\.\S+$/.test(email.trim())) found.email = t('security.errors.invalidEmail')
+    if (!usernamePattern.test(username.trim().toLowerCase())) {
+      found.username = t('security.errors.invalidUsername')
+    }
     if (password.length < minimumPasswordLength) {
       found.password = t('security.errors.passwordTooShort', { count: minimumPasswordLength })
     } else if (confirm !== password) {
@@ -61,7 +64,7 @@ export function SignUpScreen() {
   if (signUp.data) {
     return (
       <RecoveryKeyStep
-        email={email.trim().toLowerCase()}
+        username={username.trim().toLowerCase()}
         recoveryKey={signUp.data.recoveryKey}
         onDone={async () => {
           queryClient.removeQueries(sessionQuery)
@@ -110,15 +113,16 @@ export function SignUpScreen() {
           />
         )}
         <TextField
-          label={t('form.email')}
-          type="email"
+          label={t('form.username')}
+          hint={t('security.signUp.usernameHint')}
           autoComplete="username"
-          inputMode="email"
           autoCapitalize="none"
-          error={problems.email}
-          value={email}
+          autoCorrect="off"
+          spellCheck={false}
+          error={problems.username}
+          value={username}
           onChange={(event) => {
-            setEmail(event.target.value)
+            setUsername(event.target.value)
           }}
         />
         <TextField

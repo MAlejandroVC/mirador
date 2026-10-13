@@ -25,7 +25,7 @@ export interface AccountRoutesOptions {
   openSignUp: boolean
 }
 
-// Matches defaultKdfCost in @repo/crypto, so made-up settings for unknown emails
+// Matches defaultKdfCost in @repo/crypto, so made-up settings for unknown usernames
 // look like everyone else's.
 const fakeKdfCost = { memoryKiB: 64 * 1024, iterations: 3, parallelism: 1 } as const
 
@@ -61,11 +61,17 @@ export function accountRoutes({ db, auth, secret, setupCode, openSignUp }: Accou
     const existing = await db
       .select({ id: schema.users.id })
       .from(schema.users)
-      .where(eq(schema.users.email, body.email))
-    if (existing.length > 0) return refuse('email-taken', 409)
+      .where(eq(schema.users.username, body.username))
+    if (existing.length > 0) return refuse('username-taken', 409)
 
     const created = await auth.api.signUpEmail({
-      body: { email: body.email, password: body.loginSecret, name: '' },
+      body: {
+        username: body.username,
+        // Better Auth requires an email; this one is never shown, used or sent to.
+        email: `${body.username}@users.invalid`,
+        password: body.loginSecret,
+        name: '',
+      },
       headers: c.req.raw.headers,
       returnHeaders: true,
     })
@@ -97,22 +103,22 @@ export function accountRoutes({ db, auth, secret, setupCode, openSignUp }: Accou
     return response
   })
 
-  // Salt and cost for deriving the login secret before signing in. POST so the email
-  // stays out of URLs and access logs.
+  // Salt and cost for deriving the login secret before signing in. POST so the
+  // username stays out of URLs and access logs.
   routes.post('/accounts/prelogin', jsonBody(preloginRequest), async (c) => {
-    const { email } = c.req.valid('json')
+    const { username } = c.req.valid('json')
     const [row] = await db
       .select({ material: schema.keyMaterial })
       .from(schema.users)
       .innerJoin(schema.keyMaterial, eq(schema.keyMaterial.userId, schema.users.id))
-      .where(eq(schema.users.email, email))
-    // An unknown email gets a salt that is the same on every request, so the answer
+      .where(eq(schema.users.username, username))
+    // An unknown username gets a salt that is the same on every request, so the answer
     // doesn't tell whether the account exists.
     const kdf = row
       ? kdfOf(row.material)
       : {
           algorithm: 'argon2id' as const,
-          salt: Buffer.from(await makeSignature(`prelogin:${email}`, secret), 'base64')
+          salt: Buffer.from(await makeSignature(`prelogin:${username}`, secret), 'base64')
             .subarray(0, 16)
             .toString('base64url'),
           ...fakeKdfCost,

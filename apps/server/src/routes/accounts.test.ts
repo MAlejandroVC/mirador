@@ -7,6 +7,7 @@ import {
   signUpStatus,
 } from '@repo/api'
 import { sql } from 'drizzle-orm'
+import { schema } from '../store/db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createTestApp, testHost, testOrigin, testSetupCode } from '../test-app.ts'
 
@@ -21,22 +22,22 @@ function base64Url(length: number, seed: string) {
     .slice(0, length)
 }
 
-function newAccount(email: string, extra: Partial<SignUpRequest> = {}): SignUpRequest {
+function newAccount(username: string, extra: Partial<SignUpRequest> = {}): SignUpRequest {
   return {
-    email,
-    loginSecret: base64Url(43, `login ${email}`),
+    username,
+    loginSecret: base64Url(43, `login ${username}`),
     kdf: {
       algorithm: 'argon2id',
-      salt: base64Url(22, `salt ${email}`),
+      salt: base64Url(22, `salt ${username}`),
       memoryKiB: 65536,
       iterations: 3,
       parallelism: 1,
     },
     wrappedAccountKey: {
-      password: base64Url(54, `password-wrapped ${email}`),
-      recovery: base64Url(54, `recovery-wrapped ${email}`),
+      password: base64Url(54, `password-wrapped ${username}`),
+      recovery: base64Url(54, `recovery-wrapped ${username}`),
     },
-    recoverySecret: base64Url(43, `recovery ${email}`),
+    recoverySecret: base64Url(43, `recovery ${username}`),
     ...extra,
   }
 }
@@ -73,8 +74,12 @@ async function signUp(server: TestServer, account: SignUpRequest) {
   return cookieOf(response)
 }
 
-async function signIn(server: TestServer, email: string, loginSecret: string) {
-  return post(server, '/api/auth/sign-in/email', { email, password: loginSecret, rememberMe: true })
+async function signIn(server: TestServer, username: string, loginSecret: string) {
+  return post(server, '/api/auth/sign-in/username', {
+    username,
+    password: loginSecret,
+    rememberMe: true,
+  })
 }
 
 describe('sign-up', () => {
@@ -88,30 +93,30 @@ describe('sign-up', () => {
     const status = signUpStatus.parse(await (await get(server, '/api/accounts/sign-up')).json())
     expect(status.mode).toBe('setup')
 
-    const without = await post(server, '/api/accounts', newAccount('ana@example.com'))
+    const without = await post(server, '/api/accounts', newAccount('ana'))
     expect(without.status).toBe(403)
     expect(signUpError.parse(await without.json()).error).toBe('wrong-setup-code')
 
     const wrong = await post(
       server,
       '/api/accounts',
-      newAccount('ana@example.com', { setupCode: 'NOTTHECODE' }),
+      newAccount('ana', { setupCode: 'NOTTHECODE' }),
     )
     expect(wrong.status).toBe(403)
 
     // Typed from the log: lower case, spaces for dashes, O for 0.
-    await signUp(server, newAccount('ana@example.com', { setupCode: 'test setu pc0d e123 4567' }))
+    await signUp(server, newAccount('ana', { setupCode: 'test setu pc0d e123 4567' }))
   })
 
   it('SYS-13: once an account exists, sign-up is closed unless the operator opens it', async () => {
-    await signUp(server, newAccount('ana@example.com', { setupCode: testSetupCode }))
+    await signUp(server, newAccount('ana', { setupCode: testSetupCode }))
 
     const status = signUpStatus.parse(await (await get(server, '/api/accounts/sign-up')).json())
     expect(status.mode).toBe('closed')
     const refused = await post(
       server,
       '/api/accounts',
-      newAccount('ben@example.com', { setupCode: testSetupCode }),
+      newAccount('ben', { setupCode: testSetupCode }),
     )
     expect(refused.status).toBe(403)
     expect(signUpError.parse(await refused.json()).error).toBe('sign-up-closed')
@@ -119,20 +124,20 @@ describe('sign-up', () => {
 
   it('SYS-13: open sign-up, when the operator turns it on, needs no code', async () => {
     server = await createTestApp({ openSignUp: true })
-    await signUp(server, newAccount('ana@example.com', { setupCode: testSetupCode }))
+    await signUp(server, newAccount('ana', { setupCode: testSetupCode }))
 
     const status = signUpStatus.parse(await (await get(server, '/api/accounts/sign-up')).json())
     expect(status.mode).toBe('open')
-    await signUp(server, newAccount('ben@example.com'))
+    await signUp(server, newAccount('ben'))
   })
 
-  it('SYS-06: an email can hold only one account, whatever its case', async () => {
+  it('SYS-06: a username can hold only one account, whatever its case', async () => {
     server = await createTestApp({ openSignUp: true })
-    await signUp(server, newAccount('ana@example.com', { setupCode: testSetupCode }))
+    await signUp(server, newAccount('ana', { setupCode: testSetupCode }))
 
-    const again = await post(server, '/api/accounts', newAccount('Ana@Example.com'))
+    const again = await post(server, '/api/accounts', newAccount(' Ana '))
     expect(again.status).toBe(409)
-    expect(signUpError.parse(await again.json()).error).toBe('email-taken')
+    expect(signUpError.parse(await again.json()).error).toBe('username-taken')
   })
 
   it("SYS-13: Better Auth's own sign-up, which skips these checks, is not reachable", async () => {
@@ -146,15 +151,21 @@ describe('sign-up', () => {
   })
 
   it('SEC-03: rejects anything that is not a well-formed login secret and wrapped key', async () => {
-    const account = newAccount('ana@example.com', { setupCode: testSetupCode })
+    const account = newAccount('ana', { setupCode: testSetupCode })
 
     for (const body of [
       { ...account, loginSecret: 'my password' },
       { ...account, wrappedAccountKey: { password: 'short', recovery: 'short' } },
       { ...account, kdf: { ...account.kdf, algorithm: 'pbkdf2' } },
-      { email: 'ana@example.com', password: 'hunter2' },
+      { username: 'ana', password: 'hunter2' },
     ]) {
       expect((await post(server, '/api/accounts', body)).status).toBe(400)
+    }
+  })
+
+  it('SYS-06: usernames are 3 to 32 letters, digits, dots, dashes or underscores', async () => {
+    for (const name of ['ab', 'a'.repeat(33), 'ana maría', 'ana@example.com', 'añá']) {
+      expect((await post(server, '/api/accounts', newAccount(name))).status).toBe(400)
     }
   })
 
@@ -162,7 +173,7 @@ describe('sign-up', () => {
     const response = await server.app.request('/api/accounts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'email=ana%40example.com',
+      body: 'username=ana',
     })
 
     expect(response.status).toBe(400)
@@ -171,7 +182,7 @@ describe('sign-up', () => {
 
 describe('sign-in', () => {
   let server: TestServer
-  const ana = newAccount('ana@example.com', { setupCode: testSetupCode })
+  const ana = newAccount('ana', { setupCode: testSetupCode })
 
   beforeEach(async () => {
     server = await createTestApp()
@@ -180,15 +191,15 @@ describe('sign-in', () => {
 
   it('SYS-06: sign-up signs the new account in on that device', async () => {
     server = await createTestApp()
-    const cookie = await signUp(server, newAccount('ana@example.com', { setupCode: testSetupCode }))
+    const cookie = await signUp(server, newAccount('ana', { setupCode: testSetupCode }))
     const session = sessionResponse.parse(
       await (await get(server, '/api/auth/get-session', cookie)).json(),
     )
-    expect(session?.user.email).toBe('ana@example.com')
+    expect(session?.user.username).toBe('ana')
   })
 
   it('SYS-06: signs in with the login secret and stays signed in until signing out', async () => {
-    const response = await signIn(server, 'ana@example.com', ana.loginSecret)
+    const response = await signIn(server, 'ana', ana.loginSecret)
     expect(response.status).toBe(200)
     const cookie = cookieOf(response)
     expect(response.headers.get('set-cookie')).toMatch(/HttpOnly/i)
@@ -197,7 +208,7 @@ describe('sign-in', () => {
     const session = sessionResponse.parse(
       await (await get(server, '/api/auth/get-session', cookie)).json(),
     )
-    expect(session?.user.email).toBe('ana@example.com')
+    expect(session?.user.username).toBe('ana')
 
     expect((await post(server, '/api/auth/sign-out', {}, cookie)).status).toBe(200)
     const after = sessionResponse.parse(
@@ -206,9 +217,20 @@ describe('sign-in', () => {
     expect(after).toBeNull()
   })
 
-  it('SEC-03: a wrong login secret or unknown email is refused the same way', async () => {
-    const wrong = await signIn(server, 'ana@example.com', base64Url(43, 'guess'))
-    const unknown = await signIn(server, 'nobody@example.com', ana.loginSecret)
+  it('SYS-06: signs in only by username; the stored email is made up and unused', async () => {
+    const byEmail = await post(server, '/api/auth/sign-in/email', {
+      email: 'ana@users.invalid',
+      password: ana.loginSecret,
+    })
+    expect(byEmail.status).toBe(404)
+
+    const [user] = await server.db.select().from(schema.users)
+    expect(user).toMatchObject({ username: 'ana', email: 'ana@users.invalid' })
+  })
+
+  it('SEC-03: a wrong login secret or unknown username is refused the same way', async () => {
+    const wrong = await signIn(server, 'ana', base64Url(43, 'guess'))
+    const unknown = await signIn(server, 'nobody', ana.loginSecret)
 
     expect(wrong.status).toBe(401)
     expect(unknown.status).toBe(401)
@@ -216,19 +238,20 @@ describe('sign-in', () => {
   })
 
   it('SEC-02: prelogin returns the salt and cost the account was made with', async () => {
-    const response = await post(server, '/api/accounts/prelogin', { email: 'ANA@example.com' })
+    const response = await post(server, '/api/accounts/prelogin', { username: 'ANA' })
 
     expect(preloginResponse.parse(await response.json()).kdf).toEqual(ana.kdf)
   })
 
-  it('SEC-03: prelogin answers an unknown email with steady, made-up settings', async () => {
-    const ask = async (email: string) =>
-      preloginResponse.parse(await (await post(server, '/api/accounts/prelogin', { email })).json())
-        .kdf
+  it('SEC-03: prelogin answers an unknown username with steady, made-up settings', async () => {
+    const ask = async (username: string) =>
+      preloginResponse.parse(
+        await (await post(server, '/api/accounts/prelogin', { username })).json(),
+      ).kdf
 
-    const first = await ask('nobody@example.com')
-    expect(await ask('nobody@example.com')).toEqual(first)
-    expect((await ask('someone@example.com')).salt).not.toBe(first.salt)
+    const first = await ask('nobody')
+    expect(await ask('nobody')).toEqual(first)
+    expect((await ask('someone')).salt).not.toBe(first.salt)
     expect(first).toMatchObject({ algorithm: 'argon2id', memoryKiB: 65536, iterations: 3 })
     expect(Buffer.from(first.salt, 'base64url')).toHaveLength(16)
   })
@@ -236,8 +259,8 @@ describe('sign-in', () => {
 
 describe('key material', () => {
   let server: TestServer
-  const ana = newAccount('ana@example.com', { setupCode: testSetupCode })
-  const ben = newAccount('ben@example.com')
+  const ana = newAccount('ana', { setupCode: testSetupCode })
+  const ben = newAccount('ben')
 
   beforeEach(async () => {
     server = await createTestApp({ openSignUp: true })
@@ -249,7 +272,7 @@ describe('key material', () => {
     expect((await get(server, '/api/keys')).status).toBe(401)
 
     for (const account of [ana, ben]) {
-      const cookie = cookieOf(await signIn(server, account.email, account.loginSecret))
+      const cookie = cookieOf(await signIn(server, account.username, account.loginSecret))
       const keys = keysResponse.parse(await (await get(server, '/api/keys', cookie)).json())
       expect(keys).toEqual({
         kdf: account.kdf,

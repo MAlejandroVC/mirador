@@ -15,14 +15,14 @@ export function fakeVault(server: FakeServer, overrides: Partial<VaultClient> = 
   let unlocked = false
   const vault: VaultClient = {
     status: vi.fn(() => Promise.resolve(unlocked ? ('unlocked' as const) : ('locked' as const))),
-    signUp: vi.fn(({ email }: SignUpInput) => {
+    signUp: vi.fn(({ username }: SignUpInput) => {
       unlocked = true
-      server.signedIn = email
+      server.signedIn = username
       return Promise.resolve({ recoveryKey: shownRecoveryKey })
     }),
-    signIn: vi.fn((email: string) => {
+    signIn: vi.fn((username: string) => {
       unlocked = true
-      server.signedIn = email
+      server.signedIn = username
       return Promise.resolve()
     }),
     unlock: vi.fn(() => {
@@ -70,7 +70,9 @@ export function stubServer(server: FakeServer) {
           )
         case '/api/auth/get-session':
           return Promise.resolve(
-            Response.json(server.signedIn ? { user: { id: '1', email: server.signedIn } } : null),
+            Response.json(
+              server.signedIn ? { user: { id: '1', username: server.signedIn } } : null,
+            ),
           )
         case '/api/accounts/sign-up':
           return Promise.resolve(Response.json({ mode: server.signUpMode ?? 'open' }))

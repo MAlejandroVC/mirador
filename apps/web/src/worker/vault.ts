@@ -13,7 +13,7 @@ import { type Api, ApiError } from '../lib/api'
 import { VaultError, vaultErrorCodes } from './errors'
 
 export interface SignUpInput {
-  email: string
+  username: string
   password: string
   setupCode?: string
 }
@@ -33,8 +33,8 @@ export class Vault {
   // SEC-02, SEC-07: everything is made here; the server gets the login secret, the
   // wrapped account key and a recovery secret, none of which can decrypt anything.
   // Returns the recovery key to show once.
-  async signUp({ email, password, setupCode }: SignUpInput) {
-    email = normalizeEmail(email)
+  async signUp({ username, password, setupCode }: SignUpInput) {
+    username = normalizeUsername(username)
     return guard(async () => {
       const kdf = newKdfParams()
       const recoveryKey = newRecoveryKey()
@@ -45,7 +45,7 @@ export class Vault {
         recoveryWrappingKey,
       )
       await this.api.signUp({
-        email,
+        username,
         loginSecret,
         kdf,
         wrappedAccountKey: { password: wrappedByPassword, recovery: wrappedByRecovery },
@@ -60,13 +60,13 @@ export class Vault {
   }
 
   // SEC-03: the server learns the login secret, not the password.
-  async signIn(email: string, password: string) {
-    email = normalizeEmail(email)
+  async signIn(username: string, password: string) {
+    username = normalizeUsername(username)
     return guard(async () => {
-      const { kdf } = await this.api.prelogin(email)
+      const { kdf } = await this.api.prelogin(username)
       const { loginSecret, keyEncryptionKey } = await derivePasswordKeys(password, kdf)
       try {
-        await this.api.signIn(email, loginSecret)
+        await this.api.signIn(username, loginSecret)
       } catch (error) {
         throw error instanceof ApiError && error.status === 401
           ? new VaultError('wrong-credentials')
@@ -103,9 +103,9 @@ export class Vault {
   }
 }
 
-// The server matches emails in lower case; the same here keeps typed variants equal.
-function normalizeEmail(email: string) {
-  return email.trim().toLowerCase()
+// The server keeps usernames in lower case; the same here keeps typed variants equal.
+function normalizeUsername(username: string) {
+  return username.trim().toLowerCase()
 }
 
 // Turns every failure into a VaultError the screens can explain.

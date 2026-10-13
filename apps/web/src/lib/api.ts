@@ -54,12 +54,18 @@ export function createApi(fetchFn: Fetch = (...args) => globalThis.fetch(...args
     async signUp(body: SignUpRequest) {
       await post('/api/accounts', body)
     },
-    async prelogin(email: string) {
-      return preloginResponse.parse(await (await post('/api/accounts/prelogin', { email })).json())
+    async prelogin(username: string) {
+      return preloginResponse.parse(
+        await (await post('/api/accounts/prelogin', { username })).json(),
+      )
     },
     // SEC-03: Better Auth's "password" is the login secret, never the password.
-    async signIn(email: string, loginSecret: string) {
-      await post('/api/auth/sign-in/email', { email, password: loginSecret, rememberMe: true })
+    async signIn(username: string, loginSecret: string) {
+      await post('/api/auth/sign-in/username', {
+        username,
+        password: loginSecret,
+        rememberMe: true,
+      })
     },
     async signOut() {
       await post('/api/auth/sign-out', {})

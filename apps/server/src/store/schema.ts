@@ -11,6 +11,10 @@ export const users = pgTable('users', {
   id: text('id').primaryKey(),
   // Better Auth requires a name; Mirador doesn't ask for one, so it stays empty.
   name: text('name').notNull(),
+  // What people sign in with (Better Auth's username plugin), always lower case.
+  username: text('username').notNull().unique(),
+  // Better Auth requires an email too. Mirador doesn't ask for one: this is a made-up
+  // <username>@users.invalid address that is never shown or used.
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified').notNull().default(false),
   image: text('image'),

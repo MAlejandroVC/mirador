@@ -48,12 +48,12 @@ export function UnlockScreen() {
     <AuthLayout title={t('security.unlock.title')} intro={t('security.unlock.intro')}>
       {session && (
         <p className="text-sm text-slate-600">
-          {t('security.unlock.signedInAs', { email: session.user.email })}
+          {t('security.unlock.signedInAs', { username: session.user.username })}
         </p>
       )}
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
         {/* Lets password managers fill the right entry. */}
-        <input type="hidden" autoComplete="username" value={session?.user.email ?? ''} />
+        <input type="hidden" autoComplete="username" value={session?.user.username ?? ''} />
         <TextField
           label={t('form.password')}
           type="password"

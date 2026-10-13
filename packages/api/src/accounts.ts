@@ -12,7 +12,11 @@ export const secret = base64Url.length(43)
 // Base64url of a 256-bit key wrapped with AES-KW (40 bytes).
 export const wrappedKey = base64Url.length(54)
 
-export const email = z.string().trim().toLowerCase().pipe(z.email().max(254))
+// The name a person signs in with. Not an email: the server sends no mail (NFR-05)
+// and can't reset a password anyway (SEC-07), so it would only be personal data
+// sitting on the server and in its backups.
+export const usernamePattern = /^[a-z0-9._-]{3,32}$/
+export const username = z.string().trim().toLowerCase().regex(usernamePattern)
 
 // Argon2id settings, stored per user so they can be raised later. The browser
 // refuses settings below its own minimum, whatever the server says (SEC-03).
@@ -35,7 +39,7 @@ export type SignUpStatus = z.infer<typeof signUpStatus>
 
 // POST /api/accounts. Creates the account and signs it in.
 export const signUpRequest = z.object({
-  email,
+  username,
   loginSecret: secret,
   kdf: kdfParams,
   wrappedAccountKey: z.object({
@@ -48,14 +52,14 @@ export const signUpRequest = z.object({
 export type SignUpRequest = z.infer<typeof signUpRequest>
 
 export const signUpError = z.object({
-  error: z.enum(['sign-up-closed', 'wrong-setup-code', 'email-taken']),
+  error: z.enum(['sign-up-closed', 'wrong-setup-code', 'username-taken']),
 })
 export type SignUpError = z.infer<typeof signUpError>
 
 // POST /api/accounts/prelogin. The salt and cost to derive the login secret with.
-// An unknown email gets made-up settings that stay the same on every request, so
-// this can't be used to find out who has an account.
-export const preloginRequest = z.object({ email })
+// An unknown username gets made-up settings that stay the same on every request,
+// so this can't be used to find out who has an account.
+export const preloginRequest = z.object({ username })
 export const preloginResponse = z.object({ kdf: kdfParams })
 export type PreloginResponse = z.infer<typeof preloginResponse>
 
@@ -69,7 +73,7 @@ export type KeysResponse = z.infer<typeof keysResponse>
 // GET /api/auth/get-session (Better Auth). Only the fields the app reads.
 export const sessionResponse = z
   .object({
-    user: z.object({ id: z.string(), email: z.string() }),
+    user: z.object({ id: z.string(), username: z.string() }),
   })
   .nullable()
 export type SessionResponse = z.infer<typeof sessionResponse>

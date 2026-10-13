@@ -9,7 +9,7 @@
     "unreachable": "No se puede conectar con el servidor"
   },
   "form": {
-    "email": "Correo electrónico",
+    "username": "Nombre de usuario",
     "password": "Contraseña",
     "show": "Mostrar contraseña",
     "hide": "Ocultar contraseña"
@@ -26,6 +26,7 @@
     "signUp": {
       "title": "Crea tu cuenta",
       "intro": "Tu contraseña cifra tus datos en este dispositivo. El servidor nunca la ve, así que nadie puede restablecerla por ti.",
+      "usernameHint": "De 3 a 32 letras, números, puntos, guiones o guiones bajos. No tiene que ser tu nombre real.",
       "passwordHint": "Al menos {{count}} caracteres. Unas cuantas palabras sin relación son fáciles de recordar.",
       "confirm": "Repite la contraseña",
       "setupCode": "Código de configuración",
@@ -45,28 +46,28 @@
       "copied": "Copiada",
       "download": "Descargar",
       "fileName": "mirador-clave-de-recuperacion.txt",
-      "fileText": "Clave de recuperación de Mirador para {{email}}\n\n{{key}}\n\nGuárdala en un lugar seguro y privado. Con ella puedes volver a tus datos si olvidas tu contraseña.\n",
+      "fileText": "Clave de recuperación de Mirador para {{username}}\n\n{{key}}\n\nGuárdala en un lugar seguro y privado. Con ella puedes volver a tus datos si olvidas tu contraseña.\n",
       "confirm": "Guardé mi clave de recuperación en un lugar seguro",
       "continue": "Continuar"
     },
     "unlock": {
       "title": "Desbloquear Mirador",
       "intro": "Tus datos están cifrados. Escribe tu contraseña para abrirlos en este dispositivo.",
-      "signedInAs": "Sesión iniciada como {{email}}",
+      "signedInAs": "Sesión iniciada como {{username}}",
       "submit": "Desbloquear",
       "working": "Desbloqueando…",
       "signOut": "Cerrar sesión"
     },
     "home": {
-      "signedInAs": "Sesión iniciada como {{email}}",
+      "signedInAs": "Sesión iniciada como {{username}}",
       "encrypted": "Tus datos están cifrados de extremo a extremo. Solo este dispositivo puede leerlos mientras está desbloqueado.",
       "lock": "Bloquear",
       "signOut": "Cerrar sesión"
     },
     "errors": {
-      "wrong-credentials": "Correo o contraseña incorrectos.",
+      "wrong-credentials": "Usuario o contraseña incorrectos.",
       "wrong-password": "Contraseña incorrecta.",
-      "email-taken": "Ese correo ya tiene una cuenta. Inicia sesión.",
+      "username-taken": "Ese nombre de usuario ya existe. Elige otro o inicia sesión.",
       "sign-up-closed": "Este servidor no acepta cuentas nuevas.",
       "wrong-setup-code": "Ese código de configuración no es correcto. Busca el actual en el registro del servidor.",
       "signed-out": "Se cerró tu sesión. Vuelve a iniciarla.",
@@ -74,7 +75,7 @@
       "unsafe-server": "El servidor envió claves o ajustes que no son seguros, así que Mirador se detuvo. Tu contraseña no se envió.",
       "network": "No se puede conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.",
       "unknown": "Algo salió mal. Inténtalo de nuevo.",
-      "invalidEmail": "Escribe un correo electrónico.",
+      "invalidUsername": "Usa de 3 a 32 letras, números, puntos, guiones o guiones bajos, sin espacios.",
       "passwordTooShort": "Usa al menos {{count}} caracteres.",
       "passwordsDontMatch": "Las contraseñas no coinciden.",
       "setupCodeMissing": "Escribe el código de configuración."

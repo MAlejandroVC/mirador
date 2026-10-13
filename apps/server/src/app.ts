@@ -42,6 +42,8 @@ export function createApp({
   // Better Auth's own sign-up would create an account without key material and
   // without the sign-up checks, so only POST /api/accounts creates accounts.
   api.all('/auth/sign-up/*', (c) => c.notFound())
+  // People sign in with their username; the email Better Auth keeps is made up.
+  api.all('/auth/sign-in/email', (c) => c.notFound())
   api.on(['GET', 'POST'], '/auth/*', (c) => auth.handler(c.req.raw))
 
   const app = new Hono()

@@ -10,18 +10,18 @@ import { ErrorMessage } from '../components/error-message'
 import { sessionQuery } from '../hooks/session'
 import { useVault } from '../hooks/vault'
 
-// SYS-06: sign in with email and password. The password stays in the browser
+// SYS-06: sign in with username and password. The password stays in the browser
 // (SEC-03) and also unlocks the data on this device.
 export function SignInScreen() {
   const { t } = useTranslation()
   const vault = useVault()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
   const signIn = useMutation({
-    mutationFn: () => vault.signIn(email, password),
+    mutationFn: () => vault.signIn(username, password),
     onSuccess: async () => {
       queryClient.removeQueries(sessionQuery)
       await navigate({ to: '/' })
@@ -37,15 +37,15 @@ export function SignInScreen() {
     <AuthLayout title={t('security.signIn.title')} intro={t('security.signIn.intro')}>
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
         <TextField
-          label={t('form.email')}
-          type="email"
+          label={t('form.username')}
           autoComplete="username"
-          inputMode="email"
           autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           required
-          value={email}
+          value={username}
           onChange={(event) => {
-            setEmail(event.target.value)
+            setUsername(event.target.value)
           }}
         />
         <TextField
@@ -59,7 +59,7 @@ export function SignInScreen() {
           }}
         />
         <ErrorMessage code={signIn.isError ? vaultErrorCode(signIn.error) : null} />
-        <Button type="submit" disabled={signIn.isPending || !email || !password}>
+        <Button type="submit" disabled={signIn.isPending || !username || !password}>
           {signIn.isPending ? t('security.signIn.working') : t('security.signIn.submit')}
         </Button>
       </form>

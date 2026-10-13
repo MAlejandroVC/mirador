@@ -11,19 +11,19 @@ describe('home page', () => {
 
   it('shows who is signed in and that the server is connected', async () => {
     await i18n.changeLanguage('en')
-    const server: FakeServer = { signedIn: 'ana@example.com' }
+    const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
 
     renderApp('/', unlockedVault(server))
 
     expect(await screen.findByRole('heading', { name: 'Mirador' })).toBeInTheDocument()
-    expect(await screen.findByText('Signed in as ana@example.com')).toBeInTheDocument()
+    expect(await screen.findByText('Signed in as ana')).toBeInTheDocument()
     expect(await screen.findByText('Server connected')).toBeInTheDocument()
   })
 
   it('says so in Spanish when the server cannot be reached', async () => {
     await i18n.changeLanguage('es')
-    const server: FakeServer = { signedIn: 'ana@example.com', healthy: false }
+    const server: FakeServer = { signedIn: 'ana', healthy: false }
     stubServer(server)
 
     renderApp('/', unlockedVault(server))
@@ -43,7 +43,7 @@ describe('home page', () => {
 
   it('SEC-12: asks for the password when signed in but locked, as after a reload', async () => {
     await i18n.changeLanguage('en')
-    const server: FakeServer = { signedIn: 'ana@example.com' }
+    const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
 
     renderApp('/', fakeVault(server))
@@ -54,7 +54,7 @@ describe('home page', () => {
   it('SEC-12: locking drops to the unlock screen; signing out to sign in', async () => {
     await i18n.changeLanguage('en')
     const user = userEvent.setup()
-    const server: FakeServer = { signedIn: 'ana@example.com' }
+    const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
     const vault = unlockedVault(server)
     renderApp('/', vault)

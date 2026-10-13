@@ -52,7 +52,7 @@ function Home() {
       <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-5">
         {session && (
           <p className="font-medium">
-            {t('security.home.signedInAs', { email: session.user.email })}
+            {t('security.home.signedInAs', { username: session.user.username })}
           </p>
         )}
         <p className="text-sm text-slate-600">{t('security.home.encrypted')}</p>

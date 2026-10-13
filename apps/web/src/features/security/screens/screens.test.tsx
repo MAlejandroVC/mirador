@@ -29,7 +29,7 @@ describe('sign-up', () => {
     const vault = fakeVault(server)
     renderApp('/sign-up', vault)
 
-    await user.type(await screen.findByLabelText('Email'), 'ana@example.com')
+    await user.type(await screen.findByLabelText('Username'), 'ana')
     await user.type(screen.getByLabelText('Password'), password)
     await user.type(screen.getByLabelText('Repeat password'), password)
     await user.click(screen.getByRole('button', { name: 'Create account' }))
@@ -39,13 +39,13 @@ describe('sign-up', () => {
     await user.type(screen.getByLabelText('Setup code'), ' ABC123 ')
     await user.click(screen.getByRole('button', { name: 'Create account' }))
     expect(vault.signUp).toHaveBeenCalledWith({
-      email: 'ana@example.com',
+      username: 'ana',
       password,
       setupCode: 'ABC123',
     })
   })
 
-  it('SYS-06: checks the email, the password length and the repeat before anything else', async () => {
+  it('SYS-06: checks the username, the password length and the repeat before anything else', async () => {
     const user = userEvent.setup()
     const server: FakeServer = { signUpMode: 'open' }
     stubServer(server)
@@ -53,13 +53,16 @@ describe('sign-up', () => {
     renderApp('/sign-up', vault)
 
     expect(screen.queryByLabelText('Setup code')).not.toBeInTheDocument()
-    await user.type(await screen.findByLabelText('Email'), 'ana')
+    await user.type(await screen.findByLabelText('Username'), 'ana maría')
     await user.type(screen.getByLabelText('Password'), 'short')
     await user.click(screen.getByRole('button', { name: 'Create account' }))
-    expect(await screen.findByText('Enter an email address.')).toBeInTheDocument()
+    expect(
+      await screen.findByText(/Use 3 to 32 letters, numbers, dots, dashes or underscores/),
+    ).toBeInTheDocument()
     expect(screen.getByText('Use at least 12 characters.')).toBeInTheDocument()
 
-    await user.type(screen.getByLabelText('Email'), '@example.com')
+    await user.clear(screen.getByLabelText('Username'))
+    await user.type(screen.getByLabelText('Username'), 'Ana.Maria')
     await user.clear(screen.getByLabelText('Password'))
     await user.type(screen.getByLabelText('Password'), password)
     await user.type(screen.getByLabelText('Repeat password'), `${password}!`)
@@ -74,7 +77,7 @@ describe('sign-up', () => {
     stubServer(server)
     renderApp('/sign-up', fakeVault(server))
 
-    await user.type(await screen.findByLabelText('Email'), 'ana@example.com')
+    await user.type(await screen.findByLabelText('Username'), 'ana')
     await user.type(screen.getByLabelText('Password'), password)
     await user.type(screen.getByLabelText('Repeat password'), password)
     await user.click(screen.getByRole('button', { name: 'Create account' }))
@@ -91,7 +94,7 @@ describe('sign-up', () => {
 
     await user.click(screen.getByLabelText('I saved my recovery key somewhere safe'))
     await user.click(proceed)
-    expect(await screen.findByText('Signed in as ana@example.com')).toBeInTheDocument()
+    expect(await screen.findByText('Signed in as ana')).toBeInTheDocument()
   })
 
   it('SYS-13: says so when the server takes no new accounts', async () => {
@@ -100,25 +103,25 @@ describe('sign-up', () => {
     renderApp('/sign-up', fakeVault(server))
 
     expect(await screen.findByText(/isn't taking new accounts/)).toBeInTheDocument()
-    expect(screen.queryByLabelText('Email')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Username')).not.toBeInTheDocument()
   })
 
-  it('SYS-06: explains an email that already has an account, in Spanish too', async () => {
+  it('SYS-06: explains a username that is already taken, in Spanish too', async () => {
     await i18n.changeLanguage('es')
     const user = userEvent.setup()
     const server: FakeServer = { signUpMode: 'open' }
     stubServer(server)
     renderApp(
       '/sign-up',
-      fakeVault(server, { signUp: () => Promise.reject(new VaultError('email-taken')) }),
+      fakeVault(server, { signUp: () => Promise.reject(new VaultError('username-taken')) }),
     )
 
-    await user.type(await screen.findByLabelText('Correo electrónico'), 'ana@example.com')
+    await user.type(await screen.findByLabelText('Nombre de usuario'), 'ana')
     await user.type(screen.getByLabelText('Contraseña'), password)
     await user.type(screen.getByLabelText('Repite la contraseña'), password)
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Ese correo ya tiene una cuenta')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Ese nombre de usuario ya existe')
   })
 })
 
@@ -130,15 +133,15 @@ describe('sign-in', () => {
     const vault = fakeVault(server)
     renderApp('/sign-in', vault)
 
-    await user.type(await screen.findByLabelText('Email'), 'ana@example.com')
+    await user.type(await screen.findByLabelText('Username'), 'ana')
     await user.type(screen.getByLabelText('Password'), password)
     await user.click(screen.getByRole('button', { name: 'Sign in' }))
 
-    expect(await screen.findByText('Signed in as ana@example.com')).toBeInTheDocument()
-    expect(vault.signIn).toHaveBeenCalledWith('ana@example.com', password)
+    expect(await screen.findByText('Signed in as ana')).toBeInTheDocument()
+    expect(vault.signIn).toHaveBeenCalledWith('ana', password)
   })
 
-  it('SEC-03: says the email or password is wrong without saying which', async () => {
+  it('SEC-03: says the username or password is wrong without saying which', async () => {
     const user = userEvent.setup()
     const server: FakeServer = { signedIn: null }
     stubServer(server)
@@ -147,11 +150,11 @@ describe('sign-in', () => {
       fakeVault(server, { signIn: () => Promise.reject(new VaultError('wrong-credentials')) }),
     )
 
-    await user.type(await screen.findByLabelText('Email'), 'ana@example.com')
+    await user.type(await screen.findByLabelText('Username'), 'ana')
     await user.type(screen.getByLabelText('Password'), password)
     await user.click(screen.getByRole('button', { name: 'Sign in' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Wrong email or password.')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Wrong username or password.')
   })
 
   it('NFR-07: the password can be shown to check it, with a named control', async () => {
@@ -170,7 +173,7 @@ describe('sign-in', () => {
 describe('unlock', () => {
   it('SEC-12: unlocks with the password and reports a wrong one', async () => {
     const user = userEvent.setup()
-    const server: FakeServer = { signedIn: 'ana@example.com' }
+    const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
     let unlocked = false
     const vault = fakeVault(server, {
@@ -183,7 +186,7 @@ describe('unlock', () => {
     })
     renderApp('/unlock', vault)
 
-    expect(await screen.findByText('Signed in as ana@example.com')).toBeInTheDocument()
+    expect(await screen.findByText('Signed in as ana')).toBeInTheDocument()
     await user.type(screen.getByLabelText('Password'), 'not it')
     await user.click(screen.getByRole('button', { name: 'Unlock' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Wrong password.')
@@ -191,7 +194,7 @@ describe('unlock', () => {
     await user.clear(screen.getByLabelText('Password'))
     await user.type(screen.getByLabelText('Password'), password)
     await user.click(screen.getByRole('button', { name: 'Unlock' }))
-    expect(await screen.findByText('Signed in as ana@example.com')).toBeInTheDocument()
+    expect(await screen.findByText('Signed in as ana')).toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'Lock' })).toBeInTheDocument()
   })
 })
