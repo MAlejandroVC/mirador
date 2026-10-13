@@ -10,7 +10,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing anything; it is the full
 
 - What to build: the Functional Requirements Specification (linked from README.md). Every requirement has an ID such as `BUD-35`; each one is a GitHub issue titled `<ID> <summary>`.
 - `apps/web`: React 19, Vite, TanStack Router and Query, Tailwind 4, shadcn/ui. `src/worker/` holds the keys, the local SQLite database and sync.
-- `apps/server`: Node 24, Hono, Better Auth, Drizzle on PostgreSQL. Stores encrypted records and files, runs OCR in memory, sends generic push.
+- `apps/server`: Node 24, Hono, Drizzle on PostgreSQL, its own small sign-in (`src/auth`). Stores encrypted records and files, runs OCR in memory, sends generic push.
 - `packages/core`: pure logic (money, periods, ledger, analysis, budget). No React, no network, no storage.
 - `packages/crypto`: Argon2id (hash-wasm), HKDF and AES-256-GCM (WebCrypto), key wrapping, recovery key. The only place that touches crypto.
 - `packages/db`: local SQLite schema (Drizzle), migrations and queries, running in the browser.
@@ -24,7 +24,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing anything; it is the full
 - Money is integer minor units plus a currency code, through the Money helpers in `@repo/core`. Never floats.
 - Dates are `YYYY-MM-DD` calendar dates; period math goes through `@repo/core/periods`.
 - Never send or store plaintext user data. Encrypt every record and file with `@repo/crypto` first. The only exception is an image or scanned PDF sent for OCR, which the server must keep in memory only: never write it to disk, the database or logs.
-- All cryptography goes through `@repo/crypto`: standard algorithms only, keys non-extractable, never in localStorage, IndexedDB or logs.
+- All cryptography goes through `@repo/crypto`: standard algorithms only, keys non-extractable, never in localStorage, IndexedDB or logs. The one exception is the server's sign-in hashing and session tokens, all in `apps/server/src/auth/secrets.ts`; the server holds no keys.
 - Decrypted data lives only in memory (the worker's SQLite); IndexedDB holds ciphertext only.
 - Never add business logic to the server or a server column for data inside a record. If something seems to need it, stop and ask.
 - No network calls to anything but the app's own server; the server's only outbound calls are push deliveries. No analytics, no remote AI, no third-party scripts or fonts.

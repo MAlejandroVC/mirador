@@ -27,8 +27,6 @@ const app = createApp({
   secret,
   setupCode,
   openSignUp: process.env.MIRADOR_OPEN_SIGNUP === 'true',
-  ...(process.env.MIRADOR_URL ? { baseURL: process.env.MIRADOR_URL } : {}),
-  rateLimit: process.env.NODE_ENV === 'production',
   ...(process.env.WEB_ROOT ? { webRoot: process.env.WEB_ROOT } : {}),
 })
 

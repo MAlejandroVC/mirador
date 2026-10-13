@@ -1,21 +1,20 @@
 import { type HealthResponse } from '@repo/api'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
-import { createAuth } from './auth/auth.ts'
+import { attemptLimits, sameOrigin } from './auth/guard.ts'
+import { sessionStore } from './auth/sessions.ts'
 import { accountRoutes } from './routes/accounts.ts'
+import { sessionRoutes } from './routes/session.ts'
 import type { Database } from './store/db.ts'
 
 export interface AppOptions {
   db: Database
-  // Signs session cookies (see loadSecret).
+  // Known only to this server (see loadSecret).
   secret: string
   // Needed to create the first account (SYS-13); see index.ts.
   setupCode: string
   // SYS-13: open sign-up stays off unless the operator turns it on.
   openSignUp?: boolean
-  // The public address; inferred from the HTTPS proxy's headers when not set.
-  baseURL?: string
-  rateLimit?: boolean
   // Folder holding the built web app. The release image serves it from the same origin
   // as the API, so the browser only ever talks to its own server (NFR-05).
   webRoot?: string
@@ -23,28 +22,17 @@ export interface AppOptions {
 
 // The server stores and syncs ciphertext and handles sign-in; it never reads user
 // data. Routes are mounted under /api so the web app can be served from the same origin.
-export function createApp({
-  db,
-  secret,
-  setupCode,
-  openSignUp = false,
-  baseURL,
-  rateLimit,
-  webRoot,
-}: AppOptions) {
-  const auth = createAuth({ db, secret, ...(baseURL ? { baseURL } : {}), rateLimit })
+export function createApp({ db, secret, setupCode, openSignUp = false, webRoot }: AppOptions) {
+  const sessions = sessionStore(db)
+  const limits = attemptLimits()
   const api = new Hono()
+
+  api.use(sameOrigin)
 
   api.get('/health', (c) => c.json({ status: 'ok' } satisfies HealthResponse))
 
-  api.route('/', accountRoutes({ db, auth, secret, setupCode, openSignUp }))
-
-  // Better Auth's own sign-up would create an account without key material and
-  // without the sign-up checks, so only POST /api/accounts creates accounts.
-  api.all('/auth/sign-up/*', (c) => c.notFound())
-  // People sign in with their username; the email Better Auth keeps is made up.
-  api.all('/auth/sign-in/email', (c) => c.notFound())
-  api.on(['GET', 'POST'], '/auth/*', (c) => auth.handler(c.req.raw))
+  api.route('/', accountRoutes({ db, sessions, limits, secret, setupCode, openSignUp }))
+  api.route('/', sessionRoutes({ db, sessions, limits }))
 
   const app = new Hono()
   app.route('/api', api)

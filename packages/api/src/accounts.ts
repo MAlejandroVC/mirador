@@ -70,10 +70,24 @@ export const keysResponse = z.object({
 })
 export type KeysResponse = z.infer<typeof keysResponse>
 
-// GET /api/auth/get-session (Better Auth). Only the fields the app reads.
+// POST /api/session. Signs in with the login secret, never the password (SEC-03).
+export const signInRequest = z.object({ username, loginSecret: secret })
+export type SignInRequest = z.infer<typeof signInRequest>
+
+// GET /api/session. The signed-in user, or null.
 export const sessionResponse = z
   .object({
     user: z.object({ id: z.string(), username: z.string() }),
   })
   .nullable()
 export type SessionResponse = z.infer<typeof sessionResponse>
+
+// What every sign-in route can refuse with, besides a malformed request (400).
+// A wrong login secret and an unknown username get the same answer.
+export const sessionError = z.object({
+  error: z.enum(['wrong-credentials', 'too-many-attempts', 'signed-out']),
+})
+export type SessionError = z.infer<typeof sessionError>
+
+// Any error body the server sends: a short code the app turns into words.
+export const errorResponse = z.object({ error: z.string() })

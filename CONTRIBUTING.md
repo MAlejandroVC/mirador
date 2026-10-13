@@ -103,7 +103,7 @@ mirador/
 │   └── server/                   Hono API server: stores ciphertext, never decrypts
 │       └── src/
 │           ├── routes/           auth, keys, sync, files, ocr, push, admin
-│           ├── auth/             Better Auth setup, invites, recovery
+│           ├── auth/             Sign-in, sessions, attempt limits, invites, recovery
 │           ├── store/            Drizzle schema and migrations for PostgreSQL
 │           ├── ocr/              In-memory OCR worker; model files (Git LFS)
 │           └── tasks/            Scheduled backups, purges, push sends (Croner)
@@ -150,7 +150,7 @@ TypeScript runs in strict mode, Prettier decides formatting, and ESLint enforces
 
 - **Phone first.** Build and check every screen at 375 pixels wide before the desktop layout. Touch targets at least 44 by 44 pixels, nothing that only works on hover, and forms that open the right phone keyboard (`inputmode="decimal"` for amounts).
 - **Nothing readable leaves the browser.** Every record and file is encrypted through `@repo/crypto` before it is stored or sent. The only plaintext the server ever receives is an image or scanned PDF sent for OCR, which it keeps in memory only (SEC-01, SEC-05).
-- **All cryptography goes through `@repo/crypto`.** No other package calls WebCrypto or hash-wasm, no custom algorithms, no keys in localStorage, IndexedDB or logs. Keys stay non-extractable in the worker (SEC-13).
+- **All cryptography goes through `@repo/crypto`.** No other package calls WebCrypto or hash-wasm, no custom algorithms, no keys in localStorage, IndexedDB or logs. Keys stay non-extractable in the worker (SEC-13). The one exception is the server's sign-in hashing and session tokens, all in `apps/server/src/auth/secrets.ts`; the server holds no keys.
 - **Plaintext never touches the device's disk.** Decrypted data lives in the worker's in-memory SQLite; IndexedDB holds only ciphertext. Locking clears both keys and data (SEC-11, SEC-12).
 - **The server stays dumb.** It stores, syncs and authenticates; it never parses a record, adds business rules or needs a key. If a feature seems to need the server to read data, open a decision issue.
 - **Money is never a float.** Amounts are integers in minor units with a currency code, created and combined only through the Money helpers in `@repo/core`. Rates and interest go through decimal.js and round once, half to even (NFR-03).

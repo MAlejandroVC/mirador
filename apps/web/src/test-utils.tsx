@@ -68,7 +68,7 @@ export function stubServer(server: FakeServer) {
               ? new Response(null, { status: 503 })
               : Response.json({ status: 'ok' }),
           )
-        case '/api/auth/get-session':
+        case '/api/session':
           return Promise.resolve(
             Response.json(
               server.signedIn ? { user: { id: '1', username: server.signedIn } } : null,

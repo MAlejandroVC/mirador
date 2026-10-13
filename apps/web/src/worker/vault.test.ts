@@ -1,5 +1,11 @@
 // @vitest-environment node
-import { keysResponse, preloginRequest, signUpRequest, type SignUpRequest } from '@repo/api'
+import {
+  keysResponse,
+  preloginRequest,
+  signInRequest,
+  signUpRequest,
+  type SignUpRequest,
+} from '@repo/api'
 import { describe, expect, it } from 'vitest'
 import { createApi, type Fetch } from '../lib/api'
 import { vaultErrorCode } from './errors'
@@ -36,15 +42,18 @@ function fakeServer() {
         if (!account) throw new Error('Not used by these tests')
         return json({ kdf: account.kdf })
       }
-      case '/api/auth/sign-in/username': {
-        const { username, password: secret } = body as { username: string; password: string }
-        if (accounts.get(username)?.loginSecret !== secret) return json({ code: 'INVALID' }, 401)
+      case '/api/session': {
+        if (init?.method === 'DELETE') {
+          signedIn = null
+          return new Response(null, { status: 204 })
+        }
+        const { username, loginSecret } = signInRequest.parse(body)
+        if (accounts.get(username)?.loginSecret !== loginSecret) {
+          return json({ error: 'wrong-credentials' }, 401)
+        }
         signedIn = username
-        return json({})
+        return new Response(null, { status: 204 })
       }
-      case '/api/auth/sign-out':
-        signedIn = null
-        return json({})
       case '/api/keys': {
         const account = signedIn ? accounts.get(signedIn) : undefined
         if (!account) return json({ error: 'signed-out' }, 401)
@@ -141,7 +150,7 @@ describe('vault', () => {
     const phone = new Vault(server.api)
 
     expect(await failure(phone.signIn('ana', password))).toBe('unsafe-server')
-    expect(server.sent.join('\n')).not.toContain('sign-in')
+    expect(server.sent.join('\n')).not.toContain('/api/session')
   })
 
   it('SEC-04: refuses a wrapped key the server altered', async () => {

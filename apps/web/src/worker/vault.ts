@@ -118,7 +118,6 @@ async function guard<T>(action: () => Promise<T>): Promise<T> {
     if (error instanceof WrongKeyError) throw new VaultError('wrong-password')
     if (error instanceof ApiError) {
       if (error.status === 401) throw new VaultError('signed-out')
-      // Better Auth limits sign-in attempts per address.
       if (error.status === 429) throw new VaultError('too-many-attempts')
       const code = vaultErrorCodes.find((known) => known === error.code)
       throw new VaultError(code ?? 'unknown')

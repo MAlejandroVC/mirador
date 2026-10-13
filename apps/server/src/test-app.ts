@@ -6,7 +6,7 @@ import { type AppOptions, createApp } from './app.ts'
 import { migrationsFolder, schema } from './store/db.ts'
 
 export const testSetupCode = 'TEST-SETU-PCOD-E123-4567'
-// Browsers always send these; Better Auth works out the server's address from them.
+// Browsers always send these on a request that changes something.
 export const testHost = 'localhost'
 export const testOrigin = 'http://localhost'
 
@@ -21,14 +21,10 @@ export async function createTestApp(options: Partial<AppOptions> = {}) {
     await migrate(shared, { migrationsFolder })
   }
   const db = shared
-  await db.execute(
-    sql.raw(
-      'truncate users, sessions, accounts, verifications, key_material, server_settings cascade',
-    ),
-  )
+  await db.execute(sql.raw('truncate users, sessions, key_material, server_settings cascade'))
   const app = createApp({
     db,
-    secret: 'a-test-secret-that-is-long-enough-for-better-auth',
+    secret: 'a-test-secret',
     setupCode: testSetupCode,
     ...options,
   })

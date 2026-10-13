@@ -25,9 +25,28 @@ const restrictedImports = (patterns, paths = []) => ({
   'no-restricted-imports': ['error', { patterns, paths }],
 })
 
+const serverImports = (extraPaths) =>
+  restrictedImports(
+    [
+      {
+        group: serverForbidden.flatMap((name) => [`@repo/${name}`, `@repo/${name}/*`]),
+        message: 'The server may import only @repo/api, @repo/sync/protocol and @repo/i18n.',
+      },
+      {
+        group: ['@repo/sync/*', '!@repo/sync/protocol'],
+        message: 'The server may use only the sync protocol types: @repo/sync/protocol.',
+      },
+    ],
+    [
+      {
+        name: '@repo/sync',
+        message: 'The server may use only the sync protocol types: @repo/sync/protocol.',
+      },
+      ...extraPaths,
+    ],
+  )
+
 // Exact module names: a pattern such as `crypto` would also catch @repo/crypto itself.
-// Better Auth's own helpers (better-auth/crypto) stay allowed on the server: they hash
-// sign-in secrets, which is sign-in, not user data.
 const rawCrypto = ['hash-wasm', 'node:crypto', 'crypto'].map((name) => ({
   name,
   message: 'All cryptography goes through @repo/crypto (SEC-13).',
@@ -91,26 +110,15 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
     rules: {
       ...cryptoOutsideCryptoPackage,
-      ...restrictedImports(
-        [
-          {
-            group: serverForbidden.flatMap((name) => [`@repo/${name}`, `@repo/${name}/*`]),
-            message: 'The server may import only @repo/api, @repo/sync/protocol and @repo/i18n.',
-          },
-          {
-            group: ['@repo/sync/*', '!@repo/sync/protocol'],
-            message: 'The server may use only the sync protocol types: @repo/sync/protocol.',
-          },
-        ],
-        [
-          {
-            name: '@repo/sync',
-            message: 'The server may use only the sync protocol types: @repo/sync/protocol.',
-          },
-          ...rawCrypto,
-        ],
-      ),
+      ...serverImports(rawCrypto),
     },
+  },
+  {
+    // The server can't use @repo/crypto (it holds no keys), but it hashes what the
+    // browser sends to sign in and makes session tokens. That is sign-in, not user
+    // data, and it all stays in this one file.
+    files: ['apps/server/src/auth/secrets.ts'],
+    rules: serverImports([]),
   },
   {
     files: ['packages/core/**/*.ts'],

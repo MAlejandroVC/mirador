@@ -1,9 +1,9 @@
 import {
+  errorResponse,
   healthResponse,
   keysResponse,
   preloginResponse,
   sessionResponse,
-  signUpError,
   type SignUpRequest,
   signUpStatus,
 } from '@repo/api'
@@ -32,7 +32,7 @@ export function createApi(fetchFn: Fetch = (...args) => globalThis.fetch(...args
     })
     if (!response.ok) {
       const body: unknown = await response.json().catch(() => null)
-      const parsed = signUpError.safeParse(body)
+      const parsed = errorResponse.safeParse(body)
       throw new ApiError(response.status, parsed.success ? parsed.data.error : undefined)
     }
     return response
@@ -46,7 +46,7 @@ export function createApi(fetchFn: Fetch = (...args) => globalThis.fetch(...args
       return healthResponse.parse(await (await request('/api/health')).json())
     },
     async session() {
-      return sessionResponse.parse(await (await request('/api/auth/get-session')).json())
+      return sessionResponse.parse(await (await request('/api/session')).json())
     },
     async signUpStatus() {
       return signUpStatus.parse(await (await request('/api/accounts/sign-up')).json())
@@ -59,16 +59,12 @@ export function createApi(fetchFn: Fetch = (...args) => globalThis.fetch(...args
         await (await post('/api/accounts/prelogin', { username })).json(),
       )
     },
-    // SEC-03: Better Auth's "password" is the login secret, never the password.
+    // SEC-03: the login secret, never the password.
     async signIn(username: string, loginSecret: string) {
-      await post('/api/auth/sign-in/username', {
-        username,
-        password: loginSecret,
-        rememberMe: true,
-      })
+      await post('/api/session', { username, loginSecret })
     },
     async signOut() {
-      await post('/api/auth/sign-out', {})
+      await request('/api/session', { method: 'DELETE' })
     },
     async keys() {
       return keysResponse.parse(await (await request('/api/keys')).json())

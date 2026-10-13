@@ -2,6 +2,7 @@ import {
   keysResponse,
   preloginResponse,
   sessionResponse,
+  sessionError,
   signUpError,
   type SignUpRequest,
   signUpStatus,
@@ -42,14 +43,19 @@ function newAccount(username: string, extra: Partial<SignUpRequest> = {}): SignU
   }
 }
 
-function post(server: TestServer, path: string, body: unknown, cookie?: string) {
+function post(
+  server: TestServer,
+  path: string,
+  body: unknown,
+  headers: Record<string, string> = {},
+) {
   return server.app.request(path, {
     method: 'POST',
     headers: {
       Host: testHost,
       'Content-Type': 'application/json',
       Origin: testOrigin,
-      ...(cookie ? { Cookie: cookie } : {}),
+      ...headers,
     },
     body: JSON.stringify(body),
   })
@@ -74,12 +80,24 @@ async function signUp(server: TestServer, account: SignUpRequest) {
   return cookieOf(response)
 }
 
-async function signIn(server: TestServer, username: string, loginSecret: string) {
-  return post(server, '/api/auth/sign-in/username', {
-    username,
-    password: loginSecret,
-    rememberMe: true,
+function signIn(
+  server: TestServer,
+  username: string,
+  loginSecret: string,
+  headers: Record<string, string> = {},
+) {
+  return post(server, '/api/session', { username, loginSecret }, headers)
+}
+
+function signOut(server: TestServer, cookie: string) {
+  return server.app.request('/api/session', {
+    method: 'DELETE',
+    headers: { Host: testHost, Origin: testOrigin, Cookie: cookie },
   })
+}
+
+async function sessionOf(server: TestServer, cookie: string) {
+  return sessionResponse.parse(await (await get(server, '/api/session', cookie)).json())
 }
 
 describe('sign-up', () => {
@@ -140,16 +158,6 @@ describe('sign-up', () => {
     expect(signUpError.parse(await again.json()).error).toBe('username-taken')
   })
 
-  it("SYS-13: Better Auth's own sign-up, which skips these checks, is not reachable", async () => {
-    const response = await post(server, '/api/auth/sign-up/email', {
-      email: 'eve@example.com',
-      password: base64Url(43, 'eve'),
-      name: '',
-    })
-
-    expect(response.status).toBe(404)
-  })
-
   it('SEC-03: rejects anything that is not a well-formed login secret and wrapped key', async () => {
     const account = newAccount('ana', { setupCode: testSetupCode })
 
@@ -192,40 +200,62 @@ describe('sign-in', () => {
   it('SYS-06: sign-up signs the new account in on that device', async () => {
     server = await createTestApp()
     const cookie = await signUp(server, newAccount('ana', { setupCode: testSetupCode }))
-    const session = sessionResponse.parse(
-      await (await get(server, '/api/auth/get-session', cookie)).json(),
-    )
-    expect(session?.user.username).toBe('ana')
+
+    expect((await sessionOf(server, cookie))?.user.username).toBe('ana')
   })
 
   it('SYS-06: signs in with the login secret and stays signed in until signing out', async () => {
-    const response = await signIn(server, 'ana', ana.loginSecret)
-    expect(response.status).toBe(200)
+    const response = await signIn(server, 'ANA', ana.loginSecret)
+    expect(response.status).toBe(204)
     const cookie = cookieOf(response)
-    expect(response.headers.get('set-cookie')).toMatch(/HttpOnly/i)
-    expect(response.headers.get('set-cookie')).toMatch(/Max-Age=\d{7}/)
+    expect((await sessionOf(server, cookie))?.user.username).toBe('ana')
 
-    const session = sessionResponse.parse(
-      await (await get(server, '/api/auth/get-session', cookie)).json(),
-    )
-    expect(session?.user.username).toBe('ana')
-
-    expect((await post(server, '/api/auth/sign-out', {}, cookie)).status).toBe(200)
-    const after = sessionResponse.parse(
-      await (await get(server, '/api/auth/get-session', cookie)).json(),
-    )
-    expect(after).toBeNull()
+    expect((await signOut(server, cookie)).status).toBe(204)
+    expect(await sessionOf(server, cookie)).toBeNull()
+    expect((await get(server, '/api/keys', cookie)).status).toBe(401)
   })
 
-  it('SYS-06: signs in only by username; the stored email is made up and unused', async () => {
-    const byEmail = await post(server, '/api/auth/sign-in/email', {
-      email: 'ana@users.invalid',
-      password: ana.loginSecret,
-    })
-    expect(byEmail.status).toBe(404)
+  it('SEC-09: the session cookie is out of reach of scripts and other sites', async () => {
+    const plain = (await signIn(server, 'ana', ana.loginSecret)).headers.get('set-cookie')
+    expect(plain).toMatch(/^mirador_session=[A-Za-z0-9_-]{43};/)
+    expect(plain).toMatch(/HttpOnly/)
+    expect(plain).toMatch(/SameSite=Strict/)
+    expect(plain).toMatch(/Max-Age=5184000/)
+    expect(plain).not.toMatch(/Secure/)
 
-    const [user] = await server.db.select().from(schema.users)
-    expect(user).toMatchObject({ username: 'ana', email: 'ana@users.invalid' })
+    const behindHttps = await signIn(server, 'ana', ana.loginSecret, {
+      'X-Forwarded-Proto': 'https',
+    })
+    expect(behindHttps.headers.get('set-cookie')).toMatch(/Secure/)
+  })
+
+  it('SYS-06: a session ends after 60 unused days, and each day of use extends it', async () => {
+    const cookie = cookieOf(await signIn(server, 'ana', ana.loginSecret))
+    const day = 24 * 60 * 60 * 1000
+    const setExpiry = (inDays: number) =>
+      server.db.update(schema.sessions).set({ expiresAt: new Date(Date.now() + inDays * day) })
+
+    await setExpiry(58)
+    const used = await get(server, '/api/session', cookie)
+    expect(used.headers.get('set-cookie')).toMatch(/Max-Age=5184000/)
+    // Sign-up in beforeEach left another session, which wasn't used.
+    const ends = (await server.db.select().from(schema.sessions)).map((row) =>
+      row.expiresAt.getTime(),
+    )
+    expect(Math.max(...ends)).toBeGreaterThan(Date.now() + 59 * day)
+    expect(Math.min(...ends)).toBeLessThan(Date.now() + 59 * day)
+
+    await setExpiry(-1)
+    expect(await sessionOf(server, cookie)).toBeNull()
+  })
+
+  it('SEC-04: the database keeps only a hash of each session token', async () => {
+    const response = await signIn(server, 'ana', ana.loginSecret)
+    const token = cookieOf(response).split('=')[1]!
+
+    const dump = JSON.stringify(await server.db.select().from(schema.sessions))
+    expect(dump).not.toContain(token)
+    expect(await sessionOf(server, `mirador_session=${token}x`)).toBeNull()
   })
 
   it('SEC-03: a wrong login secret or unknown username is refused the same way', async () => {
@@ -235,6 +265,44 @@ describe('sign-in', () => {
     expect(wrong.status).toBe(401)
     expect(unknown.status).toBe(401)
     expect(await wrong.json()).toEqual(await unknown.json())
+    expect(wrong.headers.get('set-cookie')).toBeNull()
+  })
+
+  it('SEC-03: after ten wrong guesses a username waits, even with the right secret', async () => {
+    for (let guess = 0; guess < 10; guess += 1) {
+      const address = { 'X-Forwarded-For': `10.0.0.${guess}` }
+      expect((await signIn(server, 'ana', base64Url(43, `guess ${guess}`), address)).status).toBe(
+        401,
+      )
+    }
+
+    const right = await signIn(server, 'ana', ana.loginSecret, { 'X-Forwarded-For': '10.0.1.1' })
+    expect(right.status).toBe(429)
+    expect(sessionError.parse(await right.json()).error).toBe('too-many-attempts')
+  })
+
+  it('SEC-03: one address gets a limited number of attempts a minute', async () => {
+    const address = { 'X-Forwarded-For': '203.0.113.7' }
+    const statuses = []
+    for (let attempt = 0; attempt < 31; attempt += 1) {
+      statuses.push((await signIn(server, `user${attempt}`, ana.loginSecret, address)).status)
+    }
+
+    expect(statuses.slice(0, 30)).toEqual(Array(30).fill(401))
+    expect(statuses[30]).toBe(429)
+    const elsewhere = await signIn(server, 'ana', ana.loginSecret, {
+      'X-Forwarded-For': '203.0.113.8',
+    })
+    expect(elsewhere.status).toBe(204)
+  })
+
+  it('SEC-09: refuses a request another site makes in the browser', async () => {
+    const response = await signIn(server, 'ana', ana.loginSecret, {
+      Origin: 'https://evil.example',
+    })
+
+    expect(response.status).toBe(403)
+    expect(response.headers.get('set-cookie')).toBeNull()
   })
 
   it('SEC-02: prelogin returns the salt and cost the account was made with', async () => {
@@ -284,8 +352,8 @@ describe('key material', () => {
   it('SEC-04: the database never holds the login secret or the recovery secret', async () => {
     const dump = JSON.stringify(
       await Promise.all(
-        ['users', 'sessions', 'accounts', 'verifications', 'key_material', 'server_settings'].map(
-          (table) => server.db.execute(sql.raw(`select * from ${table}`)),
+        ['users', 'sessions', 'key_material', 'server_settings'].map((table) =>
+          server.db.execute(sql.raw(`select * from ${table}`)),
         ),
       ),
     )
