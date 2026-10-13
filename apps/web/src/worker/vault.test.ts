@@ -2,11 +2,13 @@
 import {
   keysResponse,
   preloginRequest,
+  pushRequest,
   signInRequest,
   signUpRequest,
   type SignUpRequest,
 } from '@repo/api'
 import { describe, expect, it } from 'vitest'
+import { newRecordId } from '@repo/crypto'
 import { createApi, type Fetch } from '../lib/api'
 import { vaultErrorCode } from './errors'
 import { Vault } from './vault'
@@ -17,6 +19,8 @@ const password = 'a sunny day in Monterrey'
 // the tests can check what would have left the browser.
 function fakeServer() {
   const accounts = new Map<string, SignUpRequest>()
+  // Per user, like apps/server/src/routes/records.ts (without conflict checks).
+  const records = new Map<string, { id: string; revision: number; ciphertext: string }[]>()
   const sent: string[] = []
   let signedIn: string | null = null
   let tamper: ((keys: { kdf: SignUpRequest['kdf']; wrappedAccountKey: string }) => void) | null =
@@ -43,7 +47,10 @@ function fakeServer() {
         return json({ kdf: account.kdf })
       }
       case '/api/session': {
-        if (init?.method === 'DELETE') {
+        if (!init?.method || init.method === 'GET') {
+          return json(signedIn ? { user: { id: `id-${signedIn}`, username: signedIn } } : null)
+        }
+        if (init.method === 'DELETE') {
           signedIn = null
           return new Response(null, { status: 204 })
         }
@@ -61,8 +68,28 @@ function fakeServer() {
         tamper?.(keys)
         return json(keysResponse.parse(keys))
       }
-      default:
+      case '/api/records': {
+        if (!signedIn) return json({ error: 'signed-out' }, 401)
+        const mine = records.get(signedIn) ?? []
+        records.set(signedIn, mine)
+        const { changes } = pushRequest.parse(body)
+        const revisions: Record<string, number> = {}
+        for (const change of changes) {
+          const revision = mine.length + 1
+          mine.push({ id: change.id, revision, ciphertext: change.ciphertext })
+          revisions[change.id] = revision
+        }
+        return json({ revisions })
+      }
+      default: {
+        const after = /^\/api\/records\?after=(\d+)$/.exec(path)?.[1]
+        if (after !== undefined && signedIn) {
+          const latest = new Map((records.get(signedIn) ?? []).map((row) => [row.id, row]))
+          const changes = [...latest.values()].filter((row) => row.revision > Number(after))
+          return json({ changes, more: false })
+        }
         return json({}, 404)
+      }
     }
   }
 
@@ -103,6 +130,26 @@ describe('vault', () => {
     expect(everything).not.toContain(password)
     expect(everything).not.toContain(recoveryKey)
     expect(everything).not.toContain(recoveryKey.replaceAll('-', ''))
+  })
+
+  it('SEC-01: records are encrypted before they leave, and only the owner reads them', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    await phone.signUp({ username: 'ana', password })
+    const id = newRecordId()
+
+    await phone.saveRecords([
+      { id, body: { deleted: false, type: 'note', schema: 1, data: { text: 'Casa Azul rent' } } },
+    ])
+
+    expect(server.sent.join('\n')).not.toContain('Casa Azul')
+    const laptop = new Vault(server.api)
+    await laptop.signIn('ana', password)
+    expect((await laptop.listRecords()).map((record) => record.body)).toEqual([
+      { deleted: false, type: 'note', schema: 1, data: { text: 'Casa Azul rent' } },
+    ])
+    await laptop.lock()
+    expect(await failure(laptop.listRecords())).toBe('locked')
   })
 
   it('SEC-07: makes a recovery key at sign-up and stays unlocked', async () => {

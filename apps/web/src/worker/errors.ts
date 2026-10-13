@@ -7,6 +7,7 @@ export const vaultErrorCodes = [
   'sign-up-closed',
   'wrong-setup-code',
   'signed-out',
+  'locked',
   'too-many-attempts',
   'unsafe-server',
   'network',

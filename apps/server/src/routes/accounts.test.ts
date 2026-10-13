@@ -4,81 +4,24 @@ import {
   sessionResponse,
   sessionError,
   signUpError,
-  type SignUpRequest,
   signUpStatus,
 } from '@repo/api'
 import { sql } from 'drizzle-orm'
 import { schema } from '../store/db.ts'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createTestApp, testHost, testOrigin, testSetupCode } from '../test-app.ts'
-
-type TestServer = Awaited<ReturnType<typeof createTestApp>>
-
-// Stand-ins for what the browser sends: the server can't tell them from real key
-// material, which is the point. Real values come from @repo/crypto in the web app.
-function base64Url(length: number, seed: string) {
-  return Buffer.from(seed.repeat(length))
-    .toString('base64url')
-    .replace(/[^A-Za-z0-9_-]/g, 'x')
-    .slice(0, length)
-}
-
-function newAccount(username: string, extra: Partial<SignUpRequest> = {}): SignUpRequest {
-  return {
-    username,
-    loginSecret: base64Url(43, `login ${username}`),
-    kdf: {
-      algorithm: 'argon2id',
-      salt: base64Url(22, `salt ${username}`),
-      memoryKiB: 65536,
-      iterations: 3,
-      parallelism: 1,
-    },
-    wrappedAccountKey: {
-      password: base64Url(54, `password-wrapped ${username}`),
-      recovery: base64Url(54, `recovery-wrapped ${username}`),
-    },
-    recoverySecret: base64Url(43, `recovery ${username}`),
-    ...extra,
-  }
-}
-
-function post(
-  server: TestServer,
-  path: string,
-  body: unknown,
-  headers: Record<string, string> = {},
-) {
-  return server.app.request(path, {
-    method: 'POST',
-    headers: {
-      Host: testHost,
-      'Content-Type': 'application/json',
-      Origin: testOrigin,
-      ...headers,
-    },
-    body: JSON.stringify(body),
-  })
-}
-
-function get(server: TestServer, path: string, cookie?: string) {
-  return server.app.request(path, {
-    headers: { Host: testHost, ...(cookie ? { Cookie: cookie } : {}) },
-  })
-}
-
-function cookieOf(response: Response) {
-  return response.headers
-    .getSetCookie()
-    .map((cookie) => cookie.split(';')[0])
-    .join('; ')
-}
-
-async function signUp(server: TestServer, account: SignUpRequest) {
-  const response = await post(server, '/api/accounts', account)
-  expect(response.status).toBe(201)
-  return cookieOf(response)
-}
+import {
+  base64Url,
+  cookieOf,
+  createTestApp,
+  get,
+  newAccount,
+  post,
+  signUp,
+  testHost,
+  testOrigin,
+  testSetupCode,
+  type TestServer,
+} from '../test-app.ts'
 
 function signIn(
   server: TestServer,
