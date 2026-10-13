@@ -1,10 +1,12 @@
 // @vitest-environment node
 import {
+  changePasswordRequest,
   keysResponse,
   preloginRequest,
   pushRequest,
   recoverRequest,
   recoveryKeyRequest,
+  replaceRecoveryKeyRequest,
   signInRequest,
   signUpRequest,
   type SignUpRequest,
@@ -88,6 +90,29 @@ function fakeServer() {
         account.kdf = request.kdf
         account.wrappedAccountKey.password = request.wrappedAccountKey
         signedIn = request.username
+        return new Response(null, { status: 204 })
+      }
+      case '/api/accounts/password': {
+        const request = changePasswordRequest.parse(body)
+        const account = signedIn ? accounts.get(signedIn) : undefined
+        if (!account) return json({ error: 'signed-out' }, 401)
+        if (account.loginSecret !== request.loginSecret) {
+          return json({ error: 'wrong-password' }, 401)
+        }
+        account.loginSecret = request.newLoginSecret
+        account.kdf = request.kdf
+        account.wrappedAccountKey.password = request.wrappedAccountKey
+        return new Response(null, { status: 204 })
+      }
+      case '/api/accounts/recovery-key': {
+        const request = replaceRecoveryKeyRequest.parse(body)
+        const account = signedIn ? accounts.get(signedIn) : undefined
+        if (!account) return json({ error: 'signed-out' }, 401)
+        if (account.loginSecret !== request.loginSecret) {
+          return json({ error: 'wrong-password' }, 401)
+        }
+        account.recoverySecret = request.recoverySecret
+        account.wrappedAccountKey.recovery = request.wrappedAccountKey
         return new Response(null, { status: 204 })
       }
       case '/api/records': {
@@ -223,6 +248,62 @@ describe('vault', () => {
       failure(vault.recover({ username: 'ana', recoveryKey: key, newPassword: 'new password!' }))
     expect(await attempt(typo)).toBe('recovery-key-typo')
     expect(await attempt(other)).toBe('wrong-recovery-key')
+  })
+
+  it('SEC-08: a new password keeps the data, and neither password leaves the browser', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    await phone.signUp({ username: 'ana', password })
+    const id = newRecordId()
+    await phone.saveRecords([
+      { id, body: { deleted: false, type: 'note', schema: 1, data: { text: 'kept' } } },
+    ])
+    server.sent.length = 0
+
+    await phone.changePassword(password, 'a brand new password')
+
+    expect(await phone.status()).toBe('unlocked')
+    expect(server.sent.join('\n')).not.toContain(password)
+    expect(server.sent.join('\n')).not.toContain('a brand new password')
+    expect(await failure(new Vault(server.api).signIn('ana', password))).toBe('wrong-credentials')
+    const laptop = new Vault(server.api)
+    await laptop.signIn('ana', 'a brand new password')
+    expect((await laptop.listRecords()).map((record) => record.id)).toEqual([id])
+  })
+
+  it('SEC-08: a wrong current password is caught before anything is sent', async () => {
+    const server = fakeServer()
+    const vault = new Vault(server.api)
+    await vault.signUp({ username: 'ana', password })
+    server.sent.length = 0
+
+    expect(await failure(vault.changePassword('not my password', 'a brand new password'))).toBe(
+      'wrong-password',
+    )
+    expect(await failure(vault.replaceRecoveryKey('not my password'))).toBe('wrong-password')
+    expect(server.sent.join('\n')).not.toContain('/api/accounts/')
+    await vault.lock()
+    expect(await failure(vault.changePassword(password, 'a brand new password'))).toBe('locked')
+  })
+
+  it('SEC-08: a new recovery key opens the data and the old one no longer does', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    const { recoveryKey: old } = await phone.signUp({ username: 'ana', password })
+    server.sent.length = 0
+
+    const { recoveryKey } = await phone.replaceRecoveryKey(password)
+
+    expect(recoveryKey).not.toBe(old)
+    expect(server.sent.join('\n')).not.toContain(recoveryKey.replaceAll('-', ''))
+    expect(server.sent.join('\n')).not.toContain(password)
+    await phone.signOut()
+    const laptop = new Vault(server.api)
+    const recover = (key: string) =>
+      laptop.recover({ username: 'ana', recoveryKey: key, newPassword: 'a brand new password' })
+    expect(await failure(recover(old))).toBe('wrong-recovery-key')
+    await recover(recoveryKey)
+    expect(await laptop.status()).toBe('unlocked')
   })
 
   it('SEC-12: locking forgets the key, and only the right password unlocks again', async () => {

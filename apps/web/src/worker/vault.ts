@@ -153,7 +153,7 @@ export class Vault {
       const { loginSecret, keyEncryptionKey } = await derivePasswordKeys(newPassword, kdf)
       // The server accepted the recovery secret, so a key that won't open with the
       // recovery key was altered there.
-      const { accountKey, wrappedByPassword } = await rewrapAccountKey(
+      const { accountKey, rewrapped } = await rewrapAccountKey(
         wrapped,
         recoveryWrappingKey,
         keyEncryptionKey,
@@ -165,10 +165,71 @@ export class Vault {
         recoverySecret,
         loginSecret,
         kdf,
-        wrappedAccountKey: wrappedByPassword,
+        wrappedAccountKey: rewrapped,
       })
       await this.#open(accountKey)
     })
+  }
+
+  // SEC-08: a new password wraps the same account key, so nothing is encrypted again.
+  // The current password must open the key here and sign in on the server too. Other
+  // devices are signed out; this one stays signed in and unlocked.
+  async changePassword(currentPassword: string, newPassword: string) {
+    return guard(async () => {
+      this.#sync()
+      const { current, keys } = await this.#currentPassword(currentPassword)
+      const kdf = newKdfParams()
+      const fresh = await derivePasswordKeys(newPassword, kdf)
+      const { rewrapped } = await rewrapAccountKey(
+        keys.wrappedAccountKey,
+        current.keyEncryptionKey,
+        fresh.keyEncryptionKey,
+      )
+      await this.api.changePassword({
+        loginSecret: current.loginSecret,
+        newLoginSecret: fresh.loginSecret,
+        kdf,
+        wrappedAccountKey: rewrapped,
+      })
+    })
+  }
+
+  // SEC-08: a new recovery key wraps the same account key, and the old key stops
+  // working. Returns the new key to show once, like at sign-up.
+  async replaceRecoveryKey(password: string) {
+    return guard(async () => {
+      this.#sync()
+      const { current, keys } = await this.#currentPassword(password)
+      const recoveryKey = newRecoveryKey()
+      const { recoverySecret, recoveryWrappingKey } = await deriveRecoveryKeys(recoveryKey)
+      const { rewrapped } = await rewrapAccountKey(
+        keys.wrappedAccountKey,
+        current.keyEncryptionKey,
+        recoveryWrappingKey,
+      )
+      await this.api.replaceRecoveryKey({
+        loginSecret: current.loginSecret,
+        recoverySecret,
+        wrappedAccountKey: rewrapped,
+      })
+      const shown = await formatRecoveryKey(recoveryKey)
+      recoveryKey.fill(0)
+      return { recoveryKey: shown }
+    })
+  }
+
+  // SEC-08: ends every session but this device's. Returns how many devices.
+  async signOutOthers() {
+    return guard(async () => (await this.api.signOutOthers()).signedOut)
+  }
+
+  // The current password's keys, checked against the wrapped key before anything is
+  // sent, so a typo is caught here (WrongKeyError) rather than counted by the server.
+  async #currentPassword(password: string) {
+    const keys = await this.api.keys()
+    const current = await derivePasswordKeys(password, keys.kdf)
+    await unwrapAccountKey(keys.wrappedAccountKey, current.keyEncryptionKey)
+    return { current, keys }
   }
 
   async unlock(password: string) {
@@ -207,10 +268,12 @@ async function guard<T>(action: () => Promise<T>): Promise<T> {
     // SEC-04: the server altered or swapped a record; say so rather than show it.
     if (error instanceof RecordsAltered) throw new VaultError('unsafe-server')
     if (error instanceof ApiError) {
+      // The server's own code first: a 401 can be a wrong password, not only signed out.
+      const code = vaultErrorCodes.find((known) => known === error.code)
+      if (code) throw new VaultError(code)
       if (error.status === 401) throw new VaultError('signed-out')
       if (error.status === 429) throw new VaultError('too-many-attempts')
-      const code = vaultErrorCodes.find((known) => known === error.code)
-      throw new VaultError(code ?? 'unknown')
+      throw new VaultError('unknown')
     }
     if (error instanceof TypeError) throw new VaultError('network')
     throw new VaultError('unknown')

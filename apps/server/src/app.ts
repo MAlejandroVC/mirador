@@ -5,6 +5,7 @@ import { bodyLimit } from 'hono/body-limit'
 import { attemptLimits, sameOrigin } from './auth/guard.ts'
 import { sessionStore } from './auth/sessions.ts'
 import { accountRoutes } from './routes/accounts.ts'
+import { credentialRoutes } from './routes/credentials.ts'
 import { recordRoutes } from './routes/records.ts'
 import { recoveryRoutes } from './routes/recovery.ts'
 import { sessionRoutes } from './routes/session.ts'
@@ -52,6 +53,7 @@ export function createApp({
   api.route('/', sessionRoutes({ db, sessions, limits }))
   api.route('/', recordRoutes({ db, sessions }))
   api.route('/', recoveryRoutes({ db, sessions, limits }))
+  api.route('/', credentialRoutes({ db, sessions, limits }))
 
   const app = new Hono()
   app.route('/api', api)

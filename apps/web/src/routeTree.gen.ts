@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RecoverRouteImport } from './routes/recover'
+import { Route as SecurityRouteImport } from './routes/security'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as UnlockRouteImport } from './routes/unlock'
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const RecoverRoute = RecoverRouteImport.update({
   id: '/recover',
   path: '/recover',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SecurityRoute = SecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignInRoute = SignInRouteImport.update({
@@ -44,6 +50,7 @@ const UnlockRoute = UnlockRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/recover': typeof RecoverRoute
+  '/security': typeof SecurityRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/unlock': typeof UnlockRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/recover': typeof RecoverRoute
+  '/security': typeof SecurityRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/unlock': typeof UnlockRoute
@@ -59,21 +67,31 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/recover': typeof RecoverRoute
+  '/security': typeof SecurityRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/unlock': typeof UnlockRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/recover' | '/sign-in' | '/sign-up' | '/unlock'
+  fullPaths:
+    '/' | '/recover' | '/security' | '/sign-in' | '/sign-up' | '/unlock'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/recover' | '/sign-in' | '/sign-up' | '/unlock'
-  id: '__root__' | '/' | '/recover' | '/sign-in' | '/sign-up' | '/unlock'
+  to: '/' | '/recover' | '/security' | '/sign-in' | '/sign-up' | '/unlock'
+  id:
+    | '__root__'
+    | '/'
+    | '/recover'
+    | '/security'
+    | '/sign-in'
+    | '/sign-up'
+    | '/unlock'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   RecoverRoute: typeof RecoverRoute
+  SecurityRoute: typeof SecurityRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
   UnlockRoute: typeof UnlockRoute
@@ -93,6 +111,13 @@ declare module '@tanstack/react-router' {
       path: '/recover'
       fullPath: '/recover'
       preLoaderRoute: typeof RecoverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/security': {
+      id: '/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof SecurityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sign-in': {
@@ -122,6 +147,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   RecoverRoute: RecoverRoute,
+  SecurityRoute: SecurityRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
   UnlockRoute: UnlockRoute,

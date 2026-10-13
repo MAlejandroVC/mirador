@@ -74,7 +74,39 @@
       "signedInAs": "Signed in as {{username}}",
       "encrypted": "Your data is end-to-end encrypted. Only this device can read it while it's unlocked.",
       "lock": "Lock",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "security": "Password and security"
+    },
+    "settings": {
+      "title": "Password and security",
+      "back": "Back",
+      "password": {
+        "title": "Password",
+        "intro": "Your password unlocks your data. Changing it signs out your other devices, and your data stays as it is.",
+        "current": "Current password",
+        "new": "New password",
+        "confirm": "Repeat new password",
+        "submit": "Change password",
+        "working": "Changing your password…",
+        "done": "Password changed. Your other devices were signed out."
+      },
+      "recoveryKey": {
+        "title": "Recovery key",
+        "intro": "Make a new recovery key if you lost yours or someone else may have seen it. The old one stops working at once.",
+        "password": "Current password",
+        "submit": "Make a new recovery key",
+        "working": "Making a new recovery key…",
+        "done": "Your new recovery key is saved. The old one no longer works."
+      },
+      "devices": {
+        "title": "Other devices",
+        "intro": "Sign out every other phone, tablet or computer. This one stays signed in.",
+        "submit": "Sign out other devices",
+        "working": "Signing out…",
+        "done_zero": "No other devices were signed in.",
+        "done_one": "Signed out {{count}} other device.",
+        "done_other": "Signed out {{count}} other devices."
+      }
     },
     "errors": {
       "wrong-credentials": "Wrong username or password.",
@@ -94,7 +126,8 @@
       "setupCodeMissing": "Enter the setup code.",
       "wrong-recovery-key": "Wrong username or recovery key.",
       "recovery-key-typo": "That recovery key has a typo. Check each group of four characters.",
-      "recoveryKeyMissing": "Enter your recovery key."
+      "recoveryKeyMissing": "Enter your recovery key.",
+      "passwordMissing": "Enter your current password."
     }
   }
 }

@@ -1,4 +1,5 @@
 import {
+  type ChangePasswordRequest,
   errorResponse,
   pullResponse,
   pushConflict,
@@ -6,10 +7,12 @@ import {
   pushResponse,
   type RecoverRequest,
   recoveryKeyResponse,
+  type ReplaceRecoveryKeyRequest,
   healthResponse,
   keysResponse,
   preloginResponse,
   sessionResponse,
+  signOutOthersResponse,
   type SignUpRequest,
   signUpStatus,
 } from '@repo/api'
@@ -78,6 +81,18 @@ export function createApi(fetchFn: Fetch = (...args) => globalThis.fetch(...args
     },
     async recover(body: RecoverRequest) {
       await post('/api/accounts/recovery', body)
+    },
+    // SEC-08: each proves the current password with its login secret.
+    async changePassword(body: ChangePasswordRequest) {
+      await post('/api/accounts/password', body)
+    },
+    async replaceRecoveryKey(body: ReplaceRecoveryKeyRequest) {
+      await post('/api/accounts/recovery-key', body)
+    },
+    async signOutOthers() {
+      return signOutOthersResponse.parse(
+        await (await request('/api/session/others', { method: 'DELETE' })).json(),
+      )
     },
     async signOut() {
       await request('/api/session', { method: 'DELETE' })

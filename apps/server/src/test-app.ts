@@ -89,6 +89,13 @@ export function get(server: TestServer, path: string, cookie?: string) {
   })
 }
 
+export function del(server: TestServer, path: string, cookie?: string) {
+  return server.app.request(path, {
+    method: 'DELETE',
+    headers: { Host: testHost, Origin: testOrigin, ...(cookie ? { Cookie: cookie } : {}) },
+  })
+}
+
 export function cookieOf(response: Response) {
   return response.headers
     .getSetCookie()
