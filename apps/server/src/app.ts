@@ -19,6 +19,8 @@ export interface AppOptions {
   secret: string
   // Needed to create the first account (SYS-13); see index.ts.
   setupCode: string
+  // Shows the setup code again when the last account is deleted; see index.ts.
+  onNoAccounts?: () => void
   // SYS-13: open sign-up stays off unless the operator turns it on.
   openSignUp?: boolean
   // An HTTPS proxy in front sets X-Forwarded-For (see auth/guard.ts).
@@ -34,6 +36,7 @@ export function createApp({
   db,
   secret,
   setupCode,
+  onNoAccounts,
   openSignUp = false,
   trustProxy = false,
   webRoot,
@@ -51,7 +54,10 @@ export function createApp({
 
   api.get('/health', (c) => c.json({ status: 'ok' } satisfies HealthResponse))
 
-  api.route('/', accountRoutes({ db, sessions, limits, secret, setupCode, openSignUp }))
+  api.route(
+    '/',
+    accountRoutes({ db, sessions, limits, secret, setupCode, openSignUp, onNoAccounts }),
+  )
   api.route('/', sessionRoutes({ db, sessions, limits }))
   api.route('/', recordRoutes({ db, sessions }))
   api.route('/', recoveryRoutes({ db, sessions, limits }))

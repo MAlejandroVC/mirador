@@ -11,7 +11,7 @@ import {
 } from '../../../test-utils'
 import { VaultError } from '../../../worker/errors'
 
-const password = 'a sunny day in Monterrey'
+const password = 'A sunny day in Monterrey 2026'
 
 beforeEach(async () => {
   await i18n.changeLanguage('en')
@@ -45,7 +45,7 @@ describe('sign-up', () => {
     })
   })
 
-  it('SYS-06: checks the username, the password length and the repeat before anything else', async () => {
+  it('SYS-06: checks the username, the password rules and the repeat before anything else', async () => {
     const user = userEvent.setup()
     const server: FakeServer = { signUpMode: 'open' }
     stubServer(server)
@@ -59,7 +59,11 @@ describe('sign-up', () => {
     expect(
       await screen.findByText(/Use 3 to 32 letters, numbers, dots, dashes or underscores/),
     ).toBeInTheDocument()
-    expect(screen.getByText('Use at least 12 characters.')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Use at least 8 characters, with an uppercase letter, a lowercase letter, a number and a symbol.',
+      ),
+    ).toBeInTheDocument()
 
     await user.clear(screen.getByLabelText('Username'))
     await user.type(screen.getByLabelText('Username'), 'Ana.Maria')
@@ -137,6 +141,65 @@ describe('sign-up', () => {
     await user.type(screen.getByLabelText('Invite code'), 'used-code')
     await user.click(screen.getByRole('button', { name: 'Create account' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('already used or expired')
+  })
+
+  it('SYS-06: ticks off the username and password rules while typing, and keeps the hints behind (i)', async () => {
+    const user = userEvent.setup()
+    const server: FakeServer = { signUpMode: 'open' }
+    stubServer(server)
+    renderApp('/sign-up', fakeVault(server))
+
+    const username = await screen.findByLabelText('Username')
+    expect(screen.queryByText(/It doesn't need to be your real name/)).not.toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'About Username' }))
+    expect(screen.getByText(/It doesn't need to be your real name/)).toBeVisible()
+
+    await user.type(username, 'ana maría')
+    expect(screen.getByText('3 to 32 characters')).toHaveTextContent('(done)')
+    expect(screen.getByText(/^Only letters, numbers/)).toHaveTextContent('(not yet)')
+
+    await user.type(screen.getByLabelText('Password'), 'monte 2')
+    expect(screen.queryByText('3 to 32 characters')).not.toBeInTheDocument()
+    expect(screen.getByText('At least 8 characters')).toHaveTextContent('(not yet)')
+    expect(screen.getByText('An uppercase letter')).toHaveTextContent('(not yet)')
+    expect(screen.getByText('A lowercase letter')).toHaveTextContent('(done)')
+    expect(screen.getByText('A number')).toHaveTextContent('(done)')
+    expect(screen.getByText('A symbol, like ! or #')).toHaveTextContent('(done)')
+    await user.type(screen.getByLabelText('Password'), 'X')
+    expect(screen.getByText('At least 8 characters')).toHaveTextContent('(done)')
+    expect(screen.getByText('An uppercase letter')).toHaveTextContent('(done)')
+
+    await user.type(screen.getByLabelText('Repeat password'), 'monte 2')
+    expect(screen.queryByText('A number')).not.toBeInTheDocument()
+    expect(screen.getByText('Matches the password')).toHaveTextContent('(not yet)')
+    await user.type(screen.getByLabelText('Repeat password'), 'X')
+    expect(screen.getByText('Matches the password')).toHaveTextContent('(done)')
+  })
+
+  it('SYS-06: says whether the username is free when leaving the field', async () => {
+    const user = userEvent.setup()
+    const server: FakeServer = { signUpMode: 'open', takenUsernames: ['ana'] }
+    stubServer(server)
+    const vault = fakeVault(server)
+    renderApp('/sign-up', vault)
+
+    await user.type(await screen.findByLabelText('Username'), ' Ana ')
+    await user.tab()
+    expect(await screen.findByText('That username is taken. Pick another.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Username')).toHaveAttribute('aria-invalid', 'true')
+
+    await user.type(screen.getByLabelText('Password'), password)
+    await user.type(screen.getByLabelText('Repeat password'), password)
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+    expect(vault.signUp).not.toHaveBeenCalled()
+
+    await user.clear(screen.getByLabelText('Username'))
+    expect(screen.queryByText(/is taken/)).not.toBeInTheDocument()
+    await user.type(screen.getByLabelText('Username'), 'Ana.Maria')
+    await user.tab()
+    expect(await screen.findByRole('status')).toHaveTextContent('ana.maria is available.')
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+    expect(vault.signUp).toHaveBeenCalledWith({ username: 'Ana.Maria', password })
   })
 
   it('SYS-06: explains a username that is already taken, in Spanish too', async () => {
@@ -255,7 +318,11 @@ describe('recover', () => {
     await user.type(screen.getByLabelText('Recovery key'), shownKey)
     await user.type(screen.getByLabelText('New password'), 'short')
     await user.click(screen.getByRole('button', { name: 'Set new password' }))
-    expect(await screen.findByText('Use at least 12 characters.')).toBeInTheDocument()
+    expect(
+      await screen.findByText(
+        'Use at least 8 characters, with an uppercase letter, a lowercase letter, a number and a symbol.',
+      ),
+    ).toBeInTheDocument()
     expect(vault.recover).not.toHaveBeenCalled()
 
     await user.clear(screen.getByLabelText('New password'))

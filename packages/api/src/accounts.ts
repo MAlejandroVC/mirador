@@ -58,6 +58,17 @@ export const signUpError = z.object({
 })
 export type SignUpError = z.infer<typeof signUpError>
 
+// POST /api/accounts/username-check. Whether a username is free, while signing up. It
+// answers only someone who could sign up right now: on an invite-only server, only
+// with a waiting invite code, so it can't be used to find out who has an account.
+export const usernameCheckRequest = z.object({
+  username,
+  inviteCode: z.string().trim().max(64).optional(),
+})
+export type UsernameCheckRequest = z.infer<typeof usernameCheckRequest>
+export const usernameCheckResponse = z.object({ available: z.boolean() })
+export type UsernameCheckResponse = z.infer<typeof usernameCheckResponse>
+
 // POST /api/accounts/prelogin. The salt and cost to derive the login secret with.
 // An unknown username gets made-up settings that stay the same on every request,
 // so this can't be used to find out who has an account.
@@ -112,6 +123,19 @@ export const replaceRecoveryKeyRequest = z.object({
   wrappedAccountKey: wrappedKey,
 })
 export type ReplaceRecoveryKeyRequest = z.infer<typeof replaceRecoveryKeyRequest>
+
+// POST /api/accounts/username. A new name to sign in with. The keys don't depend on
+// it, so nothing is wrapped again; the old name is free for anyone at once.
+export const changeUsernameRequest = z.object({ username, loginSecret: secret })
+export type ChangeUsernameRequest = z.infer<typeof changeUsernameRequest>
+
+export const changeUsernameError = z.object({ error: z.enum(['username-taken']) })
+export type ChangeUsernameError = z.infer<typeof changeUsernameError>
+
+// POST /api/accounts/delete. Deletes the account and everything the server keeps for it,
+// for good. The current password confirms it, like the changes above.
+export const deleteAccountRequest = z.object({ loginSecret: secret })
+export type DeleteAccountRequest = z.infer<typeof deleteAccountRequest>
 
 // DELETE /api/session/others. How many other devices were signed out.
 export const signOutOthersResponse = z.object({ signedOut: z.int().nonnegative() })

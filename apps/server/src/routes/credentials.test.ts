@@ -153,6 +153,52 @@ describe('changing credentials', () => {
     expect((await del(server, '/api/session/others')).status).toBe(401)
   })
 
+  it('SYS-06: changes the username with the current password, and keeps every device in', async () => {
+    const laptop = cookieOf(await signIn(server))
+
+    const response = await post(
+      server,
+      '/api/accounts/username',
+      { username: ' Ana.Maria ', loginSecret: ana.loginSecret },
+      { Cookie: phone },
+    )
+
+    expect(response.status).toBe(204)
+    expect(await signedInAs(server, phone)).toBe('ana.maria')
+    expect(await signedInAs(server, laptop)).toBe('ana.maria')
+    expect((await signIn(server)).status).toBe(401)
+    const renamed = await post(server, '/api/session', {
+      username: 'ana.maria',
+      loginSecret: ana.loginSecret,
+    })
+    expect(renamed.status).toBe(204)
+    // The old name is free again.
+    await signUp(server, newAccount('ana'))
+  })
+
+  it('SYS-06: a taken username, a wrong password or no session changes nothing', async () => {
+    await signUp(server, newAccount('ben'))
+    const rename = (body: object, cookie?: string) =>
+      post(server, '/api/accounts/username', body, cookie ? { Cookie: cookie } : {})
+
+    const taken = await rename({ username: 'ben', loginSecret: ana.loginSecret }, phone)
+    const wrong = await rename({ username: 'carla', loginSecret: base64Url(43, 'guess') }, phone)
+    const signedOut = await rename({ username: 'carla', loginSecret: ana.loginSecret })
+    const invalid = await rename({ username: 'no spaces', loginSecret: ana.loginSecret }, phone)
+
+    expect(taken.status).toBe(409)
+    expect(await taken.json()).toEqual({ error: 'username-taken' })
+    expect(wrong.status).toBe(401)
+    expect(await wrong.json()).toEqual({ error: 'wrong-password' })
+    expect(signedOut.status).toBe(401)
+    expect(invalid.status).toBe(400)
+    expect(await signedInAs(server, phone)).toBe('ana')
+    // Its own name again is no change at all.
+    expect((await rename({ username: 'ana', loginSecret: ana.loginSecret }, phone)).status).toBe(
+      204,
+    )
+  })
+
   it('SEC-04: the database never holds the new login secret or recovery secret', async () => {
     const response = await post(
       server,

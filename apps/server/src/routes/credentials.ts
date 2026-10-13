@@ -1,4 +1,6 @@
 import {
+  type ChangeUsernameError,
+  changeUsernameRequest,
   changePasswordRequest,
   type KdfParamsBody,
   replaceRecoveryKeyRequest,
@@ -77,7 +79,12 @@ export function passwordCheck({ db, limits }: Pick<CredentialRoutesOptions, 'db'
 // left signed in (or a stolen session cookie) isn't enough to take the account over.
 export function credentialRoutes({ db, sessions, limits }: CredentialRoutesOptions) {
   const routes = new Hono<{ Variables: SessionVariables }>()
-  for (const path of ['/accounts/password', '/accounts/recovery-key', '/session/others']) {
+  for (const path of [
+    '/accounts/password',
+    '/accounts/recovery-key',
+    '/accounts/username',
+    '/session/others',
+  ]) {
     routes.use(path, requireUser(sessions))
   }
 
@@ -122,6 +129,30 @@ export function credentialRoutes({ db, sessions, limits }: CredentialRoutesOptio
     },
   )
 
+  // A new username. It needs the password too: whoever renames the account decides what
+  // it signs in with. Sessions and passkeys are tied to the account's id, so they all
+  // keep working.
+  routes.post(
+    '/accounts/username',
+    limitAddress(limits),
+    jsonBody(changeUsernameRequest),
+    async (c) => {
+      const body = c.req.valid('json')
+      const refused = await checkPassword(c, body.loginSecret)
+      if (refused) return refused
+      try {
+        await db
+          .update(schema.users)
+          .set({ username: body.username, updatedAt: new Date() })
+          .where(eq(schema.users.id, c.var.userId))
+      } catch (error) {
+        if (!isUniqueViolation(error)) throw error
+        return c.json({ error: 'username-taken' } satisfies ChangeUsernameError, 409)
+      }
+      return c.body(null, 204)
+    },
+  )
+
   // Without the password: it only signs devices out, which the person can undo by
   // signing in again there.
   routes.delete('/session/others', async (c) => {
@@ -130,4 +161,12 @@ export function credentialRoutes({ db, sessions, limits }: CredentialRoutesOptio
   })
 
   return routes
+}
+
+// PostgreSQL's code for a duplicate in a unique column, wherever the driver puts it.
+function isUniqueViolation(error: unknown) {
+  for (let cause = error; cause instanceof Error; cause = cause.cause) {
+    if ((cause as { code?: unknown }).code === '23505') return true
+  }
+  return false
 }

@@ -11,7 +11,7 @@ It covers everything that exists in this version. Whenever the server starts sto
 **The server can see:**
 
 - your username, and whether you run the server
-- when you created your account, signed in, and changed your password or recovery key
+- when you created your account, signed in, and changed your username, password or recovery key
 - how many encrypted records you have, how big each one is, when each one was created and when it last changed
 - how many passkeys you have, when each was added and last used, and how each one connects (built into the device, USB, Bluetooth and so on)
 - the invites the operator made, and who used them
@@ -21,6 +21,8 @@ It covers everything that exists in this version. Whenever the server starts sto
 
 Every table and column the server keeps, from `apps/server/src/store/schema.ts`. Backups hold the same tables.
 
+Deleting your account deletes all of its rows from every table at once. Backups made before keep them until they expire (14 days with the built-in nightly backup).
+
 ### `users`
 
 One row per account.
@@ -28,12 +30,12 @@ One row per account.
 | Column              | What it is                                                                                                                  |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `id`                | A random id.                                                                                                                |
-| `username`          | The name you sign in with. No email or real name is asked for or kept.                                                      |
+| `username`          | The name you sign in with. No email or real name is asked for or kept. If you change it, the old one isn't kept.            |
 | `login_secret_hash` | A hash of the login secret your browser derives from your password. Neither can be turned back into your password.          |
 | `record_revision`   | A counter that goes up each time one of your records is saved, so it shows roughly how often you save.                      |
 | `operator`          | Whether this account runs the server and can invite people (SYS-13).                                                        |
 | `created_at`        | When the account was created.                                                                                               |
-| `updated_at`        | When the account last changed, such as a new password.                                                                      |
+| `updated_at`        | When the account last changed, such as a new username or password.                                                          |
 
 ### `sessions`
 
@@ -101,7 +103,7 @@ Invites the operator made (SYS-13).
 | `code_hash`  | A hash of the invite code, so this table can't be used to sign up.                  |
 | `created_by` | Which account made it.                                                              |
 | `expires_at` | When it stops working, 7 days after it was made.                                    |
-| `used_by`    | Which account signed up with it.                                                    |
+| `used_by`    | Which account signed up with it. Emptied if that account is deleted.                |
 | `used_at`    | When it was used.                                                                   |
 | `created_at` | When it was made.                                                                   |
 
@@ -124,7 +126,7 @@ The server's own settings. Nothing about any user.
 
 ## Logs
 
-The server prints only two things when it starts: the setup code while the server has no accounts yet, and the port it listens on.
+The server prints only two things when it starts: the setup code while the server has no accounts yet, and the port it listens on. It prints the setup code again if the last account is deleted.
 
 ## Backups
 

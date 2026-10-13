@@ -12,7 +12,10 @@
     "username": "Nombre de usuario",
     "password": "Contraseña",
     "show": "Mostrar contraseña",
-    "hide": "Ocultar contraseña"
+    "hide": "Ocultar contraseña",
+    "info": "Información sobre {{label}}",
+    "checkMet": "cumplido",
+    "checkNotMet": "pendiente"
   },
   "security": {
     "signIn": {
@@ -25,13 +28,15 @@
       "forgot": "¿Olvidaste tu contraseña?",
       "passkey": "Iniciar sesión con Face ID o una llave de acceso",
       "passkeyWorking": "Iniciando sesión…",
-      "or": "o"
+      "or": "o",
+      "deleted": "Tu cuenta y todos sus datos se borraron de este servidor."
     },
     "signUp": {
       "title": "Crea tu cuenta",
       "intro": "Tu contraseña cifra tus datos en este dispositivo. El servidor nunca la ve, así que nadie puede restablecerla por ti.",
       "usernameHint": "De 3 a 32 letras, números, puntos, guiones o guiones bajos. No tiene que ser tu nombre real.",
-      "passwordHint": "Al menos {{count}} caracteres. Unas cuantas palabras sin relación son fáciles de recordar.",
+      "usernameAvailable": "{{username}} está disponible.",
+      "passwordHint": "Al menos {{count}} caracteres, con una mayúscula, una minúscula, un número y un símbolo.",
       "confirm": "Repite la contraseña",
       "setupCode": "Código de configuración",
       "setupCodeHint": "Este servidor aún no tiene cuentas. Quien lo administra encuentra el código de configuración en el registro del servidor.",
@@ -89,6 +94,15 @@
     "settings": {
       "title": "Contraseña y seguridad",
       "back": "Volver",
+      "username": {
+        "title": "Nombre de usuario",
+        "intro": "Inicias sesión como {{username}}. Con un nombre de usuario nuevo, tu contraseña, tus llaves de acceso y tus datos siguen igual.",
+        "new": "Nombre de usuario nuevo",
+        "password": "Contraseña actual",
+        "submit": "Cambiar nombre de usuario",
+        "working": "Cambiando tu nombre de usuario…",
+        "done": "Nombre de usuario cambiado. A partir de ahora, inicia sesión como {{username}}."
+      },
       "password": {
         "title": "Contraseña",
         "intro": "Tu contraseña abre tus datos. Al cambiarla se cierra la sesión en tus otros dispositivos, y tus datos quedan como están.",
@@ -139,6 +153,15 @@
         "minutes_one": "Después de {{count}} minuto sin uso",
         "minutes_other": "Después de {{count}} minutos sin uso",
         "done": "Guardado en este dispositivo."
+      },
+      "delete": {
+        "title": "Borrar cuenta",
+        "intro": "Borra tu cuenta y todos tus datos de este servidor para siempre. Nadie puede deshacerlo, ni siquiera la persona que administra el servidor. Las copias de seguridad del servidor pueden conservar una copia hasta que venzan.",
+        "operator": "Tú administras este servidor. La cuenta más antigua que quede lo administrará después de ti. Si no queda ninguna, el servidor esperará una nueva primera cuenta.",
+        "username": "Escribe tu nombre de usuario, {{username}}, para confirmar",
+        "password": "Contraseña actual",
+        "submit": "Borrar mi cuenta para siempre",
+        "working": "Borrando tu cuenta…"
       }
     },
     "invites": {
@@ -148,7 +171,7 @@
       "working": "Creando la invitación…",
       "newTitle": "Enlace de invitación nuevo",
       "share": "Compartir",
-      "shareText": "Tu invitación a Mirador",
+      "shareText": "Controla tus gastos y planea tu futuro con Mirador Budget:",
       "shownOnce": "Envía este enlace ahora: solo se muestra esta vez. Si lo pierdes, retira la invitación y crea otra.",
       "listTitle": "Tus invitaciones",
       "none": "Todavía no hay invitaciones.",
@@ -159,10 +182,21 @@
       "made": "Creada el {{date}}",
       "withdraw": "Retirar"
     },
+    "checks": {
+      "length_one": "Al menos {{count}} carácter",
+      "length_other": "Al menos {{count}} caracteres",
+      "uppercase": "Una mayúscula",
+      "lowercase": "Una minúscula",
+      "number": "Un número",
+      "symbol": "Un símbolo, como ! o #",
+      "matches": "Coincide con la contraseña",
+      "usernameLength": "De 3 a 32 caracteres",
+      "usernameCharacters": "Solo letras, números, puntos, guiones o guiones bajos"
+    },
     "errors": {
       "wrong-credentials": "Usuario o contraseña incorrectos.",
       "wrong-password": "Contraseña incorrecta.",
-      "username-taken": "Ese nombre de usuario ya existe. Elige otro o inicia sesión.",
+      "username-taken": "Ese nombre de usuario ya existe. Elige otro.",
       "wrong-setup-code": "Ese código de configuración no es correcto. Busca el actual en el registro del servidor.",
       "signed-out": "Se cerró tu sesión. Vuelve a iniciarla.",
       "locked": "Mirador está bloqueado. Desbloquéalo con tu contraseña.",
@@ -171,7 +205,9 @@
       "network": "No se puede conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.",
       "unknown": "Algo salió mal. Inténtalo de nuevo.",
       "invalidUsername": "Usa de 3 a 32 letras, números, puntos, guiones o guiones bajos, sin espacios.",
-      "passwordTooShort": "Usa al menos {{count}} caracteres.",
+      "sameUsername": "Ese ya es tu nombre de usuario.",
+      "usernameMismatch": "Escribe tu nombre de usuario tal como aparece.",
+      "passwordRules": "Usa al menos {{count}} caracteres, con una mayúscula, una minúscula, un número y un símbolo.",
       "passwordsDontMatch": "Las contraseñas no coinciden.",
       "setupCodeMissing": "Escribe el código de configuración.",
       "wrong-recovery-key": "Usuario o clave de recuperación incorrectos.",

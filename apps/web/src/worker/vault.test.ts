@@ -2,6 +2,8 @@
 import {
   addPasskeyRequest,
   changePasswordRequest,
+  changeUsernameRequest,
+  deleteAccountRequest,
   passkeySignInRequest,
   keysResponse,
   preloginRequest,
@@ -28,6 +30,8 @@ function fakeServer() {
   // Per user, like apps/server/src/routes/records.ts (without conflict checks).
   const records = new Map<string, { id: string; revision: number; ciphertext: string }[]>()
   const sent: string[] = []
+  // Like the server's user ids: they stay the same when the username changes.
+  const ids = new Map<string, string>()
   // SYS-06: what the server keeps per passkey: whose it is and the key it wrapped.
   const passkeys = new Map<string, { username: string; wrappedAccountKey: string }>()
   let signedIn: string | null = null
@@ -58,7 +62,13 @@ function fakeServer() {
         if (!init?.method || init.method === 'GET') {
           return json(
             signedIn
-              ? { user: { id: `id-${signedIn}`, username: signedIn, operator: false } }
+              ? {
+                  user: {
+                    id: ids.get(signedIn) ?? `id-${signedIn}`,
+                    username: signedIn,
+                    operator: false,
+                  },
+                }
               : null,
           )
         }
@@ -121,6 +131,34 @@ function fakeServer() {
         }
         account.recoverySecret = request.recoverySecret
         account.wrappedAccountKey.recovery = request.wrappedAccountKey
+        return new Response(null, { status: 204 })
+      }
+      case '/api/accounts/username': {
+        const request = changeUsernameRequest.parse(body)
+        const account = signedIn ? accounts.get(signedIn) : undefined
+        if (!signedIn || !account) return json({ error: 'signed-out' }, 401)
+        if (account.loginSecret !== request.loginSecret) {
+          return json({ error: 'wrong-password' }, 401)
+        }
+        if (accounts.has(request.username)) return json({ error: 'username-taken' }, 409)
+        accounts.delete(signedIn)
+        accounts.set(request.username, { ...account, username: request.username })
+        ids.set(request.username, ids.get(signedIn) ?? `id-${signedIn}`)
+        records.set(request.username, records.get(signedIn) ?? [])
+        records.delete(signedIn)
+        signedIn = request.username
+        return new Response(null, { status: 204 })
+      }
+      case '/api/accounts/delete': {
+        const request = deleteAccountRequest.parse(body)
+        const account = signedIn ? accounts.get(signedIn) : undefined
+        if (!signedIn || !account) return json({ error: 'signed-out' }, 401)
+        if (account.loginSecret !== request.loginSecret) {
+          return json({ error: 'wrong-password' }, 401)
+        }
+        accounts.delete(signedIn)
+        records.delete(signedIn)
+        signedIn = null
         return new Response(null, { status: 204 })
       }
       case '/api/passkeys/registration':
@@ -370,6 +408,51 @@ describe('vault', () => {
     expect(await failure(recover(old))).toBe('wrong-recovery-key')
     await recover(recoveryKey)
     expect(await laptop.status()).toBe('unlocked')
+  })
+
+  it('SYS-06: a new username signs in to the same data, with the same password', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    await phone.signUp({ username: 'ana', password })
+    await new Vault(server.api).signUp({ username: 'ben', password })
+    await phone.signIn('ana', password)
+    const id = newRecordId()
+    await phone.saveRecords([
+      { id, body: { deleted: false, type: 'note', schema: 1, data: { text: 'kept' } } },
+    ])
+    server.sent.length = 0
+
+    expect(await failure(phone.changeUsername('Ana Maria', 'not my password'))).toBe(
+      'wrong-password',
+    )
+    expect(server.sent.join('\n')).not.toContain('/api/accounts/')
+    expect(await failure(phone.changeUsername('ben', password))).toBe('username-taken')
+    await phone.changeUsername(' Ana.Maria ', password)
+
+    expect(await phone.status()).toBe('unlocked')
+    expect(server.sent.join('\n')).toContain('"username":"ana.maria"')
+    expect(server.sent.join('\n')).not.toContain(password)
+    const laptop = new Vault(server.api)
+    await laptop.signIn('ana.maria', password)
+    expect((await laptop.listRecords()).map((record) => record.id)).toEqual([id])
+  })
+
+  it('SYS-06: deleting the account needs the password, which never leaves the browser', async () => {
+    const server = fakeServer()
+    const vault = new Vault(server.api)
+    await vault.signUp({ username: 'ana', password })
+    server.sent.length = 0
+
+    expect(await failure(vault.deleteAccount('not my password'))).toBe('wrong-password')
+    expect(server.sent.join('\n')).not.toContain('/api/accounts/')
+    expect(server.accounts.has('ana')).toBe(true)
+
+    await vault.deleteAccount(password)
+
+    expect(server.accounts.has('ana')).toBe(false)
+    expect(await vault.status()).toBe('locked')
+    expect(server.sent.join('\n')).not.toContain(password)
+    expect(await failure(vault.listRecords())).toBe('locked')
   })
 
   it('SEC-12: locking forgets the key, and only the right password unlocks again', async () => {

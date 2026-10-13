@@ -63,11 +63,11 @@ describe('password and security', () => {
     expect(vault.changePassword).not.toHaveBeenCalled()
 
     await user.type(form.getByLabelText('Current password'), password)
-    await user.type(form.getByLabelText('New password'), 'a brand new password')
-    await user.type(form.getByLabelText('Repeat new password'), 'a brand new password')
+    await user.type(form.getByLabelText('New password'), 'A brand new password 2')
+    await user.type(form.getByLabelText('Repeat new password'), 'A brand new password 2')
     await user.click(form.getByRole('button', { name: 'Change password' }))
 
-    expect(vault.changePassword).toHaveBeenCalledWith(password, 'a brand new password')
+    expect(vault.changePassword).toHaveBeenCalledWith(password, 'A brand new password 2')
     expect(
       await form.findByText('Password changed. Your other devices were signed out.'),
     ).toBeInTheDocument()
@@ -87,11 +87,133 @@ describe('password and security', () => {
     await screen.findByRole('heading', { name: 'Password and security' })
     const form = section('Password')
     await user.type(form.getByLabelText('Current password'), 'not my password')
-    await user.type(form.getByLabelText('New password'), 'a brand new password')
-    await user.type(form.getByLabelText('Repeat new password'), 'a brand new password')
+    await user.type(form.getByLabelText('New password'), 'A brand new password 2')
+    await user.type(form.getByLabelText('Repeat new password'), 'A brand new password 2')
     await user.click(form.getByRole('button', { name: 'Change password' }))
 
     expect(await form.findByRole('alert')).toHaveTextContent('Wrong password.')
+  })
+
+  it('SYS-06: changes the username with the current password, and renames the passkeys', async () => {
+    const user = userEvent.setup()
+    const signalCurrentUserDetails = vi.fn(() => Promise.resolve())
+    vi.stubGlobal('PublicKeyCredential', { signalCurrentUserDetails })
+    const server: FakeServer = { signedIn: 'ana' }
+    stubServer(server)
+    const vault = unlockedVault(server)
+    renderApp('/security', vault)
+
+    await screen.findByRole('heading', { name: 'Password and security' })
+    const form = section('Username')
+    expect(form.getByText(/You sign in as ana\./)).toBeInTheDocument()
+    await user.type(form.getByLabelText('New username'), 'ana maria')
+    await user.click(form.getByRole('button', { name: 'Change username' }))
+    expect(form.getByText(/with no spaces/)).toBeInTheDocument()
+    expect(form.getByText('Enter your current password.')).toBeInTheDocument()
+
+    await user.clear(form.getByLabelText('New username'))
+    await user.type(form.getByLabelText('New username'), 'ANA')
+    await user.type(form.getByLabelText('Current password'), password)
+    await user.click(form.getByRole('button', { name: 'Change username' }))
+    expect(form.getByText("That's already your username.")).toBeInTheDocument()
+    expect(vault.changeUsername).not.toHaveBeenCalled()
+
+    await user.clear(form.getByLabelText('New username'))
+    await user.type(form.getByLabelText('New username'), ' Ana.Maria ')
+    await user.click(form.getByRole('button', { name: 'Change username' }))
+
+    expect(vault.changeUsername).toHaveBeenCalledWith('ana.maria', password)
+    expect(
+      await form.findByText('Username changed. Sign in as ana.maria from now on.'),
+    ).toBeInTheDocument()
+    expect(form.getByText(/You sign in as ana\.maria\./)).toBeInTheDocument()
+    expect(form.getByLabelText('Current password')).toHaveValue('')
+    expect(signalCurrentUserDetails).toHaveBeenCalledWith({
+      rpId: 'localhost',
+      userId: 'MQ',
+      name: 'ana.maria',
+      displayName: 'ana.maria',
+    })
+  })
+
+  it('SYS-06: says when the new username is taken', async () => {
+    const user = userEvent.setup()
+    const server: FakeServer = { signedIn: 'ana' }
+    stubServer(server)
+    const vault = fakeVault(server, {
+      changeUsername: vi.fn(() => Promise.reject(new VaultError('username-taken'))),
+    })
+    await vault.unlock('')
+    renderApp('/security', vault)
+
+    await screen.findByRole('heading', { name: 'Password and security' })
+    const form = section('Username')
+    await user.type(form.getByLabelText('New username'), 'ben')
+    await user.type(form.getByLabelText('Current password'), password)
+    await user.click(form.getByRole('button', { name: 'Change username' }))
+
+    expect(await form.findByRole('alert')).toHaveTextContent(
+      'That username is taken. Pick another.',
+    )
+  })
+
+  it('SYS-06: deletes the account after the username is typed and the password given', async () => {
+    const user = userEvent.setup()
+    const signalAllAcceptedCredentials = vi.fn(() => Promise.resolve())
+    vi.stubGlobal('PublicKeyCredential', { signalAllAcceptedCredentials })
+    const server: FakeServer = { signedIn: 'ana' }
+    stubServer(server)
+    const vault = unlockedVault(server)
+    const { router } = renderApp('/security', vault)
+
+    await screen.findByRole('heading', { name: 'Password and security' })
+    const form = section('Delete account')
+    expect(form.getByText(/backups may keep a copy until they expire/)).toBeInTheDocument()
+    expect(form.queryByText(/You run this server/)).not.toBeInTheDocument()
+    await user.type(form.getByLabelText('Type your username, ana, to confirm'), 'anna')
+    await user.click(form.getByRole('button', { name: 'Delete my account for good' }))
+    expect(form.getByText('Type your username exactly as shown.')).toBeInTheDocument()
+    expect(form.getByText('Enter your current password.')).toBeInTheDocument()
+    expect(vault.deleteAccount).not.toHaveBeenCalled()
+
+    await user.clear(form.getByLabelText('Type your username, ana, to confirm'))
+    await user.type(form.getByLabelText('Type your username, ana, to confirm'), 'Ana')
+    await user.type(form.getByLabelText('Current password'), password)
+    await user.click(form.getByRole('button', { name: 'Delete my account for good' }))
+
+    expect(vault.deleteAccount).toHaveBeenCalledWith(password)
+    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/sign-in')
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Your account and all its data were deleted from this server.',
+    )
+    expect(signalAllAcceptedCredentials).toHaveBeenCalledWith({
+      rpId: 'localhost',
+      userId: 'MQ',
+      allAcceptedCredentialIds: [],
+    })
+  })
+
+  it('SYS-13: tells the operator who runs the server next, and explains a wrong password', async () => {
+    await i18n.changeLanguage('es')
+    const user = userEvent.setup()
+    const server: FakeServer = { signedIn: 'ana', operator: true }
+    stubServer(server)
+    const vault = fakeVault(server, {
+      deleteAccount: vi.fn(() => Promise.reject(new VaultError('wrong-password'))),
+    })
+    await vault.unlock('')
+    renderApp('/security', vault)
+
+    await screen.findByRole('heading', { name: 'Contraseña y seguridad' })
+    const form = section('Borrar cuenta')
+    expect(form.getByText(/Tú administras este servidor/)).toBeInTheDocument()
+    await user.type(form.getByLabelText(/Escribe tu nombre de usuario, ana/), 'ana')
+    await user.type(form.getByLabelText('Contraseña actual'), 'not my password')
+    await user.click(form.getByRole('button', { name: 'Borrar mi cuenta para siempre' }))
+
+    expect(await form.findByRole('alert')).toHaveTextContent('Contraseña incorrecta.')
+    expect(screen.getByRole('heading', { name: 'Contraseña y seguridad' })).toBeInTheDocument()
   })
 
   it('SEC-08: shows a new recovery key once, then confirms the old one stopped working', async () => {

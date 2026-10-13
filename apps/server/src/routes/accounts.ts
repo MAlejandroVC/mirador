@@ -1,4 +1,5 @@
 import {
+  deleteAccountRequest,
   type KdfParamsBody,
   type KeysResponse,
   preloginRequest,
@@ -6,14 +7,17 @@ import {
   type SignUpError,
   signUpRequest,
   type SignUpStatus,
+  usernameCheckRequest,
+  type UsernameCheckResponse,
 } from '@repo/api'
-import { and, count, eq, gt, isNull, TransactionRollbackError } from 'drizzle-orm'
+import { and, asc, count, eq, gt, isNull, TransactionRollbackError } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { type AttemptLimits, limitAddress } from '../auth/guard.ts'
 import { hashSecret, hashToken, randomToken, sameText, steadyBytes } from '../auth/secrets.ts'
 import { requireUser, type SessionStore, type SessionVariables } from '../auth/sessions.ts'
 import { normalizeCode } from '../settings.ts'
 import { type Database, schema } from '../store/db.ts'
+import { passwordCheck } from './credentials.ts'
 import { jsonBody } from './json-body.ts'
 
 export interface AccountRoutesOptions {
@@ -24,6 +28,8 @@ export interface AccountRoutesOptions {
   // Shown in the server's log at start while there are no accounts (SYS-13).
   setupCode: string
   openSignUp: boolean
+  // Called when the last account is deleted, so the setup code can be shown again.
+  onNoAccounts?: () => void
 }
 
 // Matches defaultKdfCost in @repo/crypto, so made-up settings for unknown usernames
@@ -37,6 +43,7 @@ export function accountRoutes({
   secret,
   setupCode,
   openSignUp,
+  onNoAccounts = () => undefined,
 }: AccountRoutesOptions) {
   const routes = new Hono<{ Variables: SessionVariables }>()
 
@@ -128,6 +135,37 @@ export function accountRoutes({
     return c.body(null, 201)
   })
 
+  // Lets the sign-up screen say a username is taken before the keys are made. It tells
+  // no more than signing up would: with open sign-up anyone could try the name, and on
+  // an invite-only server it needs an invite code that still works. Counted per
+  // address like sign-ups.
+  routes.post(
+    '/accounts/username-check',
+    limitAddress(limits),
+    jsonBody(usernameCheckRequest),
+    async (c) => {
+      const body = c.req.valid('json')
+      if ((await signUpMode()) === 'invite') {
+        const [invite] = await db
+          .select({ id: schema.invites.id })
+          .from(schema.invites)
+          .where(
+            and(
+              eq(schema.invites.codeHash, hashToken(normalizeCode(body.inviteCode ?? ''))),
+              isNull(schema.invites.usedAt),
+              gt(schema.invites.expiresAt, new Date()),
+            ),
+          )
+        if (!invite) return c.json({ error: 'wrong-invite' } satisfies SignUpError, 403)
+      }
+      const [taken] = await db
+        .select({ id: schema.users.id })
+        .from(schema.users)
+        .where(eq(schema.users.username, body.username))
+      return c.json({ available: !taken } satisfies UsernameCheckResponse)
+    },
+  )
+
   // Salt and cost for deriving the login secret before signing in. POST so the
   // username stays out of URLs and access logs.
   routes.post('/accounts/prelogin', limitAddress(limits), jsonBody(preloginRequest), async (c) => {
@@ -148,6 +186,48 @@ export function accountRoutes({
         }
     return c.json({ kdf } satisfies PreloginResponse)
   })
+
+  // Deletes the account for good: its key material, records, sessions, passkeys and
+  // invites go with it (the foreign keys cascade), so nothing of it is left but the
+  // backups made before. Needs the current password, so a device left signed in isn't
+  // enough.
+  const checkPassword = passwordCheck({ db, limits })
+  routes.post(
+    '/accounts/delete',
+    requireUser(sessions),
+    limitAddress(limits),
+    jsonBody(deleteAccountRequest),
+    async (c) => {
+      const refused = await checkPassword(c, c.req.valid('json').loginSecret)
+      if (refused) return refused
+      const remaining = await db.transaction(async (tx) => {
+        const [deleted] = await tx
+          .delete(schema.users)
+          .where(eq(schema.users.id, c.var.userId))
+          .returning({ operator: schema.users.operator })
+        // SYS-13: someone has to run the server: the oldest account left takes over.
+        if (deleted?.operator) {
+          const [oldest] = await tx
+            .select({ id: schema.users.id })
+            .from(schema.users)
+            .orderBy(asc(schema.users.createdAt), asc(schema.users.id))
+            .limit(1)
+          if (oldest) {
+            await tx
+              .update(schema.users)
+              .set({ operator: true })
+              .where(eq(schema.users.id, oldest.id))
+          }
+        }
+        const [row] = await tx.select({ users: count() }).from(schema.users)
+        return row?.users ?? 0
+      })
+      await sessions.end(c)
+      // The server is new again: the next account needs the setup code (SYS-13).
+      if (remaining === 0) onNoAccounts()
+      return c.body(null, 204)
+    },
+  )
 
   // SEC-09: only ever the signed-in user's own key material.
   routes.get('/keys', requireUser(sessions), async (c) => {

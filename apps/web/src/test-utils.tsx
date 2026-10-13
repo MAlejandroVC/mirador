@@ -1,4 +1,4 @@
-import type { CreationOptions, Invite, Passkey } from '@repo/api'
+import { type CreationOptions, type Invite, type Passkey, usernameCheckRequest } from '@repo/api'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryHistory, RouterProvider } from '@tanstack/react-router'
 import { render } from '@testing-library/react'
@@ -42,6 +42,15 @@ export function fakeVault(server: FakeServer, overrides: Partial<VaultClient> = 
     changePassword: vi.fn(() => Promise.resolve()),
     replaceRecoveryKey: vi.fn(() => Promise.resolve({ recoveryKey: shownRecoveryKey })),
     signOutOthers: vi.fn(() => Promise.resolve(2)),
+    deleteAccount: vi.fn(() => {
+      unlocked = false
+      server.signedIn = null
+      return Promise.resolve()
+    }),
+    changeUsername: vi.fn((username: string) => {
+      server.signedIn = username.trim().toLowerCase()
+      return Promise.resolve()
+    }),
     startAddingPasskey: vi.fn(() =>
       Promise.resolve({ challengeId: 'registration', options: fakeCreationOptions }),
     ),
@@ -94,8 +103,9 @@ export interface FakeServer {
   // SYS-13: whether the signed-in user runs the server, and their invites.
   operator?: boolean
   invites?: Invite[]
-  // SYS-06: the signed-in user's passkeys.
+  // SYS-06: the signed-in user's passkeys, and usernames other people have.
   passkeys?: Passkey[]
+  takenUsernames?: string[]
 }
 
 // Answers the page's own requests (the vault's go through the fake vault).
@@ -146,6 +156,12 @@ export function stubServer(server: FakeServer) {
         }
         case '/api/passkeys':
           return Promise.resolve(Response.json({ passkeys: server.passkeys ?? [] }))
+        case '/api/accounts/username-check': {
+          const { username } = usernameCheckRequest.parse(JSON.parse(init?.body as string))
+          return Promise.resolve(
+            Response.json({ available: !server.takenUsernames?.includes(username) }),
+          )
+        }
         default: {
           const removed = /^\/api\/passkeys\/(.+)$/.exec(path)?.[1]
           if (removed && init?.method === 'DELETE') {

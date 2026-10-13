@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { type SubmitEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Alert } from '../../../components/ui/alert'
 import { Button } from '../../../components/ui/button'
 import { TextField } from '../../../components/ui/text-field'
 import { vaultErrorCode } from '../../../worker/errors'
@@ -21,6 +22,7 @@ export function SignInScreen() {
   const queryClient = useQueryClient()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const { deleted } = useSearch({ from: '/sign-in' })
 
   async function signedIn() {
     queryClient.removeQueries(sessionQuery)
@@ -39,6 +41,7 @@ export function SignInScreen() {
 
   return (
     <AuthLayout title={t('security.signIn.title')} intro={t('security.signIn.intro')}>
+      {deleted && <Alert tone="success">{t('security.signIn.deleted')}</Alert>}
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
         <TextField
           label={t('form.username')}

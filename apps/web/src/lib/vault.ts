@@ -15,6 +15,8 @@ export type VaultClient = Pick<
   | 'changePassword'
   | 'replaceRecoveryKey'
   | 'signOutOthers'
+  | 'changeUsername'
+  | 'deleteAccount'
   | 'startAddingPasskey'
   | 'addPasskey'
   | 'passkeySignInOptions'

@@ -1,6 +1,8 @@
 import {
   type AddPasskeyRequest,
   type ChangePasswordRequest,
+  type ChangeUsernameRequest,
+  type DeleteAccountRequest,
   errorResponse,
   pullResponse,
   pushConflict,
@@ -24,6 +26,8 @@ import {
   signOutOthersResponse,
   type SignUpRequest,
   signUpStatus,
+  type UsernameCheckRequest,
+  usernameCheckResponse,
 } from '@repo/api'
 
 // The server is untrusted: every response is checked against its schema. Works on
@@ -73,6 +77,12 @@ export function createApi(fetchFn: Fetch = (...args) => globalThis.fetch(...args
     async signUp(body: SignUpRequest) {
       await post('/api/accounts', body)
     },
+    // SYS-06: whether a username is free, before the keys are made.
+    async checkUsername(body: UsernameCheckRequest) {
+      return usernameCheckResponse.parse(
+        await (await post('/api/accounts/username-check', body)).json(),
+      ).available
+    },
     async prelogin(username: string) {
       return preloginResponse.parse(
         await (await post('/api/accounts/prelogin', { username })).json(),
@@ -97,6 +107,14 @@ export function createApi(fetchFn: Fetch = (...args) => globalThis.fetch(...args
     },
     async replaceRecoveryKey(body: ReplaceRecoveryKeyRequest) {
       await post('/api/accounts/recovery-key', body)
+    },
+    // SYS-06: a new username, proven with the current password.
+    async changeUsername(body: ChangeUsernameRequest) {
+      await post('/api/accounts/username', body)
+    },
+    // Deletes the account and everything the server keeps for it.
+    async deleteAccount(body: DeleteAccountRequest) {
+      await post('/api/accounts/delete', body)
     },
     async signOutOthers() {
       return signOutOthersResponse.parse(

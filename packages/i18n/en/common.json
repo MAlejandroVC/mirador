@@ -12,7 +12,10 @@
     "username": "Username",
     "password": "Password",
     "show": "Show password",
-    "hide": "Hide password"
+    "hide": "Hide password",
+    "info": "About {{label}}",
+    "checkMet": "done",
+    "checkNotMet": "not yet"
   },
   "security": {
     "signIn": {
@@ -25,13 +28,15 @@
       "forgot": "Forgot your password?",
       "passkey": "Sign in with Face ID or a passkey",
       "passkeyWorking": "Signing in…",
-      "or": "or"
+      "or": "or",
+      "deleted": "Your account and all its data were deleted from this server."
     },
     "signUp": {
       "title": "Create your account",
       "intro": "Your password encrypts your data on this device. The server never sees it, so nobody can reset it for you.",
       "usernameHint": "3 to 32 letters, numbers, dots, dashes or underscores. It doesn't need to be your real name.",
-      "passwordHint": "At least {{count}} characters. A few unrelated words are easy to remember.",
+      "usernameAvailable": "{{username}} is available.",
+      "passwordHint": "At least {{count}} characters, with an uppercase letter, a lowercase letter, a number and a symbol.",
       "confirm": "Repeat password",
       "setupCode": "Setup code",
       "setupCodeHint": "This server has no accounts yet. The person who runs it finds the setup code in the server's log.",
@@ -89,6 +94,15 @@
     "settings": {
       "title": "Password and security",
       "back": "Back",
+      "username": {
+        "title": "Username",
+        "intro": "You sign in as {{username}}. A new username keeps your password, passkeys and data as they are.",
+        "new": "New username",
+        "password": "Current password",
+        "submit": "Change username",
+        "working": "Changing your username…",
+        "done": "Username changed. Sign in as {{username}} from now on."
+      },
       "password": {
         "title": "Password",
         "intro": "Your password unlocks your data. Changing it signs out your other devices, and your data stays as it is.",
@@ -139,6 +153,15 @@
         "minutes_one": "After {{count}} minute without use",
         "minutes_other": "After {{count}} minutes without use",
         "done": "Saved for this device."
+      },
+      "delete": {
+        "title": "Delete account",
+        "intro": "Deletes your account and all your data from this server for good. Nobody can undo it, not even the person who runs the server. Server backups may keep a copy until they expire.",
+        "operator": "You run this server. The oldest other account will run it after you. With no other accounts, the server waits for a new first account.",
+        "username": "Type your username, {{username}}, to confirm",
+        "password": "Current password",
+        "submit": "Delete my account for good",
+        "working": "Deleting your account…"
       }
     },
     "invites": {
@@ -148,7 +171,7 @@
       "working": "Making an invite…",
       "newTitle": "New invite link",
       "share": "Share",
-      "shareText": "Your invite to Mirador",
+      "shareText": "Track your expenses and plan your future with Mirador Budget:",
       "shownOnce": "Send this link now: it is shown only once. If you lose it, withdraw the invite and make another.",
       "listTitle": "Your invites",
       "none": "No invites yet.",
@@ -159,10 +182,21 @@
       "made": "Made on {{date}}",
       "withdraw": "Withdraw"
     },
+    "checks": {
+      "length_one": "At least {{count}} character",
+      "length_other": "At least {{count}} characters",
+      "uppercase": "An uppercase letter",
+      "lowercase": "A lowercase letter",
+      "number": "A number",
+      "symbol": "A symbol, like ! or #",
+      "matches": "Matches the password",
+      "usernameLength": "3 to 32 characters",
+      "usernameCharacters": "Only letters, numbers, dots, dashes or underscores"
+    },
     "errors": {
       "wrong-credentials": "Wrong username or password.",
       "wrong-password": "Wrong password.",
-      "username-taken": "That username is taken. Pick another, or sign in.",
+      "username-taken": "That username is taken. Pick another.",
       "wrong-setup-code": "That setup code is wrong. Check the server's log for the current one.",
       "signed-out": "You were signed out. Sign in again.",
       "locked": "Mirador is locked. Unlock it with your password.",
@@ -171,7 +205,9 @@
       "network": "Can't reach the server. Check your connection and try again.",
       "unknown": "Something went wrong. Try again.",
       "invalidUsername": "Use 3 to 32 letters, numbers, dots, dashes or underscores, with no spaces.",
-      "passwordTooShort": "Use at least {{count}} characters.",
+      "sameUsername": "That's already your username.",
+      "usernameMismatch": "Type your username exactly as shown.",
+      "passwordRules": "Use at least {{count}} characters, with an uppercase letter, a lowercase letter, a number and a symbol.",
       "passwordsDontMatch": "The passwords don't match.",
       "setupCodeMissing": "Enter the setup code.",
       "wrong-recovery-key": "Wrong username or recovery key.",

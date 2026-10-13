@@ -1,5 +1,6 @@
+import { usernamePattern } from '@repo/api'
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { type ReactNode, type SubmitEvent, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert } from '../../../components/ui/alert'
@@ -10,15 +11,17 @@ import { vaultErrorCode } from '../../../worker/errors'
 import { ErrorMessage } from '../components/error-message'
 import { RecoveryKeyStep } from '../components/recovery-key-step'
 import { sessionQuery } from '../hooks/session'
-import { minimumPasswordLength } from '../hooks/sign-up'
+import { minimumPasswordLength, passwordFollowsRules } from '../lib/password'
+import { usePasswordChecks, useRepeatChecks, useUsernameChecks } from '../hooks/field-checks'
 import { useVault } from '../hooks/vault'
 import { addPasskey, passkeysQuery } from '../hooks/passkeys'
 import { type AutoLockChoice, autoLockChoices, readAutoLock, saveAutoLock } from '../lib/auto-lock'
-import { passkeysSupported } from '../lib/passkey'
+import { forgetAllPasskeys, passkeysSupported, renamePasskeys } from '../lib/passkey'
 
 // SEC-08: change the password, replace the recovery key and sign out other devices,
 // all without touching the data: the account key stays the same. SYS-06, SEC-12:
-// passkeys (Face ID) and when this device locks itself.
+// the username, passkeys (Face ID) and when this device locks itself, and deleting the
+// account.
 export function SecurityScreen() {
   const { t } = useTranslation()
   const { data: session } = useSuspenseQuery(sessionQuery)
@@ -52,6 +55,7 @@ export function SecurityScreen() {
         </Link>
         <h1 className="text-2xl font-semibold text-slate-900">{t('security.settings.title')}</h1>
       </div>
+      <ChangeUsername username={username} />
       <Passkeys username={username} />
       <AutoLockSetting />
       <ChangePassword username={username} />
@@ -64,6 +68,7 @@ export function SecurityScreen() {
         }}
       />
       <SignOutOthers />
+      <DeleteAccount username={username} operator={session?.user.operator ?? false} />
     </main>
   )
 }
@@ -99,6 +104,86 @@ function UsernameForPasswordManagers({ username }: { username: string }) {
   return <input type="text" autoComplete="username" value={username} readOnly hidden />
 }
 
+interface UsernameProblems {
+  username?: string
+  password?: string
+}
+
+// SYS-06: the keys don't depend on the username, so changing it touches nothing else.
+function ChangeUsername({ username }: { username: string }) {
+  const { t } = useTranslation()
+  const vault = useVault()
+  const queryClient = useQueryClient()
+  const [newUsername, setNewUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [problems, setProblems] = useState<UsernameProblems>({})
+  const usernameRules = useUsernameChecks(newUsername)
+  const wanted = newUsername.trim().toLowerCase()
+
+  const change = useMutation({
+    mutationFn: () => vault.changeUsername(wanted, password),
+    onSuccess: async () => {
+      setNewUsername('')
+      setPassword('')
+      const session = await queryClient.query({ ...sessionQuery, staleTime: 0 })
+      if (session) await renamePasskeys(session.user.id, session.user.username)
+    },
+  })
+
+  function submit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const found: UsernameProblems = {}
+    if (!usernamePattern.test(wanted)) found.username = t('security.errors.invalidUsername')
+    else if (wanted === username) found.username = t('security.errors.sameUsername')
+    if (!password) found.password = t('security.errors.passwordMissing')
+    setProblems(found)
+    if (Object.keys(found).length === 0) change.mutate()
+  }
+
+  return (
+    <Section
+      title={t('security.settings.username.title')}
+      intro={t('security.settings.username.intro', { username })}
+    >
+      <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
+        <TextField
+          label={t('security.settings.username.new')}
+          info={t('security.signUp.usernameHint')}
+          checks={usernameRules}
+          autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          error={problems.username}
+          value={newUsername}
+          onChange={(event) => {
+            setNewUsername(event.target.value)
+          }}
+        />
+        <TextField
+          label={t('security.settings.username.password')}
+          type="password"
+          autoComplete="current-password"
+          error={problems.password}
+          value={password}
+          onChange={(event) => {
+            setPassword(event.target.value)
+          }}
+        />
+        <ErrorMessage code={change.isError ? vaultErrorCode(change.error) : null} />
+        {change.isSuccess && (
+          <Alert tone="success">{t('security.settings.username.done', { username })}</Alert>
+        )}
+        <Button type="submit" variant="secondary" disabled={change.isPending}>
+          {change.isPending
+            ? t('security.settings.username.working')
+            : t('security.settings.username.submit')}
+        </Button>
+      </form>
+    </Section>
+  )
+}
+
 interface PasswordProblems {
   current?: string
   password?: string
@@ -112,6 +197,8 @@ function ChangePassword({ username }: { username: string }) {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [problems, setProblems] = useState<PasswordProblems>({})
+  const passwordRules = usePasswordChecks(password)
+  const repeatRules = useRepeatChecks(password, confirm)
 
   const change = useMutation({
     mutationFn: () => vault.changePassword(current, password),
@@ -126,8 +213,8 @@ function ChangePassword({ username }: { username: string }) {
     event.preventDefault()
     const found: PasswordProblems = {}
     if (!current) found.current = t('security.errors.passwordMissing')
-    if (password.length < minimumPasswordLength) {
-      found.password = t('security.errors.passwordTooShort', { count: minimumPasswordLength })
+    if (!passwordFollowsRules(password)) {
+      found.password = t('security.errors.passwordRules', { count: minimumPasswordLength })
     } else if (confirm !== password) {
       found.confirm = t('security.errors.passwordsDontMatch')
     }
@@ -156,7 +243,8 @@ function ChangePassword({ username }: { username: string }) {
           label={t('security.settings.password.new')}
           type="password"
           autoComplete="new-password"
-          hint={t('security.signUp.passwordHint', { count: minimumPasswordLength })}
+          info={t('security.signUp.passwordHint', { count: minimumPasswordLength })}
+          checks={passwordRules}
           error={problems.password}
           value={password}
           onChange={(event) => {
@@ -167,6 +255,7 @@ function ChangePassword({ username }: { username: string }) {
           label={t('security.settings.password.confirm')}
           type="password"
           autoComplete="new-password"
+          checks={repeatRules}
           error={problems.confirm}
           value={confirm}
           onChange={(event) => {
@@ -268,6 +357,86 @@ function SignOutOthers() {
           ? t('security.settings.devices.working')
           : t('security.settings.devices.submit')}
       </Button>
+    </Section>
+  )
+}
+
+interface DeleteProblems {
+  username?: string
+  password?: string
+}
+
+// Deleting the account can't be undone, so it asks for the username typed out as well as
+// the current password, which the server checks too.
+function DeleteAccount({ username, operator }: { username: string; operator: boolean }) {
+  const { t } = useTranslation()
+  const vault = useVault()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [typed, setTyped] = useState('')
+  const [password, setPassword] = useState('')
+  const [problems, setProblems] = useState<DeleteProblems>({})
+
+  const remove = useMutation({
+    mutationFn: async () => {
+      const session = queryClient.getQueryData(sessionQuery.queryKey)
+      await vault.deleteAccount(password)
+      if (session) await forgetAllPasskeys(session.user.id)
+    },
+    onSuccess: async () => {
+      // Nothing cached about the account is kept on the page either.
+      queryClient.clear()
+      await navigate({ to: '/sign-in', search: { deleted: true } })
+    },
+  })
+
+  function submit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const found: DeleteProblems = {}
+    if (typed.trim().toLowerCase() !== username) {
+      found.username = t('security.errors.usernameMismatch')
+    }
+    if (!password) found.password = t('security.errors.passwordMissing')
+    setProblems(found)
+    if (Object.keys(found).length === 0) remove.mutate()
+  }
+
+  return (
+    <Section
+      title={t('security.settings.delete.title')}
+      intro={t('security.settings.delete.intro')}
+    >
+      {operator && <Alert tone="warning">{t('security.settings.delete.operator')}</Alert>}
+      <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
+        <TextField
+          label={t('security.settings.delete.username', { username })}
+          autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          error={problems.username}
+          value={typed}
+          onChange={(event) => {
+            setTyped(event.target.value)
+          }}
+        />
+        <TextField
+          label={t('security.settings.delete.password')}
+          type="password"
+          autoComplete="current-password"
+          error={problems.password}
+          value={password}
+          onChange={(event) => {
+            setPassword(event.target.value)
+          }}
+        />
+        <ErrorMessage code={remove.isError ? vaultErrorCode(remove.error) : null} />
+        <Button type="submit" variant="danger" disabled={remove.isPending}>
+          {remove.isPending
+            ? t('security.settings.delete.working')
+            : t('security.settings.delete.submit')}
+        </Button>
+      </form>
     </Section>
   )
 }
