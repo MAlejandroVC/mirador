@@ -21,7 +21,13 @@ export function sessionRoutes({ db, sessions, limits }: SessionRoutesOptions) {
     const signedIn = await sessions.read(c)
     return c.json(
       (signedIn
-        ? { user: { id: signedIn.userId, username: signedIn.username } }
+        ? {
+            user: {
+              id: signedIn.userId,
+              username: signedIn.username,
+              operator: signedIn.operator,
+            },
+          }
         : null) satisfies SessionResponse,
     )
   })

@@ -36,7 +36,8 @@
       "working": "Making your encryption keys…",
       "haveAccount": "Already have an account?",
       "signIn": "Sign in",
-      "closed": "This server isn't taking new accounts. Ask the person who runs it for one."
+      "inviteCode": "Invite code",
+      "inviteCodeHint": "This server takes new accounts by invite only. The code is in the link you were sent; if you have none, ask the person who runs the server."
     },
     "recoveryKey": {
       "title": "Save your recovery key",
@@ -75,7 +76,8 @@
       "encrypted": "Your data is end-to-end encrypted. Only this device can read it while it's unlocked.",
       "lock": "Lock",
       "signOut": "Sign out",
-      "security": "Password and security"
+      "security": "Password and security",
+      "invites": "Invite someone"
     },
     "settings": {
       "title": "Password and security",
@@ -108,11 +110,28 @@
         "done_other": "Signed out {{count}} other devices."
       }
     },
+    "invites": {
+      "title": "Invites",
+      "intro": "Only people you invite can create an account on this server. Make an invite link and send it to them yourself. Each link works once, for {{count}} days.",
+      "create": "Make an invite link",
+      "working": "Making an invite…",
+      "newTitle": "New invite link",
+      "share": "Share",
+      "shareText": "Your invite to Mirador",
+      "shownOnce": "Send this link now: it is shown only once. If you lose it, withdraw the invite and make another.",
+      "listTitle": "Your invites",
+      "none": "No invites yet.",
+      "waiting": "Waiting, expires {{date}}",
+      "usedBy": "Used by {{username}} on {{date}}",
+      "used": "Used on {{date}}",
+      "expired": "Expired on {{date}}",
+      "made": "Made on {{date}}",
+      "withdraw": "Withdraw"
+    },
     "errors": {
       "wrong-credentials": "Wrong username or password.",
       "wrong-password": "Wrong password.",
       "username-taken": "That username is taken. Pick another, or sign in.",
-      "sign-up-closed": "This server isn't taking new accounts.",
       "wrong-setup-code": "That setup code is wrong. Check the server's log for the current one.",
       "signed-out": "You were signed out. Sign in again.",
       "locked": "Mirador is locked. Unlock it with your password.",
@@ -127,7 +146,9 @@
       "wrong-recovery-key": "Wrong username or recovery key.",
       "recovery-key-typo": "That recovery key has a typo. Check each group of four characters.",
       "recoveryKeyMissing": "Enter your recovery key.",
-      "passwordMissing": "Enter your current password."
+      "passwordMissing": "Enter your current password.",
+      "wrong-invite": "That invite code is wrong, already used or expired. Ask for a new one.",
+      "inviteCodeMissing": "Enter your invite code."
     }
   }
 }

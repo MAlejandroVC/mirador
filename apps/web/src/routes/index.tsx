@@ -10,6 +10,9 @@ export const Route = createFileRoute('/')({
   component: Home,
 })
 
+const linkButton =
+  'inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 font-medium text-slate-900 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900'
+
 function Home() {
   const { t } = useTranslation()
   const vault = useVault()
@@ -53,12 +56,16 @@ function Home() {
           {status}
         </p>
       </div>
-      <Link
-        to="/security"
-        className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 font-medium text-slate-900 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
-      >
-        {t('security.home.security')}
-      </Link>
+      <div className="flex flex-col gap-3">
+        <Link to="/security" className={linkButton}>
+          {t('security.home.security')}
+        </Link>
+        {session?.user.operator && (
+          <Link to="/invites" className={linkButton}>
+            {t('security.home.invites')}
+          </Link>
+        )}
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <Button
           variant="secondary"

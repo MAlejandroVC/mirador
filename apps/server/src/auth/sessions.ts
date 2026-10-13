@@ -19,6 +19,8 @@ export const sessionCookie = '__Host-mirador_session'
 export interface SignedIn {
   userId: string
   username: string
+  // SYS-13: runs this server and can invite people.
+  operator: boolean
 }
 
 export type SessionVariables = SignedIn
@@ -64,6 +66,7 @@ export function sessionStore(db: Database, now: () => number = Date.now) {
         .select({
           userId: schema.users.id,
           username: schema.users.username,
+          operator: schema.users.operator,
           expiresAt: schema.sessions.expiresAt,
         })
         .from(schema.sessions)
@@ -77,7 +80,7 @@ export function sessionStore(db: Database, now: () => number = Date.now) {
           .where(eq(schema.sessions.id, id))
         writeCookie(c, token)
       }
-      return { userId: row.userId, username: row.username }
+      return { userId: row.userId, username: row.username, operator: row.operator }
     },
 
     // SEC-08: signs the user out everywhere but this device. Returns how many devices.
@@ -110,6 +113,7 @@ export function requireUser(sessions: SessionStore) {
     if (!signedIn) return c.json({ error: 'signed-out' }, 401)
     c.set('userId', signedIn.userId)
     c.set('username', signedIn.username)
+    c.set('operator', signedIn.operator)
     await next()
   })
 }

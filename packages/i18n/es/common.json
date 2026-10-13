@@ -36,7 +36,8 @@
       "working": "Creando tus claves de cifrado…",
       "haveAccount": "¿Ya tienes una cuenta?",
       "signIn": "Iniciar sesión",
-      "closed": "Este servidor no acepta cuentas nuevas. Pídele una a quien lo administra."
+      "inviteCode": "Código de invitación",
+      "inviteCodeHint": "Este servidor solo acepta cuentas nuevas por invitación. El código viene en el enlace que te enviaron; si no tienes uno, pídeselo a quien administra el servidor."
     },
     "recoveryKey": {
       "title": "Guarda tu clave de recuperación",
@@ -75,7 +76,8 @@
       "encrypted": "Tus datos están cifrados de extremo a extremo. Solo este dispositivo puede leerlos mientras está desbloqueado.",
       "lock": "Bloquear",
       "signOut": "Cerrar sesión",
-      "security": "Contraseña y seguridad"
+      "security": "Contraseña y seguridad",
+      "invites": "Invitar a alguien"
     },
     "settings": {
       "title": "Contraseña y seguridad",
@@ -108,11 +110,28 @@
         "done_other": "Se cerró la sesión en {{count}} dispositivos más."
       }
     },
+    "invites": {
+      "title": "Invitaciones",
+      "intro": "Solo las personas que invites pueden crear una cuenta en este servidor. Crea un enlace de invitación y envíaselo tú. Cada enlace sirve una vez, durante {{count}} días.",
+      "create": "Crear enlace de invitación",
+      "working": "Creando la invitación…",
+      "newTitle": "Enlace de invitación nuevo",
+      "share": "Compartir",
+      "shareText": "Tu invitación a Mirador",
+      "shownOnce": "Envía este enlace ahora: solo se muestra esta vez. Si lo pierdes, retira la invitación y crea otra.",
+      "listTitle": "Tus invitaciones",
+      "none": "Todavía no hay invitaciones.",
+      "waiting": "Pendiente, vence el {{date}}",
+      "usedBy": "Usada por {{username}} el {{date}}",
+      "used": "Usada el {{date}}",
+      "expired": "Venció el {{date}}",
+      "made": "Creada el {{date}}",
+      "withdraw": "Retirar"
+    },
     "errors": {
       "wrong-credentials": "Usuario o contraseña incorrectos.",
       "wrong-password": "Contraseña incorrecta.",
       "username-taken": "Ese nombre de usuario ya existe. Elige otro o inicia sesión.",
-      "sign-up-closed": "Este servidor no acepta cuentas nuevas.",
       "wrong-setup-code": "Ese código de configuración no es correcto. Busca el actual en el registro del servidor.",
       "signed-out": "Se cerró tu sesión. Vuelve a iniciarla.",
       "locked": "Mirador está bloqueado. Desbloquéalo con tu contraseña.",
@@ -127,7 +146,9 @@
       "wrong-recovery-key": "Usuario o clave de recuperación incorrectos.",
       "recovery-key-typo": "Esa clave de recuperación tiene un error. Revisa cada grupo de cuatro caracteres.",
       "recoveryKeyMissing": "Escribe tu clave de recuperación.",
-      "passwordMissing": "Escribe tu contraseña actual."
+      "passwordMissing": "Escribe tu contraseña actual.",
+      "wrong-invite": "Ese código de invitación es incorrecto, ya se usó o venció. Pide uno nuevo.",
+      "inviteCodeMissing": "Escribe tu código de invitación."
     }
   }
 }

@@ -69,18 +69,18 @@ describe('sign-up', () => {
     await signUp(server, newAccount('ana', { setupCode: 'test setu pc0d e123 4567' }))
   })
 
-  it('SYS-13: once an account exists, sign-up is closed unless the operator opens it', async () => {
+  it('SYS-13: once an account exists, sign-up needs an invite unless the operator opens it', async () => {
     await signUp(server, newAccount('ana', { setupCode: testSetupCode }))
 
     const status = signUpStatus.parse(await (await get(server, '/api/accounts/sign-up')).json())
-    expect(status.mode).toBe('closed')
+    expect(status.mode).toBe('invite')
     const refused = await post(
       server,
       '/api/accounts',
       newAccount('ben', { setupCode: testSetupCode }),
     )
     expect(refused.status).toBe(403)
-    expect(signUpError.parse(await refused.json()).error).toBe('sign-up-closed')
+    expect(signUpError.parse(await refused.json()).error).toBe('wrong-invite')
   })
 
   it('SYS-13: open sign-up, when the operator turns it on, needs no code', async () => {

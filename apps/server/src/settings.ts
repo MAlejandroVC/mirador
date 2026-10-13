@@ -19,16 +19,19 @@ export async function loadSecret(db: Database, fromEnv = process.env.MIRADOR_SEC
   return row.value
 }
 
-// SYS-13: the first account needs a code that only the person running the server can
-// read, in its log, so finding the address of a fresh server isn't enough to claim it.
-// A new code is made at every start and is useless once an account exists.
-export function newSetupCode() {
-  const code = randomCode(20, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+// SYS-13: codes a person reads and types. The first account needs a setup code that
+// only the person running the server can read, in its log, so finding the address of a
+// fresh server isn't enough to claim it; a new one is made at every start and is
+// useless once an account exists. Invites carry one too. Crockford's base32 alphabet
+// leaves out I, L, O and U, so nothing in a code can be read two ways; 20 characters
+// from 32 is 100 bits, far beyond guessing at the rate sign-up allows.
+export function newCode() {
+  const code = randomCode(20, '0123456789ABCDEFGHJKMNPQRSTVWXYZ')
   return code.match(/.{4}/g)?.join('-') ?? code
 }
 
 // Read from a log by a person: case, spaces and dashes don't matter, and the letters
 // that look like digits count as those digits.
-export function normalizeSetupCode(code: string) {
+export function normalizeCode(code: string) {
   return code.toUpperCase().replace(/[\s-]/g, '').replace(/[IL]/g, '1').replace(/O/g, '0')
 }

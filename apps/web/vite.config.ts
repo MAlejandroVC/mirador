@@ -17,5 +17,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
+    // The vault tests derive keys with the real Argon2id cost, which can take seconds
+    // each when every package's tests run at once.
+    testTimeout: 30_000,
   },
 })
