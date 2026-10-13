@@ -21,7 +21,8 @@
       "submit": "Iniciar sesión",
       "working": "Iniciando sesión y desbloqueando…",
       "noAccount": "¿Eres nuevo?",
-      "createAccount": "Crear una cuenta"
+      "createAccount": "Crear una cuenta",
+      "forgot": "¿Olvidaste tu contraseña?"
     },
     "signUp": {
       "title": "Crea tu cuenta",
@@ -58,6 +59,17 @@
       "working": "Desbloqueando…",
       "signOut": "Cerrar sesión"
     },
+    "recover": {
+      "title": "Recupera tu cuenta",
+      "intro": "Tu clave de recuperación abre tus datos y define una contraseña nueva. Se cerrará la sesión en tus otros dispositivos.",
+      "recoveryKey": "Clave de recuperación",
+      "recoveryKeyHint": "La clave que guardaste al crear tu cuenta. Los espacios y guiones no importan.",
+      "newPassword": "Contraseña nueva",
+      "confirm": "Repite la contraseña nueva",
+      "submit": "Guardar contraseña nueva",
+      "working": "Abriendo tus datos con la clave de recuperación…",
+      "back": "Volver a iniciar sesión"
+    },
     "home": {
       "signedInAs": "Sesión iniciada como {{username}}",
       "encrypted": "Tus datos están cifrados de extremo a extremo. Solo este dispositivo puede leerlos mientras está desbloqueado.",
@@ -79,7 +91,10 @@
       "invalidUsername": "Usa de 3 a 32 letras, números, puntos, guiones o guiones bajos, sin espacios.",
       "passwordTooShort": "Usa al menos {{count}} caracteres.",
       "passwordsDontMatch": "Las contraseñas no coinciden.",
-      "setupCodeMissing": "Escribe el código de configuración."
+      "setupCodeMissing": "Escribe el código de configuración.",
+      "wrong-recovery-key": "Usuario o clave de recuperación incorrectos.",
+      "recovery-key-typo": "Esa clave de recuperación tiene un error. Revisa cada grupo de cuatro caracteres.",
+      "recoveryKeyMissing": "Escribe tu clave de recuperación."
     }
   }
 }

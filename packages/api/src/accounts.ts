@@ -70,6 +70,25 @@ export const keysResponse = z.object({
 })
 export type KeysResponse = z.infer<typeof keysResponse>
 
+// SEC-07: a forgotten password. The browser proves it holds the recovery key with the
+// recovery secret derived from it, gets the account key wrapped by the recovery key,
+// and opens it there.
+// POST /api/accounts/recovery/key
+export const recoveryKeyRequest = z.object({ username, recoverySecret: secret })
+export const recoveryKeyResponse = z.object({ wrappedAccountKey: wrappedKey })
+export type RecoveryKeyResponse = z.infer<typeof recoveryKeyResponse>
+
+// POST /api/accounts/recovery. Sets the new password's login secret, salt and wrapped
+// key, signs every device out and signs this one in. The recovery key keeps working.
+export const recoverRequest = z.object({
+  username,
+  recoverySecret: secret,
+  loginSecret: secret,
+  kdf: kdfParams,
+  wrappedAccountKey: wrappedKey,
+})
+export type RecoverRequest = z.infer<typeof recoverRequest>
+
 // POST /api/session. Signs in with the login secret, never the password (SEC-03).
 export const signInRequest = z.object({ username, loginSecret: secret })
 export type SignInRequest = z.infer<typeof signInRequest>
@@ -85,7 +104,7 @@ export type SessionResponse = z.infer<typeof sessionResponse>
 // What every sign-in route can refuse with, besides a malformed request (400).
 // A wrong login secret and an unknown username get the same answer.
 export const sessionError = z.object({
-  error: z.enum(['wrong-credentials', 'too-many-attempts', 'signed-out']),
+  error: z.enum(['wrong-credentials', 'wrong-recovery-key', 'too-many-attempts', 'signed-out']),
 })
 export type SessionError = z.infer<typeof sessionError>
 

@@ -3,6 +3,8 @@
 export const vaultErrorCodes = [
   'wrong-credentials',
   'wrong-password',
+  'wrong-recovery-key',
+  'recovery-key-typo',
   'username-taken',
   'sign-up-closed',
   'wrong-setup-code',

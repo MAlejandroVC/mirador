@@ -5,7 +5,7 @@ import type { Vault } from '../worker/vault'
 // in the worker; tests pass a stand-in.
 export type VaultClient = Pick<
   Vault,
-  'status' | 'signUp' | 'signIn' | 'unlock' | 'lock' | 'signOut'
+  'status' | 'signUp' | 'signIn' | 'recover' | 'unlock' | 'lock' | 'signOut'
 >
 
 export function startVault(): VaultClient {

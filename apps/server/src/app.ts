@@ -6,6 +6,7 @@ import { attemptLimits, sameOrigin } from './auth/guard.ts'
 import { sessionStore } from './auth/sessions.ts'
 import { accountRoutes } from './routes/accounts.ts'
 import { recordRoutes } from './routes/records.ts'
+import { recoveryRoutes } from './routes/recovery.ts'
 import { sessionRoutes } from './routes/session.ts'
 import type { Database } from './store/db.ts'
 
@@ -50,6 +51,7 @@ export function createApp({
   api.route('/', accountRoutes({ db, sessions, limits, secret, setupCode, openSignUp }))
   api.route('/', sessionRoutes({ db, sessions, limits }))
   api.route('/', recordRoutes({ db, sessions }))
+  api.route('/', recoveryRoutes({ db, sessions, limits }))
 
   const app = new Hono()
   app.route('/api', api)

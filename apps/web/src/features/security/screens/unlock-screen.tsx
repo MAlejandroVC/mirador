@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { type SubmitEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../../../components/ui/button'
@@ -69,6 +69,14 @@ export function UnlockScreen() {
           {unlock.isPending ? t('security.unlock.working') : t('security.unlock.submit')}
         </Button>
       </form>
+      <p className="text-center text-sm">
+        <Link
+          to="/recover"
+          className="inline-flex min-h-11 items-center font-medium text-slate-900 underline"
+        >
+          {t('security.signIn.forgot')}
+        </Link>
+      </p>
       <Button
         variant="ghost"
         onClick={() => {

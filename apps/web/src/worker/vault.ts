@@ -5,6 +5,9 @@ import {
   formatRecoveryKey,
   newKdfParams,
   newRecoveryKey,
+  parseRecoveryKey,
+  RecoveryKeyTypoError,
+  rewrapAccountKey,
   unwrapAccountKey,
   WeakKdfParamsError,
   WrongKeyError,
@@ -13,6 +16,12 @@ import type { RecordBody } from '@repo/api'
 import { RecordsAltered, RecordSync } from '@repo/sync'
 import { type Api, ApiError } from '../lib/api'
 import { VaultError, vaultErrorCodes } from './errors'
+
+export interface RecoverInput {
+  username: string
+  recoveryKey: string
+  newPassword: string
+}
 
 export interface SignUpInput {
   username: string
@@ -123,6 +132,45 @@ export class Vault {
     })
   }
 
+  // SEC-07: a forgotten password. The recovery key opens the account key here, and a
+  // new password wraps it again; the server gets only the recovery secret and the new
+  // login secret. Every other device is signed out; the recovery key keeps working.
+  async recover({ username, recoveryKey, newPassword }: RecoverInput) {
+    username = normalizeUsername(username)
+    return guard(async () => {
+      const bytes = await parseRecoveryKey(recoveryKey)
+      const { recoverySecret, recoveryWrappingKey } = await deriveRecoveryKeys(bytes)
+      bytes.fill(0)
+      let wrapped: string
+      try {
+        ;({ wrappedAccountKey: wrapped } = await this.api.recoveryKey(username, recoverySecret))
+      } catch (error) {
+        throw error instanceof ApiError && error.status === 401
+          ? new VaultError('wrong-recovery-key')
+          : error
+      }
+      const kdf = newKdfParams()
+      const { loginSecret, keyEncryptionKey } = await derivePasswordKeys(newPassword, kdf)
+      // The server accepted the recovery secret, so a key that won't open with the
+      // recovery key was altered there.
+      const { accountKey, wrappedByPassword } = await rewrapAccountKey(
+        wrapped,
+        recoveryWrappingKey,
+        keyEncryptionKey,
+      ).catch(() => {
+        throw new VaultError('unsafe-server')
+      })
+      await this.api.recover({
+        username,
+        recoverySecret,
+        loginSecret,
+        kdf,
+        wrappedAccountKey: wrappedByPassword,
+      })
+      await this.#open(accountKey)
+    })
+  }
+
   async unlock(password: string) {
     return guard(async () => {
       const keys = await this.api.keys()
@@ -154,6 +202,7 @@ async function guard<T>(action: () => Promise<T>): Promise<T> {
   } catch (error) {
     if (error instanceof VaultError) throw error
     if (error instanceof WeakKdfParamsError) throw new VaultError('unsafe-server')
+    if (error instanceof RecoveryKeyTypoError) throw new VaultError('recovery-key-typo')
     if (error instanceof WrongKeyError) throw new VaultError('wrong-password')
     // SEC-04: the server altered or swapped a record; say so rather than show it.
     if (error instanceof RecordsAltered) throw new VaultError('unsafe-server')

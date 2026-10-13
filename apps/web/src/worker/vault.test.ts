@@ -3,6 +3,8 @@ import {
   keysResponse,
   preloginRequest,
   pushRequest,
+  recoverRequest,
+  recoveryKeyRequest,
   signInRequest,
   signUpRequest,
   type SignUpRequest,
@@ -67,6 +69,26 @@ function fakeServer() {
         const keys = { kdf: account.kdf, wrappedAccountKey: account.wrappedAccountKey.password }
         tamper?.(keys)
         return json(keysResponse.parse(keys))
+      }
+      case '/api/accounts/recovery/key': {
+        const { username, recoverySecret } = recoveryKeyRequest.parse(body)
+        const account = accounts.get(username)
+        if (account?.recoverySecret !== recoverySecret) {
+          return json({ error: 'wrong-recovery-key' }, 401)
+        }
+        return json({ wrappedAccountKey: account.wrappedAccountKey.recovery })
+      }
+      case '/api/accounts/recovery': {
+        const request = recoverRequest.parse(body)
+        const account = accounts.get(request.username)
+        if (account?.recoverySecret !== request.recoverySecret) {
+          return json({ error: 'wrong-recovery-key' }, 401)
+        }
+        account.loginSecret = request.loginSecret
+        account.kdf = request.kdf
+        account.wrappedAccountKey.password = request.wrappedAccountKey
+        signedIn = request.username
+        return new Response(null, { status: 204 })
       }
       case '/api/records': {
         if (!signedIn) return json({ error: 'signed-out' }, 401)
@@ -161,6 +183,46 @@ describe('vault', () => {
     expect(recoveryKey).toMatch(/^([0-9A-Z]{4}-){13}[0-9A-Z]{4}$/)
     expect(await vault.status()).toBe('unlocked')
     expect(server.accounts.get('ana')?.wrappedAccountKey.recovery).toBeTruthy()
+  })
+
+  it('SEC-07: the recovery key sets a new password and keeps the data readable', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    const { recoveryKey } = await phone.signUp({ username: 'ana', password })
+    const id = newRecordId()
+    await phone.saveRecords([
+      { id, body: { deleted: false, type: 'note', schema: 1, data: { text: 'kept' } } },
+    ])
+    await phone.signOut()
+    server.sent.length = 0
+
+    const laptop = new Vault(server.api)
+    // Typed in lower case without dashes, as people do.
+    await laptop.recover({
+      username: 'Ana',
+      recoveryKey: recoveryKey.replaceAll('-', '').toLowerCase(),
+      newPassword: 'a brand new password',
+    })
+
+    expect((await laptop.listRecords()).map((record) => record.id)).toEqual([id])
+    expect(server.sent.join('\n')).not.toContain(recoveryKey.replaceAll('-', ''))
+    expect(server.sent.join('\n')).not.toContain('a brand new password')
+    expect(await failure(new Vault(server.api).signIn('ana', password))).toBe('wrong-credentials')
+    await new Vault(server.api).signIn('ana', 'a brand new password')
+  })
+
+  it('SEC-07: tells a typo from a wrong recovery key', async () => {
+    const server = fakeServer()
+    const { recoveryKey } = await new Vault(server.api).signUp({ username: 'ana', password })
+    const typo = (recoveryKey.startsWith('A') ? 'B' : 'A') + recoveryKey.slice(1)
+    const other = (await new Vault(fakeServer().api).signUp({ username: 'ana', password }))
+      .recoveryKey
+
+    const vault = new Vault(server.api)
+    const attempt = (key: string) =>
+      failure(vault.recover({ username: 'ana', recoveryKey: key, newPassword: 'new password!' }))
+    expect(await attempt(typo)).toBe('recovery-key-typo')
+    expect(await attempt(other)).toBe('wrong-recovery-key')
   })
 
   it('SEC-12: locking forgets the key, and only the right password unlocks again', async () => {

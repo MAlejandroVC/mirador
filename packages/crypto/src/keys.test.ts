@@ -8,6 +8,7 @@ import {
   derivePasswordKeys,
   type KdfParams,
   newKdfParams,
+  rewrapAccountKey,
   unwrapAccountKey,
   WeakKdfParamsError,
   WrongKeyError,
@@ -121,6 +122,41 @@ describe('account key', () => {
       const opened = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, sealed)
       expect(new Uint8Array(opened)).toEqual(new Uint8Array([1, 2, 3]))
     }
+  })
+
+  it('SEC-07: the recovery key sets a new password over the same account key', async () => {
+    const old = await derivePasswordKeys('the forgotten password', cheap, unsafe)
+    const { recoveryWrappingKey } = await deriveRecoveryKeys(newRecoveryKey())
+    const created = await createAccountKey(old.keyEncryptionKey, recoveryWrappingKey)
+    const fresh = await derivePasswordKeys('a brand new password', cheap, unsafe)
+
+    const rewrapped = await rewrapAccountKey(
+      created.wrappedByRecovery,
+      recoveryWrappingKey,
+      fresh.keyEncryptionKey,
+    )
+
+    expect(rewrapped.accountKey.extractable).toBe(false)
+    const { iv, sealed } = await roundTrip(created.accountKey)
+    const viaNewPassword = await unwrapAccountKey(
+      rewrapped.wrappedByPassword,
+      fresh.keyEncryptionKey,
+    )
+    for (const key of [rewrapped.accountKey, viaNewPassword]) {
+      const opened = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, sealed)
+      expect(new Uint8Array(opened)).toEqual(new Uint8Array([1, 2, 3]))
+    }
+  })
+
+  it('SEC-07: a wrong recovery key opens nothing', async () => {
+    const { keyEncryptionKey } = await derivePasswordKeys('a long password', cheap, unsafe)
+    const { recoveryWrappingKey } = await deriveRecoveryKeys(newRecoveryKey())
+    const created = await createAccountKey(keyEncryptionKey, recoveryWrappingKey)
+    const wrong = await deriveRecoveryKeys(newRecoveryKey())
+
+    await expect(
+      rewrapAccountKey(created.wrappedByRecovery, wrong.recoveryWrappingKey, keyEncryptionKey),
+    ).rejects.toThrow(WrongKeyError)
   })
 
   it('SEC-13: keeps every key it hands out non-extractable', async () => {
