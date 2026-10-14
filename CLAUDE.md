@@ -8,7 +8,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing anything; it is the full
 
 ## Where things are
 
-- What to build: the Functional Requirements Specification (linked from README.md). Every requirement has an ID such as `BUD-35`; each one is a GitHub issue titled `<ID> <summary>`.
+- What to build: the Functional Requirements Specification, [docs/requirements.md](docs/requirements.md). Every requirement has an ID such as `BUD-35`; each one is a GitHub issue titled `<ID> <summary>`.
 - `apps/web`: React 19, Vite, TanStack Router and Query, Tailwind 4, shadcn/ui. `src/worker/` holds the keys, the local SQLite database and sync.
 - `apps/server`: Node 24, Hono, Drizzle on PostgreSQL, its own small sign-in (`src/auth`). Stores encrypted records and files, runs OCR in memory, sends generic push.
 - `packages/core`: pure logic (money, periods, ledger, analysis, budget). No React, no network, no storage.

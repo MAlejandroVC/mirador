@@ -8,8 +8,8 @@ Mirador is **end-to-end encrypted**. The browser holds the keys and does all the
 | --- | --- |
 | Repository | [github.com/MAlejandroVC/mirador](https://github.com/MAlejandroVC/mirador) |
 | Project board | The **Mirador** board under the repository's **Projects** tab |
-| What to build | [Functional Requirements Specification](https://claude.ai/code/artifact/41bcf9b8-1440-4e64-a8fa-c47b2f2444bb) |
-| What we build it with | [Technology Stack](https://claude.ai/code/artifact/c3cfc88d-022c-4712-9068-ffa7c25aa1bb) |
+| What to build | [Functional Requirements Specification](docs/requirements.md) |
+| What we build it with | [Technology Stack](docs/technology-stack.md) |
 | Questions and ideas | [GitHub Discussions](https://github.com/MAlejandroVC/mirador/discussions) |
 
 ## The tools we use

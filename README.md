@@ -35,8 +35,8 @@ Installation instructions will arrive with the first release.
 
 | Document | What it covers |
 | --- | --- |
-| [Functional Requirements Specification](https://claude.ai/code/artifact/41bcf9b8-1440-4e64-a8fa-c47b2f2444bb) | What to build: every requirement, with its ID and priority |
-| [Technology Stack](https://claude.ai/code/artifact/c3cfc88d-022c-4712-9068-ffa7c25aa1bb) | What we build it with, and why |
+| [Functional Requirements Specification](docs/requirements.md) | What to build: every requirement, with its ID and priority |
+| [Technology Stack](docs/technology-stack.md) | What we build it with, and why |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How we work: setup, layout, code rules, issues, branches, commits, tests, releases |
 | [docs/](docs/) | Architecture decision records, and later the hosting guide and archive schema |
 
