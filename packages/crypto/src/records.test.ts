@@ -29,7 +29,10 @@ describe('records', () => {
   it('SEC-04: refuses a record moved to another id or user, or altered', async () => {
     const key = await accountKey()
     const sealed = await encryptRecord(key, ana, body)
-    const flipped = sealed.slice(0, -2) + (sealed.endsWith('A') ? 'B' : 'A') + sealed.at(-1)!
+    // Change the second-to-last character: the last one can hold only padding bits. Compare
+    // that same character, or 1 time in 64 the "change" writes back the letter already there.
+    const at = sealed.length - 2
+    const flipped = sealed.slice(0, at) + (sealed[at] === 'A' ? 'B' : 'A') + sealed.slice(at + 1)
 
     for (const attempt of [
       () => decryptRecord(key, { ...ana, recordId: newRecordId() }, sealed),

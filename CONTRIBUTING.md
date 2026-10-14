@@ -148,6 +148,7 @@ Use the glossary words from the spec everywhere: code, UI and database say **wal
 
 TypeScript runs in strict mode, Prettier decides formatting, and ESLint enforces most of the rules below, so reviews can focus on behaviour. These are the rules a linter cannot fully check.
 
+- **Follow the design language.** [docs/design-language.md](docs/design-language.md) decides how every screen looks, moves and reads. Colors come only from its tokens in `apps/web/src/index.css` (`bg-surface`, `text-text-muted`, `text-warning`), never from Tailwind's built-in palette or a hex value, so a palette change is one edit. Changing a rule or a color means changing the doc and the tokens in the same pull request; a test fails if they disagree.
 - **Phone first.** Build and check every screen at 375 pixels wide before the desktop layout. Touch targets at least 44 by 44 pixels, nothing that only works on hover, and forms that open the right phone keyboard (`inputmode="decimal"` for amounts).
 - **Nothing readable leaves the browser.** Every record and file is encrypted through `@repo/crypto` before it is stored or sent. The only plaintext the server ever receives is an image or scanned PDF sent for OCR, which it keeps in memory only (SEC-01, SEC-05).
 - **All cryptography goes through `@repo/crypto`.** No other package calls WebCrypto or hash-wasm, no custom algorithms, no keys in localStorage, IndexedDB or logs. Keys stay non-extractable in the worker (SEC-13). The one exception is the server's sign-in: hashing and session tokens in `apps/server/src/auth/secrets.ts`, and passkey checks (`@simplewebauthn/server`) in `apps/server/src/auth/webauthn.ts`; the server holds no keys.
@@ -328,6 +329,7 @@ Using Claude Code, Copilot or similar tools is welcome; the author of the pull r
 
 - The repo's [CLAUDE.md](CLAUDE.md) (and [AGENTS.md](AGENTS.md) for other tools) gives assistants the layout, the code rules and the commands, so their output follows this guide.
 - Review and run what an assistant writes before you open the PR; say in the PR description if a large part was generated.
+- Never put an assistant's artifacts, or links to them, in code, docs, commits or pull requests. They live outside the repository and can change or disappear. Turn anything worth keeping into a file here (an HTML mockup becomes a page in `docs/`) and show that file in the screenshots.
 - Never paste real financial data, statements or user files into an assistant. Use the fixtures.
 - The app itself never uses remote AI (NFR-05). An assistant helping write code is fine; code that calls an AI service is not.
 
