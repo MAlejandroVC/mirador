@@ -1,0 +1,1300 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Mirador palettes</title>
+    <style>
+      /* Reference for SYS-17 and docs/design-language.md (DL-COL-01, DL-COL-12): the palette picker,
+   then every palette on four screens. Values come from the palette-data block below,
+   which design-tokens.test.ts keeps equal to the doc and index.css. */
+      :root {
+        --pg: #ecebe8;
+        --pg-fg: #1d1d1f;
+        --pg-muted: #6b6b70;
+        --pg-card: #fff;
+        --pg-line: rgb(0 0 0/10%);
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) {
+          --pg: #111110;
+          --pg-fg: #f2f2f0;
+          --pg-muted: #9a9a96;
+          --pg-card: #1b1b1a;
+          --pg-line: rgb(255 255 255/12%);
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme='dark'] {
+        --pg: #111110;
+        --pg-fg: #f2f2f0;
+        --pg-muted: #9a9a96;
+        --pg-card: #1b1b1a;
+        --pg-line: rgb(255 255 255/12%);
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--pg);
+        color: var(--pg-fg);
+        font:
+          15px/1.4 -apple-system,
+          BlinkMacSystemFont,
+          'SF Pro Text',
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        padding-left: max(16px, env(safe-area-inset-left, 0px));
+        padding-right: max(16px, env(safe-area-inset-right, 0px));
+        padding-block: 28px 48px;
+      }
+      .wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 40px;
+      }
+      .top {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 28px;
+        justify-content: center;
+        align-items: flex-start;
+      }
+      .modebar {
+        display: flex;
+        justify-content: center;
+      }
+      .seg {
+        display: inline-flex;
+        background: var(--pg-line);
+        border-radius: 10px;
+        padding: 2px;
+        gap: 2px;
+      }
+      .seg button {
+        font: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        border: 0;
+        background: transparent;
+        color: var(--pg-fg);
+        padding: 7px 16px;
+        border-radius: 8px;
+        min-height: 32px;
+        cursor: pointer;
+      }
+      .seg button[aria-pressed='true'] {
+        background: var(--pg-card);
+        box-shadow: 0 1px 3px rgb(0 0 0/15%);
+      }
+      .seg button:focus-visible {
+        outline: 2px solid var(--pg-fg);
+        outline-offset: 1px;
+      }
+      h2 {
+        font-size: 20px;
+        margin: 0 0 4px;
+        text-wrap: balance;
+        text-align: center;
+      }
+      .gal {
+        display: flex;
+        flex-direction: column;
+        gap: 36px;
+      }
+      .pal {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+      }
+      .pal header {
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .pal header b {
+        font-size: 17px;
+      }
+      .chip {
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--pg-muted);
+        border: 1px solid var(--pg-line);
+        border-radius: 99px;
+        padding: 1px 8px;
+      }
+      .pair {
+        display: flex;
+        gap: 22px;
+        overflow-x: auto;
+        max-width: 100%;
+        padding: 10px 10px 30px;
+        scroll-snap-type: x mandatory;
+      }
+      .pair .phone {
+        flex: none;
+        scroll-snap-align: center;
+        height: 600px;
+      }
+      .pal {
+        min-width: 0;
+        width: 100%;
+      }
+      .pal header {
+        align-self: center;
+      }
+
+      /* ---- phone, themed by inline custom properties ---- */
+      .phone {
+        width: 300px;
+        max-width: 100%;
+        border-radius: 38px;
+        background: var(--bg);
+        color: var(--text);
+        padding: 14px 14px 0;
+        box-shadow:
+          0 0 0 8px #0d0d0d,
+          0 18px 40px rgb(0 0 0/25%);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow: hidden;
+        position: relative;
+        transition: background 0.3s;
+      }
+      .phone.big {
+        width: 340px;
+      }
+      .sb {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px 10px 0;
+      }
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 15px;
+        color: var(--brand);
+        font-weight: 500;
+        min-height: 30px;
+      }
+      .title {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0 2px;
+      }
+      .hero {
+        background: var(--hero);
+        color: var(--onHero);
+        border-radius: 20px;
+        padding: 16px;
+        position: relative;
+        overflow: hidden;
+      }
+      .hero.glow::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          circle at 100% 0,
+          color-mix(in srgb, var(--glow) 24%, transparent) 0,
+          color-mix(in srgb, var(--glow) 10%, transparent) 40%,
+          transparent 78%
+        );
+        pointer-events: none;
+      }
+      .hero small {
+        font-size: 12px;
+        opacity: 0.8;
+        position: relative;
+      }
+      .hero .big {
+        font-size: 36px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.1;
+        position: relative;
+      }
+      .hbar {
+        height: 6px;
+        border-radius: 9px;
+        background: color-mix(in srgb, var(--onHero) 22%, transparent);
+        margin-top: 12px;
+        position: relative;
+      }
+      .hbar i {
+        display: block;
+        height: 100%;
+        width: 60%;
+        border-radius: 9px;
+        background: var(--onHero);
+      }
+      .card {
+        background: var(--surface);
+        border-radius: 16px;
+        padding: 4px 12px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 34px 1fr auto;
+        gap: 4px 10px;
+        align-items: center;
+        padding: 9px 0;
+        border-bottom: 0.5px solid var(--sep);
+      }
+      .row:last-child {
+        border-bottom: 0;
+      }
+      .tile {
+        grid-row: span 2;
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        color: var(--c);
+        background: color-mix(in srgb, var(--c) var(--tmix), var(--surface));
+      }
+      .tile svg {
+        width: 20px;
+        height: 20px;
+      }
+      .nm {
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .amt {
+        font-size: 13px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .amt.w {
+        color: var(--warning);
+        font-weight: 500;
+      }
+      .bar {
+        grid-column: 2/4;
+        height: 5px;
+        border-radius: 9px;
+        background: var(--fill);
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+        border-radius: 9px;
+        background: color-mix(in srgb, var(--c) var(--bmix), var(--surface));
+      }
+      .goal {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px 0;
+      }
+      .goal .gh {
+        display: flex;
+        justify-content: space-between;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .goal .gh span {
+        color: var(--sun);
+        font-weight: 600;
+      }
+      .goal p {
+        margin: 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .tabs {
+        margin: auto -14px 0;
+        padding: 8px 16px 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--surface);
+        border-top: 0.5px solid var(--sep);
+      }
+      .tabs .t {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-size: 10px;
+        color: var(--faint);
+        gap: 2px;
+      }
+      .tabs .t svg {
+        width: 22px;
+        height: 22px;
+      }
+      .tabs .t.on {
+        color: var(--brand);
+      }
+      .plus {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: var(--brand);
+        color: var(--onBrand);
+        display: grid;
+        place-items: center;
+        flex: none;
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--brand) 35%, transparent);
+      }
+      .plus svg {
+        width: 22px;
+        height: 22px;
+      }
+      .income {
+        color: var(--moss);
+        font-weight: 600;
+      }
+      /* settings */
+      .sh {
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin: 4px 14px -6px;
+      }
+      .sfoot {
+        font-size: 12px;
+        color: var(--muted);
+        margin: -4px 14px 0;
+      }
+      .mseg {
+        display: flex;
+        background: var(--fill);
+        border-radius: 9px;
+        padding: 2px;
+        gap: 2px;
+      }
+      .mseg button {
+        flex: 1;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        border: 0;
+        background: transparent;
+        color: var(--text);
+        padding: 6px 0;
+        border-radius: 7px;
+        min-height: 32px;
+        cursor: pointer;
+      }
+      .mseg button[aria-pressed='true'] {
+        background: var(--surface);
+        box-shadow: 0 1px 3px rgb(0 0 0/18%);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 12px 0;
+      }
+      .opt {
+        all: unset;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        min-height: 44px;
+        border-radius: 14px;
+      }
+      .opt:focus-visible {
+        outline: 2px solid var(--brand);
+        outline-offset: 3px;
+      }
+      .thumb {
+        width: 100%;
+        aspect-ratio: 1.15;
+        border-radius: 12px;
+        padding: 7px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        box-shadow: 0 0 0 0.5px var(--sep) inset;
+        position: relative;
+        overflow: hidden;
+      }
+      .opt[aria-checked='true'] .thumb {
+        box-shadow: 0 0 0 2.5px var(--brand);
+      }
+      .thumb .h {
+        height: 42%;
+        border-radius: 7px;
+        position: relative;
+        overflow: hidden;
+      }
+      .thumb .l {
+        height: 16%;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0 5px;
+      }
+      .thumb .l i {
+        width: 7px;
+        height: 7px;
+        border-radius: 2px;
+      }
+      .thumb .l s {
+        flex: 1;
+        height: 3px;
+        border-radius: 3px;
+        opacity: 0.5;
+      }
+      .thumb .p {
+        position: absolute;
+        right: 6px;
+        bottom: 6px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+      }
+      .olab {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .ck {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 1.5px solid var(--faint);
+        display: grid;
+        place-items: center;
+      }
+      .opt[aria-checked='true'] .ck {
+        background: var(--brand);
+        border-color: var(--brand);
+        color: var(--onBrand);
+      }
+      .ck svg {
+        width: 11px;
+        height: 11px;
+      }
+      .pal .phone {
+        width: 268px;
+      }
+      .phone > * {
+        flex-shrink: 0;
+      }
+      .phone {
+        padding-bottom: 76px;
+      }
+      .tabs {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        margin: 0 !important;
+        z-index: 1;
+      }
+      .dim {
+        z-index: 2;
+      }
+      .sheet {
+        z-index: 3;
+      }
+      .sub {
+        font-size: 13px;
+        color: var(--muted);
+        margin: -8px 2px 0;
+      }
+      .sumc {
+        background: var(--surface);
+        border-radius: 16px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .sumc .lbl {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .sumc .num {
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+      }
+      .chart {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        height: 90px;
+        padding-top: 6px;
+      }
+      .chart div {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        height: 100%;
+        justify-content: flex-end;
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .chart i {
+        width: 100%;
+        border-radius: 5px;
+        background: color-mix(in srgb, var(--brand) 30%, var(--surface));
+      }
+      .chart .now i {
+        background: var(--brand);
+      }
+      .chart .now {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--c);
+      }
+      .lrow {
+        display: grid;
+        grid-template-columns: 34px 1fr auto;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 0.5px solid var(--sep);
+        font-size: 14px;
+      }
+      .lrow:last-child {
+        border-bottom: 0;
+      }
+      .lrow .r {
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+      }
+      .lrow .r small {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .lrow .d {
+        width: 34px;
+        display: grid;
+        place-items: center;
+      }
+      .mseg2 {
+        display: flex;
+        background: var(--fill);
+        border-radius: 9px;
+        padding: 2px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+      .mseg2 span {
+        flex: 1;
+        text-align: center;
+        padding: 5px 0;
+        border-radius: 7px;
+        color: var(--text);
+      }
+      .mseg2 .on {
+        background: var(--surface);
+        box-shadow: 0 1px 3px rgb(0 0 0/18%);
+      }
+      .dim {
+        position: absolute;
+        inset: 0;
+        background: rgb(0 0 0/35%);
+      }
+      .sheet {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: 54px;
+        background: var(--bg);
+        border-radius: 18px 18px 0 0;
+        padding: 10px 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .grab {
+        width: 36px;
+        height: 5px;
+        border-radius: 3px;
+        background: var(--faint);
+        align-self: center;
+      }
+      .shd {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 15px;
+      }
+      .shd .x {
+        color: var(--brand);
+      }
+      .shd b {
+        font-weight: 600;
+      }
+      .amtbig {
+        font-size: 44px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+        padding: 2px 0;
+      }
+      .chips {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .chip2 {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 10px 5px 6px;
+        border-radius: 99px;
+        background: var(--surface);
+        font-size: 12px;
+        font-weight: 500;
+        box-shadow: 0 0 0 0.5px var(--sep) inset;
+      }
+      .chip2 .tile {
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+      }
+      .chip2 .tile svg {
+        width: 13px;
+        height: 13px;
+      }
+      .chip2.on {
+        box-shadow: 0 0 0 2px var(--brand) inset;
+      }
+      .keys {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        margin-top: auto;
+      }
+      .keys span {
+        background: var(--surface);
+        border-radius: 10px;
+        text-align: center;
+        padding: 9px 0;
+        font-size: 18px;
+        font-weight: 500;
+      }
+      .save {
+        background: var(--brand);
+        color: var(--onBrand);
+        border-radius: 14px;
+        text-align: center;
+        padding: 12px;
+        font-weight: 600;
+        font-size: 15px;
+      }
+      .fld {
+        background: var(--surface);
+        border-radius: 12px;
+        padding: 0 12px;
+        font-size: 13px;
+      }
+      .fld div {
+        display: flex;
+        justify-content: space-between;
+        padding: 9px 0;
+        border-bottom: 0.5px solid var(--sep);
+      }
+      .fld div:last-child {
+        border: 0;
+      }
+      .fld span {
+        color: var(--muted);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .phone {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <script type="application/json" id="palette-data">
+      {
+        "palettes": [
+          {
+            "id": "paper",
+            "name": "Paper",
+            "light": {
+              "background": "#F2F2F7",
+              "surface": "#FFFFFF",
+              "inset": "#F2F2F7",
+              "text": "#1C1C1E",
+              "text-muted": "#6C6C70",
+              "text-faint": "#AEAEB2",
+              "separator": "#3C3C43 at 12%",
+              "fill": "#3C3C43 at 6%",
+              "brand": "#1C1C1E",
+              "on-brand": "#FFFFFF",
+              "hero": "#1C1C1E",
+              "on-hero": "#FFFFFF",
+              "glow": "none"
+            },
+            "dark": {
+              "background": "#000000",
+              "surface": "#1C1C1E",
+              "inset": "#2C2C2E",
+              "text": "#F2F2F7",
+              "text-muted": "#98989F",
+              "text-faint": "#5A5A5E",
+              "separator": "#EBEBF5 at 13%",
+              "fill": "#EBEBF5 at 8%",
+              "brand": "#F2F2F7",
+              "on-brand": "#000000",
+              "hero": "#2C2C2E",
+              "on-hero": "#F2F2F7",
+              "glow": "none"
+            }
+          },
+          {
+            "id": "sage-grove",
+            "name": "Sage Grove",
+            "light": {
+              "background": "#F3F2EF",
+              "surface": "#FFFFFF",
+              "inset": "#F3F2EF",
+              "text": "#1D211A",
+              "text-muted": "#656C5F",
+              "text-faint": "#A9AEA3",
+              "separator": "#23281C at 12%",
+              "fill": "#23281C at 6%",
+              "brand": "#3D6B45",
+              "on-brand": "#FFFFFF",
+              "hero": "#3D6B45",
+              "on-hero": "#FFFFFF",
+              "glow": "#FFCE6E"
+            },
+            "dark": {
+              "background": "#0A0A09",
+              "surface": "#191917",
+              "inset": "#242321",
+              "text": "#EEF1EA",
+              "text-muted": "#9CA595",
+              "text-faint": "#5D6657",
+              "separator": "#E1EBD7 at 13%",
+              "fill": "#E1EBD7 at 8%",
+              "brand": "#4E9E5C",
+              "on-brand": "#06140A",
+              "hero": "#1E4527",
+              "on-hero": "#EEF1EA",
+              "glow": "#FFCE6E"
+            }
+          },
+          {
+            "id": "cami",
+            "name": "Cami",
+            "light": {
+              "background": "#FAF4F6",
+              "surface": "#FFFFFF",
+              "inset": "#F7EEF2",
+              "text": "#2A1D24",
+              "text-muted": "#7A6670",
+              "text-faint": "#BBA9B2",
+              "separator": "#3A2430 at 12%",
+              "fill": "#3A2430 at 6%",
+              "brand": "#D46A98",
+              "on-brand": "#3A0F24",
+              "hero": "#F6D2E0",
+              "on-hero": "#4A1A33",
+              "glow": "#B9A4F2"
+            },
+            "dark": {
+              "background": "#0C0A0B",
+              "surface": "#1D181B",
+              "inset": "#2A2327",
+              "text": "#F7ECF1",
+              "text-muted": "#B39DA8",
+              "text-faint": "#6A5862",
+              "separator": "#F5E1EA at 13%",
+              "fill": "#F5E1EA at 8%",
+              "brand": "#F0A0C4",
+              "on-brand": "#3A0F24",
+              "hero": "#4E2A3E",
+              "on-hero": "#FBEAF2",
+              "glow": "#B9A2F0"
+            }
+          },
+          {
+            "id": "coronado",
+            "name": "Coronado",
+            "light": {
+              "background": "#F4F1EA",
+              "surface": "#FFFFFF",
+              "inset": "#F1EDE4",
+              "text": "#1A2427",
+              "text-muted": "#5F6B6D",
+              "text-faint": "#A6AEAF",
+              "separator": "#1F2E30 at 12%",
+              "fill": "#1F2E30 at 6%",
+              "brand": "#0B6E7A",
+              "on-brand": "#FFFFFF",
+              "hero": "#0B6E7A",
+              "on-hero": "#FFFFFF",
+              "glow": "#FFD27A"
+            },
+            "dark": {
+              "background": "#070A0B",
+              "surface": "#151B1C",
+              "inset": "#20282A",
+              "text": "#E9F2F2",
+              "text-muted": "#93A6A8",
+              "text-faint": "#566467",
+              "separator": "#DDEDED at 13%",
+              "fill": "#DDEDED at 8%",
+              "brand": "#3FB7C2",
+              "on-brand": "#02181B",
+              "hero": "#0C4A52",
+              "on-hero": "#E9F6F6",
+              "glow": "#FFD27A"
+            }
+          },
+          {
+            "id": "glacier",
+            "name": "Glacier",
+            "light": {
+              "background": "#EEF2F6",
+              "surface": "#FFFFFF",
+              "inset": "#EBF0F5",
+              "text": "#17202B",
+              "text-muted": "#5E6B7A",
+              "text-faint": "#A5AFBB",
+              "separator": "#1F2B38 at 12%",
+              "fill": "#1F2B38 at 6%",
+              "brand": "#2F5F8A",
+              "on-brand": "#FFFFFF",
+              "hero": "#24496E",
+              "on-hero": "#FFFFFF",
+              "glow": "#6FE3C1"
+            },
+            "dark": {
+              "background": "#07090C",
+              "surface": "#151A21",
+              "inset": "#1F2630",
+              "text": "#EAF1F8",
+              "text-muted": "#95A3B3",
+              "text-faint": "#566273",
+              "separator": "#DDE7F2 at 13%",
+              "fill": "#DDE7F2 at 8%",
+              "brand": "#7FB2E5",
+              "on-brand": "#061526",
+              "hero": "#1A3452",
+              "on-hero": "#EAF1F8",
+              "glow": "#5FD6B4"
+            }
+          },
+          {
+            "id": "mesa",
+            "name": "Mesa",
+            "light": {
+              "background": "#F6F0E7",
+              "surface": "#FFFFFF",
+              "inset": "#F2EADF",
+              "text": "#2A1F17",
+              "text-muted": "#7A6A5B",
+              "text-faint": "#B9AB9C",
+              "separator": "#3A2A1D at 12%",
+              "fill": "#3A2A1D at 6%",
+              "brand": "#A5502F",
+              "on-brand": "#FFFFFF",
+              "hero": "#A5502F",
+              "on-hero": "#FFFFFF",
+              "glow": "#F4B860"
+            },
+            "dark": {
+              "background": "#0B0908",
+              "surface": "#1C1816",
+              "inset": "#28221E",
+              "text": "#F5EDE4",
+              "text-muted": "#B0A090",
+              "text-faint": "#6B5E52",
+              "separator": "#F2E4D6 at 13%",
+              "fill": "#F2E4D6 at 8%",
+              "brand": "#E08A63",
+              "on-brand": "#2A0E03",
+              "hero": "#5A2A1A",
+              "on-hero": "#F8ECE2",
+              "glow": "#F4B860"
+            }
+          },
+          {
+            "id": "jacaranda",
+            "name": "Jacaranda",
+            "light": {
+              "background": "#F5F3F8",
+              "surface": "#FFFFFF",
+              "inset": "#F0EDF5",
+              "text": "#211C2A",
+              "text-muted": "#6B6478",
+              "text-faint": "#ADA6BA",
+              "separator": "#2A2238 at 12%",
+              "fill": "#2A2238 at 6%",
+              "brand": "#6A4FB0",
+              "on-brand": "#FFFFFF",
+              "hero": "#6A4FB0",
+              "on-hero": "#FFFFFF",
+              "glow": "#F2B8D8"
+            },
+            "dark": {
+              "background": "#09080C",
+              "surface": "#18161D",
+              "inset": "#24212B",
+              "text": "#EFECF5",
+              "text-muted": "#A49CB5",
+              "text-faint": "#5F586D",
+              "separator": "#E6E0F2 at 13%",
+              "fill": "#E6E0F2 at 8%",
+              "brand": "#A58DEB",
+              "on-brand": "#160B33",
+              "hero": "#35265E",
+              "on-hero": "#F1ECFB",
+              "glow": "#E9A6CF"
+            }
+          },
+          {
+            "id": "sierra",
+            "name": "Sierra",
+            "light": {
+              "background": "#F1F0EE",
+              "surface": "#FFFFFF",
+              "inset": "#E9E8E5",
+              "text": "#1E2124",
+              "text-muted": "#62666A",
+              "text-faint": "#A9ACAF",
+              "separator": "#2A2E33 at 12%",
+              "fill": "#2A2E33 at 6%",
+              "brand": "#505B66",
+              "on-brand": "#FFFFFF",
+              "hero": "#5A626B",
+              "on-hero": "#FFFFFF",
+              "glow": "#E4ECF4"
+            },
+            "dark": {
+              "background": "#09090A",
+              "surface": "#18191B",
+              "inset": "#232528",
+              "text": "#EDEEF0",
+              "text-muted": "#9DA2A8",
+              "text-faint": "#5B6066",
+              "separator": "#E2E5EA at 13%",
+              "fill": "#E2E5EA at 8%",
+              "brand": "#AEB8C2",
+              "on-brand": "#111519",
+              "hero": "#363C43",
+              "on-hero": "#EDEEF0",
+              "glow": "#C9D6E3"
+            }
+          }
+        ],
+        "shared": {
+          "light": {
+            "warning": "#B54E1A",
+            "danger": "#BF322B",
+            "sun": "#B87A06",
+            "on-sun": "#2A1D00"
+          },
+          "dark": {
+            "warning": "#F2935C",
+            "danger": "#FF6B5F",
+            "sun": "#E8B24A",
+            "on-sun": "#231800"
+          }
+        },
+        "categories": {
+          "light": {
+            "clay": "#C1462D",
+            "bark": "#86613E",
+            "marigold": "#A98200",
+            "meadow": "#6B9325",
+            "moss": "#437A2C",
+            "lagoon": "#12807F",
+            "lake": "#2A74AB",
+            "dusk": "#2C5397",
+            "heather": "#7A5CBD",
+            "plum": "#94459A",
+            "berry": "#B93D6C",
+            "stone": "#63707A"
+          },
+          "dark": {
+            "clay": "#E18E7D",
+            "bark": "#CC9F74",
+            "marigold": "#F0C42E",
+            "meadow": "#9CC842",
+            "moss": "#8BC56B",
+            "lagoon": "#5CCAC4",
+            "lake": "#74B3E6",
+            "dusk": "#7096D8",
+            "heather": "#B59FF0",
+            "plum": "#CB8FCF",
+            "berry": "#EF88AE",
+            "stone": "#A4B1B8"
+          }
+        }
+      }
+    </script>
+
+    <div class="wrap">
+      <div class="modebar">
+        <div class="seg" role="group" aria-label="Preview mode">
+          <button id="pm-light" type="button" data-m="light">Light</button>
+          <button id="pm-dark" type="button" data-m="dark">Dark</button>
+        </div>
+      </div>
+      <div class="top">
+        <div class="phone big" id="settings"></div>
+        <div class="phone big" id="home"></div>
+      </div>
+      <h2>Every palette</h2>
+      <div class="gal" id="gal"></div>
+    </div>
+    <script>
+      const SRC = JSON.parse(document.getElementById('palette-data').textContent)
+      // The page draws with short names; map the design language's token names onto them.
+      const mixOf = (v) => {
+        const m = /^(#[0-9A-F]{6}) at (\d+)%$/i.exec(v)
+        return m ? `color-mix(in srgb, ${m[1]} ${m[2]}%, transparent)` : v
+      }
+      const short = (t, m) => ({
+        bg: t.background,
+        surface: t.surface,
+        inset: t.inset,
+        text: t.text,
+        muted: t['text-muted'],
+        faint: t['text-faint'],
+        brand: t.brand,
+        onBrand: t['on-brand'],
+        hero: t.hero,
+        onHero: t['on-hero'],
+        glow: t.glow === 'none' ? null : t.glow,
+        sep: mixOf(t.separator),
+        fill: mixOf(t.fill),
+        warning: SRC.shared[m].warning,
+        sun: SRC.shared[m].sun,
+      })
+      const D = {
+        cat: {
+          light: Object.fromEntries(
+            Object.entries(SRC.categories.light).map(([k, v]) => [k.toLowerCase(), v]),
+          ),
+          dark: Object.fromEntries(
+            Object.entries(SRC.categories.dark).map(([k, v]) => [k.toLowerCase(), v]),
+          ),
+        },
+        pal: SRC.palettes.map((p) => ({
+          id: p.id,
+          name: p.name,
+          default: p.id === 'sage-grove',
+          light: short(p.light, 'light'),
+          dark: short(p.dark, 'dark'),
+        })),
+      }
+      const ic = {
+        cart: '<svg viewBox="0 0 256 256"><path d="M40 56h176l-24 96H64z" fill="currentColor" opacity=".25"/><path d="M24 40h24l28 112h112l24-88H56" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/><circle cx="88" cy="204" r="16" fill="currentColor"/><circle cx="184" cy="204" r="16" fill="currentColor"/></svg>',
+        fork: '<svg viewBox="0 0 256 256"><path d="M168 32c-24 16-32 56-32 96h32z" fill="currentColor" opacity=".25"/><path d="M80 32v64a24 24 0 0 0 48 0V32M104 32v192M168 224V32c-24 16-32 56-32 96h32" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        bus: '<svg viewBox="0 0 256 256"><rect x="48" y="40" width="160" height="136" rx="20" fill="currentColor" opacity=".25"/><path d="M48 112h160M68 176v32M188 176v32M68 40h120a20 20 0 0 1 20 20v116H48V60a20 20 0 0 1 20-20z" fill="none" stroke="currentColor" stroke-width="16" stroke-linejoin="round"/><circle cx="84" cy="148" r="12" fill="currentColor"/><circle cx="172" cy="148" r="12" fill="currentColor"/></svg>',
+        film: '<svg viewBox="0 0 256 256"><circle cx="128" cy="128" r="88" fill="currentColor" opacity=".25"/><circle cx="128" cy="128" r="88" fill="none" stroke="currentColor" stroke-width="16"/><path d="M108 96l56 32-56 32z" fill="currentColor"/></svg>',
+        house:
+          '<svg viewBox="0 0 256 256"><path d="M216 216V115a8 8 0 0 0-3-6l-80-72a8 8 0 0 0-10 0l-80 72a8 8 0 0 0-3 6v101z" fill="currentColor"/></svg>',
+        chart:
+          '<svg viewBox="0 0 256 256"><path d="M40 208V48M40 208h176M80 168v-40M128 168V88M176 168v-64" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round"/></svg>',
+        wallet:
+          '<svg viewBox="0 0 256 256"><path d="M40 72v112a16 16 0 0 0 16 16h160V88H56a16 16 0 0 1-16-16 16 16 0 0 1 16-16h136" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/><circle cx="176" cy="144" r="12" fill="currentColor"/></svg>',
+        gear: '<svg viewBox="0 0 256 256"><circle cx="128" cy="128" r="40" fill="none" stroke="currentColor" stroke-width="16"/><path d="M128 24v32M128 200v32M24 128h32M200 128h32M54 54l23 23M179 179l23 23M54 202l23-23M179 77l23-23" stroke="currentColor" stroke-width="16" stroke-linecap="round"/></svg>',
+        plus: '<svg viewBox="0 0 256 256"><path d="M40 128h176M128 40v176" stroke="currentColor" stroke-width="20" stroke-linecap="round"/></svg>',
+        check:
+          '<svg viewBox="0 0 256 256"><path d="M40 136l56 56 120-120" fill="none" stroke="currentColor" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        bank: '<svg viewBox="0 0 256 256"><path d="M24 96h208L128 32z" fill="currentColor" opacity=".25"/><path d="M24 96h208L128 32zM48 96v88M96 96v88M160 96v88M208 96v88M24 208h208" fill="none" stroke="currentColor" stroke-width="16" stroke-linejoin="round" stroke-linecap="round"/></svg>',
+        card: '<svg viewBox="0 0 256 256"><rect x="24" y="56" width="208" height="144" rx="16" fill="currentColor" opacity=".25"/><rect x="24" y="56" width="208" height="144" rx="16" fill="none" stroke="currentColor" stroke-width="16"/><path d="M24 100h208M168 168h32" stroke="currentColor" stroke-width="16" stroke-linecap="round"/></svg>',
+        cash: '<svg viewBox="0 0 256 256"><rect x="16" y="64" width="224" height="128" rx="12" fill="currentColor" opacity=".25"/><rect x="16" y="64" width="224" height="128" rx="12" fill="none" stroke="currentColor" stroke-width="16"/><circle cx="128" cy="128" r="28" fill="none" stroke="currentColor" stroke-width="16"/></svg>',
+        piggy:
+          '<svg viewBox="0 0 256 256"><ellipse cx="124" cy="132" rx="84" ry="64" fill="currentColor" opacity=".25"/><path d="M88 196l-8 24M168 196l8 24M40 132c0-36 38-64 84-64 30 0 56 12 70 30h22v52h-18c-8 18-26 34-50 40H96c-32-8-56-30-56-58zM104 64a24 24 0 0 1 40 0" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        back: '<svg viewBox="0 0 256 256" width="18" height="18"><path d="M160 40l-88 88 88 88" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      }
+      const byId = Object.fromEntries(D.pal.map((p) => [p.id, p]))
+      let mode = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      const rt = document.documentElement.getAttribute('data-theme')
+      if (rt === 'dark' || rt === 'light') mode = rt
+      let cur = 'sage-grove'
+      function vars(p, m) {
+        const t = p[m],
+          c = D.cat[m]
+        const dk = m === 'dark'
+        let s = `--bg:${t.bg};--surface:${t.surface};--inset:${t.inset};--text:${t.text};--muted:${t.muted};--faint:${t.faint};--brand:${t.brand};--onBrand:${t.onBrand};--hero:${t.hero};--onHero:${t.onHero};--glow:${t.glow || 'transparent'};--warning:${t.warning};--sun:${t.sun};--tmix:${dk ? 22 : 14}%;--bmix:${dk ? 64 : 52}%;--sep:${t.sep};--fill:${t.fill};`
+        for (const k in c) s += `--${k}:${c[k]};`
+        return s
+      }
+      const tabs = (on) =>
+        `<div class="tabs">${[
+          ['house', 'Home'],
+          ['chart', 'Spending'],
+          ['wallet', 'Wallets'],
+          ['gear', 'Settings'],
+        ]
+          .map(([i, n]) => `<div class="t${n === on ? ' on' : ''}">${ic[i]}${n}</div>`)
+          .join('')}<div class="plus">${ic.plus}</div></div>`
+      const row = (i, c, n, a, w, pct) =>
+        `<div class="row" style="--c:var(--${c})"><div class="tile">${ic[i]}</div><div class="nm">${n}</div><div class="amt${w ? ' w' : ''}">${a}</div><div class="bar"><i style="width:${pct}%"></i></div></div>`
+      function home(p) {
+        return `<div class="sb"><span>9:41</span><span>▮▮▮</span></div>
+<div class="title">October</div>
+<div class="hero${p[mode].glow ? ' glow' : ''}"><small>Left to spend</small><div class="big">$8,420</div><small>of $14,000 · 12 days left</small><div class="hbar"><i></i></div></div>
+<div class="card">${row('cart', 'moss', 'Groceries', '$1,212 left', 0, 58)}${row('fork', 'clay', 'Eating out', '$180 over', 1, 100)}${row('bus', 'lake', 'Transport', '$640 left', 0, 36)}${row('film', 'plum', 'Fun', '$310 left', 0, 70)}</div>
+<div class="card"><div class="goal"><div class="gh">Trip to Oaxaca<span>62%</span></div><div class="bar" style="--c:var(--sun);grid-column:auto"><i style="width:62%"></i></div><p>$12,400 of $20,000 saved. You're on pace for March.</p></div></div>
+<div class="card"><div class="row" style="grid-template-columns:1fr auto;border:0"><div class="nm">Salary</div><div class="amt income">+$18,500</div></div></div>
+${tabs('Home')}`
+      }
+      function thumb(p) {
+        const t = p[mode],
+          c = D.cat[mode]
+        return `<div class="thumb" style="background:${t.bg}"><div class="h" style="background:${t.hero}${t.glow ? `;background-image:radial-gradient(circle at 100% 0,color-mix(in srgb,${t.glow} 40%,transparent),transparent 75%)` : ''}"></div>
+ <div class="l" style="background:${t.surface}"><i style="background:${c.moss}"></i><s style="background:${c.moss}"></s></div>
+ <div class="l" style="background:${t.surface}"><i style="background:${c.lake}"></i><s style="background:${c.lake}"></s></div>
+ <div class="p" style="background:${t.brand}"></div></div>`
+      }
+      function settings(p) {
+        return `<div class="sb"><span>9:41</span><span>▮▮▮</span></div>
+<div class="nav">${ic.back}Settings</div><div class="title">Appearance</div>
+<div class="sh">Mode</div>
+<div class="card" style="padding:10px"><div class="mseg" role="group" aria-label="Mode"><button id="m-auto" type="button" data-m="auto">Automatic</button><button id="m-light" type="button" data-m="light" aria-pressed="${mode === 'light'}">Light</button><button id="m-dark" type="button" data-m="dark" aria-pressed="${mode === 'dark'}">Dark</button></div></div>
+<div class="sh">Palette</div>
+<div class="card"><div class="grid" role="radiogroup" aria-label="Palette">${D.pal.map((q) => `<button class="opt" id="opt-${q.id}" role="radio" aria-checked="${q.id === cur}" data-p="${q.id}">${thumb(q)}<span class="olab"><span class="ck">${q.id === cur ? ic.check : ''}</span>${q.name}</span></button>`).join('')}</div></div>
+<div class="sfoot">Your category colors stay the same in every palette.</div>
+${tabs('Settings')}`
+      }
+      function render() {
+        const p = byId[cur]
+        gallery()
+        const s = document.getElementById('settings'),
+          h = document.getElementById('home')
+        s.style.cssText = vars(p, mode)
+        h.style.cssText = vars(p, mode)
+        s.innerHTML = settings(p)
+        h.innerHTML = home(p)
+        document
+          .querySelectorAll('.seg button')
+          .forEach((b) => b.setAttribute('aria-pressed', b.dataset.m === mode))
+        s.querySelectorAll('.opt').forEach(
+          (b) =>
+            (b.onclick = () => {
+              cur = b.dataset.p
+              render()
+            }),
+        )
+        s.querySelectorAll('.mseg button').forEach(
+          (b) =>
+            (b.onclick = () => {
+              if (b.dataset.m !== 'auto') {
+                mode = b.dataset.m
+                render()
+              }
+            }),
+        )
+      }
+      document.querySelectorAll('.seg button').forEach(
+        (b) =>
+          (b.onclick = () => {
+            mode = b.dataset.m
+            render()
+          }),
+      )
+
+      function spending(p) {
+        const months = [
+          ['May', 62],
+          ['Jun', 70],
+          ['Jul', 55],
+          ['Aug', 80],
+          ['Sep', 66],
+          ['Oct', 48],
+        ]
+        const cats = [
+          ['moss', 'Groceries', '$2,788', '42%'],
+          ['clay', 'Eating out', '$1,580', '24%'],
+          ['lake', 'Transport', '$860', '13%'],
+          ['plum', 'Fun', '$690', '10%'],
+          ['bark', 'Home', '$712', '11%'],
+        ]
+        return `<div class="sb"><span>9:41</span><span>▮▮▮</span></div><div class="title">Spending</div>
+<div class="mseg2"><span>Week</span><span class="on">Month</span><span>Year</span></div>
+<div class="sumc"><div class="lbl">Spent in October</div><div class="num">$6,630</div><div class="chart">${months.map(([m, v], i) => `<div class="${i === 5 ? 'now' : ''}"><i style="height:${v}%"></i>${m}</div>`).join('')}</div></div>
+<div class="card">${cats.map(([c, n, a, pc]) => `<div class="lrow" style="--c:var(--${c})"><div class="d"><span class="dot"></span></div><div>${n}</div><div class="r">${a}<small>${pc}</small></div></div>`).join('')}</div>
+${tabs('Spending')}`
+      }
+      function wallets(p) {
+        const w = [
+          ['bank', 'lake', 'BBVA Debit', '$24,180'],
+          ['piggy', 'meadow', 'Savings', '$96,500'],
+          ['cash', 'bark', 'Cash', '$1,830'],
+          ['card', 'berry', 'Nu Credit Card', '−$4,210'],
+        ]
+        return `<div class="sb"><span>9:41</span><span>▮▮▮</span></div><div class="title">Wallets</div>
+<div class="hero${p[mode].glow ? ' glow' : ''}"><small>Net worth</small><div class="big">$142,300</div><small>+$3,240 since September</small></div>
+<div class="card">${w.map(([i, c, n, b]) => `<div class="lrow" style="--c:var(--${c})"><div class="tile" style="grid-row:auto">${ic[i]}</div><div>${n}</div><div class="r">${b}</div></div>`).join('')}</div>
+<div class="sub" style="margin:0 4px">Updated today</div>
+${tabs('Wallets')}`
+      }
+      function addScreen(p) {
+        return `<div style="opacity:.55;display:flex;flex-direction:column;gap:12px">${home(p).replace(/<div class="tabs">[\s\S]*$/, '')}</div><div class="dim"></div>
+<div class="sheet"><div class="grab"></div><div class="shd"><span class="x">Cancel</span><b>New expense</b><span style="width:44px"></span></div>
+<div class="amtbig">$245</div>
+<div class="chips">${[
+          ['fork', 'clay', 'Eating out', 1],
+          ['cart', 'moss', 'Groceries'],
+          ['bus', 'lake', 'Transport'],
+          ['film', 'plum', 'Fun'],
+        ]
+          .map(
+            ([i, c, n, on]) =>
+              `<span class="chip2${on ? ' on' : ''}" style="--c:var(--${c})"><span class="tile" style="grid-row:auto">${ic[i]}</span>${n}</span>`,
+          )
+          .join('')}</div>
+<div class="fld"><div><span>Wallet</span>Nu Credit Card</div><div><span>Date</span>Today</div></div>
+<div class="keys">${['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '⌫'].map((k) => `<span>${k}</span>`).join('')}</div>
+<div class="save">Save</div></div>`
+      }
+      function gallery() {
+        document.getElementById('gal').innerHTML = D.pal
+          .map(
+            (p) =>
+              `<section class="pal"><header><b>${p.name}</b>${p.default ? '<span class="chip">default</span>' : ''}</header><div class="pair">${[home, spending, wallets, addScreen].map((fn) => `<div class="phone" style="${vars(p, mode)}">${fn(p)}</div>`).join('')}</div></section>`,
+          )
+          .join('')
+      }
+
+      render()
+    </script>
+  </body>
+</html>

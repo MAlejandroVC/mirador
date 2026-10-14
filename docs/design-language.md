@@ -15,7 +15,9 @@ Every rule has a stable ID, like the requirements spec: `DL-<area>-<number>`, fo
 
 ### How it maps to code
 
-- Foundations are **semantic tokens** in Tailwind 4's `@theme` block in `apps/web/src/index.css`, named by role (`surface`, `text-muted`, `warning`, `danger`), never by hue. Components use the role names only, so a palette change is one edit.
+- Foundations are **semantic tokens** in Tailwind 4's `@theme` block in `apps/web/src/index.css`, named by role (`surface`, `brand`, `warning`, `danger`), never by hue. Components use the role names only, so every palette works on every screen without a change to the component.
+- The palette and the appearance mode are attributes on `<html>`: `data-palette` (for example `data-palette="cami"`) and `data-theme` (`light` or `dark`; none means Automatic). `apps/web/src/lib/appearance.ts` sets them.
+- [design-language-palettes.html](design-language-palettes.html) shows every palette on four screens in light and dark.
 - Components live in `apps/web/src/components/ui`, built on shadcn/ui and restyled to these tokens.
 - The repository copy, `docs/design-language.md`, is the source of truth. `CLAUDE.md` points to it, and changes go through pull requests.
 
@@ -34,10 +36,11 @@ Mirador is **cool**: it sits comfortably within what people already know and gen
 - an icon and a color for each wallet
 - a color for each category group and an icon for each category
 - a color for each tag
+- the app's palette and its light or dark mode, from eight designed palettes (DL-COL-01)
 - which cards the dashboard shows, and their order (from Mirador's own cards; there is no card builder)
 - the app icon, from a few designed options
 
-The app's own palette is fixed. Colors people pick come from Mirador's curated set, never a free color picker. *Why:* the opposite of "unfinished but highly customizable". A curated set keeps every combination looking designed.
+Colors people pick come from Mirador's curated set, never a free color picker. *Why:* the opposite of "unfinished but highly customizable". A curated set keeps every combination looking designed.
 
 **DL-PRI-05 Confident, not loud.** One clear main action per screen. No confetti, badge counts, streak pressure, pop-ups or dark patterns. The interface steps back and lets the numbers lead. *Why:* "cool" stands out through its differences, not its volume. A quiet interface also reads as more trustworthy with money.
 
@@ -70,13 +73,13 @@ Mirador feels **polished, familiar and calm, ****refined with a touch of whimsy*
 
 ## Color
 
-**DL-COL-01** The app palette is fixed and the same for everyone; people color their wallets, category groups and tags from Mirador's curated set (DL-PRI-04).
+**DL-COL-01** People choose the app's palette from eight designed palettes (SYS-17) and its mode: Automatic, Light or Dark (SYS-16). A palette changes only the palette tokens (DL-COL-12); the 12 category colors, `warning`, `danger` and `sun` stay the same in every palette. *Why:* the default reflects one taste, so people get a few finished alternatives, while a color still means the same thing on every screen and in every palette.
 
-**DL-COL-02** No decorative gradients. A gradient is allowed only where it shows a quantity, such as a chart fill, plus the one sunlight glow on the hero card (DL-COL-10).
+**DL-COL-02** No decorative gradients. A gradient is allowed only where it shows a quantity, such as a chart fill, plus the one glow on the hero card (DL-COL-10).
 
-**DL-COL-03** The palette is **Sage Grove**: neutrals with a whisper of warm brown, and **Pine**, a deep forest green, as the brand color. Pine marks the main action, the selected tab and the hero card. *Why:* calm and steady, it stands out without shouting, and it belongs to the outdoors that the name Mirador comes from.
+**DL-COL-03** The default palette is **Sage Grove**: neutrals with a whisper of warm brown, and **Pine**, a deep forest green, as the brand color. In every palette, `brand` marks the main action, the selected tab, switches and links, and `hero` colors the hero card. *Why:* calm and steady, Sage Grove stands out without shouting, and it belongs to the outdoors that the name Mirador comes from.
 
-**DL-COL-04** Screens use color generously but with restraint: Pine for the brand, plus the curated colors of category groups, wallets and tags. A screen with only the brand color and grays is unfinished. *Why:* Mirador is refined but whimsical. Two colors look polished but dull.
+**DL-COL-04** Screens use color generously but with restraint: the brand color, plus the curated colors of category groups, wallets and tags. A screen with only the brand color and grays is unfinished. *Why:* Mirador is refined but whimsical. Two colors look polished but dull.
 
 **DL-COL-05** Over budget is shown only in words: the amount and the word "over" ("$18 over") take the `warning` color. The bar keeps its category color. `warning` is for gentle cautions like this one; it is outside the curated set, so it never means a category.
 
@@ -86,32 +89,206 @@ Mirador feels **polished, familiar and calm, ****refined with a touch of whimsy*
 
 **DL-COL-08** A tile's background is its color mixed with the surface at 14% (light) or 22% (dark). A bar is its color mixed with the surface at 52% (light) or 64% (dark).
 
-**DL-COL-09** `sun`, a golden color, marks goals, milestones and good moments, and nothing else. *Why:* it is the sunlight through the trees; used rarely, it stays a small reward.
+**DL-COL-09** `sun`, a golden color, marks goals, milestones and good moments, and nothing else, in every palette. *Why:* used rarely, it stays a small reward.
 
-**DL-COL-10** The hero card carries one soft sunlight glow from its top-right corner: gold at 24% opacity, 10% at 40% of the way, gone by 78%. It is the only decorative gradient in Mirador. *Why:* it gives the one loud element on the screen a warm, outdoor light without becoming a pattern.
+**DL-COL-10** The hero card carries one soft glow from its top-right corner in the palette's `glow` color: 24% opacity, 10% at 40% of the way, gone by 78%. Paper has no glow. It is the only decorative gradient in Mirador. *Why:* it gives the one loud element on the screen its palette's light (sunlight in Sage Grove, an aurora in Glacier) without becoming a pattern.
 
 ### App tokens
 
-Every text token below meets WCAG 2.2 AA (4.5:1) on the surfaces it is used on, except `text-faint`, which is only for disabled controls.
+**DL-COL-12** Each palette sets the 13 palette tokens below; the shared tokens and the category colors are the same in every palette. In every palette and mode, `text` and `text-muted` reach 4.5:1 on `background` and `surface`, `on-brand` and `on-hero` reach 4.5:1 on `brand` and `hero`, `brand` reaches 3:1 on `surface`, and `warning` reaches 4.5:1 and `sun` and every category color 3:1 on `background` and `surface` (WCAG 2.2 AA). `text-faint` is only for disabled controls. A test checks every palette.
 
-| Token | Used for | Light | Dark |
-|---|---|---|---|
-| `background` | Screen behind cards | #F3F2EF | #0A0A09 |
-| `surface` | Cards, lists, tab bar, sheets | #FFFFFF | #191917 |
-| `inset` | Fields inside a sheet | #F3F2EF | #242321 |
-| `text` | Main text and amounts | #1D211A | #EEF1EA |
-| `text-muted` | Secondary text, cents, labels, inactive tabs | #656C5F | #9CA595 |
-| `text-faint` | Disabled controls only | #A9AEA3 | #5D6657 |
-| `separator` | Hairlines between rows | #23281C at 12% | #E1EBD7 at 13% |
-| `fill` | Empty part of bars, segmented controls | #23281C at 6% | #E1EBD7 at 8% |
-| `pine` | Brand: quick-add, selected tab, switches, links | #3D6B45 | #4E9E5C |
-| `on-pine` | Text and icons on pine | #FFFFFF | #06140A |
-| `hero` | Hero card background | #3D6B45 | #1E4527 |
-| `on-hero` | Text on the hero card | #FFFFFF | #EEF1EA |
-| `warning` | Over budget and other gentle cautions | #B54E1A | #F2935C |
-| `danger` | Destructive actions only | #BF322B | #FF6B5F |
-| `sun` | Goals, milestones, good moments | #B87A06 | #E8B24A |
-| `on-sun` | Text on sun | #2A1D00 | #231800 |
+| Token | Used for | Set by |
+|---|---|---|
+| `background` | Screen behind cards | Palette |
+| `surface` | Cards, lists, tab bar, sheets | Palette |
+| `inset` | Fields inside a sheet | Palette |
+| `text` | Main text and amounts | Palette |
+| `text-muted` | Secondary text, cents, labels, inactive tabs | Palette |
+| `text-faint` | Disabled controls only | Palette |
+| `separator` | Hairlines between rows | Palette |
+| `fill` | Empty part of bars, segmented controls | Palette |
+| `brand` | Quick-add, selected tab, switches, links, focus ring | Palette |
+| `on-brand` | Text and icons on brand | Palette |
+| `hero` | Hero card background | Palette |
+| `on-hero` | Text on the hero card | Palette |
+| `glow` | The hero card's glow (DL-COL-10) | Palette |
+| `warning` | Over budget and other gentle cautions | Shared |
+| `danger` | Destructive actions only | Shared |
+| `sun` | Goals, milestones, good moments | Shared |
+| `on-sun` | Text on sun | Shared |
+
+### Shared tokens
+
+| Token | Light | Dark |
+|---|---|---|
+| `warning` | #B54E1A | #F2935C |
+| `danger` | #BF322B | #FF6B5F |
+| `sun` | #B87A06 | #E8B24A |
+| `on-sun` | #2A1D00 | #231800 |
+
+### Palettes
+
+In the order the palette picker shows them. The id is the value of `data-palette`.
+
+#### Paper
+
+Id `paper`. Plain black and white with no personality, like Apple's own apps. The hero card has no glow.
+
+| Token | Light | Dark |
+|---|---|---|
+| `background` | #F2F2F7 | #000000 |
+| `surface` | #FFFFFF | #1C1C1E |
+| `inset` | #F2F2F7 | #2C2C2E |
+| `text` | #1C1C1E | #F2F2F7 |
+| `text-muted` | #6C6C70 | #98989F |
+| `text-faint` | #AEAEB2 | #5A5A5E |
+| `separator` | #3C3C43 at 12% | #EBEBF5 at 13% |
+| `fill` | #3C3C43 at 6% | #EBEBF5 at 8% |
+| `brand` | #1C1C1E | #F2F2F7 |
+| `on-brand` | #FFFFFF | #000000 |
+| `hero` | #1C1C1E | #2C2C2E |
+| `on-hero` | #FFFFFF | #F2F2F7 |
+| `glow` | none | none |
+
+#### Sage Grove (default)
+
+Id `sage-grove`. Neutrals with a whisper of warm brown and Pine, a deep forest green, with sunlight through the trees on the hero. The default.
+
+| Token | Light | Dark |
+|---|---|---|
+| `background` | #F3F2EF | #0A0A09 |
+| `surface` | #FFFFFF | #191917 |
+| `inset` | #F3F2EF | #242321 |
+| `text` | #1D211A | #EEF1EA |
+| `text-muted` | #656C5F | #9CA595 |
+| `text-faint` | #A9AEA3 | #5D6657 |
+| `separator` | #23281C at 12% | #E1EBD7 at 13% |
+| `fill` | #23281C at 6% | #E1EBD7 at 8% |
+| `brand` | #3D6B45 | #4E9E5C |
+| `on-brand` | #FFFFFF | #06140A |
+| `hero` | #3D6B45 | #1E4527 |
+| `on-hero` | #FFFFFF | #EEF1EA |
+| `glow` | #FFCE6E | #FFCE6E |
+
+#### Cami
+
+Id `cami`. Soft pastels: a pink hero with a lilac glow and rose buttons, because looking at your finances is stressful enough and soft colors are calming.
+
+| Token | Light | Dark |
+|---|---|---|
+| `background` | #FAF4F6 | #0C0A0B |
+| `surface` | #FFFFFF | #1D181B |
+| `inset` | #F7EEF2 | #2A2327 |
+| `text` | #2A1D24 | #F7ECF1 |
+| `text-muted` | #7A6670 | #B39DA8 |
+| `text-faint` | #BBA9B2 | #6A5862 |
+| `separator` | #3A2430 at 12% | #F5E1EA at 13% |
+| `fill` | #3A2430 at 6% | #F5E1EA at 8% |
+| `brand` | #D46A98 | #F0A0C4 |
+| `on-brand` | #3A0F24 | #3A0F24 |
+| `hero` | #F6D2E0 | #4E2A3E |
+| `on-hero` | #4A1A33 | #FBEAF2 |
+| `glow` | #B9A4F2 | #B9A2F0 |
+
+#### Coronado
+
+Id `coronado`. Sun and sand: sand neutrals, a turquoise sea and a sun glow, after the beaches of Cancún and San Diego.
+
+| Token | Light | Dark |
+|---|---|---|
+| `background` | #F4F1EA | #070A0B |
+| `surface` | #FFFFFF | #151B1C |
+| `inset` | #F1EDE4 | #20282A |
+| `text` | #1A2427 | #E9F2F2 |
+| `text-muted` | #5F6B6D | #93A6A8 |
+| `text-faint` | #A6AEAF | #566467 |
+| `separator` | #1F2E30 at 12% | #DDEDED at 13% |
+| `fill` | #1F2E30 at 6% | #DDEDED at 8% |
+| `brand` | #0B6E7A | #3FB7C2 |
+| `on-brand` | #FFFFFF | #02181B |
+| `hero` | #0B6E7A | #0C4A52 |
+| `on-hero` | #FFFFFF | #E9F6F6 |
+| `glow` | #FFD27A | #FFD27A |
+
+#### Glacier
+
+Id `glacier`. An icy tundra: cool blue-white neutrals, glacier blue and an aurora glow.
+
+| Token | Light | Dark |
+|---|---|---|
+| `background` | #EEF2F6 | #07090C |
+| `surface` | #FFFFFF | #151A21 |
+| `inset` | #EBF0F5 | #1F2630 |
+| `text` | #17202B | #EAF1F8 |
+| `text-muted` | #5E6B7A | #95A3B3 |
+| `text-faint` | #A5AFBB | #566273 |
+| `separator` | #1F2B38 at 12% | #DDE7F2 at 13% |
+| `fill` | #1F2B38 at 6% | #DDE7F2 at 8% |
+| `brand` | #2F5F8A | #7FB2E5 |
+| `on-brand` | #FFFFFF | #061526 |
+| `hero` | #24496E | #1A3452 |
+| `on-hero` | #FFFFFF | #EAF1F8 |
+| `glow` | #6FE3C1 | #5FD6B4 |
+
+#### Mesa
+
+Id `mesa`. The desert: warm sand, terracotta and a sunset glow.
+
+| Token | Light | Dark |
+|---|---|---|
+| `background` | #F6F0E7 | #0B0908 |
+| `surface` | #FFFFFF | #1C1816 |
+| `inset` | #F2EADF | #28221E |
+| `text` | #2A1F17 | #F5EDE4 |
+| `text-muted` | #7A6A5B | #B0A090 |
+| `text-faint` | #B9AB9C | #6B5E52 |
+| `separator` | #3A2A1D at 12% | #F2E4D6 at 13% |
+| `fill` | #3A2A1D at 6% | #F2E4D6 at 8% |
+| `brand` | #A5502F | #E08A63 |
+| `on-brand` | #FFFFFF | #2A0E03 |
+| `hero` | #A5502F | #5A2A1A |
+| `on-hero` | #FFFFFF | #F8ECE2 |
+| `glow` | #F4B860 | #F4B860 |
+
+#### Jacaranda
+
+Id `jacaranda`. The purple of the jacaranda trees that bloom across Mexico City in spring, with a blossom-pink glow.
+
+| Token | Light | Dark |
+|---|---|---|
+| `background` | #F5F3F8 | #09080C |
+| `surface` | #FFFFFF | #18161D |
+| `inset` | #F0EDF5 | #24212B |
+| `text` | #211C2A | #EFECF5 |
+| `text-muted` | #6B6478 | #A49CB5 |
+| `text-faint` | #ADA6BA | #5F586D |
+| `separator` | #2A2238 at 12% | #E6E0F2 at 13% |
+| `fill` | #2A2238 at 6% | #E6E0F2 at 8% |
+| `brand` | #6A4FB0 | #A58DEB |
+| `on-brand` | #FFFFFF | #160B33 |
+| `hero` | #6A4FB0 | #35265E |
+| `on-hero` | #FFFFFF | #F1ECFB |
+| `glow` | #F2B8D8 | #E9A6CF |
+
+#### Sierra
+
+Id `sierra`. A stony mountain: granite grays, a slate hero and a pale glow like light on snow.
+
+| Token | Light | Dark |
+|---|---|---|
+| `background` | #F1F0EE | #09090A |
+| `surface` | #FFFFFF | #18191B |
+| `inset` | #E9E8E5 | #232528 |
+| `text` | #1E2124 | #EDEEF0 |
+| `text-muted` | #62666A | #9DA2A8 |
+| `text-faint` | #A9ACAF | #5B6066 |
+| `separator` | #2A2E33 at 12% | #E2E5EA at 13% |
+| `fill` | #2A2E33 at 6% | #E2E5EA at 8% |
+| `brand` | #505B66 | #AEB8C2 |
+| `on-brand` | #FFFFFF | #111519 |
+| `hero` | #5A626B | #363C43 |
+| `on-hero` | #FFFFFF | #EDEEF0 |
+| `glow` | #E4ECF4 | #C9D6E3 |
 
 ### Category colors
 
@@ -258,7 +435,7 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 
 **DL-VIZ-01** Progress toward a goal or a budget is a bar plus one plain sentence ("$4,400 of $10,000"). It is never a chart (DL-PRI-07).
 
-**DL-VIZ-02** A chart about categories, wallets or tags uses their own colors, so a color means the same thing on every screen. A chart with one series uses `pine`.
+**DL-VIZ-02** A chart about categories, wallets or tags uses their own colors, so a color means the same thing on every screen. A chart with one series uses `brand`.
 
 **DL-VIZ-03** A phone chart shows at most six series; the rest are grouped as "Other" in `text-faint`. Labels sit on or next to the data, not in a separate legend, wherever they fit.
 
@@ -307,13 +484,13 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 
 **DL-CMP-03 Progress row.** Icon tile, name, and "$212 left" or "$18 over" on the first line; a 5 px bar in the category's softer tone below (DL-COL-05, DL-COL-06).
 
-**DL-CMP-04** **Quick-add button.** A 54 px circle in `pine` with a plus in `on-pine`, beside the tab bar (DL-LAY-02).
+**DL-CMP-04** **Quick-add button.** A 54 px circle in `brand` with a plus in `on-brand`, beside the tab bar (DL-LAY-02).
 
 **DL-CMP-05** **Buttons.** Three styles, as in iOS:
 
-- **Filled** (`pine` with `on-pine` text): the one main action of a screen or sheet, such as Save. Never two on one screen.
-- **Tinted** (`pine` at 14% on the surface, `pine` text): a second action next to it, such as "Save & new".
-- **Plain** (`pine` text, no background): actions in the navigation bar and inside lists.
+- **Filled** (`brand` with `on-brand` text): the one main action of a screen or sheet, such as Save. Never two on one screen.
+- **Tinted** (`brand` at 14% on the surface, `brand` text): a second action next to it, such as "Save & new".
+- **Plain** (`brand` text, no background): actions in the navigation bar and inside lists.
 
 Full-width buttons are 50 px tall; any button is at least 44 px. A destructive button uses `danger` text, plain or tinted, never filled. The label is a verb (DL-VOC-05).
 
@@ -325,7 +502,7 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 
 **DL-CMP-09** **Fields.** Fields are rows in an inset list, as in iOS Settings: label on the left, value on the right, chevron when it opens a picker. Free text fields use the `inset` fill. The amount is entered as a big number with the decimal keypad. A field's error appears right under it in `warning` (DL-PAT-05).
 
-**DL-CMP-10** **Switches.** The iOS switch, `pine` when on. Only for settings that take effect immediately; anything that needs Save is not a switch.
+**DL-CMP-10** **Switches.** The iOS switch, `brand` when on. Only for settings that take effect immediately; anything that needs Save is not a switch.
 
 **DL-CMP-11** **Segmented control.** Two to five equal options that switch a mode or a view, such as Expense, Income and Transfer. More than five becomes a list.
 
@@ -365,7 +542,7 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 
 **DL-A11Y-05** Every tap target is at least 44 px, and nothing depends on hover.
 
-**DL-A11Y-06** Keyboard focus is always visible: a 2 px `pine` ring.
+**DL-A11Y-06** Keyboard focus is always visible: a 2 px `brand` ring.
 
 **DL-A11Y-07** Every gesture (swipe actions, swipe back, swipe to close) has a visible tap alternative.
 

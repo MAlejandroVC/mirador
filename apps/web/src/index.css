@@ -1,11 +1,13 @@
 @import 'tailwindcss';
 
 /*
- * Design tokens from docs/design-language.md: the Sage Grove app tokens (DL-COL-07)
- * and the 12 category colors (DL-COL-11). Components use the role names only
- * (`bg-surface`, `text-text-muted`, `text-warning`), never a hue, so the palette lives
- * here and nowhere else. Dark mode follows the device unless `data-theme` on <html>
- * says otherwise. design-tokens.test.ts keeps these values in step with the doc.
+ * Design tokens from docs/design-language.md: the app tokens with Sage Grove as the
+ * default palette (DL-COL-12), the 12 category colors (DL-COL-11) and, further down,
+ * the other palettes (DL-COL-01). Components use the role names only (`bg-surface`,
+ * `text-text-muted`, `bg-brand`), never a hue, so every palette works on every screen.
+ * Dark mode follows the device unless `data-theme` on <html> says otherwise, and the
+ * palette follows `data-palette` (lib/appearance.ts sets both). design-tokens.test.ts
+ * keeps these values in step with the doc.
  */
 :root {
   --mirador-background: #f3f2ef;
@@ -16,10 +18,11 @@
   --mirador-text-faint: #a9aea3;
   --mirador-separator: rgb(35 40 28 / 12%);
   --mirador-fill: rgb(35 40 28 / 6%);
-  --mirador-pine: #3d6b45;
-  --mirador-on-pine: #ffffff;
+  --mirador-brand: #3d6b45;
+  --mirador-on-brand: #ffffff;
   --mirador-hero: #3d6b45;
   --mirador-on-hero: #ffffff;
+  --mirador-glow: #ffce6e;
   --mirador-warning: #b54e1a;
   --mirador-danger: #bf322b;
   --mirador-sun: #b87a06;
@@ -55,10 +58,11 @@
     --mirador-text-faint: #5d6657;
     --mirador-separator: rgb(225 235 215 / 13%);
     --mirador-fill: rgb(225 235 215 / 8%);
-    --mirador-pine: #4e9e5c;
-    --mirador-on-pine: #06140a;
+    --mirador-brand: #4e9e5c;
+    --mirador-on-brand: #06140a;
     --mirador-hero: #1e4527;
     --mirador-on-hero: #eef1ea;
+    --mirador-glow: #ffce6e;
     --mirador-warning: #f2935c;
     --mirador-danger: #ff6b5f;
     --mirador-sun: #e8b24a;
@@ -93,10 +97,11 @@
   --mirador-text-faint: #5d6657;
   --mirador-separator: rgb(225 235 215 / 13%);
   --mirador-fill: rgb(225 235 215 / 8%);
-  --mirador-pine: #4e9e5c;
-  --mirador-on-pine: #06140a;
+  --mirador-brand: #4e9e5c;
+  --mirador-on-brand: #06140a;
   --mirador-hero: #1e4527;
   --mirador-on-hero: #eef1ea;
+  --mirador-glow: #ffce6e;
   --mirador-warning: #f2935c;
   --mirador-danger: #ff6b5f;
   --mirador-sun: #e8b24a;
@@ -121,6 +126,368 @@
   color-scheme: dark;
 }
 
+/*
+ * The other palettes (DL-COL-01, SYS-17). Each sets only the palette tokens and wins over
+ * the Sage Grove defaults above by coming later with the same or higher specificity.
+ */
+
+/* Paper */
+:root[data-palette='paper'] {
+  --mirador-background: #f2f2f7;
+  --mirador-surface: #ffffff;
+  --mirador-inset: #f2f2f7;
+  --mirador-text: #1c1c1e;
+  --mirador-text-muted: #6c6c70;
+  --mirador-text-faint: #aeaeb2;
+  --mirador-separator: rgb(60 60 67 / 12%);
+  --mirador-fill: rgb(60 60 67 / 6%);
+  --mirador-brand: #1c1c1e;
+  --mirador-on-brand: #ffffff;
+  --mirador-hero: #1c1c1e;
+  --mirador-on-hero: #ffffff;
+  --mirador-glow: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='paper']:not([data-theme='light']) {
+    --mirador-background: #000000;
+    --mirador-surface: #1c1c1e;
+    --mirador-inset: #2c2c2e;
+    --mirador-text: #f2f2f7;
+    --mirador-text-muted: #98989f;
+    --mirador-text-faint: #5a5a5e;
+    --mirador-separator: rgb(235 235 245 / 13%);
+    --mirador-fill: rgb(235 235 245 / 8%);
+    --mirador-brand: #f2f2f7;
+    --mirador-on-brand: #000000;
+    --mirador-hero: #2c2c2e;
+    --mirador-on-hero: #f2f2f7;
+    --mirador-glow: transparent;
+  }
+}
+
+:root[data-palette='paper'][data-theme='dark'] {
+  --mirador-background: #000000;
+  --mirador-surface: #1c1c1e;
+  --mirador-inset: #2c2c2e;
+  --mirador-text: #f2f2f7;
+  --mirador-text-muted: #98989f;
+  --mirador-text-faint: #5a5a5e;
+  --mirador-separator: rgb(235 235 245 / 13%);
+  --mirador-fill: rgb(235 235 245 / 8%);
+  --mirador-brand: #f2f2f7;
+  --mirador-on-brand: #000000;
+  --mirador-hero: #2c2c2e;
+  --mirador-on-hero: #f2f2f7;
+  --mirador-glow: transparent;
+}
+
+/* Cami */
+:root[data-palette='cami'] {
+  --mirador-background: #faf4f6;
+  --mirador-surface: #ffffff;
+  --mirador-inset: #f7eef2;
+  --mirador-text: #2a1d24;
+  --mirador-text-muted: #7a6670;
+  --mirador-text-faint: #bba9b2;
+  --mirador-separator: rgb(58 36 48 / 12%);
+  --mirador-fill: rgb(58 36 48 / 6%);
+  --mirador-brand: #d46a98;
+  --mirador-on-brand: #3a0f24;
+  --mirador-hero: #f6d2e0;
+  --mirador-on-hero: #4a1a33;
+  --mirador-glow: #b9a4f2;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='cami']:not([data-theme='light']) {
+    --mirador-background: #0c0a0b;
+    --mirador-surface: #1d181b;
+    --mirador-inset: #2a2327;
+    --mirador-text: #f7ecf1;
+    --mirador-text-muted: #b39da8;
+    --mirador-text-faint: #6a5862;
+    --mirador-separator: rgb(245 225 234 / 13%);
+    --mirador-fill: rgb(245 225 234 / 8%);
+    --mirador-brand: #f0a0c4;
+    --mirador-on-brand: #3a0f24;
+    --mirador-hero: #4e2a3e;
+    --mirador-on-hero: #fbeaf2;
+    --mirador-glow: #b9a2f0;
+  }
+}
+
+:root[data-palette='cami'][data-theme='dark'] {
+  --mirador-background: #0c0a0b;
+  --mirador-surface: #1d181b;
+  --mirador-inset: #2a2327;
+  --mirador-text: #f7ecf1;
+  --mirador-text-muted: #b39da8;
+  --mirador-text-faint: #6a5862;
+  --mirador-separator: rgb(245 225 234 / 13%);
+  --mirador-fill: rgb(245 225 234 / 8%);
+  --mirador-brand: #f0a0c4;
+  --mirador-on-brand: #3a0f24;
+  --mirador-hero: #4e2a3e;
+  --mirador-on-hero: #fbeaf2;
+  --mirador-glow: #b9a2f0;
+}
+
+/* Coronado */
+:root[data-palette='coronado'] {
+  --mirador-background: #f4f1ea;
+  --mirador-surface: #ffffff;
+  --mirador-inset: #f1ede4;
+  --mirador-text: #1a2427;
+  --mirador-text-muted: #5f6b6d;
+  --mirador-text-faint: #a6aeaf;
+  --mirador-separator: rgb(31 46 48 / 12%);
+  --mirador-fill: rgb(31 46 48 / 6%);
+  --mirador-brand: #0b6e7a;
+  --mirador-on-brand: #ffffff;
+  --mirador-hero: #0b6e7a;
+  --mirador-on-hero: #ffffff;
+  --mirador-glow: #ffd27a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='coronado']:not([data-theme='light']) {
+    --mirador-background: #070a0b;
+    --mirador-surface: #151b1c;
+    --mirador-inset: #20282a;
+    --mirador-text: #e9f2f2;
+    --mirador-text-muted: #93a6a8;
+    --mirador-text-faint: #566467;
+    --mirador-separator: rgb(221 237 237 / 13%);
+    --mirador-fill: rgb(221 237 237 / 8%);
+    --mirador-brand: #3fb7c2;
+    --mirador-on-brand: #02181b;
+    --mirador-hero: #0c4a52;
+    --mirador-on-hero: #e9f6f6;
+    --mirador-glow: #ffd27a;
+  }
+}
+
+:root[data-palette='coronado'][data-theme='dark'] {
+  --mirador-background: #070a0b;
+  --mirador-surface: #151b1c;
+  --mirador-inset: #20282a;
+  --mirador-text: #e9f2f2;
+  --mirador-text-muted: #93a6a8;
+  --mirador-text-faint: #566467;
+  --mirador-separator: rgb(221 237 237 / 13%);
+  --mirador-fill: rgb(221 237 237 / 8%);
+  --mirador-brand: #3fb7c2;
+  --mirador-on-brand: #02181b;
+  --mirador-hero: #0c4a52;
+  --mirador-on-hero: #e9f6f6;
+  --mirador-glow: #ffd27a;
+}
+
+/* Glacier */
+:root[data-palette='glacier'] {
+  --mirador-background: #eef2f6;
+  --mirador-surface: #ffffff;
+  --mirador-inset: #ebf0f5;
+  --mirador-text: #17202b;
+  --mirador-text-muted: #5e6b7a;
+  --mirador-text-faint: #a5afbb;
+  --mirador-separator: rgb(31 43 56 / 12%);
+  --mirador-fill: rgb(31 43 56 / 6%);
+  --mirador-brand: #2f5f8a;
+  --mirador-on-brand: #ffffff;
+  --mirador-hero: #24496e;
+  --mirador-on-hero: #ffffff;
+  --mirador-glow: #6fe3c1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='glacier']:not([data-theme='light']) {
+    --mirador-background: #07090c;
+    --mirador-surface: #151a21;
+    --mirador-inset: #1f2630;
+    --mirador-text: #eaf1f8;
+    --mirador-text-muted: #95a3b3;
+    --mirador-text-faint: #566273;
+    --mirador-separator: rgb(221 231 242 / 13%);
+    --mirador-fill: rgb(221 231 242 / 8%);
+    --mirador-brand: #7fb2e5;
+    --mirador-on-brand: #061526;
+    --mirador-hero: #1a3452;
+    --mirador-on-hero: #eaf1f8;
+    --mirador-glow: #5fd6b4;
+  }
+}
+
+:root[data-palette='glacier'][data-theme='dark'] {
+  --mirador-background: #07090c;
+  --mirador-surface: #151a21;
+  --mirador-inset: #1f2630;
+  --mirador-text: #eaf1f8;
+  --mirador-text-muted: #95a3b3;
+  --mirador-text-faint: #566273;
+  --mirador-separator: rgb(221 231 242 / 13%);
+  --mirador-fill: rgb(221 231 242 / 8%);
+  --mirador-brand: #7fb2e5;
+  --mirador-on-brand: #061526;
+  --mirador-hero: #1a3452;
+  --mirador-on-hero: #eaf1f8;
+  --mirador-glow: #5fd6b4;
+}
+
+/* Mesa */
+:root[data-palette='mesa'] {
+  --mirador-background: #f6f0e7;
+  --mirador-surface: #ffffff;
+  --mirador-inset: #f2eadf;
+  --mirador-text: #2a1f17;
+  --mirador-text-muted: #7a6a5b;
+  --mirador-text-faint: #b9ab9c;
+  --mirador-separator: rgb(58 42 29 / 12%);
+  --mirador-fill: rgb(58 42 29 / 6%);
+  --mirador-brand: #a5502f;
+  --mirador-on-brand: #ffffff;
+  --mirador-hero: #a5502f;
+  --mirador-on-hero: #ffffff;
+  --mirador-glow: #f4b860;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='mesa']:not([data-theme='light']) {
+    --mirador-background: #0b0908;
+    --mirador-surface: #1c1816;
+    --mirador-inset: #28221e;
+    --mirador-text: #f5ede4;
+    --mirador-text-muted: #b0a090;
+    --mirador-text-faint: #6b5e52;
+    --mirador-separator: rgb(242 228 214 / 13%);
+    --mirador-fill: rgb(242 228 214 / 8%);
+    --mirador-brand: #e08a63;
+    --mirador-on-brand: #2a0e03;
+    --mirador-hero: #5a2a1a;
+    --mirador-on-hero: #f8ece2;
+    --mirador-glow: #f4b860;
+  }
+}
+
+:root[data-palette='mesa'][data-theme='dark'] {
+  --mirador-background: #0b0908;
+  --mirador-surface: #1c1816;
+  --mirador-inset: #28221e;
+  --mirador-text: #f5ede4;
+  --mirador-text-muted: #b0a090;
+  --mirador-text-faint: #6b5e52;
+  --mirador-separator: rgb(242 228 214 / 13%);
+  --mirador-fill: rgb(242 228 214 / 8%);
+  --mirador-brand: #e08a63;
+  --mirador-on-brand: #2a0e03;
+  --mirador-hero: #5a2a1a;
+  --mirador-on-hero: #f8ece2;
+  --mirador-glow: #f4b860;
+}
+
+/* Jacaranda */
+:root[data-palette='jacaranda'] {
+  --mirador-background: #f5f3f8;
+  --mirador-surface: #ffffff;
+  --mirador-inset: #f0edf5;
+  --mirador-text: #211c2a;
+  --mirador-text-muted: #6b6478;
+  --mirador-text-faint: #ada6ba;
+  --mirador-separator: rgb(42 34 56 / 12%);
+  --mirador-fill: rgb(42 34 56 / 6%);
+  --mirador-brand: #6a4fb0;
+  --mirador-on-brand: #ffffff;
+  --mirador-hero: #6a4fb0;
+  --mirador-on-hero: #ffffff;
+  --mirador-glow: #f2b8d8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='jacaranda']:not([data-theme='light']) {
+    --mirador-background: #09080c;
+    --mirador-surface: #18161d;
+    --mirador-inset: #24212b;
+    --mirador-text: #efecf5;
+    --mirador-text-muted: #a49cb5;
+    --mirador-text-faint: #5f586d;
+    --mirador-separator: rgb(230 224 242 / 13%);
+    --mirador-fill: rgb(230 224 242 / 8%);
+    --mirador-brand: #a58deb;
+    --mirador-on-brand: #160b33;
+    --mirador-hero: #35265e;
+    --mirador-on-hero: #f1ecfb;
+    --mirador-glow: #e9a6cf;
+  }
+}
+
+:root[data-palette='jacaranda'][data-theme='dark'] {
+  --mirador-background: #09080c;
+  --mirador-surface: #18161d;
+  --mirador-inset: #24212b;
+  --mirador-text: #efecf5;
+  --mirador-text-muted: #a49cb5;
+  --mirador-text-faint: #5f586d;
+  --mirador-separator: rgb(230 224 242 / 13%);
+  --mirador-fill: rgb(230 224 242 / 8%);
+  --mirador-brand: #a58deb;
+  --mirador-on-brand: #160b33;
+  --mirador-hero: #35265e;
+  --mirador-on-hero: #f1ecfb;
+  --mirador-glow: #e9a6cf;
+}
+
+/* Sierra */
+:root[data-palette='sierra'] {
+  --mirador-background: #f1f0ee;
+  --mirador-surface: #ffffff;
+  --mirador-inset: #e9e8e5;
+  --mirador-text: #1e2124;
+  --mirador-text-muted: #62666a;
+  --mirador-text-faint: #a9acaf;
+  --mirador-separator: rgb(42 46 51 / 12%);
+  --mirador-fill: rgb(42 46 51 / 6%);
+  --mirador-brand: #505b66;
+  --mirador-on-brand: #ffffff;
+  --mirador-hero: #5a626b;
+  --mirador-on-hero: #ffffff;
+  --mirador-glow: #e4ecf4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='sierra']:not([data-theme='light']) {
+    --mirador-background: #09090a;
+    --mirador-surface: #18191b;
+    --mirador-inset: #232528;
+    --mirador-text: #edeef0;
+    --mirador-text-muted: #9da2a8;
+    --mirador-text-faint: #5b6066;
+    --mirador-separator: rgb(226 229 234 / 13%);
+    --mirador-fill: rgb(226 229 234 / 8%);
+    --mirador-brand: #aeb8c2;
+    --mirador-on-brand: #111519;
+    --mirador-hero: #363c43;
+    --mirador-on-hero: #edeef0;
+    --mirador-glow: #c9d6e3;
+  }
+}
+
+:root[data-palette='sierra'][data-theme='dark'] {
+  --mirador-background: #09090a;
+  --mirador-surface: #18191b;
+  --mirador-inset: #232528;
+  --mirador-text: #edeef0;
+  --mirador-text-muted: #9da2a8;
+  --mirador-text-faint: #5b6066;
+  --mirador-separator: rgb(226 229 234 / 13%);
+  --mirador-fill: rgb(226 229 234 / 8%);
+  --mirador-brand: #aeb8c2;
+  --mirador-on-brand: #111519;
+  --mirador-hero: #363c43;
+  --mirador-on-hero: #edeef0;
+  --mirador-glow: #c9d6e3;
+}
+
 /* `inline` so utilities read the variables above at use time and follow the theme. */
 @theme inline {
   --color-background: var(--mirador-background);
@@ -131,10 +498,11 @@
   --color-text-faint: var(--mirador-text-faint);
   --color-separator: var(--mirador-separator);
   --color-fill: var(--mirador-fill);
-  --color-pine: var(--mirador-pine);
-  --color-on-pine: var(--mirador-on-pine);
+  --color-brand: var(--mirador-brand);
+  --color-on-brand: var(--mirador-on-brand);
   --color-hero: var(--mirador-hero);
   --color-on-hero: var(--mirador-on-hero);
+  --color-glow: var(--mirador-glow);
   --color-warning: var(--mirador-warning);
   --color-danger: var(--mirador-danger);
   --color-sun: var(--mirador-sun);
@@ -152,4 +520,16 @@
   --color-plum: var(--mirador-plum);
   --color-berry: var(--mirador-berry);
   --color-stone: var(--mirador-stone);
+}
+
+/* DL-COL-10: the hero card with its palette's glow from the top-right corner. */
+@utility bg-hero-glow {
+  background:
+    radial-gradient(
+      190% 170% at 100% 0%,
+      color-mix(in srgb, var(--mirador-glow) 24%, transparent),
+      color-mix(in srgb, var(--mirador-glow) 10%, transparent) 40%,
+      transparent 78%
+    ),
+    var(--mirador-hero);
 }
