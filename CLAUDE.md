@@ -9,6 +9,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing anything; it is the full
 ## Where things are
 
 - What to build: the Functional Requirements Specification (linked from README.md). Every requirement has an ID such as `BUD-35`; each one is a GitHub issue titled `<ID> <summary>`.
+- How it looks and behaves: [docs/design-language.md](docs/design-language.md). Every rule has an ID such as `DL-COL-05`; its colors are the tokens in `apps/web/src/index.css`.
 - `apps/web`: React 19, Vite, TanStack Router and Query, Tailwind 4, shadcn/ui. `src/worker/` holds the keys, the local SQLite database and sync.
 - `apps/server`: Node 24, Hono, Drizzle on PostgreSQL, its own small sign-in (`src/auth`). Stores encrypted records and files, runs OCR in memory, sends generic push.
 - `packages/core`: pure logic (money, periods, ledger, analysis, budget). No React, no network, no storage.
@@ -34,6 +35,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing anything; it is the full
 - Analysis and budget functions are pure; the caller passes "today".
 - Use the spec's words: wallet (never account), category group (never super-category).
 - Phone first: check every screen at 375 px wide, 44 px touch targets, no hover-only behaviour.
+- Every screen follows the design language. Use its color tokens (`bg-surface`, `text-text-muted`, `text-warning`), never Tailwind's built-in palette or a hex value, and cite the `DL-` rule in comments where a choice follows one.
 - Tests sit next to the code and their names start with the requirement ID: `it('BUD-35: ...')`. Anything that stores or sends data also needs the zero-knowledge check (no plaintext reaches the server).
 - Comments explain why, and cite the requirement ID when implementing a spec rule.
 

@@ -1,1 +1,155 @@
 @import 'tailwindcss';
+
+/*
+ * Design tokens from docs/design-language.md: the Sage Grove app tokens (DL-COL-07)
+ * and the 12 category colors (DL-COL-11). Components use the role names only
+ * (`bg-surface`, `text-text-muted`, `text-warning`), never a hue, so the palette lives
+ * here and nowhere else. Dark mode follows the device unless `data-theme` on <html>
+ * says otherwise. design-tokens.test.ts keeps these values in step with the doc.
+ */
+:root {
+  --mirador-background: #f3f2ef;
+  --mirador-surface: #ffffff;
+  --mirador-inset: #f3f2ef;
+  --mirador-text: #1d211a;
+  --mirador-text-muted: #656c5f;
+  --mirador-text-faint: #a9aea3;
+  --mirador-separator: rgb(35 40 28 / 12%);
+  --mirador-fill: rgb(35 40 28 / 6%);
+  --mirador-pine: #3d6b45;
+  --mirador-on-pine: #ffffff;
+  --mirador-hero: #3d6b45;
+  --mirador-on-hero: #ffffff;
+  --mirador-warning: #b54e1a;
+  --mirador-danger: #bf322b;
+  --mirador-sun: #b87a06;
+  --mirador-on-sun: #2a1d00;
+
+  --mirador-clay: #c1462d;
+  --mirador-bark: #86613e;
+  --mirador-marigold: #a98200;
+  --mirador-meadow: #6b9325;
+  --mirador-moss: #437a2c;
+  --mirador-lagoon: #12807f;
+  --mirador-lake: #2a74ab;
+  --mirador-dusk: #2c5397;
+  --mirador-heather: #7a5cbd;
+  --mirador-plum: #94459a;
+  --mirador-berry: #b93d6c;
+  --mirador-stone: #63707a;
+
+  /* DL-COL-08: how strongly a color tints its tile and its bar. */
+  --mirador-tile-mix: 14%;
+  --mirador-bar-mix: 52%;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --mirador-background: #0a0a09;
+    --mirador-surface: #191917;
+    --mirador-inset: #242321;
+    --mirador-text: #eef1ea;
+    --mirador-text-muted: #9ca595;
+    --mirador-text-faint: #5d6657;
+    --mirador-separator: rgb(225 235 215 / 13%);
+    --mirador-fill: rgb(225 235 215 / 8%);
+    --mirador-pine: #4e9e5c;
+    --mirador-on-pine: #06140a;
+    --mirador-hero: #1e4527;
+    --mirador-on-hero: #eef1ea;
+    --mirador-warning: #f2935c;
+    --mirador-danger: #ff6b5f;
+    --mirador-sun: #e8b24a;
+    --mirador-on-sun: #231800;
+
+    --mirador-clay: #e18e7d;
+    --mirador-bark: #cc9f74;
+    --mirador-marigold: #f0c42e;
+    --mirador-meadow: #9cc842;
+    --mirador-moss: #8bc56b;
+    --mirador-lagoon: #5ccac4;
+    --mirador-lake: #74b3e6;
+    --mirador-dusk: #7096d8;
+    --mirador-heather: #b59ff0;
+    --mirador-plum: #cb8fcf;
+    --mirador-berry: #ef88ae;
+    --mirador-stone: #a4b1b8;
+
+    --mirador-tile-mix: 22%;
+    --mirador-bar-mix: 64%;
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --mirador-background: #0a0a09;
+  --mirador-surface: #191917;
+  --mirador-inset: #242321;
+  --mirador-text: #eef1ea;
+  --mirador-text-muted: #9ca595;
+  --mirador-text-faint: #5d6657;
+  --mirador-separator: rgb(225 235 215 / 13%);
+  --mirador-fill: rgb(225 235 215 / 8%);
+  --mirador-pine: #4e9e5c;
+  --mirador-on-pine: #06140a;
+  --mirador-hero: #1e4527;
+  --mirador-on-hero: #eef1ea;
+  --mirador-warning: #f2935c;
+  --mirador-danger: #ff6b5f;
+  --mirador-sun: #e8b24a;
+  --mirador-on-sun: #231800;
+
+  --mirador-clay: #e18e7d;
+  --mirador-bark: #cc9f74;
+  --mirador-marigold: #f0c42e;
+  --mirador-meadow: #9cc842;
+  --mirador-moss: #8bc56b;
+  --mirador-lagoon: #5ccac4;
+  --mirador-lake: #74b3e6;
+  --mirador-dusk: #7096d8;
+  --mirador-heather: #b59ff0;
+  --mirador-plum: #cb8fcf;
+  --mirador-berry: #ef88ae;
+  --mirador-stone: #a4b1b8;
+
+  --mirador-tile-mix: 22%;
+  --mirador-bar-mix: 64%;
+
+  color-scheme: dark;
+}
+
+/* `inline` so utilities read the variables above at use time and follow the theme. */
+@theme inline {
+  --color-background: var(--mirador-background);
+  --color-surface: var(--mirador-surface);
+  --color-inset: var(--mirador-inset);
+  --color-text: var(--mirador-text);
+  --color-text-muted: var(--mirador-text-muted);
+  --color-text-faint: var(--mirador-text-faint);
+  --color-separator: var(--mirador-separator);
+  --color-fill: var(--mirador-fill);
+  --color-pine: var(--mirador-pine);
+  --color-on-pine: var(--mirador-on-pine);
+  --color-hero: var(--mirador-hero);
+  --color-on-hero: var(--mirador-on-hero);
+  --color-warning: var(--mirador-warning);
+  --color-danger: var(--mirador-danger);
+  --color-sun: var(--mirador-sun);
+  --color-on-sun: var(--mirador-on-sun);
+
+  --color-clay: var(--mirador-clay);
+  --color-bark: var(--mirador-bark);
+  --color-marigold: var(--mirador-marigold);
+  --color-meadow: var(--mirador-meadow);
+  --color-moss: var(--mirador-moss);
+  --color-lagoon: var(--mirador-lagoon);
+  --color-lake: var(--mirador-lake);
+  --color-dusk: var(--mirador-dusk);
+  --color-heather: var(--mirador-heather);
+  --color-plum: var(--mirador-plum);
+  --color-berry: var(--mirador-berry);
+  --color-stone: var(--mirador-stone);
+}
