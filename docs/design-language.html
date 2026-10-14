@@ -1,0 +1,1497 @@
+<title>Mirador Design Language</title>
+<style>
+  :root {
+    --bg: #f3f2ef;
+    --surface: #ffffff;
+    --inset: #f3f2ef;
+    --text: #1d211a;
+    --muted: #656c5f;
+    --faint: #a9aea3;
+    --pine: #3d6b45;
+    --onpine: #ffffff;
+    --sep: rgba(35, 40, 28, 0.12);
+    --fill: rgba(35, 40, 28, 0.06);
+    --page: #e9e8e4;
+    --frame: #cfcdc6;
+    --seg-on: #ffffff;
+    --mod: 14%;
+    --barmix: 52%;
+    --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #0a0a09;
+      --surface: #191917;
+      --inset: #242321;
+      --text: #eef1ea;
+      --muted: #9ca595;
+      --faint: #5d6657;
+      --pine: #4e9e5c;
+      --onpine: #06140a;
+      --sep: rgba(225, 235, 215, 0.13);
+      --fill: rgba(225, 235, 215, 0.08);
+      --page: #050505;
+      --frame: #2e2d2a;
+      --seg-on: #4a4945;
+      --mod: 22%;
+      --barmix: 64%;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #0a0a09;
+    --surface: #191917;
+    --inset: #242321;
+    --text: #eef1ea;
+    --muted: #9ca595;
+    --faint: #5d6657;
+    --pine: #4e9e5c;
+    --onpine: #06140a;
+    --sep: rgba(225, 235, 215, 0.13);
+    --fill: rgba(225, 235, 215, 0.08);
+    --page: #050505;
+    --frame: #2e2d2a;
+    --seg-on: #4a4945;
+    --mod: 22%;
+    --barmix: 64%;
+    color-scheme: dark;
+  }
+  :root {
+    --clay: #c1462d;
+    --bark: #86613e;
+    --marigold: #a98200;
+    --meadow: #6b9325;
+    --moss: #437a2c;
+    --lagoon: #12807f;
+    --lake: #2a74ab;
+    --dusk: #2c5397;
+    --heather: #7a5cbd;
+    --plum: #94459a;
+    --berry: #b93d6c;
+    --stone: #63707a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --clay: #e18e7d;
+      --bark: #cc9f74;
+      --marigold: #f0c42e;
+      --meadow: #9cc842;
+      --moss: #8bc56b;
+      --lagoon: #5ccac4;
+      --lake: #74b3e6;
+      --dusk: #7096d8;
+      --heather: #b59ff0;
+      --plum: #cb8fcf;
+      --berry: #ef88ae;
+      --stone: #a4b1b8;
+    }
+  }
+  :root[data-theme='dark'] {
+    --clay: #e18e7d;
+    --bark: #cc9f74;
+    --marigold: #f0c42e;
+    --meadow: #9cc842;
+    --moss: #8bc56b;
+    --lagoon: #5ccac4;
+    --lake: #74b3e6;
+    --dusk: #7096d8;
+    --heather: #b59ff0;
+    --plum: #cb8fcf;
+    --berry: #ef88ae;
+    --stone: #a4b1b8;
+  }
+
+  :root {
+    --warning: #b54e1a;
+    --danger: #bf322b;
+    --hero: #3d6b45;
+    --onhero: #ffffff;
+    --sun: #b87a06;
+    --onsun: #2a1d00;
+    --dim: rgba(0, 0, 0, 0.32);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --warning: #f2935c;
+      --danger: #ff6b5f;
+      --hero: #1e4527;
+      --onhero: #eef1ea;
+      --sun: #e8b24a;
+      --onsun: #231800;
+      --dim: rgba(0, 0, 0, 0.6);
+    }
+  }
+  :root[data-theme='dark'] {
+    --warning: #f2935c;
+    --danger: #ff6b5f;
+    --hero: #1e4527;
+    --onhero: #eef1ea;
+    --sun: #e8b24a;
+    --onsun: #231800;
+    --dim: rgba(0, 0, 0, 0.6);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 32px 16px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .controls {
+    display: flex;
+    gap: 10px 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .ctl {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .seg {
+    display: inline-flex;
+    background: rgba(127, 127, 127, 0.14);
+    border-radius: 9px;
+    padding: 2px;
+    gap: 2px;
+  }
+  .seg button {
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    background: transparent;
+    border: 0;
+    border-radius: 7px;
+    padding: 6px 12px;
+    min-height: 36px;
+    cursor: pointer;
+  }
+  .seg button[aria-pressed='true'] {
+    background: var(--seg-on);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14);
+  }
+  button:focus-visible {
+    outline: 2px solid var(--pine);
+    outline-offset: 2px;
+  }
+  svg {
+    fill: currentColor;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 350px));
+    gap: 28px 24px;
+    justify-content: center;
+  }
+  .demo {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+  .demo h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .demo h2 span {
+    font-weight: 400;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+  }
+
+  .phone {
+    position: relative;
+    width: 100%;
+    height: 740px;
+    border-radius: 42px;
+    border: 1px solid var(--frame);
+    background: var(--bg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .status {
+    height: 42px;
+    flex: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 26px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .screen {
+    flex: 1;
+    overflow: hidden;
+    padding: 2px 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .large-title {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 4px 0 0;
+  }
+  .navrow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 44px;
+  }
+  .navrow .plain {
+    color: var(--pine);
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .navrow .plain svg {
+    width: 22px;
+    height: 22px;
+  }
+  .navrow b {
+    font-weight: 600;
+  }
+  .eyebrow {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 4px 4px -4px;
+  }
+
+  .list {
+    background: var(--surface);
+    border-radius: 16px;
+    overflow: hidden;
+    flex: none;
+  }
+  .row {
+    position: relative;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 9px 16px;
+    min-height: 52px;
+    background: var(--surface);
+  }
+  .row + .row::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 62px;
+    right: 0;
+    height: 0.5px;
+    background: var(--sep);
+  }
+  .row .body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .row .sub {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .amt {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .amt .c {
+    font-size: 0.8em;
+    color: var(--muted);
+  }
+  .amt.in {
+    color: var(--moss);
+  }
+  .amt.in .c {
+    color: inherit;
+    opacity: 0.8;
+  }
+  .chev {
+    color: var(--faint);
+    width: 14px;
+    height: 14px;
+    flex: none;
+  }
+  .tile {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    color: var(--c);
+    background: color-mix(in srgb, var(--c) var(--mod), var(--surface));
+  }
+  .tile svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* swipe */
+  .swipe {
+    position: relative;
+    overflow: hidden;
+  }
+  .swipe .row {
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    cursor: pointer;
+  }
+  .swipe.open .row {
+    transform: translateX(-112px);
+  }
+  .swipe .acts {
+    position: absolute;
+    inset: 0 0 0 auto;
+    width: 112px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .swipe + .swipe .row::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 62px;
+    right: 0;
+    height: 0.5px;
+    background: var(--sep);
+  }
+  .pill {
+    cursor: pointer;
+    border: 0;
+    font: inherit;
+  }
+  .segc span {
+    cursor: pointer;
+  }
+  .banner button {
+    cursor: pointer;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .swipe .row {
+      transition: none;
+    }
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 18px;
+    background: var(--danger);
+    color: var(--surface);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .pill svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .hero {
+    background:
+      radial-gradient(
+        190% 170% at 100% 0%,
+        rgba(255, 206, 110, 0.24),
+        rgba(255, 206, 110, 0.1) 40%,
+        rgba(255, 206, 110, 0) 78%
+      ),
+      var(--hero);
+    color: var(--onhero);
+    border-radius: 16px;
+    padding: 14px 16px;
+    flex: none;
+  }
+  .hero .label,
+  .hero .sub2 {
+    color: color-mix(in srgb, var(--onhero) 74%, transparent);
+    font-size: 13px;
+  }
+  .big {
+    font-size: 40px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.15;
+  }
+  .big .s,
+  .big .c {
+    font-size: 20px;
+    font-weight: 600;
+    vertical-align: 15px;
+    opacity: 0.74;
+  }
+
+  .tabbar {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 22px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .tabs {
+    flex: 1;
+    height: 54px;
+    background: var(--surface);
+    border-radius: 27px;
+    border: 0.5px solid var(--sep);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+  .tabs span {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 10px;
+    color: var(--muted);
+    gap: 1px;
+  }
+  .tabs span.on {
+    color: var(--pine);
+  }
+  .tabs svg {
+    width: 23px;
+    height: 23px;
+  }
+  .fab {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: var(--pine);
+    color: var(--onpine);
+    display: grid;
+    place-items: center;
+    flex: none;
+  }
+  .fab svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .banner {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 88px;
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.14);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 8px 0 16px;
+    min-height: 48px;
+  }
+  .banner span {
+    flex: 1;
+  }
+  .banner button {
+    font: inherit;
+    font-weight: 600;
+    color: var(--pine);
+    background: transparent;
+    border: 0;
+    min-height: 44px;
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .banner button svg {
+    width: 18px;
+    height: 18px;
+  }
+  .offline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
+    background: var(--fill);
+    border-radius: 10px;
+    padding: 8px 12px;
+    flex: none;
+  }
+  .offline svg {
+    width: 18px;
+    height: 18px;
+    flex: none;
+  }
+
+  /* sheet */
+  .sheetwrap {
+    position: absolute;
+    inset: 0;
+    background: var(--dim);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  .sheet {
+    background: var(--surface);
+    border-radius: 22px 22px 0 0;
+    padding: 8px 16px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .sheet.tall {
+    height: 92%;
+    background: var(--bg);
+  }
+  .grabber {
+    width: 36px;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--faint);
+    opacity: 0.6;
+    margin: 0 auto 2px;
+  }
+  .sheethead {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 44px;
+  }
+  .sheethead span:first-child {
+    color: var(--pine);
+  }
+  .sheethead b {
+    font-weight: 600;
+  }
+  .sheethead span:last-child {
+    width: 50px;
+  }
+  .segc {
+    display: flex;
+    background: var(--fill);
+    border-radius: 9px;
+    padding: 2px;
+  }
+  .segc span {
+    flex: 1;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 0;
+    border-radius: 7px;
+  }
+  .segc span.on {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  }
+  .amount {
+    text-align: center;
+    font-size: 44px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .amount .s,
+  .amount .c {
+    font-size: 22px;
+    vertical-align: 18px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .field .val {
+    color: var(--muted);
+  }
+  .err {
+    color: var(--warning);
+    font-size: 13px;
+    padding: 0 16px 10px 62px;
+    margin-top: -4px;
+    background: var(--surface);
+  }
+  .note {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 12px 14px;
+    color: var(--muted);
+  }
+  .btns {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+  }
+  .btn {
+    flex: 1;
+    height: 50px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-weight: 600;
+    font-size: 16px;
+  }
+  .btn.filled {
+    background: var(--pine);
+    color: var(--onpine);
+  }
+  .btn.tinted {
+    background: color-mix(in srgb, var(--pine) 14%, var(--surface));
+    color: var(--pine);
+  }
+  .btn.disabled {
+    background: var(--fill);
+    color: var(--faint);
+  }
+
+  .action {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 8px 28px;
+  }
+  .action .grp {
+    background: var(--surface);
+    border-radius: 14px;
+    overflow: hidden;
+    text-align: center;
+  }
+  .action .msg {
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--muted);
+    border-bottom: 0.5px solid var(--sep);
+  }
+  .action .msg b {
+    display: block;
+    color: var(--text);
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+  .action .opt {
+    min-height: 54px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+  }
+  .action .del {
+    color: var(--danger);
+  }
+  .action .cancel {
+    color: var(--pine);
+    font-weight: 600;
+  }
+
+  .empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 10px;
+    padding: 0 20px 120px;
+  }
+  .empty .tile {
+    width: 72px;
+    height: 72px;
+    border-radius: 20px;
+  }
+  .empty .tile svg {
+    width: 40px;
+    height: 40px;
+  }
+  .empty h3 {
+    margin: 6px 0 0;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .empty p {
+    margin: 0;
+    color: var(--muted);
+  }
+  .empty .btn {
+    flex: none;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .sw-sec {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .sw-sec h2 {
+    margin: 8px 0 0;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .sw-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 10px;
+  }
+  .sw-item {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 10px;
+    min-width: 0;
+  }
+  .sw-chip {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    flex: none;
+    background: var(--c);
+    box-shadow: inset 0 0 0 1px var(--sep);
+  }
+  .sw-item b {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .sw-item code {
+    font:
+      12px ui-monospace,
+      SFMono-Regular,
+      Menlo,
+      monospace;
+    color: var(--muted);
+  }
+</style>
+
+<div class="wrap">
+  <h1>Mirador design language</h1>
+  <div class="controls">
+    <div class="ctl">
+      Theme
+      <div class="seg" role="group" aria-label="Theme">
+        <button type="button" id="th-auto" aria-pressed="true" data-t="">Phone</button>
+        <button type="button" id="th-light" aria-pressed="false" data-t="light">Light</button>
+        <button type="button" id="th-dark" aria-pressed="false" data-t="dark">Dark</button>
+      </div>
+    </div>
+    <div class="ctl">
+      Language
+      <div class="seg" role="group" aria-label="Language">
+        <button type="button" id="lg-en" aria-pressed="true" data-l="en">English</button>
+        <button type="button" id="lg-es" aria-pressed="false" data-l="es">Español (México)</button>
+      </div>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <section class="sw-sec">
+    <h2>App tokens</h2>
+    <div class="sw-grid" id="tokens"></div>
+  </section>
+  <section class="sw-sec">
+    <h2>Category colors</h2>
+    <div class="sw-grid" id="cats"></div>
+  </section>
+</div>
+
+<script>
+  var ICONS = {
+    duotone: {
+      house:
+        '<path d="M216,120v96H152V152H104v64H40V120a8,8,0,0,1,2.34-5.66l80-80a8,8,0,0,1,11.32,0l80,80A8,8,0,0,1,216,120Z" opacity="0.2"/><path d="M219.31,108.68l-80-80a16,16,0,0,0-22.62,0l-80,80A15.87,15.87,0,0,0,32,120v96a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V160h32v56a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V120A15.87,15.87,0,0,0,219.31,108.68ZM208,208H160V152a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8v56H48V120l80-80,80,80Z"/>',
+      'list-bullets':
+        '<path d="M216,64V192H88V64Z" opacity="0.2"/><path d="M80,64a8,8,0,0,1,8-8H216a8,8,0,0,1,0,16H88A8,8,0,0,1,80,64Zm136,56H88a8,8,0,1,0,0,16H216a8,8,0,0,0,0-16Zm0,64H88a8,8,0,1,0,0,16H216a8,8,0,0,0,0-16ZM44,52A12,12,0,1,0,56,64,12,12,0,0,0,44,52Zm0,64a12,12,0,1,0,12,12A12,12,0,0,0,44,116Zm0,64a12,12,0,1,0,12,12A12,12,0,0,0,44,180Z"/>',
+      'chart-pie-slice':
+        '<path d="M96,37.5v72l-62.4,36A96,96,0,0,1,96,37.5Z" opacity="0.2"/><path d="M100,116.43a8,8,0,0,0,4-6.93v-72A8,8,0,0,0,93.34,30,104.06,104.06,0,0,0,25.73,147a8,8,0,0,0,4.52,5.81,7.86,7.86,0,0,0,3.35.74,8,8,0,0,0,4-1.07ZM88,49.62v55.26L40.12,132.51C40,131,40,129.48,40,128A88.12,88.12,0,0,1,88,49.62ZM128,24a8,8,0,0,0-8,8v91.82L41.19,169.73a8,8,0,0,0-2.87,11A104,104,0,1,0,128,24Zm0,192a88.47,88.47,0,0,1-71.49-36.68l75.52-44a8,8,0,0,0,4-6.92V40.36A88,88,0,0,1,128,216Z"/>',
+      wallet:
+        '<path d="M224,80V192a8,8,0,0,1-8,8H56a16,16,0,0,1-16-16V56A16,16,0,0,0,56,72H216A8,8,0,0,1,224,80Z" opacity="0.2"/><path d="M216,64H56a8,8,0,0,1,0-16H192a8,8,0,0,0,0-16H56A24,24,0,0,0,32,56V184a24,24,0,0,0,24,24H216a16,16,0,0,0,16-16V80A16,16,0,0,0,216,64Zm0,128H56a8,8,0,0,1-8-8V78.63A23.84,23.84,0,0,0,56,80H216Zm-48-60a12,12,0,1,1,12,12A12,12,0,0,1,168,132Z"/>',
+      plus: '<path d="M216,56V200a16,16,0,0,1-16,16H56a16,16,0,0,1-16-16V56A16,16,0,0,1,56,40H200A16,16,0,0,1,216,56Z" opacity="0.2"/><path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z"/>',
+      'shopping-cart':
+        '<path d="M224,64l-12.16,66.86A16,16,0,0,1,196.1,144H70.55L56,64Z" opacity="0.2"/><path d="M230.14,58.87A8,8,0,0,0,224,56H62.68L56.6,22.57A8,8,0,0,0,48.73,16H24a8,8,0,0,0,0,16h18L67.56,172.29a24,24,0,0,0,5.33,11.27,28,28,0,1,0,44.4,8.44h45.42A27.75,27.75,0,0,0,160,204a28,28,0,1,0,28-28H91.17a8,8,0,0,1-7.87-6.57L80.13,152h116a24,24,0,0,0,23.61-19.71l12.16-66.86A8,8,0,0,0,230.14,58.87ZM104,204a12,12,0,1,1-12-12A12,12,0,0,1,104,204Zm96,0a12,12,0,1,1-12-12A12,12,0,0,1,200,204Zm4-74.57A8,8,0,0,1,196.1,136H77.22L65.59,72H214.41Z"/>',
+      'fork-knife':
+        '<path d="M208,40V168H152S152,64,208,40Z" opacity="0.2"/><path d="M72,88V40a8,8,0,0,1,16,0V88a8,8,0,0,1-16,0ZM216,40V224a8,8,0,0,1-16,0V176H152a8,8,0,0,1-8-8,268.75,268.75,0,0,1,7.22-56.88c9.78-40.49,28.32-67.63,53.63-78.47A8,8,0,0,1,216,40ZM200,53.9c-32.17,24.57-38.47,84.42-39.7,106.1H200ZM119.89,38.69a8,8,0,1,0-15.78,2.63L112,88.63a32,32,0,0,1-64,0l7.88-47.31a8,8,0,1,0-15.78-2.63l-8,48A8.17,8.17,0,0,0,32,88a48.07,48.07,0,0,0,40,47.32V224a8,8,0,0,0,16,0V135.32A48.07,48.07,0,0,0,128,88a8.17,8.17,0,0,0-.11-1.31Z"/>',
+      coffee:
+        '<path d="M208,88v48a88,88,0,0,1-51.3,80H83.3A88,88,0,0,1,32,136V88Z" opacity="0.2"/><path d="M80,56V24a8,8,0,0,1,16,0V56a8,8,0,0,1-16,0Zm40,8a8,8,0,0,0,8-8V24a8,8,0,0,0-16,0V56A8,8,0,0,0,120,64Zm32,0a8,8,0,0,0,8-8V24a8,8,0,0,0-16,0V56A8,8,0,0,0,152,64Zm96,56v8a40,40,0,0,1-37.51,39.91,96.59,96.59,0,0,1-27,40.09H208a8,8,0,0,1,0,16H32a8,8,0,0,1,0-16H56.54A96.3,96.3,0,0,1,24,136V88a8,8,0,0,1,8-8H208A40,40,0,0,1,248,120ZM200,96H40v40a80.27,80.27,0,0,0,45.12,72h69.76A80.27,80.27,0,0,0,200,136Zm32,24a24,24,0,0,0-16-22.62V136a95.78,95.78,0,0,1-1.2,15A24,24,0,0,0,232,128Z"/>',
+      briefcase:
+        '<path d="M224,118.31V200a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V118.31h0A191.14,191.14,0,0,0,128,144,191.08,191.08,0,0,0,224,118.31Z" opacity="0.2"/><path d="M104,112a8,8,0,0,1,8-8h32a8,8,0,0,1,0,16H112A8,8,0,0,1,104,112ZM232,72V200a16,16,0,0,1-16,16H40a16,16,0,0,1-16-16V72A16,16,0,0,1,40,56H80V48a24,24,0,0,1,24-24h48a24,24,0,0,1,24,24v8h40A16,16,0,0,1,232,72ZM96,56h64V48a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8ZM40,72v41.62A184.07,184.07,0,0,0,128,136a184,184,0,0,0,88-22.39V72ZM216,200V131.63A200.25,200.25,0,0,1,128,152a200.19,200.19,0,0,1-88-20.36V200H216Z"/>',
+      'arrows-horizontal':
+        '<path d="M232,128l-32,32H56L24,128,56,96H200Z" opacity="0.2"/><path d="M237.66,133.66l-32,32a8,8,0,0,1-11.32-11.32L212.69,136H43.31l18.35,18.34a8,8,0,0,1-11.32,11.32l-32-32a8,8,0,0,1,0-11.32l32-32a8,8,0,0,1,11.32,11.32L43.31,120H212.69l-18.35-18.34a8,8,0,0,1,11.32-11.32l32,32A8,8,0,0,1,237.66,133.66Z"/>',
+      'credit-card':
+        '<path d="M232,96v96a8,8,0,0,1-8,8H32a8,8,0,0,1-8-8V96Z" opacity="0.2"/><path d="M224,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48Zm0,16V88H32V64Zm0,128H32V104H224v88Zm-16-24a8,8,0,0,1-8,8H168a8,8,0,0,1,0-16h32A8,8,0,0,1,208,168Zm-64,0a8,8,0,0,1-8,8H120a8,8,0,0,1,0-16h16A8,8,0,0,1,144,168Z"/>',
+      bank: '<path d="M232,96H24L128,32Z" opacity="0.2"/><path d="M24,104H48v64H32a8,8,0,0,0,0,16H224a8,8,0,0,0,0-16H208V104h24a8,8,0,0,0,4.19-14.81l-104-64a8,8,0,0,0-8.38,0l-104,64A8,8,0,0,0,24,104Zm40,0H96v64H64Zm80,0v64H112V104Zm48,64H160V104h32ZM128,41.39,203.74,88H52.26ZM248,208a8,8,0,0,1-8,8H16a8,8,0,0,1,0-16H240A8,8,0,0,1,248,208Z"/>',
+      'piggy-bank':
+        '<path d="M240,112v32a16,16,0,0,1-16,16h-8l-18.1,50.69a8,8,0,0,1-7.54,5.31H177.64a8,8,0,0,1-7.54-5.31L166.29,200H97.71L93.9,210.69A8,8,0,0,1,86.36,216H73.64a8,8,0,0,1-7.54-5.31L53,174a79.7,79.7,0,0,1-21-54h0a80,80,0,0,1,80-80h32a80,80,0,0,1,73.44,48.22,82.22,82.22,0,0,1,2.9,7.78H224A16,16,0,0,1,240,112Z" opacity="0.2"/><path d="M192,116a12,12,0,1,1-12-12A12,12,0,0,1,192,116ZM152,64H112a8,8,0,0,0,0,16h40a8,8,0,0,0,0-16Zm96,48v32a24,24,0,0,1-24,24h-2.36l-16.21,45.38A16,16,0,0,1,190.36,224H177.64a16,16,0,0,1-15.07-10.62L160.65,208h-57.3l-1.92,5.38A16,16,0,0,1,86.36,224H73.64a16,16,0,0,1-15.07-10.62L46,178.22a87.69,87.69,0,0,1-21.44-48.38A16,16,0,0,0,16,144a8,8,0,0,1-16,0,32,32,0,0,1,24.28-31A88.12,88.12,0,0,1,112,32H216a8,8,0,0,1,0,16H194.61a87.93,87.93,0,0,1,30.17,37c.43,1,.85,2,1.25,3A24,24,0,0,1,248,112Zm-16,0a8,8,0,0,0-8-8h-3.66a8,8,0,0,1-7.64-5.6A71.9,71.9,0,0,0,144,48H112A72,72,0,0,0,58.91,168.64a8,8,0,0,1,1.64,2.71L73.64,208H86.36l3.82-10.69A8,8,0,0,1,97.71,192h68.58a8,8,0,0,1,7.53,5.31L177.64,208h12.72l18.11-50.69A8,8,0,0,1,216,152h8a8,8,0,0,0,8-8Z"/>',
+      'gas-pump':
+        '<path d="M168,56V216H56V56A16,16,0,0,1,72,40h80A16,16,0,0,1,168,56Z" opacity="0.2"/><path d="M241,69.66,221.66,50.34a8,8,0,0,0-11.32,11.32L229.66,81A8,8,0,0,1,232,86.63V168a8,8,0,0,1-16,0V128a24,24,0,0,0-24-24H176V56a24,24,0,0,0-24-24H72A24,24,0,0,0,48,56V208H32a8,8,0,0,0,0,16H192a8,8,0,0,0,0-16H176V120h16a8,8,0,0,1,8,8v40a24,24,0,0,0,48,0V86.63A23.85,23.85,0,0,0,241,69.66ZM64,208V56a8,8,0,0,1,8-8h80a8,8,0,0,1,8,8V208Zm80-96a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h48A8,8,0,0,1,144,112Z"/>',
+      'cloud-slash':
+        '<path d="M240,128a80,80,0,0,1-80,80H72A56,56,0,1,1,85.92,97.74l0,.1A80,80,0,0,1,240,128Z" opacity="0.2"/><path d="M53.92,34.62A8,8,0,1,0,42.08,45.38L81.32,88.55l-.06.12A65,65,0,0,0,72,88a64,64,0,0,0,0,128h88a87.34,87.34,0,0,0,31.8-5.93l10.28,11.31a8,8,0,1,0,11.84-10.76ZM160,200H72a48,48,0,0,1,0-96c1.1,0,2.2,0,3.3.12A88.4,88.4,0,0,0,72,128a8,8,0,0,0,16,0,72.25,72.25,0,0,1,5.06-26.54l87,95.7A71.66,71.66,0,0,1,160,200Zm88-72a87.89,87.89,0,0,1-22.35,58.61A8,8,0,0,1,213.71,176,72,72,0,0,0,117.37,70a8,8,0,0,1-9.48-12.89A88,88,0,0,1,248,128Z"/>',
+      trash:
+        '<path d="M200,56V208a8,8,0,0,1-8,8H64a8,8,0,0,1-8-8V56Z" opacity="0.2"/><path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"/>',
+      'pencil-simple':
+        '<path d="M221.66,90.34,192,120,136,64l29.66-29.66a8,8,0,0,1,11.31,0L221.66,79A8,8,0,0,1,221.66,90.34Z" opacity="0.2"/><path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/>',
+      'caret-left':
+        '<path d="M160,48V208L80,128Z" opacity="0.2"/><path d="M163.06,40.61a8,8,0,0,0-8.72,1.73l-80,80a8,8,0,0,0,0,11.32l80,80A8,8,0,0,0,168,208V48A8,8,0,0,0,163.06,40.61ZM152,188.69,91.31,128,152,67.31Z"/>',
+      'caret-right':
+        '<path d="M176,128,96,208V48Z" opacity="0.2"/><path d="M181.66,122.34l-80-80A8,8,0,0,0,88,48V208a8,8,0,0,0,13.66,5.66l80-80A8,8,0,0,0,181.66,122.34ZM104,188.69V67.31L164.69,128Z"/>',
+      binoculars:
+        '<path d="M104,168a40,40,0,1,1-40-40A40,40,0,0,1,104,168Zm88-40a40,40,0,1,0,40,40A40,40,0,0,0,192,128Z" opacity="0.2"/><path d="M237.2,151.87v0a47.1,47.1,0,0,0-2.35-5.45L193.26,51.8a7.82,7.82,0,0,0-1.66-2.44,32,32,0,0,0-45.26,0A8,8,0,0,0,144,55V80H112V55a8,8,0,0,0-2.34-5.66,32,32,0,0,0-45.26,0,7.82,7.82,0,0,0-1.66,2.44L21.15,146.4a47.1,47.1,0,0,0-2.35,5.45v0A48,48,0,1,0,112,168V96h32v72a48,48,0,1,0,93.2-16.13ZM76.71,59.75a16,16,0,0,1,19.29-1v73.51a47.9,47.9,0,0,0-46.79-9.92ZM64,200a32,32,0,1,1,32-32A32,32,0,0,1,64,200ZM160,58.74a16,16,0,0,1,19.29,1l27.5,62.58A47.9,47.9,0,0,0,160,132.25ZM192,200a32,32,0,1,1,32-32A32,32,0,0,1,192,200Z"/>',
+      'arrow-counter-clockwise':
+        '<path d="M216,128a88,88,0,1,1-88-88A88,88,0,0,1,216,128Z" opacity="0.2"/><path d="M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,0,1,11-11.63A80,80,0,1,0,71.43,71.39a3.07,3.07,0,0,1-.26.25L44.59,96H72a8,8,0,0,1,0,16H24a8,8,0,0,1-8-8V56a8,8,0,0,1,16,0V85.8L60.25,60A96,96,0,0,1,224,128Z"/>',
+      'calendar-blank':
+        '<path d="M216,48V88H40V48a8,8,0,0,1,8-8H208A8,8,0,0,1,216,48Z" opacity="0.2"/><path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z"/>',
+      'airplane-tilt':
+        '<path d="M209,81l-33,31,32,88-24,24-48-72-24,24v24L88,224,72,184,32,168l24-24H80l24-24L32,72,56,48l88,32,31-33A24,24,0,0,1,209,81Z" opacity="0.2"/><path d="M185.33,114.21l29.14-27.43.17-.16a32,32,0,0,0-45.26-45.26l-.16.17L141.79,70.67l-83-30.2a8,8,0,0,0-8.39,1.86l-24,24a8,8,0,0,0,1.22,12.31l63.89,42.59L76.69,136H56a8,8,0,0,0-5.65,2.34l-24,24A8,8,0,0,0,29,175.42l36.82,14.73,14.7,36.75.06.16a8,8,0,0,0,13.18,2.47l23.87-23.88A8,8,0,0,0,120,200V179.31l14.76-14.76,42.59,63.89a8,8,0,0,0,12.31,1.22l24-24a8,8,0,0,0,1.86-8.39Zm-.07,97.23-42.59-63.89A8,8,0,0,0,136.8,144a7.09,7.09,0,0,0-.79,0,8,8,0,0,0-5.66,2.34l-24,24A8,8,0,0,0,104,176v20.69L90.93,209.76,79.43,181A8,8,0,0,0,75,176.57l-28.74-11.5L59.32,152H80a8,8,0,0,0,5.66-2.34l24-24a8,8,0,0,0-1.22-12.32L44.56,70.74l13.5-13.49,83.22,30.26a8,8,0,0,0,8.56-2l30.94-32.88A16,16,0,0,1,203.4,75.22l-32.87,30.94a8,8,0,0,0-2,8.56l30.26,83.22Z"/>',
+      'film-slate':
+        '<path d="M67.71,64.59l47.79,27.6L40.43,112,32.27,82a7.76,7.76,0,0,1,5.58-9.52ZM199.84,37.76a7.9,7.9,0,0,0-9.66-5.49L126.61,49.05,174.4,76.64,208,67.77Z" opacity="0.2"/><path d="M216,104H102.09L210,75.51a8,8,0,0,0,5.68-9.84l-8.16-30a15.93,15.93,0,0,0-19.42-11.13L35.81,64.74a15.75,15.75,0,0,0-9.7,7.4,15.51,15.51,0,0,0-1.55,12L32,111.56c0,.14,0,.29,0,.44v88a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V112A8,8,0,0,0,216,104ZM192.16,40l6,22.07-22.62,6L147.42,51.83Zm-66.69,17.6,28.12,16.24-36.94,9.75L88.53,67.37Zm-79.4,44.62-6-22.08,26.5-7L94.69,89.4ZM208,200H48V120H208v80Z"/>',
+      receipt:
+        '<path d="M224,56V208l-32-16-32,16-32-16L96,208,64,192,32,208V56a8,8,0,0,1,8-8H216A8,8,0,0,1,224,56Z" opacity="0.2"/><path d="M72,104a8,8,0,0,1,8-8h96a8,8,0,0,1,0,16H80A8,8,0,0,1,72,104Zm8,40h96a8,8,0,0,0,0-16H80a8,8,0,0,0,0,16ZM232,56V208a8,8,0,0,1-11.58,7.15L192,200.94l-28.42,14.21a8,8,0,0,1-7.16,0L128,200.94,99.58,215.15a8,8,0,0,1-7.16,0L64,200.94,35.58,215.15A8,8,0,0,1,24,208V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56Zm-16,0H40V195.06l20.42-10.22a8,8,0,0,1,7.16,0L96,199.06l28.42-14.22a8,8,0,0,1,7.16,0L160,199.06l28.42-14.22a8,8,0,0,1,7.16,0L216,195.06Z"/>',
+    },
+    regular: {
+      house:
+        '<path d="M219.31,108.68l-80-80a16,16,0,0,0-22.62,0l-80,80A15.87,15.87,0,0,0,32,120v96a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V160h32v56a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V120A15.87,15.87,0,0,0,219.31,108.68ZM208,208H160V152a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8v56H48V120l80-80,80,80Z"/>',
+      'list-bullets':
+        '<path d="M80,64a8,8,0,0,1,8-8H216a8,8,0,0,1,0,16H88A8,8,0,0,1,80,64Zm136,56H88a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16Zm0,64H88a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16ZM44,52A12,12,0,1,0,56,64,12,12,0,0,0,44,52Zm0,64a12,12,0,1,0,12,12A12,12,0,0,0,44,116Zm0,64a12,12,0,1,0,12,12A12,12,0,0,0,44,180Z"/>',
+      'chart-pie-slice':
+        '<path d="M100,116.43a8,8,0,0,0,4-6.93v-72A8,8,0,0,0,93.34,30,104.06,104.06,0,0,0,25.73,147a8,8,0,0,0,4.52,5.81,7.86,7.86,0,0,0,3.35.74,8,8,0,0,0,4-1.07ZM88,49.62v55.26L40.12,132.51C40,131,40,129.48,40,128A88.12,88.12,0,0,1,88,49.62ZM128,24a8,8,0,0,0-8,8v91.82L41.19,169.73a8,8,0,0,0-2.87,11A104,104,0,1,0,128,24Zm0,192a88.47,88.47,0,0,1-71.49-36.68l75.52-44a8,8,0,0,0,4-6.92V40.36A88,88,0,0,1,128,216Z"/>',
+      wallet:
+        '<path d="M216,64H56a8,8,0,0,1,0-16H192a8,8,0,0,0,0-16H56A24,24,0,0,0,32,56V184a24,24,0,0,0,24,24H216a16,16,0,0,0,16-16V80A16,16,0,0,0,216,64Zm0,128H56a8,8,0,0,1-8-8V78.63A23.84,23.84,0,0,0,56,80H216Zm-48-60a12,12,0,1,1,12,12A12,12,0,0,1,168,132Z"/>',
+      plus: '<path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z"/>',
+      'shopping-cart':
+        '<path d="M230.14,58.87A8,8,0,0,0,224,56H62.68L56.6,22.57A8,8,0,0,0,48.73,16H24a8,8,0,0,0,0,16h18L67.56,172.29a24,24,0,0,0,5.33,11.27,28,28,0,1,0,44.4,8.44h45.42A27.75,27.75,0,0,0,160,204a28,28,0,1,0,28-28H91.17a8,8,0,0,1-7.87-6.57L80.13,152h116a24,24,0,0,0,23.61-19.71l12.16-66.86A8,8,0,0,0,230.14,58.87ZM104,204a12,12,0,1,1-12-12A12,12,0,0,1,104,204Zm96,0a12,12,0,1,1-12-12A12,12,0,0,1,200,204Zm4-74.57A8,8,0,0,1,196.1,136H77.22L65.59,72H214.41Z"/>',
+      'fork-knife':
+        '<path d="M72,88V40a8,8,0,0,1,16,0V88a8,8,0,0,1-16,0ZM216,40V224a8,8,0,0,1-16,0V176H152a8,8,0,0,1-8-8,268.75,268.75,0,0,1,7.22-56.88c9.78-40.49,28.32-67.63,53.63-78.47A8,8,0,0,1,216,40ZM200,53.9c-32.17,24.57-38.47,84.42-39.7,106.1H200ZM119.89,38.69a8,8,0,1,0-15.78,2.63L112,88.63a32,32,0,0,1-64,0l7.88-47.31a8,8,0,1,0-15.78-2.63l-8,48A8.17,8.17,0,0,0,32,88a48.07,48.07,0,0,0,40,47.32V224a8,8,0,0,0,16,0V135.32A48.07,48.07,0,0,0,128,88a8.17,8.17,0,0,0-.11-1.31Z"/>',
+      coffee:
+        '<path d="M80,56V24a8,8,0,0,1,16,0V56a8,8,0,0,1-16,0Zm40,8a8,8,0,0,0,8-8V24a8,8,0,0,0-16,0V56A8,8,0,0,0,120,64Zm32,0a8,8,0,0,0,8-8V24a8,8,0,0,0-16,0V56A8,8,0,0,0,152,64Zm96,56v8a40,40,0,0,1-37.51,39.91,96.59,96.59,0,0,1-27,40.09H208a8,8,0,0,1,0,16H32a8,8,0,0,1,0-16H56.54A96.3,96.3,0,0,1,24,136V88a8,8,0,0,1,8-8H208A40,40,0,0,1,248,120ZM200,96H40v40a80.27,80.27,0,0,0,45.12,72h69.76A80.27,80.27,0,0,0,200,136Zm32,24a24,24,0,0,0-16-22.62V136a95.78,95.78,0,0,1-1.2,15A24,24,0,0,0,232,128Z"/>',
+      briefcase:
+        '<path d="M216,56H176V48a24,24,0,0,0-24-24H104A24,24,0,0,0,80,48v8H40A16,16,0,0,0,24,72V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V72A16,16,0,0,0,216,56ZM96,48a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96ZM216,72v41.61A184,184,0,0,1,128,136a184.07,184.07,0,0,1-88-22.38V72Zm0,128H40V131.64A200.19,200.19,0,0,0,128,152a200.25,200.25,0,0,0,88-20.37V200ZM104,112a8,8,0,0,1,8-8h32a8,8,0,0,1,0,16H112A8,8,0,0,1,104,112Z"/>',
+      'arrows-horizontal':
+        '<path d="M237.66,133.66l-32,32a8,8,0,0,1-11.32-11.32L212.69,136H43.31l18.35,18.34a8,8,0,0,1-11.32,11.32l-32-32a8,8,0,0,1,0-11.32l32-32a8,8,0,0,1,11.32,11.32L43.31,120H212.69l-18.35-18.34a8,8,0,0,1,11.32-11.32l32,32A8,8,0,0,1,237.66,133.66Z"/>',
+      'credit-card':
+        '<path d="M224,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48Zm0,16V88H32V64Zm0,128H32V104H224v88Zm-16-24a8,8,0,0,1-8,8H168a8,8,0,0,1,0-16h32A8,8,0,0,1,208,168Zm-64,0a8,8,0,0,1-8,8H120a8,8,0,0,1,0-16h16A8,8,0,0,1,144,168Z"/>',
+      bank: '<path d="M24,104H48v64H32a8,8,0,0,0,0,16H224a8,8,0,0,0,0-16H208V104h24a8,8,0,0,0,4.19-14.81l-104-64a8,8,0,0,0-8.38,0l-104,64A8,8,0,0,0,24,104Zm40,0H96v64H64Zm80,0v64H112V104Zm48,64H160V104h32ZM128,41.39,203.74,88H52.26ZM248,208a8,8,0,0,1-8,8H16a8,8,0,0,1,0-16H240A8,8,0,0,1,248,208Z"/>',
+      'piggy-bank':
+        '<path d="M192,116a12,12,0,1,1-12-12A12,12,0,0,1,192,116ZM152,64H112a8,8,0,0,0,0,16h40a8,8,0,0,0,0-16Zm96,48v32a24,24,0,0,1-24,24h-2.36l-16.21,45.38A16,16,0,0,1,190.36,224H177.64a16,16,0,0,1-15.07-10.62L160.65,208h-57.3l-1.92,5.38A16,16,0,0,1,86.36,224H73.64a16,16,0,0,1-15.07-10.62L46,178.22a87.69,87.69,0,0,1-21.44-48.38A16,16,0,0,0,16,144a8,8,0,0,1-16,0,32,32,0,0,1,24.28-31A88.12,88.12,0,0,1,112,32H216a8,8,0,0,1,0,16H194.61a87.93,87.93,0,0,1,30.17,37c.43,1,.85,2,1.25,3A24,24,0,0,1,248,112Zm-16,0a8,8,0,0,0-8-8h-3.66a8,8,0,0,1-7.64-5.6A71.9,71.9,0,0,0,144,48H112A72,72,0,0,0,58.91,168.64a8,8,0,0,1,1.64,2.71L73.64,208H86.36l3.82-10.69A8,8,0,0,1,97.71,192h68.58a8,8,0,0,1,7.53,5.31L177.64,208h12.72l18.11-50.69A8,8,0,0,1,216,152h8a8,8,0,0,0,8-8Z"/>',
+      'gas-pump':
+        '<path d="M241,69.66,221.66,50.34a8,8,0,0,0-11.32,11.32L229.66,81A8,8,0,0,1,232,86.63V168a8,8,0,0,1-16,0V128a24,24,0,0,0-24-24H176V56a24,24,0,0,0-24-24H72A24,24,0,0,0,48,56V208H32a8,8,0,0,0,0,16H192a8,8,0,0,0,0-16H176V120h16a8,8,0,0,1,8,8v40a24,24,0,0,0,48,0V86.63A23.85,23.85,0,0,0,241,69.66ZM64,208V56a8,8,0,0,1,8-8h80a8,8,0,0,1,8,8V208Zm80-96a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h48A8,8,0,0,1,144,112Z"/>',
+      'cloud-slash':
+        '<path d="M53.92,34.62A8,8,0,1,0,42.08,45.38L81.32,88.55l-.06.12A65,65,0,0,0,72,88a64,64,0,0,0,0,128h88a87.34,87.34,0,0,0,31.8-5.93l10.28,11.31a8,8,0,1,0,11.84-10.76ZM160,200H72a48,48,0,0,1,0-96c1.1,0,2.2,0,3.3.12A88.4,88.4,0,0,0,72,128a8,8,0,0,0,16,0,72.25,72.25,0,0,1,5.06-26.54l87,95.7A71.66,71.66,0,0,1,160,200Zm88-72a87.89,87.89,0,0,1-22.35,58.61A8,8,0,0,1,213.71,176,72,72,0,0,0,117.37,70a8,8,0,0,1-9.48-12.89A88,88,0,0,1,248,128Z"/>',
+      trash:
+        '<path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"/>',
+      'pencil-simple':
+        '<path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/>',
+      'caret-left':
+        '<path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z"/>',
+      'caret-right':
+        '<path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"/>',
+      binoculars:
+        '<path d="M237.2,151.87v0a47.1,47.1,0,0,0-2.35-5.45L193.26,51.8a7.82,7.82,0,0,0-1.66-2.44,32,32,0,0,0-45.26,0A8,8,0,0,0,144,55V80H112V55a8,8,0,0,0-2.34-5.66,32,32,0,0,0-45.26,0,7.82,7.82,0,0,0-1.66,2.44L21.15,146.4a47.1,47.1,0,0,0-2.35,5.45v0A48,48,0,1,0,112,168V96h32v72a48,48,0,1,0,93.2-16.13ZM76.71,59.75a16,16,0,0,1,19.29-1v73.51a47.9,47.9,0,0,0-46.79-9.92ZM64,200a32,32,0,1,1,32-32A32,32,0,0,1,64,200ZM160,58.74a16,16,0,0,1,19.29,1l27.5,62.58A47.9,47.9,0,0,0,160,132.25ZM192,200a32,32,0,1,1,32-32A32,32,0,0,1,192,200Z"/>',
+      'arrow-counter-clockwise':
+        '<path d="M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,0,1,11-11.63A80,80,0,1,0,71.43,71.39a3.07,3.07,0,0,1-.26.25L44.59,96H72a8,8,0,0,1,0,16H24a8,8,0,0,1-8-8V56a8,8,0,0,1,16,0V85.8L60.25,60A96,96,0,0,1,224,128Z"/>',
+      'calendar-blank':
+        '<path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z"/>',
+      'airplane-tilt':
+        '<path d="M185.33,114.21l29.14-27.42.17-.17a32,32,0,0,0-45.26-45.26c0,.06-.11.11-.17.17L141.79,70.67l-83-30.2a8,8,0,0,0-8.39,1.86l-24,24a8,8,0,0,0,1.22,12.31l63.89,42.59L76.69,136H56a8,8,0,0,0-5.65,2.34l-24,24A8,8,0,0,0,29,175.42l36.82,14.73,14.7,36.75.06.16a8,8,0,0,0,13.18,2.47l23.87-23.88A8,8,0,0,0,120,200V179.31l14.76-14.76,42.59,63.89a8,8,0,0,0,12.31,1.22l24-24a8,8,0,0,0,1.86-8.39Zm-.07,97.23-42.59-63.88A8,8,0,0,0,136.8,144c-.27,0-.53,0-.79,0a8,8,0,0,0-5.66,2.35l-24,24A8,8,0,0,0,104,176v20.69L90.93,209.76,79.43,181A8,8,0,0,0,75,176.57l-28.74-11.5L59.32,152H80a8,8,0,0,0,5.66-2.34l24-24a8,8,0,0,0-1.22-12.32L44.56,70.74l13.5-13.49,83.22,30.26a8,8,0,0,0,8.56-2L180.78,52.6A16,16,0,0,1,203.4,75.23l-32.87,30.93a8,8,0,0,0-2,8.56l30.26,83.22Z"/>',
+      'film-slate':
+        '<path d="M216,104H102.09L210,75.51a8,8,0,0,0,5.68-9.84l-8.16-30a15.93,15.93,0,0,0-19.42-11.13L35.81,64.74a15.75,15.75,0,0,0-9.7,7.4,15.51,15.51,0,0,0-1.55,12L32,111.56c0,.14,0,.29,0,.44v88a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V112A8,8,0,0,0,216,104ZM192.16,40l6,22.07-22.62,6L147.42,51.83Zm-66.69,17.6,28.12,16.24-36.94,9.75L88.53,67.37Zm-79.4,44.62-6-22.08,26.5-7L94.69,89.4ZM208,200H48V120H208v80Z"/>',
+      receipt:
+        '<path d="M72,104a8,8,0,0,1,8-8h96a8,8,0,0,1,0,16H80A8,8,0,0,1,72,104Zm8,40h96a8,8,0,0,0,0-16H80a8,8,0,0,0,0,16ZM232,56V208a8,8,0,0,1-11.58,7.15L192,200.94l-28.42,14.21a8,8,0,0,1-7.16,0L128,200.94,99.58,215.15a8,8,0,0,1-7.16,0L64,200.94,35.58,215.15A8,8,0,0,1,24,208V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56Zm-16,0H40V195.06l20.42-10.22a8,8,0,0,1,7.16,0L96,199.06l28.42-14.22a8,8,0,0,1,7.16,0L160,199.06l28.42-14.22a8,8,0,0,1,7.16,0L216,195.06Z"/>',
+    },
+    fill: {
+      house:
+        '<path d="M224,120v96a8,8,0,0,1-8,8H160a8,8,0,0,1-8-8V164a4,4,0,0,0-4-4H108a4,4,0,0,0-4,4v52a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V120a16,16,0,0,1,4.69-11.31l80-80a16,16,0,0,1,22.62,0l80,80A16,16,0,0,1,224,120Z"/>',
+      'list-bullets':
+        '<path d="M208,32H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM68,188a12,12,0,1,1,12-12A12,12,0,0,1,68,188Zm0-48a12,12,0,1,1,12-12A12,12,0,0,1,68,140Zm0-48A12,12,0,1,1,80,80,12,12,0,0,1,68,92Zm124,92H104a8,8,0,0,1,0-16h88a8,8,0,0,1,0,16Zm0-48H104a8,8,0,0,1,0-16h88a8,8,0,0,1,0,16Zm0-48H104a8,8,0,0,1,0-16h88a8,8,0,0,1,0,16Z"/>',
+      'chart-pie-slice':
+        '<path d="M100,116.43a8,8,0,0,0,4-6.93v-72A8,8,0,0,0,93.34,30,104.06,104.06,0,0,0,25.73,147a8,8,0,0,0,4.52,5.81,7.86,7.86,0,0,0,3.35.74,8,8,0,0,0,4-1.07ZM88,49.62v55.26L40.12,132.51C40,131,40,129.48,40,128A88.12,88.12,0,0,1,88,49.62ZM232,128A104,104,0,0,1,38.32,180.7a8,8,0,0,1,2.87-11L120,123.83V32a8,8,0,0,1,8-8,104.05,104.05,0,0,1,89.74,51.48c.11.16.21.32.31.49s.2.37.29.55A103.34,103.34,0,0,1,232,128Z"/>',
+      wallet:
+        '<path d="M216,64H56a8,8,0,0,1,0-16H192a8,8,0,0,0,0-16H56A24,24,0,0,0,32,56V184a24,24,0,0,0,24,24H216a16,16,0,0,0,16-16V80A16,16,0,0,0,216,64Zm-36,80a12,12,0,1,1,12-12A12,12,0,0,1,180,144Z"/>',
+      plus: '<path d="M208,32H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM184,136H136v48a8,8,0,0,1-16,0V136H72a8,8,0,0,1,0-16h48V72a8,8,0,0,1,16,0v48h48a8,8,0,0,1,0,16Z"/>',
+      'shopping-cart':
+        '<path d="M230.14,58.87A8,8,0,0,0,224,56H62.68L56.6,22.57A8,8,0,0,0,48.73,16H24a8,8,0,0,0,0,16h18L67.56,172.29a24,24,0,0,0,5.33,11.27,28,28,0,1,0,44.4,8.44h45.42A27.75,27.75,0,0,0,160,204a28,28,0,1,0,28-28H91.17a8,8,0,0,1-7.87-6.57L80.13,152h116a24,24,0,0,0,23.61-19.71l12.16-66.86A8,8,0,0,0,230.14,58.87ZM104,204a12,12,0,1,1-12-12A12,12,0,0,1,104,204Zm96,0a12,12,0,1,1-12-12A12,12,0,0,1,200,204Z"/>',
+      'fork-knife':
+        '<path d="M216,40V224a8,8,0,0,1-16,0V176H152a8,8,0,0,1-8-8,268.75,268.75,0,0,1,7.22-56.88c9.78-40.49,28.32-67.63,53.63-78.47A8,8,0,0,1,216,40Zm-96.11-1.31a8,8,0,1,0-15.78,2.63L111.89,88H88V40a8,8,0,0,0-16,0V88H48.11l7.78-46.68a8,8,0,1,0-15.78-2.63l-8,48A8.17,8.17,0,0,0,32,88a48.07,48.07,0,0,0,40,47.32V224a8,8,0,0,0,16,0V135.32A48.07,48.07,0,0,0,128,88a8.17,8.17,0,0,0-.11-1.31Z"/>',
+      coffee:
+        '<path d="M208,80H32a8,8,0,0,0-8,8v48a96.3,96.3,0,0,0,32.54,72H32a8,8,0,0,0,0,16H208a8,8,0,0,0,0-16H183.46a96.59,96.59,0,0,0,27-40.09A40,40,0,0,0,248,128v-8A40,40,0,0,0,208,80Zm24,48a24,24,0,0,1-17.2,23,95.78,95.78,0,0,0,1.2-15V97.38A24,24,0,0,1,232,120ZM112,56V24a8,8,0,0,1,16,0V56a8,8,0,0,1-16,0Zm32,0V24a8,8,0,0,1,16,0V56a8,8,0,0,1-16,0ZM80,56V24a8,8,0,0,1,16,0V56a8,8,0,0,1-16,0Z"/>',
+      briefcase:
+        '<path d="M152,112a8,8,0,0,1-8,8H112a8,8,0,0,1,0-16h32A8,8,0,0,1,152,112Zm80-40V200a16,16,0,0,1-16,16H40a16,16,0,0,1-16-16V72A16,16,0,0,1,40,56H80V48a24,24,0,0,1,24-24h48a24,24,0,0,1,24,24v8h40A16,16,0,0,1,232,72ZM96,56h64V48a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8Zm120,57.61V72H40v41.61A184,184,0,0,0,128,136,184,184,0,0,0,216,113.61Z"/>',
+      'arrows-horizontal':
+        '<path d="M237.66,133.66l-32,32A8,8,0,0,1,192,160V136H64v24a8,8,0,0,1-13.66,5.66l-32-32a8,8,0,0,1,0-11.32l32-32A8,8,0,0,1,64,96v24H192V96a8,8,0,0,1,13.66-5.66l32,32A8,8,0,0,1,237.66,133.66Z"/>',
+      'credit-card':
+        '<path d="M224,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48ZM136,176H120a8,8,0,0,1,0-16h16a8,8,0,0,1,0,16Zm64,0H168a8,8,0,0,1,0-16h32a8,8,0,0,1,0,16ZM32,88V64H224V88Z"/>',
+      bank: '<path d="M248,208a8,8,0,0,1-8,8H16a8,8,0,0,1,0-16H240A8,8,0,0,1,248,208ZM16.3,98.18a8,8,0,0,1,3.51-9l104-64a8,8,0,0,1,8.38,0l104,64A8,8,0,0,1,232,104H208v64h16a8,8,0,0,1,0,16H32a8,8,0,0,1,0-16H48V104H24A8,8,0,0,1,16.3,98.18ZM144,160a8,8,0,0,0,16,0V112a8,8,0,0,0-16,0Zm-48,0a8,8,0,0,0,16,0V112a8,8,0,0,0-16,0Z"/>',
+      'piggy-bank':
+        '<path d="M226,88.08c-.4-1-.82-2-1.25-3a87.93,87.93,0,0,0-30.17-37H216a8,8,0,0,0,0-16H112a88.12,88.12,0,0,0-87.72,81A32,32,0,0,0,0,144a8,8,0,0,0,16,0,16,16,0,0,1,8.57-14.16A87.69,87.69,0,0,0,46,178.22l12.56,35.16A16,16,0,0,0,73.64,224H86.36a16,16,0,0,0,15.07-10.62l1.92-5.38h57.3l1.92,5.38A16,16,0,0,0,177.64,224h12.72a16,16,0,0,0,15.07-10.62L221.64,168H224a24,24,0,0,0,24-24V112A24,24,0,0,0,226,88.08ZM152,72H112a8,8,0,0,1,0-16h40a8,8,0,0,1,0,16Zm28,56a12,12,0,1,1,12-12A12,12,0,0,1,180,128Z"/>',
+      'gas-pump':
+        '<path d="M241,69.66,221.66,50.34a8,8,0,0,0-11.32,11.32L229.66,81A8,8,0,0,1,232,86.63V168a8,8,0,0,1-16,0V128a24,24,0,0,0-24-24H176V56a24,24,0,0,0-24-24H72A24,24,0,0,0,48,56V208H32a8,8,0,0,0,0,16H192a8,8,0,0,0,0-16H176V120h16a8,8,0,0,1,8,8v40a24,24,0,0,0,48,0V86.63A23.85,23.85,0,0,0,241,69.66ZM144,120H80a8,8,0,0,1,0-16h64a8,8,0,0,1,0,16Z"/>',
+      'cloud-slash':
+        '<path d="M248,128.72A87.74,87.74,0,0,1,222.41,190a4,4,0,0,1-5.77-.16L103.78,65.67a4,4,0,0,1,.39-5.76A87.82,87.82,0,0,1,160.87,40C209.15,40.47,248.38,80.43,248,128.72ZM53.92,34.62A8,8,0,1,0,42.08,45.38L81.33,88.56l-.06.11A64,64,0,0,0,8,153c.53,35.12,29.84,63,65,63h87a87.65,87.65,0,0,0,31.78-5.95l10.3,11.33a8,8,0,0,0,11.33.52,8.32,8.32,0,0,0,.29-11.52Z"/>',
+      trash:
+        '<path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM112,168a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm0-120H96V40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8Z"/>',
+      'pencil-simple':
+        '<path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM192,108.68,147.31,64l24-24L216,84.68Z"/>',
+      'caret-left':
+        '<path d="M168,48V208a8,8,0,0,1-13.66,5.66l-80-80a8,8,0,0,1,0-11.32l80-80A8,8,0,0,1,168,48Z"/>',
+      'caret-right':
+        '<path d="M181.66,133.66l-80,80A8,8,0,0,1,88,208V48a8,8,0,0,1,13.66-5.66l80,80A8,8,0,0,1,181.66,133.66Z"/>',
+      binoculars:
+        '<path d="M237.22,151.9l0-.1a1.42,1.42,0,0,0-.07-.22,48.46,48.46,0,0,0-2.31-5.3L193.27,51.8a8,8,0,0,0-1.67-2.44,32,32,0,0,0-45.26,0A8,8,0,0,0,144,55V80H112V55a8,8,0,0,0-2.34-5.66,32,32,0,0,0-45.26,0,8,8,0,0,0-1.67,2.44L21.2,146.28a48.46,48.46,0,0,0-2.31,5.3,1.72,1.72,0,0,0-.07.21s0,.08,0,.11a48,48,0,0,0,90.32,32.51,47.49,47.49,0,0,0,2.9-16.59V96h32v71.83a47.49,47.49,0,0,0,2.9,16.59,48,48,0,0,0,90.32-32.51Zm-143.15,27a32,32,0,0,1-60.2-21.71l1.81-4.13A32,32,0,0,1,96,167.88V168h0A32,32,0,0,1,94.07,178.94ZM203,198.07A32,32,0,0,1,160,168h0v-.11a32,32,0,0,1,60.32-14.78l1.81,4.13A32,32,0,0,1,203,198.07Z"/>',
+      'arrow-counter-clockwise':
+        '<path d="M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,0,1,11-11.63A80,80,0,1,0,71.43,71.39a3.07,3.07,0,0,1-.26.25L60.63,81.29l17,17A8,8,0,0,1,72,112H24a8,8,0,0,1-8-8V56A8,8,0,0,1,29.66,50.3L49.31,70,60.25,60A96,96,0,0,1,224,128Z"/>',
+      'calendar-blank':
+        '<path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm0,48H48V48H72v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24Z"/>',
+      'airplane-tilt':
+        '<path d="M215.52,197.26a8,8,0,0,1-1.86,8.39l-24,24A8,8,0,0,1,184,232a7.09,7.09,0,0,1-.79,0,8,8,0,0,1-5.87-3.52l-44.07-66.12L112,183.59V208a8,8,0,0,1-2.34,5.65s-14,14.06-15.88,15.88A7.91,7.91,0,0,1,91,231.41a8,8,0,0,1-10.41-4.35l-.06-.15-14.7-36.76L29,175.42a8,8,0,0,1-2.69-13.08l16-16A8,8,0,0,1,48,144H72.4l21.27-21.27L27.56,78.65a8,8,0,0,1-1.22-12.32l24-24a8,8,0,0,1,8.39-1.86l85.94,31.25L176.2,40.19a28,28,0,0,1,39.6,39.6l-31.53,31.53Z"/>',
+      'film-slate':
+        '<path d="M216,104H102.09L210,75.51a8,8,0,0,0,5.68-9.84l-8.16-30a15.93,15.93,0,0,0-19.42-11.13L35.81,64.74a15.75,15.75,0,0,0-9.7,7.4,15.51,15.51,0,0,0-1.55,12L32,111.56c0,.14,0,.29,0,.44v88a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V112A8,8,0,0,0,216,104ZM192.16,40l6,22.07L164.57,71,136.44,54.72ZM77.55,70.27l28.12,16.24-59.6,15.73-6-22.08Z"/>',
+      receipt:
+        '<path d="M216,40H40A16,16,0,0,0,24,56V208a8,8,0,0,0,11.58,7.15L64,200.94l28.42,14.21a8,8,0,0,0,7.16,0L128,200.94l28.42,14.21a8,8,0,0,0,7.16,0L192,200.94l28.42,14.21A8,8,0,0,0,232,208V56A16,16,0,0,0,216,40ZM176,144H80a8,8,0,0,1,0-16h96a8,8,0,0,1,0,16Zm0-32H80a8,8,0,0,1,0-16h96a8,8,0,0,1,0,16Z"/>',
+    },
+  }
+  // DL-ICO-03: Duotone only inside tiles; Regular everywhere else; Fill for the selected tab
+  function I(n, w) {
+    return '<svg viewBox="0 0 256 256" aria-hidden="true">' + ICONS[w || 'regular'][n] + '</svg>'
+  }
+  var lang = 'en'
+  var LOC = { en: 'en-US', es: 'es-MX' }
+  var S = {
+    activity: ['Activity', 'Movimientos'],
+    wallets: ['Wallets', 'Carteras'],
+    home: ['Home', 'Inicio'],
+    budget: ['Budget', 'Presupuesto'],
+    today: ['Today', 'Hoy'],
+    yesterday: ['Yesterday', 'Ayer'],
+    coffee: ['Coffee', 'Café'],
+    groceries: ['Groceries', 'Súper'],
+    salary: ['Salary', 'Sueldo'],
+    transfer: ['To Savings', 'A Ahorros'],
+    flight: ['Flight to Austin', 'Vuelo a Austin'],
+    refund: ['Refund · Cinema', 'Reembolso · Cine'],
+    gas: ['Gas', 'Gasolina'],
+    checking: ['Checking', 'Débito'],
+    savings: ['Savings', 'Ahorros'],
+    cash: ['Cash', 'Efectivo'],
+    card: ['Credit card', 'Tarjeta de crédito'],
+    loan: ['Car loan', 'Crédito auto'],
+    networth: ['Net worth', 'Patrimonio'],
+    across: ['Across 5 wallets', 'En 5 carteras'],
+    deleted: ['Transaction deleted', 'Movimiento eliminado'],
+    undo: ['Undo', 'Deshacer'],
+    edit: ['Edit', 'Editar'],
+    del: ['Delete', 'Eliminar'],
+    offline: [
+      "You're offline. Changes will sync when you're back.",
+      'Sin conexión. Los cambios se sincronizan cuando vuelvas.',
+    ],
+    newexp: ['New expense', 'Nuevo gasto'],
+    newinc: ['New income', 'Nuevo ingreso'],
+    newtra: ['New transfer', 'Nueva transferencia'],
+    swipehint: [
+      'Tap a row to slide it open, then tap Delete.',
+      'Toca un movimiento para deslizarlo y luego toca Eliminar.',
+    ],
+    cancel: ['Cancel', 'Cancelar'],
+    expense: ['Expense', 'Gasto'],
+    income: ['Income', 'Ingreso'],
+    transferT: ['Transfer', 'Transferencia'],
+    category: ['Category', 'Categoría'],
+    wallet: ['Wallet', 'Cartera'],
+    date: ['Date', 'Fecha'],
+    future: [
+      'That date is in the future. Pick today or earlier.',
+      'Esa fecha es futura. Elige hoy o antes.',
+    ],
+    notePh: ['Add a note', 'Agrega una nota'],
+    save: ['Save', 'Guardar'],
+    savenew: ['Save & new', 'Guardar y otro'],
+    delq: ['Delete Credit card?', '¿Eliminar Tarjeta de crédito?'],
+    delmsg: [
+      'This also deletes its 48 transactions. This can’t be undone.',
+      'También se eliminan sus 48 movimientos. No se puede deshacer.',
+    ],
+    delbtn: ['Delete wallet', 'Eliminar cartera'],
+    lastfour: ['Ends in 4821', 'Termina en 4821'],
+    emptyT: ['A clear view starts here', 'Aquí empieza una vista clara'],
+    emptyP: [
+      'Add your first wallet and everything you have shows up in one place.',
+      'Agrega tu primera cartera y verás todo lo que tienes en un solo lugar.',
+    ],
+    addw: ['Add a wallet', 'Agregar cartera'],
+    h_act: ['Activity', 'Activity'],
+    h_wal: ['Wallets, offline', 'Wallets, offline'],
+    h_sheet: ['Quick-add with a field error', 'Quick-add with a field error'],
+    h_del: ['Deleting a wallet', 'Deleting a wallet'],
+    h_empty: ['Empty state', 'Empty state'],
+    h_swipe: ['Swipe actions', 'Swipe actions'],
+  }
+  function t(k) {
+    return S[k][lang === 'en' ? 0 : 1]
+  }
+  var TODAY = new Date(2026, 9, 14)
+  function day(d) {
+    var diff = Math.round((TODAY - d) / 86400000)
+    if (diff === 0) return t('today')
+    if (diff === 1) return t('yesterday')
+    if (diff < 7) {
+      var w = d.toLocaleDateString(LOC[lang], { weekday: 'long' })
+      return lang === 'es' ? w.charAt(0).toUpperCase() + w.slice(1) : w
+    }
+    var opts = { month: 'short', day: 'numeric' }
+    if (d.getFullYear() !== TODAY.getFullYear()) opts.year = 'numeric'
+    return d.toLocaleDateString(LOC[lang], opts).replace('.', '')
+  }
+  // DL-NUM-03..06: platform formatter; sign only when unusual; foreign currency shows its code
+  function money(v, opt) {
+    opt = opt || {}
+    var cur = opt.cur || 'MXN'
+    var abs = Math.abs(v)
+    var sign = opt.kind === 'in' ? '+' : v < 0 ? '−' : ''
+    if (cur !== 'MXN') {
+      var n = new Intl.NumberFormat(LOC[lang], {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(abs)
+      return (
+        '<span class="amt' +
+        (opt.kind === 'in' ? ' in' : '') +
+        '">' +
+        sign +
+        n +
+        ' <span class="c">' +
+        cur +
+        '</span></span>'
+      )
+    }
+    var parts = new Intl.NumberFormat(LOC[lang], {
+      style: 'currency',
+      currency: 'MXN',
+      currencyDisplay: 'narrowSymbol',
+    }).formatToParts(abs)
+    var html = parts
+      .map(function (p) {
+        return p.type === 'fraction'
+          ? '<span class="c">' + p.value + '</span>'
+          : p.type === 'decimal'
+            ? '<span class="c">' + p.value + '</span>'
+            : p.value
+      })
+      .join('')
+    return '<span class="amt' + (opt.kind === 'in' ? ' in' : '') + '">' + sign + html + '</span>'
+  }
+  function bigMoney(v) {
+    var parts = new Intl.NumberFormat(LOC[lang], {
+      style: 'currency',
+      currency: 'MXN',
+      currencyDisplay: 'narrowSymbol',
+    }).formatToParts(v)
+    return parts
+      .map(function (p) {
+        return p.type === 'currency'
+          ? '<span class="s">' + p.value + '</span>'
+          : p.type === 'decimal' || p.type === 'fraction'
+            ? '<span class="c">' + p.value + '</span>'
+            : p.value
+      })
+      .join('')
+  }
+  function row(icon, color, title, sub, right, chev) {
+    return (
+      '<div class="row"><span class="tile" style="--c:var(--' +
+      color +
+      ')">' +
+      I(icon, 'duotone') +
+      '</span><div class="body"><span>' +
+      title +
+      '</span>' +
+      (sub ? '<span class="sub">' + sub + '</span>' : '') +
+      '</div>' +
+      right +
+      (chev ? '<span class="chev">' + I('caret-right') + '</span>' : '') +
+      '</div>'
+    )
+  }
+  function tabbar(on) {
+    var tabs = [
+      ['house', 'home'],
+      ['list-bullets', 'activity'],
+      ['chart-pie-slice', 'budget'],
+      ['wallet', 'wallets'],
+    ]
+    return (
+      '<div class="tabbar"><div class="tabs">' +
+      tabs
+        .map(function (x) {
+          return (
+            '<span class="' +
+            (x[1] === on ? 'on' : '') +
+            '">' +
+            I(x[0], x[1] === on ? 'fill' : 'regular') +
+            t(x[1]) +
+            '</span>'
+          )
+        })
+        .join('') +
+      '</div><span class="fab">' +
+      I('plus') +
+      '</span></div>'
+    )
+  }
+  function phone(h, rule, inner) {
+    return (
+      '<div class="demo"><h2>' +
+      h +
+      ' <span>' +
+      rule +
+      '</span></h2><div class="phone"><div class="status"><span>9:41</span><span>●●●</span></div>' +
+      inner +
+      '</div></div>'
+    )
+  }
+  function d(m, dd) {
+    return new Date(2026, m, dd)
+  }
+
+  var TOKENS = [
+    ['background', 'bg'],
+    ['surface', 'surface'],
+    ['inset', 'inset'],
+    ['text', 'text'],
+    ['text-muted', 'muted'],
+    ['text-faint', 'faint'],
+    ['separator', 'sep'],
+    ['fill', 'fill'],
+    ['pine', 'pine'],
+    ['on-pine', 'onpine'],
+    ['hero', 'hero'],
+    ['on-hero', 'onhero'],
+    ['warning', 'warning'],
+    ['danger', 'danger'],
+    ['sun', 'sun'],
+    ['on-sun', 'onsun'],
+  ]
+  var CATS = [
+    'clay',
+    'bark',
+    'marigold',
+    'meadow',
+    'moss',
+    'lagoon',
+    'lake',
+    'dusk',
+    'heather',
+    'plum',
+    'berry',
+    'stone',
+  ]
+  function swatches() {
+    var cs = getComputedStyle(document.documentElement)
+    function item(name, v) {
+      return (
+        '<div class="sw-item"><span class="sw-chip" style="--c:var(--' +
+        v +
+        ')"></span><div><b>' +
+        name +
+        '</b><code>' +
+        cs.getPropertyValue('--' + v).trim() +
+        '</code></div></div>'
+      )
+    }
+    document.getElementById('tokens').innerHTML = TOKENS.map(function (x) {
+      return item(x[0], x[1])
+    }).join('')
+    document.getElementById('cats').innerHTML = CATS.map(function (k) {
+      return item(k.charAt(0).toUpperCase() + k.slice(1), k)
+    }).join('')
+  }
+  var SWIPE = [
+    ['coffee', 'clay', 'coffee', 'checking', 4.5],
+    ['shopping-cart', 'bark', 'groceries', 'card', 1286.4],
+    ['briefcase', 'moss', 'salary', 'checking', 24000, { kind: 'in' }],
+  ]
+  var ST = { open: 1, gone: [], swBanner: false, actBanner: true, mode: 0 }
+  function render() {
+    document.documentElement.lang = lang
+    var g = ''
+    // 1. Activity
+    g += phone(
+      'Activity',
+      'NUM-03, NUM-06, NUM-08, CMP-13',
+      '<div class="screen"><div class="large-title">' +
+        t('activity') +
+        '</div>' +
+        '<div class="eyebrow">' +
+        day(d(9, 14)) +
+        '</div><div class="list">' +
+        row('coffee', 'clay', t('coffee'), t('checking'), money(4.5)) +
+        row('briefcase', 'moss', t('salary'), t('checking'), money(24000, { kind: 'in' })) +
+        '</div><div class="eyebrow">' +
+        day(d(9, 13)) +
+        '</div><div class="list">' +
+        row('arrows-horizontal', 'stone', t('transfer'), t('checking'), money(5000)) +
+        row('shopping-cart', 'bark', t('groceries'), t('card'), money(1286.4)) +
+        '</div><div class="eyebrow">' +
+        day(d(9, 10)) +
+        '</div><div class="list">' +
+        row('airplane-tilt', 'lake', t('flight'), t('card'), money(320, { cur: 'USD' })) +
+        row('film-slate', 'heather', t('refund'), t('card'), money(180, { kind: 'in' })) +
+        '</div><div class="eyebrow">' +
+        day(d(9, 3)) +
+        '</div><div class="list">' +
+        row('gas-pump', 'dusk', t('gas'), t('card'), money(850)) +
+        '</div></div>' +
+        (ST.actBanner
+          ? '<div class="banner"><span>' +
+            t('deleted') +
+            '</span><button type="button" data-act="act-undo">' +
+            I('arrow-counter-clockwise') +
+            t('undo') +
+            '</button></div>'
+          : '') +
+        tabbar('activity'),
+    )
+    // 2. Wallets offline
+    g += phone(
+      'Wallets, offline',
+      'NUM-03, PAT-07',
+      '<div class="screen"><div class="large-title">' +
+        t('wallets') +
+        '</div>' +
+        '<div class="offline">' +
+        I('cloud-slash') +
+        t('offline') +
+        '</div>' +
+        '<div class="hero"><div class="label">' +
+        t('networth') +
+        '</div><div class="big">' +
+        bigMoney(24180.5) +
+        '</div><div class="sub2">' +
+        t('across') +
+        '</div></div>' +
+        '<div class="list">' +
+        row('bank', 'lake', t('checking'), null, money(3420.1), true) +
+        row('piggy-bank', 'moss', t('savings'), null, money(18000), true) +
+        row('wallet', 'marigold', t('cash'), null, money(260.4), true) +
+        row('credit-card', 'berry', t('card'), t('lastfour'), money(-1250), true) +
+        row('receipt', 'dusk', t('loan'), null, money(-310), true) +
+        '</div></div>' +
+        tabbar('wallets'),
+    )
+    // 3. Quick-add with error
+    g += phone(
+      'Quick-add with a field error',
+      'CMP-05, CMP-08, CMP-09, CMP-11, PAT-05',
+      '<div class="screen" style="opacity:.0"></div><div class="sheetwrap"><div class="sheet tall"><div class="grabber"></div>' +
+        '<div class="sheethead"><span>' +
+        t('cancel') +
+        '</span><b>' +
+        t(['newexp', 'newinc', 'newtra'][ST.mode]) +
+        '</b><span></span></div>' +
+        '<div class="segc" role="group">' +
+        ['expense', 'income', 'transferT']
+          .map(function (k, i) {
+            return (
+              '<span role="button" tabindex="0" data-act="mode" data-i="' +
+              i +
+              '" class="' +
+              (ST.mode === i ? 'on' : '') +
+              '">' +
+              t(k) +
+              '</span>'
+            )
+          })
+          .join('') +
+        '</div>' +
+        '<div class="amount">' +
+        bigMoney(4.5) +
+        '</div>' +
+        '<div class="list">' +
+        row(
+          'coffee',
+          'clay',
+          t('coffee'),
+          null,
+          '<span class="val sub" style="font-size:15px">' + t('category') + '</span>',
+          true,
+        ) +
+        row(
+          'bank',
+          'lake',
+          t('checking'),
+          null,
+          '<span class="val sub" style="font-size:15px">' + t('wallet') + '</span>',
+          true,
+        ) +
+        row(
+          'calendar-blank',
+          'stone',
+          day(d(9, 20)),
+          null,
+          '<span class="val sub" style="font-size:15px">' + t('date') + '</span>',
+          true,
+        ) +
+        '<div class="err">' +
+        t('future') +
+        '</div>' +
+        '</div><div class="note">' +
+        t('notePh') +
+        '</div>' +
+        '<div class="btns"><span class="btn tinted">' +
+        t('savenew') +
+        '</span><span class="btn disabled">' +
+        t('save') +
+        '</span></div></div></div>',
+    )
+    // 4. Swipe
+    g += phone(
+      'Swipe actions',
+      'CMP-07',
+      '<div class="screen"><div class="large-title">' +
+        t('activity') +
+        '</div>' +
+        '<div class="eyebrow">' +
+        day(d(9, 14)) +
+        '</div><div class="list">' +
+        SWIPE.map(function (r, i) {
+          if (ST.gone.indexOf(i) !== -1) return ''
+          return (
+            '<div class="swipe' +
+            (ST.open === i ? ' open' : '') +
+            '" data-act="row" data-i="' +
+            i +
+            '"><div class="acts"><button type="button" class="pill" data-act="del" data-i="' +
+            i +
+            '">' +
+            I('trash') +
+            t('del') +
+            '</button></div>' +
+            row(r[0], r[1], t(r[2]), t(r[3]), money(r[4], r[5])) +
+            '</div>'
+          )
+        }).join('') +
+        '</div><div class="eyebrow" style="text-transform:none;letter-spacing:0">' +
+        t('swipehint') +
+        '</div></div>' +
+        (ST.swBanner
+          ? '<div class="banner"><span>' +
+            t('deleted') +
+            '</span><button type="button" data-act="sw-undo">' +
+            I('arrow-counter-clockwise') +
+            t('undo') +
+            '</button></div>'
+          : '') +
+        tabbar('activity'),
+    )
+    // 5. Delete wallet
+    g += phone(
+      'Deleting a wallet',
+      'CMP-12, PAT-06',
+      '<div class="screen"><div class="navrow"><span class="plain">' +
+        I('caret-left') +
+        t('wallets') +
+        '</span><span class="plain">' +
+        t('edit') +
+        '</span></div>' +
+        '<div class="large-title">' +
+        t('card') +
+        '</div>' +
+        '<div class="list">' +
+        row('coffee', 'clay', t('coffee'), day(d(9, 14)), money(4.5)) +
+        row('shopping-cart', 'bark', t('groceries'), day(d(9, 13)), money(1286.4)) +
+        '</div></div>' +
+        '<div class="sheetwrap"><div class="action"><div class="grp"><div class="msg"><b>' +
+        t('delq') +
+        '</b>' +
+        t('delmsg') +
+        '</div><div class="opt del">' +
+        t('delbtn') +
+        '</div></div><div class="grp"><div class="opt cancel">' +
+        t('cancel') +
+        '</div></div></div></div>',
+    )
+    // 6. Empty
+    g += phone(
+      'Empty state',
+      'CMP-14, PAT-03',
+      '<div class="screen"><div class="large-title">' +
+        t('wallets') +
+        '</div><div class="empty"><span class="tile" style="--c:var(--pine)">' +
+        I('binoculars', 'duotone') +
+        '</span><h3>' +
+        t('emptyT') +
+        '</h3><p>' +
+        t('emptyP') +
+        '</p><span class="btn filled">' +
+        t('addw') +
+        '</span></div></div>' +
+        tabbar('wallets'),
+    )
+    document.getElementById('grid').innerHTML = g
+  }
+  document.querySelectorAll('[data-t]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (b.dataset.t) document.documentElement.dataset.theme = b.dataset.t
+      else delete document.documentElement.dataset.theme
+      document.querySelectorAll('[data-t]').forEach(function (x) {
+        x.setAttribute('aria-pressed', String(x === b))
+      })
+      swatches()
+    })
+  })
+  document.querySelectorAll('[data-l]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      lang = b.dataset.l
+      render()
+      document.querySelectorAll('[data-l]').forEach(function (x) {
+        x.setAttribute('aria-pressed', String(x === b))
+      })
+    })
+  })
+  document.getElementById('grid').addEventListener('click', function (e) {
+    var el = e.target.closest('[data-act]')
+    if (!el) return
+    var i = +el.dataset.i,
+      act = el.dataset.act
+    // DL-CMP-07: a short swipe shows the Delete pill; tapping elsewhere closes it; Delete removes the row with an undo banner (DL-CMP-13)
+    if (act === 'del') {
+      ST.gone.push(i)
+      ST.open = -1
+      ST.swBanner = true
+    } else if (act === 'row') {
+      ST.open = ST.open === i ? -1 : i
+    } else if (act === 'sw-undo') {
+      ST.gone.pop()
+      ST.swBanner = ST.gone.length > 0
+    } else if (act === 'act-undo') {
+      ST.actBanner = false
+    } else if (act === 'mode') {
+      ST.mode = i
+    }
+    render()
+  })
+  render()
+  swatches()
+</script>

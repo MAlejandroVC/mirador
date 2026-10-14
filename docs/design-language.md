@@ -1,0 +1,373 @@
+# Mirador Design Language
+
+## About this document
+
+This is the single rulebook for how Mirador looks, feels, behaves and writes; every screen and pull request follows it. It is built in four layers, the structure shared by mature public systems such as [Material Design 3](https://m3.material.io), [Apple's Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines), [Shopify Polaris](https://polaris.shopify.com) and the [GOV.UK Design System](https://design-system.service.gov.uk):
+
+1. **Principles and personality**: the few ideas every decision is checked against.
+1. **Foundations**: color, type, spacing, shape, icons, motion. These become design tokens in code.
+1. **Components**: the building blocks (buttons, fields, cards, sheets, the quick-add button).
+1. **Patterns and content**: how screens behave (navigation, forms, errors, empty states) and how Mirador writes.
+
+### How rules are written
+
+Every rule has a stable ID, like the requirements spec: `DL-<area>-<number>`, for example `DL-COL-03`. Each rule is one sentence of what to do, followed by why. Pull requests and code comments cite the ID, the same way tests cite `BUD-35`. Areas: PRI principles, COL color, TYP type, LAY layout, SHP shape, ICO icons, MOT motion, NUM money and numbers, VIZ charts, VOC voice, CMP components, PAT patterns, A11Y accessibility.
+
+### How it maps to code
+
+- Foundations are **semantic tokens** in Tailwind 4's `@theme` block in `apps/web/src/index.css`, named by role (`surface`, `text-muted`, `warning`, `danger`), never by hue. Components use the role names only, so a palette change is one edit.
+- Components live in `apps/web/src/components/ui`, built on shadcn/ui and restyled to these tokens.
+- The repository copy, `docs/design-language.md`, is the source of truth. `CLAUDE.md` points to it, and changes go through pull requests.
+
+## Principles
+
+Mirador is **cool**: it sits comfortably within what people already know and gently moves it in one direction. It is genuine and unapologetic without shouting for attention, familiar enough to relate to and different enough to stand out. These seven principles turn that into rules. When two choices conflict, the earlier principle wins.
+
+**DL-PRI-01 Polished before plentiful.** A feature ships only when it is finished in every state it can be in: empty, loading, error, offline, light and dark, at 375 px and on desktop, in English and Spanish. *Why:* polish matters more than anything else, and an unfinished state is the first thing people notice.
+
+**DL-PRI-02 Familiar first, distinct second.** Where things are and how they work follow iOS and the big apps people use every day, such as Instagram and WhatsApp: tab bar at the bottom, sheets that slide up, swipe actions on rows, large titles, back at the top left. Originality is spent only on a few signature details, never on reinventing a control. *Why:* people should understand any screen without learning it first. The signature details are what make it feel like Mirador rather than a clone.
+
+**DL-PRI-03 Calm about money.** Mirador states facts and offers a next step. It never alarms, scolds or shames. Going over budget is shown plainly, in a warm tone, never with alarm red, flashing or exclamation marks. Red is reserved for destructive actions, such as deleting. *Why:* a habit-driven budget only works if people keep opening the app, and people avoid apps that make them feel bad.
+
+**DL-PRI-04 Works out of the box.** Every screen is useful with the defaults and needs no setup to get value. Customization makes the app feel like yours; it never asks you to build it. People can change exactly these things and nothing structural:
+
+- an icon and a color for each wallet
+- a color for each category group and an icon for each category
+- a color for each tag
+- which cards the dashboard shows, and their order (from Mirador's own cards; there is no card builder)
+- the app icon, from a few designed options
+
+The app's own palette is fixed. Colors people pick come from Mirador's curated set, never a free color picker. *Why:* the opposite of "unfinished but highly customizable". A curated set keeps every combination looking designed.
+
+**DL-PRI-05 Confident, not loud.** One clear main action per screen. No confetti, badge counts, streak pressure, pop-ups or dark patterns. The interface steps back and lets the numbers lead. *Why:* "cool" stands out through its differences, not its volume. A quiet interface also reads as more trustworthy with money.
+
+**DL-PRI-06 Crafted, not generated.** Every color, gradient and animation must earn its place by explaining something. No decorative gradients, no stock palette that every other new app uses, no animation that exists only to look busy. *Why:* the "vibe-coded" look (the same gradients, the same purple-and-blue palette, tacky motion) reads as unfinished and untrustworthy, which is the opposite of polished.
+
+**DL-PRI-07 Say it simply.** Show each piece of information in the simplest form that carries it: a number, a short sentence, a bar. A chart or a richer visual appears only when it shows something the simple form cannot, such as a trend in spending analysis. *Why:* if it can't be explained simply, it isn't understood well enough. Every extra line on screen is something people have to read past.
+
+## Personality and feel
+
+Mirador feels **polished, familiar and calm, ****refined with a touch of whimsy**. It should feel like an app Apple might have made for itself, with a few touches Apple wouldn't have thought of. It is a pleasure to look at, never boring and never distracting.
+
+| Mirador is | Mirador is not |
+|---|---|
+| Polished: every pixel considered | Unfinished but highly customizable |
+| Familiar: it works the way your other apps do | Clever controls you have to learn |
+| Calm: facts, a next step, a warm tone | Alarming, guilt-tripping, gamified |
+| Distinct: a few signature details | "Millennial beige": safe, washed-out, forgettable |
+| Crafted: details made for Mirador | "Vibe-coded": stock gradients, the same palette as every other app, tacky animation |
+| Native-feeling on iPhone | A web page squeezed onto a phone |
+| Solid and clear | Glassy, blurred, "futuristic" |
+
+**References.** The behaviour models are Apple's own iPhone apps (Wallet, Health, Fitness, Weather, Settings) and the big apps everyone knows (Instagram, WhatsApp). The anti-references are Microsoft-style and Linux-style software, where everything is configurable but nothing feels finished.
+
+**Apple, but on the web.** Mirador is a web app, so it can look and behave like iOS but cannot use some Apple assets. Here is how each one is handled:
+
+- **Font:** the device's system font, which is San Francisco on iPhone and Mac (DL-TYP-01).
+- **Icons:** Apple's SF Symbols may only be used in apps for Apple platforms, so Mirador uses an open source set drawn in a similar style.
+- **Haptics:** Safari on iPhone does not let web apps vibrate, so feedback comes from motion and visual confirmation.
+- **App icon:** iPhone reads a web app's icon when it is added to the Home Screen, so the chosen icon applies from the next time it is added.
+
+## Color
+
+**DL-COL-01** The app palette is fixed and the same for everyone; people color their wallets, category groups and tags from Mirador's curated set (DL-PRI-04).
+
+**DL-COL-02** No decorative gradients. A gradient is allowed only where it shows a quantity, such as a chart fill, plus the one sunlight glow on the hero card (DL-COL-10).
+
+**DL-COL-03** The palette is **Sage Grove**: neutrals with a whisper of warm brown, and **Pine**, a deep forest green, as the brand color. Pine marks the main action, the selected tab and the hero card. *Why:* calm and steady, it stands out without shouting, and it belongs to the outdoors that the name Mirador comes from.
+
+**DL-COL-04** Screens use color generously but with restraint: Pine for the brand, plus the curated colors of category groups, wallets and tags. A screen with only the brand color and grays is unfinished. *Why:* Mirador is refined but whimsical. Two colors look polished but dull.
+
+**DL-COL-05** Over budget is shown only in words: the amount and the word "over" ("$18 over") take the `warning` color. The bar keeps its category color. `warning` is for gentle cautions like this one; it is outside the curated set, so it never means a category.
+
+**DL-COL-06** Small repeated marks, such as progress bars, use a softer tone of their color (about half strength, mixed with the surface). Icons and text keep the full color. *Why:* many full-strength bars on one screen compete for attention.
+
+**DL-COL-07** Money in (income, refunds) takes the Moss color with its plus sign. Every other amount uses the text color, including negative wallet balances (DL-NUM-03). Red (`danger`) is used only for destructive actions, such as deleting.
+
+**DL-COL-08** A tile's background is its color mixed with the surface at 14% (light) or 22% (dark). A bar is its color mixed with the surface at 52% (light) or 64% (dark).
+
+**DL-COL-09** `sun`, a golden color, marks goals, milestones and good moments, and nothing else. *Why:* it is the sunlight through the trees; used rarely, it stays a small reward.
+
+**DL-COL-10** The hero card carries one soft sunlight glow from its top-right corner: gold at 24% opacity, 10% at 40% of the way, gone by 78%. It is the only decorative gradient in Mirador. *Why:* it gives the one loud element on the screen a warm, outdoor light without becoming a pattern.
+
+### App tokens
+
+Every text token below meets WCAG 2.2 AA (4.5:1) on the surfaces it is used on, except `text-faint`, which is only for disabled controls.
+
+| Token | Used for | Light | Dark |
+|---|---|---|---|
+| `background` | Screen behind cards | #F3F2EF | #0A0A09 |
+| `surface` | Cards, lists, tab bar, sheets | #FFFFFF | #191917 |
+| `inset` | Fields inside a sheet | #F3F2EF | #242321 |
+| `text` | Main text and amounts | #1D211A | #EEF1EA |
+| `text-muted` | Secondary text, cents, labels, inactive tabs | #656C5F | #9CA595 |
+| `text-faint` | Disabled controls only | #A9AEA3 | #5D6657 |
+| `separator` | Hairlines between rows | #23281C at 12% | #E1EBD7 at 13% |
+| `fill` | Empty part of bars, segmented controls | #23281C at 6% | #E1EBD7 at 8% |
+| `pine` | Brand: quick-add, selected tab, switches, links | #3D6B45 | #4E9E5C |
+| `on-pine` | Text and icons on pine | #FFFFFF | #06140A |
+| `hero` | Hero card background | #3D6B45 | #1E4527 |
+| `on-hero` | Text on the hero card | #FFFFFF | #EEF1EA |
+| `warning` | Over budget and other gentle cautions | #B54E1A | #F2935C |
+| `danger` | Destructive actions only | #BF322B | #FF6B5F |
+| `sun` | Goals, milestones, good moments | #B87A06 | #E8B24A |
+| `on-sun` | Text on sun | #2A1D00 | #231800 |
+
+### Category colors
+
+The 12 colors people can choose for wallets, category groups and tags, in the order the color picker shows them.
+
+**DL-COL-11** Category colors color icons, bars and color dots. Text uses them only for money in (Moss, DL-COL-07). *Why:* in light mode Marigold and Meadow reach 3:1, enough for shapes but not for text; a yellow dark enough for text turns brown.
+
+| Name | Light | Dark |
+|---|---|---|
+| Clay | #C1462D | #E18E7D |
+| Bark | #86613E | #CC9F74 |
+| Marigold | #A98200 | #F0C42E |
+| Meadow | #6B9325 | #9CC842 |
+| Moss | #437A2C | #8BC56B |
+| Lagoon | #12807F | #5CCAC4 |
+| Lake | #2A74AB | #74B3E6 |
+| Dusk | #2C5397 | #7096D8 |
+| Heather | #7A5CBD | #B59FF0 |
+| Plum | #94459A | #CB8FCF |
+| Berry | #B93D6C | #EF88AE |
+| Stone | #63707A | #A4B1B8 |
+
+## Typography
+
+**DL-TYP-01** Mirador uses the device's system font: `font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`. No web fonts are downloaded. *Why:* the app should feel like it belongs on whatever device it runs on, with no loading flash, and no font service is contacted (NFR-05).
+
+**DL-TYP-02** Every amount uses tabular numerals (`font-variant-numeric: tabular-nums`), so digits have equal widths and columns of amounts line up.
+
+**DL-TYP-03** Text uses only these styles. Line height is 1.4 unless noted.
+
+| Style | Size | Weight | Tracking | Used for |
+|---|---|---|---|---|
+| Large title | 30 px | 700 | −0.02em | Screen title |
+| Hero amount | 46 px (sign and cents 23 px) | 600 (sign and cents 500) | −0.03em | The one hero amount (DL-NUM-01) |
+| Headline | 17 px | 600 | 0 | Card titles, sheet titles |
+| Body | 15 px | 400 | 0 | Rows, amounts, text |
+| Secondary | 13 px | 400 | 0 | Second line of a row, notes, "left" and "over" |
+| Section label | 12 px, uppercase | 400 | +0.04em | Labels above groups, in `text-muted` |
+| Tab label | 10 px | 500 | 0 | Tab bar |
+
+## Layout and spacing
+
+**DL-LAY-01** Navigation on a phone is a bottom tab bar. Tabs are places, never actions.
+
+**DL-LAY-02** Quick-add is a round floating button that sits beside the tab bar, on the side of the thumb, on every screen. *Why:* Apple's guidelines keep actions out of the tab bar, and Apple's own apps now place a separate button next to it. That button is always within reach of one thumb.
+
+**DL-LAY-03** All spacing comes from one scale: 4, 8, 12, 16, 24, 32 px.
+
+**DL-LAY-04** On a phone, screens have 16 px side margins and 12 px between groups. Cards have 14 px top and bottom padding and 16 px side padding. A list row is at least 52 px tall, so every tap target is well over 44 px.
+
+**DL-LAY-05** Content is grouped into cards and lists on the `background`, each group introduced by a section label.
+
+**DL-LAY-06** The layout follows the screen width:
+
+| Width | Layout |
+|---|---|
+| Under 768 px (phones) | Everything above. |
+| 768 to 1023 px (tablets) | Same tab bar. Content in one centered column, at most 640 px wide. Sheets become centered dialogs, at most 540 px wide. |
+| 1024 px and up (large tablets, computers) | A sidebar on the left replaces the tab bar, with the same places in the same order and the quick-add button at its top as a filled "New" button. Content is at most 720 px wide; Home may place its cards in two columns. |
+
+*Why:* this is how iPadOS and macOS apps adapt: the same places, presented as a sidebar when there is room.
+
+## Shape and depth
+
+**DL-SHP-01** Surfaces are solid. No translucency, background blur or glass effects (Apple's Liquid Glass included), on bars, sheets or cards. *Why:* numbers stay crisp to read, cheaper phones stay fast, and the look won't date the way "futuristic" styles do.
+
+**DL-SHP-02** Corner radius by element:
+
+| Element | Radius |
+|---|---|
+| Cards and lists | 16 px |
+| Buttons | 14 px |
+| Icon tiles | 10 px |
+| Sheets (top corners) | 22 px |
+| Tab bar | Fully rounded |
+| Quick-add button | Circle |
+| Bars | Fully rounded |
+
+**DL-SHP-03** Cards and lists have no shadow and no border. They stand apart from the `background` by their `surface` color alone. Only floating elements are lifted: the tab bar (a hairline outline), the quick-add button and sheets (a soft shadow).
+
+**DL-SHP-04** Rows in a list are divided by hairline separators that start where the text starts, not under the icon.
+
+## Icons and illustration
+
+**DL-ICO-01** Mirador never uses emoji in its interface. Categories, wallets and navigation use minimalist icons: simple shapes, little detail, recognizable at a glance.
+
+**DL-ICO-02** A category or wallet is shown as an icon tile: its icon in its color, on a rounded square tinted with that same color.
+
+**DL-ICO-03** The icon set is [Phosphor](https://phosphoricons.com) (MIT license). Duotone appears only inside category and wallet tiles. Everything else uses the Regular (line) style: buttons, the quick-add plus, chevrons, swipe actions and banners. The selected tab uses Fill, as iOS does. Inside a tile, use only icons whose second tone shades part of the drawing itself. If an icon's second tone is just a box or circle behind the drawing, pick another icon. *Why:* a background box reads as a rendering glitch, not as shading.
+
+**DL-ICO-04** Icon tiles are 34 px with a 20 px icon. Tab bar icons are 23 px.
+
+**DL-ICO-05** **App icon.** To be decided; it will be designed separately.
+
+## Motion and feedback
+
+**DL-MOT-01** Motion confirms what happened and shows where things went. It never decorates.
+
+**DL-MOT-02** Saving a transaction plays one short sequence: the Save button turns into a check, the sheet slides away, and the new row opens into its list with a highlight that fades. The whole sequence takes under one second.
+
+**DL-MOT-03** No animation blocks input. The next action, such as opening quick-add again, works the moment it is tapped, even while the previous animation is finishing. *Why:* people log expenses in a hurry. Motion that makes them wait stops being a flourish and becomes an obstacle.
+
+**DL-MOT-04** People can turn animations off for the whole app in Settings. The setting starts from the device's own Reduce Motion setting. With animations off, every change happens instantly and nothing else changes.
+
+**DL-MOT-05** Timing for the save sequence (DL-MOT-02):
+
+| Step | Duration | Easing |
+|---|---|---|
+| Save turns into a check | 260 ms | `cubic-bezier(.32,.72,0,1)` |
+| Sheet slides away | 420 ms | `cubic-bezier(.32,.72,0,1)` |
+| New row opens into the list | 360 ms | `cubic-bezier(.32,.72,0,1)` |
+| Row highlight fades | 1.4 s | ease-out, runs in the background |
+
+**DL-MOT-06** Screens move like iOS: a new screen slides in from the right and back slides it out, a sheet slides up from the bottom over a dimmed background, all with the system's spring timing (about 350 ms). With animations off (DL-MOT-04), they fade instead.
+
+## Money and numbers
+
+**DL-NUM-01** A screen has at most one hero amount: the number the screen exists to show, such as net worth on Wallets. The whole units are set large and heavy. The currency sign and the cents are set at half that size, in the muted text color. *Why:* the one number that matters stands out and doesn't get lost among the others.
+
+**DL-NUM-02** Amounts in lists keep the same structure at body size: whole units in the text color, cents in a smaller muted size.
+
+**DL-NUM-03** Signs mark only what is unusual for where the amount appears:
+
+| Where | Usual case | Unusual case |
+|---|---|---|
+| Transactions | Expense: no sign, text color ("$4.50") | Income or refund: plus sign in Moss ("+$1,200.00") |
+| Transfers between own wallets | No sign, text color | (none) |
+| Wallet balances and net worth | Positive: no sign | Negative (a credit card, a loan): minus sign, text color ("−$3,250.00") |
+| Budget | "$212 left" | "$18 over" in `warning` (DL-COL-05) |
+
+*Why:* the usual case needs no decoration; a sign or color only appears when it tells you something.
+
+**DL-NUM-04** The minus sign is the true minus (−, U+2212), never a hyphen. *Why:* it is as wide as the plus and lines up in columns.
+
+**DL-NUM-05** Amounts are formatted for the app language (`en-US` or `es-MX`) by the platform's number formatter, never by hand. Amounts always show cents in lists and forms, and full grouped numbers ("$12,480.50"). Short forms ("$12.5K", "12.5 mil") appear only on chart axes.
+
+**DL-NUM-06** Amounts in the main currency show only its symbol. Amounts in any other currency show their code after the number ("120.00 USD"). *Why:* in Mexico, pesos and dollars both use "$".
+
+**DL-NUM-07** Percentages are whole numbers ("44%"). Below 1% show "<1%".
+
+**DL-NUM-08** Dates in lists are relative while they are recent: "Today", "Yesterday", then the weekday within the last week, then "Oct 3" ("3 oct" in Spanish). The year appears only when it is not the current year. Months are lowercase in Spanish.
+
+## Charts and data visualization
+
+**DL-VIZ-01** Progress toward a goal or a budget is a bar plus one plain sentence ("$4,400 of $10,000"). It is never a chart (DL-PRI-07).
+
+**DL-VIZ-02** A chart about categories, wallets or tags uses their own colors, so a color means the same thing on every screen. A chart with one series uses `pine`.
+
+**DL-VIZ-03** A phone chart shows at most six series; the rest are grouped as "Other" in `text-faint`. Labels sit on or next to the data, not in a separate legend, wherever they fit.
+
+**DL-VIZ-04** Bars and lines are flat. The only gradient allowed is an area fill under a line, fading to transparent (DL-COL-02).
+
+## Voice and tone
+
+**DL-VOC-01 Plain and warm.** Mirador talks like a calm friend who is good with money: short sentences, everyday words, the facts first. "You're $18 over on Eating out." Never "Warning: budget exceeded."
+
+**DL-VOC-02 Whimsy, once in a while.** A light, playful line is allowed only in empty states and milestones, such as a first transaction or a goal reached. Never in errors, amounts, buttons or anything about overspending. *Why:* simple most of the time keeps the app fast to read; the occasional smile is what makes it feel like Mirador.
+
+**DL-VOC-03 Spanish uses tú.** Every Spanish string addresses the person as tú, never usted or vos.
+
+**DL-VOC-04 Spanish is written for Mexico first.** Vocabulary follows Mexican Spanish, then stays understandable across Latin America and Spain. Avoid words that only exist in Spain (ordenador, móvil, vale) and Mexican slang. The Spanish locale is `es-MX`.
+
+| Use | Avoid |
+|---|---|
+| celular | móvil |
+| computadora | ordenador |
+| listo, de acuerdo | vale |
+
+**DL-VOC-05** Buttons say exactly what happens, as a verb: "Save", "Guardar". Confirmations repeat it in the past: "Saved", "Guardado".
+
+**DL-VOC-06** **Glossary.** The spec's terms always use these words:
+
+| English | Spanish (México) |
+|---|---|
+| Wallet | Cartera |
+| Category group | Grupo de categorías |
+| Category | Categoría |
+| Tag | Etiqueta |
+| Transaction | Movimiento |
+| Income | Ingreso |
+| Expense | Gasto |
+| Transfer | Transferencia |
+| Budget | Presupuesto |
+| Goal | Meta |
+| Net worth | Patrimonio |
+| Recovery key | Clave de recuperación |
+
+## Components
+
+**DL-CMP-01 Hero card.** At most one per screen, at the top. It is filled with `hero` and holds the screen's hero amount (DL-NUM-01) in `on-hero`, with its label and one line of context. It is the only loud element on the screen; everything around it stays quiet.
+
+**DL-CMP-02 Icon tile.** A Duotone icon in its color on a tinted rounded square (DL-ICO-02, DL-COL-08, DL-ICO-04).
+
+**DL-CMP-03 Progress row.** Icon tile, name, and "$212 left" or "$18 over" on the first line; a 5 px bar in the category's softer tone below (DL-COL-05, DL-COL-06).
+
+**DL-CMP-04** **Quick-add button.** A 54 px circle in `pine` with a plus in `on-pine`, beside the tab bar (DL-LAY-02).
+
+**DL-CMP-05** **Buttons.** Three styles, as in iOS:
+
+- **Filled** (`pine` with `on-pine` text): the one main action of a screen or sheet, such as Save. Never two on one screen.
+- **Tinted** (`pine` at 14% on the surface, `pine` text): a second action next to it, such as "Save & new".
+- **Plain** (`pine` text, no background): actions in the navigation bar and inside lists.
+
+Full-width buttons are 50 px tall; any button is at least 44 px. A destructive button uses `danger` text, plain or tinted, never filled. The label is a verb (DL-VOC-05).
+
+**DL-CMP-06** **Navigation bar.** Each tab opens with a large title. Once the page scrolls, the title shrinks into the bar, centered. A screen reached from another has a back button at the top left: a chevron and the previous screen's title. At most two plain actions sit at the top right.
+
+**DL-CMP-07** **List rows.** Rows sit in inset lists (a `surface` card with 16 px corners), at least 52 px tall: icon tile, title, an optional second line in `text-muted`, and a value or amount on the right. A chevron appears only when the row opens another screen. Tapping a row opens it, which is also where it is edited. Swiping a row to the left is only for deleting, as in iOS. A short swipe slides the row aside and leaves a small red Delete pill showing; tapping the pill deletes the row. A long swipe deletes it straight away. Tapping anywhere else closes the pill. Delete can also be reached from the row's own screen (DL-A11Y-07).
+
+**DL-CMP-08** **Sheets.** Creating or editing something opens a sheet that slides up, with a grabber, Cancel at the top left, the title in the middle, and the main action as a filled button at the bottom, within reach of the thumb. Settings-like sheets put Done at the top right instead. Swiping a sheet down closes it, unless it holds unsaved changes; then an action sheet asks "Discard changes?".
+
+**DL-CMP-09** **Fields.** Fields are rows in an inset list, as in iOS Settings: label on the left, value on the right, chevron when it opens a picker. Free text fields use the `inset` fill. The amount is entered as a big number with the decimal keypad. A field's error appears right under it in `warning` (DL-PAT-05).
+
+**DL-CMP-10** **Switches.** The iOS switch, `pine` when on. Only for settings that take effect immediately; anything that needs Save is not a switch.
+
+**DL-CMP-11** **Segmented control.** Two to five equal options that switch a mode or a view, such as Expense, Income and Transfer. More than five becomes a list.
+
+**DL-CMP-12** **Action sheet.** Confirms a destructive or irreversible step. It slides up, states the consequence in one sentence, and offers the destructive action in `danger` with Cancel set apart below it.
+
+**DL-CMP-13** **Undo banner.** After a delete that can be undone: one line and an Undo button, on `surface`, just above the tab bar, for 5 seconds. Only one at a time.
+
+**DL-CMP-14** **Empty state.** A large icon tile, a short title, one sentence on what will appear here, and the filled button that fills it ("Add a wallet"). This is a place for a touch of whimsy (DL-VOC-02).
+
+## Patterns
+
+**DL-PAT-01** **Navigation.** The tabs are Home, Activity, Budget and Wallets. Opening an item pushes a screen in from the right, and swiping from the left edge goes back. Creating or editing opens a sheet (DL-CMP-08). Tapping the current tab returns to its top.
+
+**DL-PAT-02** **Forms.** Fill in everything that can be guessed: today's date, the last wallet used, the suggested category. Show the required fields first. Check a field when the person leaves it or taps Save, never while they type. The main button stays disabled until the required fields are filled.
+
+**DL-PAT-03** **Empty states.** Every list and screen that can be empty has an empty state (DL-CMP-14). It is never a blank screen.
+
+**DL-PAT-04** **Loading.** Data comes from the device, so screens appear at once with their content. Only waits on the server (sign-in, sync, reading a receipt) show progress: a small spinner in place, appearing only after 300 ms, never a full-screen block.
+
+**DL-PAT-05** **Errors.** An error says what happened and what to do next, in plain words, where it happened: under the field, on the row, or in a banner for the whole app. It uses `warning`, never `danger`. No error codes, no "Oops", no blame. Example: "That date is in the future. Pick today or earlier."
+
+**DL-PAT-06** **Confirm or undo.** Deleting one thing happens at once and shows the undo banner (DL-CMP-13). Deleting something that takes other data with it, such as a wallet with its transactions, first shows an action sheet that names the cost ("This deletes 48 transactions."). Reversible actions are never confirmed.
+
+**DL-PAT-07** **Offline.** A slim banner under the navigation bar says "You're offline. Changes will sync when you're back." Quick-add keeps working. Anything that needs the server is disabled with a one-line reason, never hidden.
+
+**DL-PAT-08** **Saved.** A normal save shows only the brief save animation (DL-MOT-02). No "Saved!" message.
+
+## Accessibility
+
+**DL-A11Y-01** Text meets 4.5:1 contrast, and icons, bars and controls meet 3:1, in light and dark.
+
+**DL-A11Y-02** Text sizes follow the person's text size setting (sizes in `rem`), and every screen still works at 200%: text wraps, nothing is cut off.
+
+**DL-A11Y-03** Color is never the only signal: over budget says "over", income has a plus sign, errors have words.
+
+**DL-A11Y-04** Every icon-only button has a spoken label. Icon tiles beside a text label are hidden from screen readers.
+
+**DL-A11Y-05** Every tap target is at least 44 px, and nothing depends on hover.
+
+**DL-A11Y-06** Keyboard focus is always visible: a 2 px `pine` ring.
+
+**DL-A11Y-07** Every gesture (swipe actions, swipe back, swipe to close) has a visible tap alternative.
+
+**DL-A11Y-08** Animations follow the device's Reduce Motion setting and the in-app switch (DL-MOT-04).
+
