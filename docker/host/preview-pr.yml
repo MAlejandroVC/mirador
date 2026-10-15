@@ -1,0 +1,45 @@
+# One pull request's preview. previews.sh runs a copy of it per open pull request, as
+# the Compose project mirador-pr-<number>, with PR_NUMBER set.
+#
+# Each preview has its own database on its own network. Only Caddy shares a network
+# with it (mirador_previews), so a pull request's code can't reach the real instance.
+
+services:
+  app:
+    image: ghcr.io/malejandrovc/mirador:pr-${PR_NUMBER:?Set PR_NUMBER}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://mirador:${PREVIEW_POSTGRES_PASSWORD:?Set PREVIEW_POSTGRES_PASSWORD in .env}@db:5432/mirador
+      MIRADOR_TRUST_PROXY: 'true'
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      default:
+      previews:
+        # Caddy reaches it as pr-<number>:3000.
+        aliases:
+          - pr-${PR_NUMBER}
+
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mirador
+      POSTGRES_DB: mirador
+      POSTGRES_PASSWORD: ${PREVIEW_POSTGRES_PASSWORD:?Set PREVIEW_POSTGRES_PASSWORD in .env}
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U mirador -d mirador']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - db-data:/var/lib/postgresql
+
+networks:
+  previews:
+    external: true
+    name: mirador_previews
+
+volumes:
+  db-data:

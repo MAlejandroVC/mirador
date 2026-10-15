@@ -248,7 +248,7 @@ Example: `feat(bud): cap suggested cuts at the proven level` with `Refs: BUD-35`
 - One issue per pull request, small enough to review in 15 minutes. Split big work behind a feature flag rather than opening a huge PR.
 - The title is a Conventional Commit line, because PRs are squash-merged and the title becomes the commit on `main`.
 - The description follows the template: what changed, which issue and requirement IDs, how it was tested, and phone and desktop screenshots when the UI changes.
-- Open it as a draft early if you want feedback; mark it ready when CI is green.
+- Open it as a draft early if you want feedback; mark it ready when CI is green. A pull request from a branch of this repository gets a preview at `pr-<number>.<preview domain>` that updates a few minutes after each push, so open the draft as soon as there is something to try.
 - To merge: CI green, one approving review (the maintainer, for now), every conversation resolved, branch up to date with `main`.
 - Reviewers comment on behaviour, the requirement and the rules above; formatting is the tools' job. Prefix optional remarks with `nit:`.
 - The branch is deleted automatically after merge.
@@ -305,6 +305,7 @@ There are two databases, and most changes touch only the first.
 | `pr-checks.yml` | Every pull request | Conventional Commit title and DCO sign-off |
 | `release-please.yml` | Push to `main` | Keeps a release PR open with the next version and changelog; when the release PR is merged, tags the version and creates the GitHub release. Then runs `release.yml` |
 | `release.yml` | Called by `release-please.yml`, or by hand | Builds the Docker image for Intel and ARM, publishes it to GitHub Container Registry with a signed build provenance attestation |
+| `pr-preview.yml` | Every push to a pull request from a branch of this repository | Builds an ARM image tagged `pr-<number>` for the pull request's preview ([hosting-oracle.md](docs/hosting-oracle.md#previews-of-pull-requests)) and comments its link |
 | `codeql.yml`, Dependabot | Weekly and on PRs | Security scanning and dependency updates |
 
 Today `ci.yml` runs lint, typecheck, the Vitest suites, the web build, and builds the Docker image and starts it with `docker/docker-compose.yml`; the PostgreSQL, license and Playwright steps are added as those parts land.
@@ -317,6 +318,7 @@ Images go to `ghcr.io/malejandrovc/mirador` with these tags:
 | --- | --- | --- |
 | `latest`, `1.4`, `1.4.0` | When a release PR is merged | Real instances. `latest` follows every release, `1.4` only its patches, `1.4.0` never moves |
 | `main` | Every merge to `main` | A preview instance with throwaway data. A merge can change the encrypted record format before the release that upgrades it is ready, so never point real data at `main` |
+| `pr-<number>` | Every push to that pull request | Its preview only (ARM only) |
 | `sha-<commit>` | Every build | Going back to an exact build |
 
 Releasing is merging the release PR. The release notes say whether the upgrade runs a migration and anything an admin must do. Before merging it, a maintainer checks the `main` build on a real iPhone and Android phone (the preview instance runs exactly that code).

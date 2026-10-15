@@ -1,0 +1,68 @@
+name: Pull request preview
+
+# Builds an image of each pull request, tagged pr-<number>. A server running
+# docker/host/previews.sh serves it at pr-<number>.<preview domain> a few minutes after
+# each push, and removes it when the pull request closes (docs/hosting-oracle.md).
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: ghcr.io/malejandrovc/mirador
+
+jobs:
+  image:
+    name: Preview image
+    # Only branches of this repository: a fork's code never runs on the server, and
+    # Dependabot's and release-please's pull requests have nothing new to try.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      !startsWith(github.head_ref, 'release-please--')
+    # The server is ARM, so the image is built for ARM only, on an ARM runner.
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ${{ env.IMAGE }}:pr-${{ github.event.pull_request.number }}
+          cache-from: type=gha,scope=preview
+          cache-to: type=gha,scope=preview,mode=max
+      # One comment per pull request with the link, so it opens from a phone. Set the
+      # repository variable PREVIEW_DOMAIN (such as preview.example.com) to turn it on.
+      - name: Link the preview
+        if: vars.PREVIEW_DOMAIN != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          URL: https://pr-${{ github.event.pull_request.number }}.${{ vars.PREVIEW_DOMAIN }}
+        run: |
+          marker='<!-- mirador-preview -->'
+          if gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json comments --jq '.comments[].body' | grep -qF "$marker"; then
+            exit 0
+          fi
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body "$marker
+          **Preview:** $URL
+
+          It updates a few minutes after each push and is deleted when this pull request closes. It starts with a copy of the preview instance's data, so the preview account signs in. Test data only."
