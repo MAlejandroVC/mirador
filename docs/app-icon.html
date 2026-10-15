@@ -1,0 +1,868 @@
+<title>Mirador App Icon</title>
+<style>
+  /* Layout: one column of stacked panels; concept picker drives the context and palette rows. */
+  :root {
+    --bg: #f3f2ef;
+    --surface: #ffffff;
+    --text: #1b1c1a;
+    --muted: #6b6c67;
+    --line: #e3e1db;
+    --pine: #3d6b45;
+    --pine-2: #4e9e5c;
+    --sun: #b87a06;
+    --on-pine: #ffffff;
+    --chip: #e9ece6;
+    --font:
+      -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, system-ui, sans-serif;
+    --font-display:
+      -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #0a0a09;
+      --surface: #191917;
+      --text: #f2f1ec;
+      --muted: #9c9b94;
+      --line: #2a2a27;
+      --pine: #4e9e5c;
+      --pine-2: #6db97a;
+      --sun: #e8b24a;
+      --on-pine: #06140a;
+      --chip: #22261f;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #0a0a09;
+    --surface: #191917;
+    --text: #f2f1ec;
+    --muted: #9c9b94;
+    --line: #2a2a27;
+    --pine: #4e9e5c;
+    --pine-2: #6db97a;
+    --sun: #e8b24a;
+    --on-pine: #06140a;
+    --chip: #22261f;
+    color-scheme: dark;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding-block: 28px 64px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  h1,
+  h2,
+  h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+  }
+  h2 {
+    font-size: 20px;
+    font-weight: 650;
+  }
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .muted {
+    color: var(--muted);
+  }
+  .label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .panel {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0;
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    align-items: flex-end;
+  }
+  .ico {
+    display: block;
+    border-radius: 22.37%;
+    overflow: hidden;
+    flex: none;
+  }
+  .ico.flat {
+    border-radius: 0;
+  }
+  .pick {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--pine);
+    background: var(--chip);
+    border-radius: 999px;
+    padding: 4px 10px;
+  }
+
+  /* hero */
+  .hero {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 28px;
+    align-items: center;
+  }
+  .hero .lock {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+  .word {
+    font-family: var(--font-display);
+    font-weight: 650;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    line-height: 1;
+  }
+  .tag {
+    font-size: 18px;
+    color: var(--muted);
+  }
+  @media (max-width: 560px) {
+    .hero {
+      grid-template-columns: 1fr;
+      justify-items: start;
+    }
+  }
+
+  /* concepts */
+  .concepts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  @media (max-width: 900px) {
+    .concepts {
+      grid-template-columns: 1fr;
+    }
+  }
+  .groups {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+  }
+  .group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .ghead {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .gen {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+  .ges {
+    color: var(--muted);
+    font-size: 15px;
+  }
+  .concept.sel {
+    outline: 2px solid var(--pine);
+    outline-offset: -2px;
+  }
+  .pair {
+    display: flex;
+    gap: 12px;
+  }
+  .sizes {
+    display: flex;
+    gap: 14px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .sizes figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .sizes figcaption {
+    font-size: 11px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .lockup {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .lockup .word {
+    font-size: 26px;
+  }
+  .dark-tile {
+    background: #0a0a09;
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .dark-tile .word {
+    color: #f2f1ec;
+    font-size: 22px;
+  }
+  .light-tile {
+    background: #f3f2ef;
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .light-tile .word {
+    color: #1b1c1a;
+    font-size: 22px;
+  }
+  .tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  @media (max-width: 420px) {
+    .tiles {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* segmented control */
+  .seg {
+    display: inline-flex;
+    background: var(--chip);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 2px;
+    flex-wrap: wrap;
+  }
+  .seg button {
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    border-radius: 8px;
+    padding: 0 14px;
+    min-height: 36px;
+    cursor: pointer;
+  }
+  .seg button[aria-pressed='true'] {
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  }
+  .seg button:focus-visible {
+    outline: 2px solid var(--pine);
+    outline-offset: 1px;
+  }
+
+  /* context */
+  .ctx {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  @media (max-width: 760px) {
+    .ctx {
+      grid-template-columns: 1fr;
+    }
+  }
+  .phone {
+    border-radius: 26px;
+    padding: 22px 18px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px 10px;
+  }
+  .phone.l {
+    background: linear-gradient(160deg, #c9d6c4, #e7e2d4);
+  }
+  .phone.d {
+    background: linear-gradient(160deg, #1c2620, #0e0f0d);
+  }
+  .app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+  }
+  .phone.l .app {
+    color: #1b1c1a;
+  }
+  .phone.d .app {
+    color: #edede8;
+  }
+  .ghost {
+    width: 56px;
+    height: 56px;
+    border-radius: 22.37%;
+  }
+  .phone.l .ghost {
+    background: rgba(255, 255, 255, 0.55);
+  }
+  .phone.d .ghost {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .browser {
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .tabs {
+    display: flex;
+    gap: 6px;
+    padding: 8px 8px 0;
+  }
+  .btab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 10px 10px 0 0;
+    font-size: 12px;
+    min-width: 0;
+  }
+  .browser.l {
+    background: #dcdad4;
+  }
+  .browser.l .btab.on {
+    background: #ffffff;
+    color: #1b1c1a;
+  }
+  .browser.l .btab {
+    color: #555;
+  }
+  .browser.d {
+    background: #232320;
+  }
+  .browser.d .btab.on {
+    background: #191917;
+    color: #f2f1ec;
+  }
+  .browser.d .btab {
+    color: #999;
+  }
+  .url {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  .browser.l .url {
+    background: #ffffff;
+    color: #6b6c67;
+  }
+  .browser.d .url {
+    background: #191917;
+    color: #9c9b94;
+  }
+  .signin {
+    border-radius: 22px;
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+  }
+  .signin.l {
+    background: #f3f2ef;
+    color: #1b1c1a;
+  }
+  .signin.d {
+    background: #0a0a09;
+    color: #f2f1ec;
+  }
+  .signin .word {
+    font-size: 30px;
+    color: inherit;
+  }
+  .signin .t {
+    font-size: 14px;
+    opacity: 0.7;
+  }
+  .field {
+    width: 100%;
+    max-width: 260px;
+    height: 44px;
+    border-radius: 12px;
+  }
+  .signin.l .field {
+    background: #ffffff;
+  }
+  .signin.d .field {
+    background: #191917;
+  }
+  .btn {
+    width: 100%;
+    max-width: 260px;
+    height: 46px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .signin.l .btn {
+    background: #3d6b45;
+    color: #ffffff;
+  }
+  .signin.d .btn {
+    background: #4e9e5c;
+    color: #06140a;
+  }
+
+  /* palettes */
+  .pals {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+  @media (max-width: 760px) {
+    .pals {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .pal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    text-align: center;
+  }
+  .pal .pair {
+    gap: 6px;
+  }
+
+  /* slogans */
+  .slogans {
+    display: flex;
+    flex-direction: column;
+  }
+  .slo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 4px 20px;
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+  }
+  .slo:first-child {
+    border-top: 0;
+  }
+  .slo .en {
+    font-size: 18px;
+    font-weight: 600;
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+  .slo .es {
+    font-size: 18px;
+    color: var(--text);
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+  .slo .note {
+    grid-column: 1 / -1;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  @media (max-width: 560px) {
+    .slo {
+      grid-template-columns: 1fr;
+    }
+  }
+  .lang {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-right: 6px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+    }
+  }
+</style>
+
+<div class="wrap">
+  <header style="display: flex; flex-direction: column; gap: 4px">
+    <span class="label">Mirador · app icon and slogan</span>
+    <h1>App icon and slogan</h1>
+  </header>
+
+  <section class="panel">
+    <div class="hero">
+      <span id="heroIcon"></span>
+      <div class="lock">
+        <span class="pick">Selected</span>
+        <span class="word" style="font-size: 56px">mirador</span>
+        <span class="tag">Know where you stand. See where you're going.</span>
+        <span class="tag" style="font-size: 16px">Conoce dónde estás. Mira a dónde vas.</span>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 12px">
+    <h2>Icon options</h2>
+    <div id="concepts" class="concepts"></div>
+  </section>
+
+  <section class="panel">
+    <div class="row" style="justify-content: space-between; align-items: center">
+      <h2>In use</h2>
+      <div class="seg" role="group" aria-label="Concept" id="seg"></div>
+    </div>
+    <div class="ctx">
+      <div class="phone l" id="phoneL"></div>
+      <div class="phone d" id="phoneD"></div>
+      <div class="browser l">
+        <div class="tabs">
+          <div class="btab on" id="tabL"></div>
+          <div class="btab">Calendar</div>
+        </div>
+        <div class="url">miradorbudget.com</div>
+      </div>
+      <div class="browser d">
+        <div class="tabs">
+          <div class="btab on" id="tabD"></div>
+          <div class="btab">Calendar</div>
+        </div>
+        <div class="url">miradorbudget.com</div>
+      </div>
+      <div class="signin l" id="signL"></div>
+      <div class="signin d" id="signD"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Slogan options</h2>
+    <div class="slogans">
+      <div class="slo">
+        <div class="en">
+          <span class="lang">EN</span>Know where you stand. See where you're going.
+          <span class="pick" style="vertical-align: middle">Selected</span>
+        </div>
+        <div class="es"><span class="lang">ES</span>Conoce dónde estás. Mira a dónde vas.</div>
+        <div class="note">Wallets and net worth, then goals.</div>
+      </div>
+      <div class="slo">
+        <div class="en"><span class="lang">EN</span>See the whole picture.</div>
+        <div class="es"><span class="lang">ES</span>Mira el panorama completo.</div>
+        <div class="note">What a mirador is for. "Mira" opens the Spanish line and the name.</div>
+      </div>
+      <div class="slo">
+        <div class="en"><span class="lang">EN</span>Stepping stones to your goals.</div>
+        <div class="es"><span class="lang">ES</span>Paso a paso hacia tus metas.</div>
+      </div>
+      <div class="slo">
+        <div class="en"><span class="lang">EN</span>A clear view of your money.</div>
+        <div class="es"><span class="lang">ES</span>Una vista clara de tu dinero.</div>
+      </div>
+      <div class="slo">
+        <div class="en"><span class="lang">EN</span>Your money, in plain view. Only for you.</div>
+        <div class="es"><span class="lang">ES</span>Tu dinero a la vista. Solo para ti.</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  ;(() => {
+    let uid = 0
+    // Each concept draws on a 100x100 square; iOS and the page mask the corners.
+    // One logo in its own fixed colors, the same in every app palette. The bead colors are the
+    // shared category colors (bright values), which no single palette owns.
+    const CAT = {
+      clay: '#E18E7D',
+      marigold: '#F0C42E',
+      meadow: '#9CC842',
+      lagoon: '#5CCAC4',
+      lake: '#74B3E6',
+      heather: '#B59FF0',
+      plum: '#CB8FCF',
+      berry: '#EF88AE',
+    }
+    const LIGHT = { dark: false, bgTop: '#FFFFFF', bgBottom: '#EDEDEA', shadow: '#000000' }
+    const DARK = { dark: true, bgTop: '#2C2C2E', bgBottom: '#0E0E0F', shadow: '#000000' }
+    const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
+    const mix = (a, b, t) =>
+      '#' +
+      hex(a)
+        .map((v, i) =>
+          Math.round(v + (hex(b)[i] - v) * t)
+            .toString(16)
+            .padStart(2, '0'),
+        )
+        .join('')
+    // Linear gradient helper; returns [defs, url].
+    function grad(stops, x1 = 0, y1 = 0, x2 = 0, y2 = 1) {
+      const id = 'g' + uid++
+      return [
+        `<linearGradient id="${id}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">${stops
+          .map(([o, c, a = 1]) => `<stop offset="${o}" stop-color="${c}" stop-opacity="${a}"/>`)
+          .join('')}</linearGradient>`,
+        `url(#${id})`,
+      ]
+    }
+    function tile(p) {
+      const [d, u] = grad([
+        [0, p.bgTop],
+        [1, p.bgBottom],
+      ])
+      return `<defs>${d}</defs><rect width="100" height="100" fill="${u}"/>`
+    }
+    const C = {
+      coins: {
+        name: 'Coin stacks',
+        blurb: 'Three stacks of gold coins growing like a chart: savings that grow.',
+        draw(p) {
+          const [dTop, top] = grad(
+            [
+              [0, '#FFE7A3'],
+              [1, '#F5BE45'],
+            ],
+            0,
+            0,
+            1,
+            1,
+          )
+          const [dSide, side] = grad(
+            [
+              [0, '#E3A52A'],
+              [0.5, '#F2C25A'],
+              [1, '#B97A0C'],
+            ],
+            0,
+            0,
+            1,
+            0,
+          )
+          const stack = (x, n) =>
+            Array.from({ length: n }, (_, i) => {
+              const y = 82 - i * 9
+              return `<path d="M${x - 12} ${y - 7} v6 a12 4.5 0 0 0 24 0 v-6z" fill="${side}"/>
+            <path d="M${x - 12} ${y - 1} a12 4.5 0 0 0 24 0" fill="none" stroke="#A86E08" stroke-width=".6" opacity=".6"/>
+            <ellipse cx="${x}" cy="${y - 7}" rx="12" ry="4.5" fill="${top}"/>`
+            }).join('')
+          return `${tile(p)}<defs>${dTop}${dSide}</defs>
+        <ellipse cx="50" cy="86.5" rx="40" ry="3.5" fill="${p.shadow}" opacity="${p.dark ? 0.5 : 0.12}"/>
+        ${stack(23, 2)}${stack(50, 4)}${stack(77, 6)}
+        <ellipse cx="77" cy="${82 - 5 * 9 - 7}" rx="7.5" ry="2.6" fill="none" stroke="#D89A22" stroke-width="1.5"/>`
+        },
+      },
+      beads: {
+        name: 'Budget ring',
+        blurb: 'A ring chart in five category colors, in liquid glass.',
+        draw(p) {
+          // Category colors between their light and dark values, so they stay vivid on white and on black.
+          const segs = [
+            ['#2A74AB', '#74B3E6', 30],
+            ['#6B9325', '#9CC842', 24],
+            ['#A98200', '#F0C42E', 18],
+            ['#B93D6C', '#EF88AE', 15],
+            ['#7A5CBD', '#B59FF0', 13],
+          ]
+          const cx = 50,
+            cy = 50,
+            Ro = 34,
+            Ri = 18,
+            gap = -1.25
+          // Same gap width at every radius: the angle shrinks as the radius grows, so seams stay parallel.
+          const off = (r) => (Math.asin((gap + 1.25) / r) * 180) / Math.PI
+          const pt = (r, deg) => {
+            const a = ((deg - 90) * Math.PI) / 180
+            return [(cx + r * Math.cos(a)).toFixed(2), (cy + r * Math.sin(a)).toFixed(2)]
+          }
+          let at = 0
+          const defs = [],
+            parts = []
+          segs.forEach(([lo, hi, pct]) => {
+            const b0 = at * 3.6,
+              b1 = (at + pct) * 3.6
+            at += pct
+            const a0 = b0 + off(Ro),
+              a1 = b1 - off(Ro)
+            const big = a1 - a0 > 180 ? 1 : 0
+            const [ox0, oy0] = pt(Ro, a0),
+              [ox1, oy1] = pt(Ro, a1),
+              [ix1, iy1] = pt(Ri, b1 - off(Ri)),
+              [ix0, iy0] = pt(Ri, b0 + off(Ri))
+            const d = `M${ox0} ${oy0} A${Ro} ${Ro} 0 ${big} 1 ${ox1} ${oy1} L${ix1} ${iy1} A${Ri} ${Ri} 0 ${big} 0 ${ix0} ${iy0}z`
+            const c = mix(lo, hi, 0.6)
+            const [g, u] = grad(
+              [
+                [0, mix(c, '#ffffff', 0.35)],
+                [0.55, c],
+                [1, mix(c, '#000000', 0.12)],
+              ],
+              0,
+              0,
+              1,
+              1,
+            )
+            defs.push(g)
+            const [hx0, hy0] = pt(Ro - 2.2, a0 + 1.5),
+              [hx1, hy1] = pt(Ro - 2.2, a1 - 1.5)
+            const [sx0, sy0] = pt(Ri + 1.8, a0 + 2),
+              [sx1, sy1] = pt(Ri + 1.8, a1 - 2)
+            parts.push(`<path d="${d}" fill="${u}" stroke="${u}" stroke-width="2.5" stroke-linejoin="round" opacity=".93"/>
+            <path d="M${hx0} ${hy0} A${Ro - 2.2} ${Ro - 2.2} 0 ${big} 1 ${hx1} ${hy1}" fill="none" stroke="#ffffff" stroke-opacity=".7" stroke-width="1.3" stroke-linecap="round"/>
+            <path d="M${sx0} ${sy0} A${Ri + 1.8} ${Ri + 1.8} 0 ${big} 1 ${sx1} ${sy1}" fill="none" stroke="#ffffff" stroke-opacity=".28" stroke-width="1" stroke-linecap="round"/>`)
+          })
+          return `${tile(p)}<defs>${defs.join('')}</defs>
+          <ellipse cx="50" cy="88" rx="30" ry="3.2" fill="#000" opacity="${p.dark ? 0.5 : 0.1}"/>
+          ${parts.join('')}`
+        },
+      },
+      stones: {
+        name: 'Path to the sunset',
+        blurb: 'Stepping stones in front of you, leading to a big sunset.',
+        draw(p) {
+          const [dS, sky] = grad(
+            p.dark
+              ? [
+                  [0, '#2B3A55'],
+                  [1, '#E18E7D'],
+                ]
+              : [
+                  [0, '#CFE4F5'],
+                  [1, '#FBE3C2'],
+                ],
+          )
+          const [dG, ground] = grad([
+            [0, p.dark ? '#2F5A20' : '#437A2C'],
+            [1, p.dark ? '#16290F' : '#2D5A1C'],
+          ])
+          return `<defs>${dS}${dG}</defs><rect width="100" height="100" fill="${sky}"/>
+        <path d="M20 58a30 30 0 0 1 60 0z" fill="#F0C42E"/>
+        <rect x="0" y="58" width="100" height="42" fill="${ground}"/>
+        <ellipse cx="49" cy="88" rx="23" ry="5" fill="#F4F2EC"/>
+        <ellipse cx="53" cy="76.5" rx="16" ry="3.6" fill="#F4F2EC"/>
+        <ellipse cx="48" cy="67.5" rx="10.5" ry="2.5" fill="#F4F2EC"/>
+        <ellipse cx="51" cy="61.8" rx="6.5" ry="1.6" fill="#F4F2EC"/>`
+        },
+      },
+      envelope: {
+        name: 'Budget envelope',
+        blurb: 'Cash envelope budgeting: a bill tucked into its envelope.',
+        draw(p) {
+          const [dB, back] = grad([
+            [0, '#2C5397'],
+            [1, '#1F3D73'],
+          ])
+          const [dF, front] = grad([
+            [0, '#74B3E6'],
+            [1, '#2A74AB'],
+          ])
+          return `${tile(p)}<defs>${dB}${dF}</defs>
+        <rect x="18" y="38" width="64" height="44" rx="7" fill="${back}"/>
+        <g transform="rotate(-6 50 40)">
+          <rect x="26" y="22" width="48" height="34" rx="4" fill="#E4F2D2"/>
+          <rect x="30" y="26" width="40" height="26" rx="3" fill="none" stroke="#6B9325" stroke-width="1.6"/>
+          <circle cx="50" cy="39" r="7" fill="#9CC842"/>
+        </g>
+        <path d="M18 50 L46 66 Q50 68.5 54 66 L82 50 V75 a7 7 0 0 1 -7 7 H25 a7 7 0 0 1 -7 -7z" fill="${front}"/>`
+        },
+      },
+    }
+    const svg = (key, p, size, flat) =>
+      `<svg class="ico${flat ? ' flat' : ''}" width="${size}" height="${size}" viewBox="0 0 100 100" role="img" aria-label="Mirador icon">
+      ${C[key].draw(p)}</svg>`
+    // Favicon: the glyph alone at 16 px reads better than a tiny tile, so it uses the full square.
+    const fav = (key, p, size) =>
+      svg(key, p, size, false).replace('class="ico"', 'class="ico" style="border-radius:22%"')
+
+    document.getElementById('heroIcon').innerHTML = svg('coins', LIGHT, 148)
+
+    const RECO = 'coins'
+    const card = (k) => `
+    <article class="panel concept${k === RECO ? ' sel' : ''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <h3>${C[k].name}</h3>${k === RECO ? '<span class="pick">Selected</span>' : ''}
+      </div>
+      <p class="muted" style="margin:0;font-size:14px">${C[k].blurb}</p>
+      <div class="pair">${svg(k, LIGHT, 112)}${svg(k, DARK, 112)}</div>
+      <div class="sizes">
+        ${[60, 40, 29].map((s) => `<figure>${svg(k, LIGHT, s)}<figcaption>${s} pt</figcaption></figure>`).join('')}
+        <figure>${fav(k, LIGHT, 32)}<figcaption>32 px</figcaption></figure>
+        <figure>${fav(k, LIGHT, 16)}<figcaption>16 px</figcaption></figure>
+      </div>
+      <div class="tiles">
+        <div class="light-tile">${svg(k, LIGHT, 34)}<span class="word">mirador</span></div>
+        <div class="dark-tile">${svg(k, DARK, 34)}<span class="word">mirador</span></div>
+      </div>
+    </article>`
+    document.getElementById('concepts').innerHTML = Object.keys(C).map(card).join('')
+
+    const ghostNames = ['Photos', 'Notes', 'Weather', 'Maps', 'Clock', 'Music', 'Mail']
+    function render(k) {
+      const phone = (p) => {
+        const apps = ghostNames.map((n) => `<div class="app"><span class="ghost"></span>${n}</div>`)
+        apps.splice(5, 0, `<div class="app">${svg(k, p, 56)}Mirador</div>`)
+        return apps.join('')
+      }
+      document.getElementById('phoneL').innerHTML = phone(LIGHT)
+      document.getElementById('phoneD').innerHTML = phone(DARK)
+      document.getElementById('tabL').innerHTML = `${fav(k, LIGHT, 16)}<span>Mirador</span>`
+      document.getElementById('tabD').innerHTML = `${fav(k, DARK, 16)}<span>Mirador</span>`
+      const sign = (
+        p,
+      ) => `${svg(k, p, 64)}<span class="word">mirador</span><span class="t">Know where you stand. See where you're going.</span>
+      <span class="field"></span><span class="field"></span><span class="btn">Sign in</span>`
+      document.getElementById('signL').innerHTML = sign(LIGHT)
+      document.getElementById('signD').innerHTML = sign(DARK)
+      document
+        .querySelectorAll('#seg button')
+        .forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.k === k)))
+    }
+    const seg = document.getElementById('seg')
+    seg.innerHTML = Object.keys(C)
+      .map((k) => `<button type="button" id="seg-${k}" data-k="${k}">${C[k].name}</button>`)
+      .join('')
+    seg.addEventListener('click', (e) => {
+      const b = e.target.closest('button')
+      if (b) render(b.dataset.k)
+    })
+    render(RECO)
+  })()
+</script>

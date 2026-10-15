@@ -1,4 +1,8 @@
+<img src="docs/brand/app-icon.svg" alt="" width="96" height="96" align="right">
+
 # Mirador
+
+*Know where you stand. See where you're going.*
 
 **A free, self-hosted, open source personal finance app that shows you where your money goes and steers it toward your goals in minutes a week, not hours.**
 
