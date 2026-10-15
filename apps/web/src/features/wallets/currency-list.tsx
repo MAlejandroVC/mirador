@@ -4,25 +4,32 @@ import { useTranslation } from 'react-i18next'
 import { ChoiceRow } from '../../components/ui/choice-row'
 import { MagnifyingGlassIcon } from '../../components/ui/icons'
 import { List } from '../../components/ui/list'
+import { ShowMoreRow } from '../../components/ui/show-more-row'
 import { useLocale } from '../../lib/format'
 
-// SYS-01, WAL-02: every currency the platform knows, named in the app language, with
-// the common ones first and a search field for the rest.
+// SYS-01, WAL-02: every currency the platform knows, named in the app language, in one
+// list: the common ones, always in view, then the rest behind "Show all currencies"
+// (DL-CMP-15), and a search field to find any of them. The chosen currency stays in
+// view even when it isn't a common one.
 export function CurrencyList({
   value,
   onChoose,
   inset,
+  label,
   disabled,
 }: {
   value: string
   onChoose: (currency: string) => void
   inset?: boolean
+  /** The section label above the list. */
+  label?: string
   /** Currencies that can't be chosen, with the reason shown under them. */
   disabled?: (currency: string) => string | null
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
   const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
   const named = useMemo(
     () => allCurrencies().map((code) => ({ code, name: currencyName(code, locale) })),
     [locale],
@@ -38,7 +45,8 @@ export function CurrencyList({
   const common = commonCurrencies.flatMap((code) =>
     named.filter((currency) => currency.code === code),
   )
-  const row = ({ code, name }: { code: string; name: string }) => {
+  const rest = named.filter((currency) => !commonCurrencies.includes(currency.code))
+  const row = ({ code, name }: { code: string; name: string }, folded?: boolean) => {
     const reason = disabled?.(code)
     return (
       <ChoiceRow
@@ -47,6 +55,7 @@ export function CurrencyList({
         title={`${name} (${code})`}
         {...(reason ? { subtitle: reason } : {})}
         checked={code === value}
+        {...(folded === undefined ? {} : { folded, separator: true })}
         onToggle={() => {
           if (!reason) onChoose(code)
         }}
@@ -69,24 +78,29 @@ export function CurrencyList({
             setQuery(event.target.value)
           }}
           placeholder={t('currency.search')}
-          className={`min-h-11 w-full rounded-xl pr-3 pl-9 text-[1.0625rem] text-text placeholder:text-text-muted focus:outline-2 focus:outline-offset-1 focus:outline-brand ${inset ? 'bg-inset' : 'bg-surface'}`}
+          className={`min-h-11 w-full rounded-xl pr-3 pl-9 text-[1.0625rem] text-text caret-brand placeholder:text-text-muted focus:outline-none ${inset ? 'bg-inset' : 'bg-surface'}`}
         />
       </label>
       {matches ? (
         matches.length > 0 ? (
-          <List inset={inset}>{matches.map(row)}</List>
+          <List inset={inset}>{matches.map((currency) => row(currency))}</List>
         ) : (
           <p className="px-4 text-[0.9375rem] text-text-muted">{t('currency.none')}</p>
         )
       ) : (
-        <>
-          <List label={t('currency.common')} inset={inset}>
-            {common.map(row)}
-          </List>
-          <List label={t('currency.all')} inset={inset}>
-            {named.filter((currency) => !commonCurrencies.includes(currency.code)).map(row)}
-          </List>
-        </>
+        <List inset={inset} {...(label ? { label } : {})}>
+          {common.map((currency) => row(currency))}
+          {rest.map((currency) => row(currency, !open && currency.code !== value))}
+          <ShowMoreRow
+            open={open}
+            more={t('currency.showAll')}
+            less={t('currency.showFewer')}
+            separator
+            onToggle={() => {
+              setOpen(!open)
+            }}
+          />
+        </List>
       )}
     </div>
   )

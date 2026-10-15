@@ -3,7 +3,15 @@ import { MoneyInput } from './money-input'
 
 // DL-CMP-09: a field inside a sheet as an iOS Settings row: the label at the left, the
 // value typed at the right, on the `inset` fill. Group rows in one <ul> (FieldRows),
-// with a hint or the first error below them.
+// with a hint or the first error below them. As in iOS, a field being typed in shows
+// only its caret, no box around it.
+
+/**
+ * DL-PAT-02: a field still to fill in when Save was tapped is outlined in `warning`.
+ * For any row holding a control marked aria-invalid.
+ */
+export const invalidRow =
+  'rounded-xl has-[[aria-invalid=true]]:outline-2 has-[[aria-invalid=true]]:-outline-offset-2 has-[[aria-invalid=true]]:outline-warning'
 export function FieldRow({
   label,
   suffix,
@@ -17,7 +25,9 @@ export function FieldRow({
 }) {
   const id = useId()
   return (
-    <li className="flex min-h-[3.25rem] items-center gap-3 border-separator px-4 not-first:border-t">
+    <li
+      className={`flex min-h-[3.25rem] items-center gap-3 border-separator px-4 not-first:border-t ${invalidRow}`}
+    >
       <label htmlFor={id} className="flex-1 text-[0.9375rem] text-text">
         {label}
       </label>
@@ -25,7 +35,7 @@ export function FieldRow({
         id={id}
         aria-invalid={error ? true : undefined}
         data-autofocus={props.autoFocus ? '' : undefined}
-        className="min-h-11 w-32 min-w-0 bg-transparent text-right text-[0.9375rem] text-text placeholder:text-text-faint focus:outline-2 focus:outline-brand aria-invalid:text-warning"
+        className="min-h-11 w-32 min-w-0 bg-transparent text-right text-[0.9375rem] text-text caret-brand placeholder:text-text-faint focus:outline-none"
         {...props}
       />
       {suffix && <span className="-ml-2 text-[0.9375rem] text-text-muted">{suffix}</span>}
@@ -57,7 +67,9 @@ export function MoneyRow({
 }) {
   const id = useId()
   return (
-    <li className="flex min-h-[3.25rem] items-center gap-3 border-separator px-4 not-first:border-t">
+    <li
+      className={`flex min-h-[3.25rem] items-center gap-3 border-separator px-4 not-first:border-t ${invalidRow}`}
+    >
       <label htmlFor={id} className="shrink-0 text-[0.9375rem] text-text">
         {label}
       </label>
@@ -70,9 +82,7 @@ export function MoneyRow({
           decimals={decimals}
           {...(shownDecimals === undefined ? {} : { shownDecimals })}
           aria-invalid={error ? true : undefined}
-          className={`min-h-11 max-w-full rounded-md text-right text-[0.9375rem] focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand ${
-            error ? 'text-warning' : 'text-text'
-          }`}
+          className="min-h-11 max-w-full text-right text-[0.9375rem] text-text"
           {...props}
         />
       </span>

@@ -102,6 +102,7 @@ export function WalletsScreen() {
     return (
       <ListLinkRow
         key={wallet.id}
+        id={wallet.id}
         to="/wallets/$walletId"
         params={{ walletId: wallet.id }}
         leading={<IconTile icon={walletIconComponents[wallet.icon]} color={wallet.color} />}

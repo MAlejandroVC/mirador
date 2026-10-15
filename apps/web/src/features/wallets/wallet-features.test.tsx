@@ -343,7 +343,7 @@ describe('wallet features, exchange rates and order', () => {
     const { server } = start([cash, card, preferences], `/wallets/${card.id}`)
 
     await user.click(await screen.findByRole('button', { name: 'Edit' }))
-    await user.click(screen.getByRole('checkbox', { name: 'Default wallet' }))
+    await user.click(screen.getByRole('checkbox', { name: /^Default wallet/ }))
     await user.click(screen.getByRole('button', { name: 'Save' }))
 
     // The other preferences are kept as they were.

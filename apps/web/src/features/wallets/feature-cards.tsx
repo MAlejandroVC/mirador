@@ -16,6 +16,7 @@ import { Amount } from '../../components/ui/amount'
 import { Button } from '../../components/ui/button'
 import { PlusIcon } from '../../components/ui/icons'
 import { formatDay, formatPercent, formatShare, useMoney } from '../../lib/format'
+import { markNew } from '../../lib/motion'
 import {
   type LedgerWallet,
   newId,
@@ -366,9 +367,12 @@ export function FeesCard({ wallet, today, defaultCurrency, onEdit }: Omit<CardPr
         fees: fees.map((each) => (each.id === fee.id ? handleFee(each, date) : each)),
       }),
     ]
-    if (confirm)
+    if (confirm) {
+      const id = newId()
+      // DL-MOT-02: the charge opens into the wallet's transactions.
+      markNew(id)
       changes.unshift({
-        id: newId(),
+        id,
         body: transactionBody({
           kind: 'fee',
           walletId: wallet.id,
@@ -377,6 +381,7 @@ export function FeesCard({ wallet, today, defaultCurrency, onEdit }: Omit<CardPr
           note: fee.name,
         }),
       })
+    }
     save.mutate(changes)
   }
 

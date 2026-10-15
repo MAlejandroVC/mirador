@@ -17,11 +17,12 @@ if (typeof HTMLDialogElement !== 'undefined' && !('showModal' in HTMLDialogEleme
   })
 }
 
-// jsdom has no media queries; answer as a light-mode device that allows motion.
+// jsdom has no media queries; answer as a light-mode device that asks for less motion,
+// so every change happens at once, as with animations off (DL-MOT-04).
 if (typeof window !== 'undefined' && typeof (window.matchMedia as unknown) !== 'function') {
   Object.assign(window, {
     matchMedia: (query: string) => ({
-      matches: false,
+      matches: query.includes('prefers-reduced-motion: reduce'),
       media: query,
       addEventListener: () => undefined,
       removeEventListener: () => undefined,

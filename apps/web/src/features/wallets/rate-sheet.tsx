@@ -8,17 +8,17 @@ import {
   rateHistory,
   rateInUse,
   toCalendarDate,
-  typedAmount,
   unitsPerOne,
 } from '@repo/core'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActionSheet } from '../../components/ui/action-sheet'
-import { Button } from '../../components/ui/button'
 import { DateRow } from '../../components/ui/date-field'
-import { FieldNote, FieldRows, MoneyRow } from '../../components/ui/field-row'
+import { FieldNote, FieldRow, FieldRows } from '../../components/ui/field-row'
 import { List, ListButtonRow } from '../../components/ui/list'
-import { Sheet, SheetFooter } from '../../components/ui/sheet'
+import { Sheet } from '../../components/ui/sheet'
+import { SubmitButton } from '../../components/ui/submit-button'
+import { useSubmit } from '../../components/ui/use-submit'
 import { useUndo } from '../../components/ui/use-undo'
 import { formatDay, formatRate, useLocale } from '../../lib/format'
 import { exchangeRateBody, newId, useSaveRecords } from './use-ledger'
@@ -84,13 +84,10 @@ function RateForm({
   const today = toCalendarDate(new Date())
   const inUse = rateInUse(currency, defaultCurrency, rates, today)
   const [text, setText] = useState(
-    inUse
-      ? typedAmount(decimalInput(unitsPerOne(inUse), rateDecimals, locale), locale, rateDecimals, 2)
-          .text
-      : '',
+    inUse ? decimalInput(unitsPerOne(inUse), rateDecimals, locale) : '',
   )
   const [date, setDate] = useState(today)
-  const [touched, setTouched] = useState(false)
+  const form = useSubmit()
   const [removing, setRemoving] = useState<ExchangeRate | null>(null)
   const rate = parseDecimal(text, locale, rateDecimals)
   const rateError = rate === null || rate === 0 ? t('rates.invalid') : null
@@ -111,34 +108,32 @@ function RateForm({
       </p>
       <FieldRows
         note={
-          touched && (rateError ?? dateError) ? (
+          form.tried && (rateError ?? dateError) ? (
             <FieldNote error>{rateError ?? dateError}</FieldNote>
           ) : (
             <FieldNote>{t('rates.hint')}</FieldNote>
           )
         }
       >
-        <MoneyRow
+        {/* A rate is a plain number, such as 18.45: no faint cents, which are for money. */}
+        <FieldRow
           label={t('rates.one', { currency })}
           value={text}
-          onChange={setText}
-          onBlur={() => {
-            setTouched(true)
+          onChange={(event) => {
+            setText(event.target.value)
           }}
-          locale={locale}
-          // A rate can have up to six decimals; "18.45" fills in two.
-          decimals={rateDecimals}
-          shownDecimals={2}
+          inputMode="decimal"
+          placeholder="0"
           suffix={defaultCurrency}
           autoFocus
-          error={touched && rateError !== null}
+          error={form.tried && rateError !== null}
         />
         <DateRow
           label={t('wallets.transactions.date')}
           value={date}
           max={today}
           onChange={setDate}
-          error={dateError !== null}
+          error={form.tried && dateError !== null}
         />
       </FieldRows>
 
@@ -165,25 +160,30 @@ function RateForm({
         </List>
       )}
 
-      {save.isError && <FieldNote error>{t('wallets.saveFailed')}</FieldNote>}
-      <SheetFooter>
-        <Button
-          className="w-full"
-          disabled={rateError !== null || dateError !== null || save.isPending}
-          onClick={() => {
-            if (rate === null || dateError) return
+      <SubmitButton
+        button={form.button}
+        done={form.done}
+        pending={save.isPending}
+        before={save.isError && <FieldNote error>{t('wallets.saveFailed')}</FieldNote>}
+        onClick={() => {
+          form.submit(rate !== null && rateError === null && dateError === null, () => {
+            if (rate === null) return
             const record = exchangeRateRecord.parse({
               from: currency,
               to: defaultCurrency,
               rate,
               date,
             })
-            save.mutate([{ id: newId(), body: exchangeRateBody(record) }], { onSuccess: onClose })
-          }}
-        >
-          {t('rates.save')}
-        </Button>
-      </SheetFooter>
+            save.mutate([{ id: newId(), body: exchangeRateBody(record) }], {
+              onSuccess: () => {
+                form.finish(onClose)
+              },
+            })
+          })
+        }}
+      >
+        {t('rates.save')}
+      </SubmitButton>
       <ActionSheet
         open={removing !== null}
         title={

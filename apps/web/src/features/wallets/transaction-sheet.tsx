@@ -12,8 +12,11 @@ import { Button } from '../../components/ui/button'
 import { DateRow } from '../../components/ui/date-field'
 import { FieldNote, FieldRows } from '../../components/ui/field-row'
 import { SegmentedControl } from '../../components/ui/segmented-control'
-import { Sheet, SheetFooter } from '../../components/ui/sheet'
+import { Sheet } from '../../components/ui/sheet'
+import { SubmitButton } from '../../components/ui/submit-button'
+import { useSubmit } from '../../components/ui/use-submit'
 import { useMoney } from '../../lib/format'
+import { markNew } from '../../lib/motion'
 import { type LedgerWallet, transactionBody, useSaveRecords } from './use-ledger'
 
 // WAL-05: the opening balance, and any adjustment (WAL-07), are ordinary transactions:
@@ -79,7 +82,7 @@ function TransactionForm({
   const [text, setText] = useState(amountText(transaction.amount, wallet.currency, money.locale))
   const [negative, setNegative] = useState(transaction.amount < 0)
   const [date, setDate] = useState(transaction.date)
-  const [touched, setTouched] = useState(false)
+  const form = useSubmit()
   const magnitude = parseAmount(text, wallet.currency, money.locale)
   const today = toCalendarDate(new Date())
   // DL-PAT-05: what happened and what to do, in words.
@@ -116,14 +119,11 @@ function TransactionForm({
         label={t('wallets.transactions.amount')}
         value={text}
         onChange={setText}
-        onBlur={() => {
-          setTouched(true)
-        }}
         locale={money.locale}
         decimals={fractionDigits(wallet.currency)}
         prefix={parts.prefix.trim()}
         suffix={parts.suffix.trim()}
-        error={touched ? amountError : null}
+        error={form.tried ? amountError : null}
       />
       <FieldRows
         note={
@@ -152,15 +152,18 @@ function TransactionForm({
           {t('wallets.transactions.delete')}
         </Button>
       )}
-      {save.isError && (
-        <p className="px-4 text-[0.8125rem] text-warning">{t('wallets.saveFailed')}</p>
-      )}
-      <SheetFooter>
-        <Button
-          className="w-full"
-          disabled={magnitude === null || dateError !== null || save.isPending}
-          onClick={() => {
-            if (magnitude === null || dateError) return
+      <SubmitButton
+        button={form.button}
+        done={form.done}
+        pending={save.isPending}
+        before={
+          save.isError && (
+            <p className="px-4 text-[0.8125rem] text-warning">{t('wallets.saveFailed')}</p>
+          )
+        }
+        onClick={() => {
+          form.submit(magnitude !== null && dateError === null, () => {
+            if (magnitude === null) return
             const { id, ...record } = transaction
             save.mutate(
               [
@@ -173,13 +176,18 @@ function TransactionForm({
                   }),
                 },
               ],
-              { onSuccess: onClose },
+              {
+                onSuccess: () => {
+                  if (isNew) markNew(id)
+                  form.finish(onClose)
+                },
+              },
             )
-          }}
-        >
-          {isNew ? t('wallets.transactions.record') : t('wallets.form.save')}
-        </Button>
-      </SheetFooter>
+          })
+        }}
+      >
+        {isNew ? t('wallets.transactions.record') : t('wallets.form.save')}
+      </SubmitButton>
     </>
   )
 }

@@ -83,7 +83,7 @@ export function MoneyInput({
           size={1}
           // Sheet focuses it once the dialog is open (a native dialog takes focus itself).
           data-autofocus={props.autoFocus ? '' : undefined}
-          className="absolute inset-0 w-full min-w-0 bg-transparent py-0 pr-0.5 pl-0 text-inherit placeholder:text-text-faint focus:outline-none"
+          className="absolute inset-0 w-full min-w-0 bg-transparent py-0 pr-0.5 pl-0 text-inherit caret-brand placeholder:text-text-faint focus:outline-none"
           {...props}
         />
       </span>

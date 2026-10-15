@@ -1,49 +1,30 @@
-import { type ReactNode, useEffect, useId, useRef } from 'react'
+import { type ReactNode, useId } from 'react'
+import { useModal } from './use-modal'
 
 // DL-CMP-08: creating or editing opens a sheet that slides up (DL-MOT-06), with a
 // grabber, Cancel at the top left and the title in the middle; the main action goes at
 // the bottom, within reach of the thumb. From 768 px it is a centered dialog
 // (DL-LAY-06). A native <dialog> keeps focus inside it and closes on Escape.
-export function Sheet({
-  open,
-  title,
-  cancelLabel,
-  onClose,
-  children,
-}: {
+export function Sheet(props: {
   open: boolean
   title: string
   cancelLabel: string
   onClose: () => void
   children: ReactNode
 }) {
-  const ref = useRef<HTMLDialogElement>(null)
+  const { open, onClose } = props
   const titleId = useId()
-
-  // Closing because `open` turned false is not the person closing it.
-  const openRef = useRef(open)
-  useEffect(() => {
-    openRef.current = open
-    const dialog = ref.current
-    if (!dialog) return
-    if (open && !dialog.open) {
-      dialog.showModal()
-      // showModal focuses the first control, such as Cancel; the field meant to be
-      // typed in first takes it instead (React's autoFocus runs before the dialog opens).
-      dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus()
-    }
-    if (!open && dialog.open) dialog.close()
-  }, [open])
+  // While it leaves, it keeps its title and content (DL-MOT-06).
+  const [ref, shown, handleClose] = useModal(open, props)
 
   return (
     <dialog
       ref={ref}
       aria-labelledby={titleId}
-      // React passes a nested sheet's close and cancel events up to this one; only
-      // this dialog's own count.
       onClose={(event) => {
-        if (event.target === event.currentTarget && openRef.current) onClose()
+        handleClose(event, onClose)
       }}
+      // React passes a nested sheet's cancel event up to this one; only its own counts.
       // Escape asks the screen, which may first ask to discard changes (DL-CMP-08).
       onCancel={(event) => {
         if (event.target !== event.currentTarget) return
@@ -66,15 +47,15 @@ export function Sheet({
               onClick={onClose}
               className="min-h-11 justify-self-start rounded-xl px-2 text-[1.0625rem] text-brand focus-visible:outline-2 focus-visible:outline-brand"
             >
-              {cancelLabel}
+              {shown?.cancelLabel}
             </button>
             <h2 id={titleId} className="text-[1.0625rem] font-semibold">
-              {title}
+              {shown?.title}
             </h2>
             <span />
           </header>
         </div>
-        <div className="flex flex-col gap-3 px-4 pt-3">{children}</div>
+        <div className="flex flex-col gap-3 px-4 pt-3">{shown?.children}</div>
       </div>
     </dialog>
   )

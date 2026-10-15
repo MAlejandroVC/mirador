@@ -80,6 +80,7 @@ function Currency() {
       )}
       {ledger && (
         <CurrencyList
+          label={t('settings.currency.title')}
           value={ledger.defaultCurrency}
           onChoose={(currency) => {
             save.mutate([preferencesChange(ledger, { defaultCurrency: currency })])

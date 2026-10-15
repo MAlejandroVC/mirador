@@ -2,10 +2,12 @@ import { balanceAdjustment, fractionDigits, parseAmount, toCalendarDate } from '
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AmountField } from '../../components/ui/amount-field'
-import { Button } from '../../components/ui/button'
 import { SegmentedControl } from '../../components/ui/segmented-control'
-import { Sheet, SheetFooter } from '../../components/ui/sheet'
+import { Sheet } from '../../components/ui/sheet'
+import { SubmitButton } from '../../components/ui/submit-button'
+import { useSubmit } from '../../components/ui/use-submit'
 import { useMoney } from '../../lib/format'
+import { markNew } from '../../lib/motion'
 import { type LedgerWallet, newId, transactionBody, useSaveRecords } from './use-ledger'
 
 // WAL-07: the person types the balance their bank or their pocket shows; when it
@@ -66,7 +68,7 @@ function BalanceForm({
   const save = useSaveRecords()
   const [text, setText] = useState('')
   const [owed, setOwed] = useState(balance < 0)
-  const [touched, setTouched] = useState(false)
+  const form = useSubmit()
   const magnitude = parseAmount(text, wallet.currency, money.locale)
   const actual = magnitude === null ? null : owed ? -magnitude : magnitude
   const adjustment =
@@ -74,7 +76,6 @@ function BalanceForm({
       ? null
       : balanceAdjustment(wallet.id, balance, actual, toCalendarDate(new Date()), kind)
   const valuation = kind === 'valuation'
-  const invalid = text.trim() !== '' && magnitude === null
   const parts = money.parts({ minor: 0, currency: wallet.currency })
   const now = money.text({ minor: balance, currency: wallet.currency })
 
@@ -100,14 +101,11 @@ function BalanceForm({
         label={valuation ? t('wallets.valuation.actual') : t('wallets.balance.actual')}
         value={text}
         onChange={setText}
-        onBlur={() => {
-          setTouched(true)
-        }}
         locale={money.locale}
         decimals={fractionDigits(wallet.currency)}
         prefix={parts.prefix.trim()}
         suffix={parts.suffix.trim()}
-        error={touched && invalid ? t('wallets.form.balanceInvalid') : null}
+        error={form.tried && magnitude === null ? t('wallets.form.balanceInvalid') : null}
         autoFocus
       />
       <p role="status" className="min-h-10 px-2 text-center text-[0.9375rem] text-text">
@@ -122,23 +120,36 @@ function BalanceForm({
               })
             : t('wallets.balance.matches')}
       </p>
-      {save.isError && (
-        <p className="px-2 text-center text-[0.8125rem] text-warning">{t('wallets.saveFailed')}</p>
-      )}
-      <SheetFooter>
-        <Button
-          className="w-full"
-          disabled={!adjustment || save.isPending}
-          onClick={() => {
-            if (!adjustment) return
-            save.mutate([{ id: newId(), body: transactionBody(adjustment) }], {
-              onSuccess: onClose,
+      <SubmitButton
+        button={form.button}
+        done={form.done}
+        pending={save.isPending}
+        before={
+          save.isError && (
+            <p className="px-2 text-center text-[0.8125rem] text-warning">
+              {t('wallets.saveFailed')}
+            </p>
+          )
+        }
+        onClick={() => {
+          form.submit(actual !== null, () => {
+            // Already the same: nothing to record.
+            if (!adjustment) {
+              onClose()
+              return
+            }
+            const id = newId()
+            save.mutate([{ id, body: transactionBody(adjustment) }], {
+              onSuccess: () => {
+                markNew(id)
+                form.finish(onClose)
+              },
             })
-          }}
-        >
-          {valuation ? t('wallets.valuation.record') : t('wallets.balance.record')}
-        </Button>
-      </SheetFooter>
+          })
+        }}
+      >
+        {valuation ? t('wallets.valuation.record') : t('wallets.balance.record')}
+      </SubmitButton>
     </>
   )
 }

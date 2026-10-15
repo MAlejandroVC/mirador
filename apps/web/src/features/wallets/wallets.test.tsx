@@ -88,7 +88,6 @@ describe('wallets', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Add a wallet' }))
     const save = screen.getByRole('button', { name: 'Save' })
-    expect(save).toBeDisabled()
     await user.type(screen.getByRole('textbox', { name: 'Name' }), 'BBVA')
     await user.click(screen.getByRole('radio', { name: 'Debit' }))
     await user.type(screen.getByRole('textbox', { name: 'Balance today' }), '3,250.50')
@@ -232,7 +231,12 @@ describe('wallets', () => {
     await user.click(await screen.findByRole('button', { name: 'Update balance' }))
     await user.type(screen.getByRole('textbox', { name: 'Balance now' }), '100')
     expect(screen.getByText("That's what Mirador has. Nothing to adjust.")).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Record adjustment' })).toBeDisabled()
+    await user.click(screen.getByRole('button', { name: 'Record adjustment' }))
+    // Nothing is recorded, and the sheet closes: only the opening balance is there.
+    await waitFor(() => {
+      expect(screen.queryByRole('textbox', { name: 'Balance now' })).toBeNull()
+    })
+    expect(saved(server, 'transaction')).toHaveLength(1)
   })
 
   it('WAL-05: the opening balance can be moved to an earlier date and amount', async () => {
@@ -350,6 +354,54 @@ describe('wallets', () => {
     await waitFor(() => {
       expect(saved(server, 'wallet')[0]?.data).toMatchObject({ name: 'Spare' })
     })
+  })
+
+  it('DL-PAT-02: a missing name is pointed out only when Save is tapped', async () => {
+    const user = userEvent.setup()
+    const server: FakeServer = { signedIn: 'ana' }
+    stubServer(server)
+    renderApp('/wallets', unlockedVault(server))
+
+    await user.click(await screen.findByRole('button', { name: 'Add a wallet' }))
+    const name = screen.getByRole('textbox', { name: 'Name' })
+    // Leaving the empty field says nothing.
+    await user.click(name)
+    await user.click(screen.getByRole('radio', { name: 'Savings' }))
+    expect(name).not.toHaveAttribute('aria-invalid')
+    expect(screen.queryByRole('alert')).toBeNull()
+
+    // Save stays tappable; tapping it marks the name and saves nothing.
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    expect(name).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByRole('alert')).toHaveTextContent('Give the wallet a name.')
+    expect(name).toHaveFocus()
+    expect(saved(server, 'wallet')).toHaveLength(0)
+
+    // Filling it in clears the mark.
+    await user.type(name, 'Nu')
+    expect(name).not.toHaveAttribute('aria-invalid')
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('SYS-01: the currency list shows the common currencies, and the rest on Show all', async () => {
+    const user = userEvent.setup()
+    const server: FakeServer = { signedIn: 'ana' }
+    stubServer(server)
+    renderApp('/settings/currency', unlockedVault(server))
+
+    expect(await screen.findByRole('radio', { name: 'US Dollar (USD)' })).toBeVisible()
+    expect(screen.queryByRole('radio', { name: 'Swiss Franc (CHF)' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Show all currencies' }))
+    await user.click(screen.getByRole('radio', { name: 'Swiss Franc (CHF)' }))
+    await waitFor(() => {
+      expect(saved(server, 'preferences').map((body) => body.data)).toEqual([
+        { defaultCurrency: 'CHF' },
+      ])
+    })
+    // Folded again, the chosen currency stays in view.
+    await user.click(screen.getByRole('button', { name: 'Show fewer' }))
+    expect(screen.getByRole('radio', { name: 'Swiss Franc (CHF)' })).toBeChecked()
+    expect(screen.queryByRole('radio', { name: 'Japanese Yen (JPY)' })).toBeNull()
   })
 
   it('SYS-01: the default currency is chosen in Settings and new wallets start with it', async () => {

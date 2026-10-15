@@ -336,8 +336,8 @@
   "currency": {
     "search": "Buscar moneda",
     "none": "Ninguna moneda coincide.",
-    "common": "Más usadas",
-    "all": "Todas las monedas"
+    "showAll": "Ver todas las monedas",
+    "showFewer": "Ver menos"
   },
   "wallets": {
     "add": "Agregar cartera",
@@ -417,7 +417,7 @@
       },
       "liquid": {
         "title": "Disponible hoy",
-        "body": "Cuenta como dinero que puedes gastar hoy."
+        "body": "Dinero que puedes usar hoy, como efectivo o una cuenta de débito. Déjalo apagado en inversiones o en tu Afore."
       },
       "setUp": "Configurar"
     },
@@ -439,7 +439,6 @@
       "color": "Color",
       "icon": "Ícono",
       "features": "Funciones",
-      "featuresHint": "Cada una agrega una tarjeta a la página de la cartera, donde la configuras. El tipo elige las de siempre.",
       "countIn": "Contar en",
       "netWorth": "Patrimonio",
       "budget": "Presupuesto",
@@ -453,7 +452,8 @@
       "featuresMore": "Ver todas las funciones",
       "featuresLess": "Ver menos",
       "default": "Cartera predeterminada",
-      "defaultHint": "Los movimientos nuevos empiezan en esta cartera. Aun así puedes elegir otra cada vez."
+      "defaultHint": "Los movimientos nuevos empiezan en esta cartera. Aun así puedes elegir otra cada vez.",
+      "nameMissing": "Ponle un nombre a la cartera."
     },
     "delete": {
       "button": "Eliminar cartera",
@@ -562,20 +562,19 @@
       "record": "Registrar los intereses del mes",
       "intro": "La tasa anual, como la da tu banco.",
       "invalid": "Escribe una tasa como 10.5.",
-      "effectiveHint": "Las cuentas de ahorro en México dan la GAT, que ya incluye la capitalización.",
-      "nominalHint": "Las tarjetas y los préstamos dan una tasa anual que se divide según cada cuándo se capitaliza.",
       "rate": "Tasa anual",
       "type": "Tipo de tasa",
       "effective": "Efectiva (GAT)",
       "nominal": "Nominal",
-      "compoundingLabel": "Capitalización"
+      "compoundingLabel": "Capitalización",
+      "typeHint": "Usa la de tu estado de cuenta. Los ahorros muestran una tasa efectiva, como la GAT, que ya cuenta el interés que ganas sobre el interés. Las tarjetas y los créditos muestran una tasa nominal anual."
     },
     "valuation": {
       "title": "Inversión",
       "contributed": "Lo que has puesto",
       "gain": "Ganancia",
       "loss": "Pérdida",
-      "hint": "Actualiza el valor cuando lo revises. El cambio cuenta como ganancia o pérdida, no como dinero que pusiste.",
+      "hint": "Cada vez que revises cuánto vale, toca Actualizar valor. Mirador muestra el cambio como ganancia o pérdida, aparte del dinero que metiste.",
       "update": "Actualizar valor",
       "intro": "Mirador tiene {{balance}}. Escribe cuánto vale ahora.",
       "actual": "Valor actual",

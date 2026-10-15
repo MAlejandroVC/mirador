@@ -336,8 +336,8 @@
   "currency": {
     "search": "Search currencies",
     "none": "No currency matches that.",
-    "common": "Common",
-    "all": "All currencies"
+    "showAll": "Show all currencies",
+    "showFewer": "Show fewer"
   },
   "wallets": {
     "add": "Add a wallet",
@@ -417,7 +417,7 @@
       },
       "liquid": {
         "title": "Available now",
-        "body": "Counts as money you can spend today."
+        "body": "Money you can use today, like cash or a debit account. Leave it off for investments or retirement savings."
       },
       "setUp": "Set up"
     },
@@ -439,7 +439,6 @@
       "color": "Color",
       "icon": "Icon",
       "features": "Features",
-      "featuresHint": "Each one adds a card to the wallet's page, where you set it up. The type picks the usual ones.",
       "countIn": "Count in",
       "netWorth": "Net worth",
       "budget": "Budget",
@@ -453,7 +452,8 @@
       "featuresMore": "Show all features",
       "featuresLess": "Show fewer",
       "default": "Default wallet",
-      "defaultHint": "New transactions start in this wallet. You can still pick another one each time."
+      "defaultHint": "New transactions start in this wallet. You can still pick another one each time.",
+      "nameMissing": "Give the wallet a name."
     },
     "delete": {
       "button": "Delete wallet",
@@ -562,20 +562,19 @@
       "record": "Record this month's interest",
       "intro": "The annual rate, as your bank quotes it.",
       "invalid": "Type a rate like 10.5.",
-      "effectiveHint": "Savings accounts in Mexico quote the GAT, which already includes compounding.",
-      "nominalHint": "Cards and loans quote an annual rate that is split by how often it compounds.",
       "rate": "Rate a year",
       "type": "How it's quoted",
       "effective": "Effective (GAT)",
       "nominal": "Nominal",
-      "compoundingLabel": "Compounds"
+      "compoundingLabel": "Compounds",
+      "typeHint": "Use the one on your statement. Savings show an effective rate, like the GAT, which already counts the interest earned on interest. Cards and loans show a nominal yearly rate."
     },
     "valuation": {
       "title": "Investment",
       "contributed": "Put in",
       "gain": "Gain",
       "loss": "Loss",
-      "hint": "Update the value when you check it. The change counts as a gain or loss, not money put in.",
+      "hint": "Each time you check what it's worth, tap Update value. Mirador shows the change as a gain or loss, apart from the money you put in.",
       "update": "Update value",
       "intro": "Mirador has {{balance}}. Type what it's worth now.",
       "actual": "Value now",

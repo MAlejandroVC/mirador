@@ -1,6 +1,7 @@
 import { CaretRightIcon } from './icons'
 import { Link, type LinkProps } from '@tanstack/react-router'
-import type { ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
+import { isNew } from '../../lib/motion'
 
 // DL-LAY-05, DL-CMP-07: rows sit in an inset list, a `surface` card with 16 px corners,
 // introduced by an optional section label, with an optional value at its right, such
@@ -62,6 +63,15 @@ function RowBody({
   )
 }
 
+/**
+ * DL-MOT-02: a row for something that was just saved opens into its list with a
+ * highlight that fades. `id` is what the save marked (lib/motion markNew).
+ */
+function useRowClass(id: string | undefined) {
+  const [fresh] = useState(() => id !== undefined && isNew(id))
+  return fresh ? 'group row-new' : 'group'
+}
+
 interface RowContent {
   leading?: ReactNode
   title: ReactNode
@@ -84,10 +94,12 @@ export function ListRow(props: RowContent) {
 export function ListLinkRow({
   to,
   params,
+  id,
   ...props
-}: RowContent & { to: LinkProps['to']; params?: LinkProps['params'] }) {
+}: RowContent & { to: LinkProps['to']; params?: LinkProps['params']; id?: string }) {
+  const className = useRowClass(id)
   return (
-    <li className="group">
+    <li className={className}>
       <Link to={to} params={params} className={rowClass}>
         <RowBody {...props} chevron />
       </Link>
@@ -98,10 +110,12 @@ export function ListLinkRow({
 export function ListButtonRow({
   onClick,
   disabled,
+  id,
   ...props
-}: RowContent & { onClick: () => void; disabled?: boolean }) {
+}: RowContent & { onClick: () => void; disabled?: boolean; id?: string }) {
+  const className = useRowClass(id)
   return (
-    <li className="group">
+    <li className={className}>
       <button
         type="button"
         onClick={onClick}

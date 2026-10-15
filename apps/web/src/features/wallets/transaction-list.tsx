@@ -57,6 +57,7 @@ export function TransactionRows({
         return (
           <ListButtonRow
             key={transaction.id}
+            id={transaction.id}
             tone="text"
             // System transactions (CAT-05) take Stone, the quietest category color.
             leading={<IconTile icon={KindIcon} color="stone" />}

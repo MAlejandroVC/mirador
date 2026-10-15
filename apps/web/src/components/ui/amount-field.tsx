@@ -34,7 +34,12 @@ export function AmountField({
       <label htmlFor={id} className="text-[0.8125rem] text-text-muted">
         {label}
       </label>
-      <div className="flex max-w-full items-baseline justify-center gap-1">
+      {/* DL-PAT-02: outlined in `warning` when Save was tapped without it. */}
+      <div
+        className={`flex max-w-full items-baseline justify-center gap-1 rounded-2xl px-3 ${
+          error ? 'outline-2 -outline-offset-2 outline-warning' : ''
+        }`}
+      >
         {prefix && <span className="text-[1.4375rem] font-medium text-text-muted">{prefix}</span>}
         <MoneyInput
           id={id}

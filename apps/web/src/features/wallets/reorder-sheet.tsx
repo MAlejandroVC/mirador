@@ -1,11 +1,13 @@
 import { walletRecord } from '@repo/api'
 import { reorderedWallets } from '@repo/core'
-import { type KeyboardEvent, type PointerEvent, useRef, useState } from 'react'
+import { type KeyboardEvent, type PointerEvent, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '../../components/ui/button'
 import { IconTile } from '../../components/ui/icon-tile'
 import { DotsSixVerticalIcon } from '../../components/ui/icons'
-import { Sheet, SheetFooter } from '../../components/ui/sheet'
+import { Sheet } from '../../components/ui/sheet'
+import { SubmitButton } from '../../components/ui/submit-button'
+import { useSubmit } from '../../components/ui/use-submit'
+import { ease, reduceMotion } from '../../lib/motion'
 import { type LedgerWallet, type RecordChange, useSaveRecords, walletBody } from './use-ledger'
 import { walletIconComponents } from './wallet-look'
 
@@ -55,6 +57,24 @@ function ReorderForm({
   const [dragging, setDragging] = useState<string | null>(null)
   const [announcement, setAnnouncement] = useState('')
   const rows = useRef(new Map<string, HTMLLIElement>())
+  const form = useSubmit()
+
+  // DL-MOT-07: rows slide to their new places rather than jumping there. Each row's
+  // place is kept, and after a move each one starts from its old place.
+  const places = useRef(new Map<string, number>())
+  useLayoutEffect(() => {
+    for (const [id, row] of rows.current) {
+      const top = row.offsetTop
+      const before = places.current.get(id)
+      places.current.set(id, top)
+      if (before === undefined || before === top || typeof row.animate !== 'function') continue
+      if (reduceMotion()) continue
+      row.animate([{ translate: `0 ${String(before - top)}px` }, { translate: '0 0' }], {
+        duration: 250,
+        easing: ease,
+      })
+    }
+  }, [order])
 
   const moveTo = (id: string, to: number) => {
     setOrder((current) => {
@@ -145,26 +165,32 @@ function ReorderForm({
       <p role="status" className="sr-only">
         {announcement}
       </p>
-      {save.isError && (
-        <p className="px-4 text-[0.8125rem] text-warning">{t('wallets.saveFailed')}</p>
-      )}
-      <SheetFooter>
-        <Button
-          className="w-full"
-          disabled={save.isPending}
-          onClick={() => {
-            // Only the wallets whose place changed are saved.
-            const changes: RecordChange[] = reorderedWallets(order).map((wallet) => ({
-              id: wallet.id,
-              body: walletBody(walletRecord.parse(wallet)),
-            }))
-            if (changes.length === 0) onClose()
-            else save.mutate(changes, { onSuccess: onClose })
-          }}
-        >
-          {t('wallets.reorder.done')}
-        </Button>
-      </SheetFooter>
+      <SubmitButton
+        button={form.button}
+        done={form.done}
+        pending={save.isPending}
+        before={
+          save.isError && (
+            <p className="px-4 text-[0.8125rem] text-warning">{t('wallets.saveFailed')}</p>
+          )
+        }
+        onClick={() => {
+          // Only the wallets whose place changed are saved.
+          const changes: RecordChange[] = reorderedWallets(order).map((wallet) => ({
+            id: wallet.id,
+            body: walletBody(walletRecord.parse(wallet)),
+          }))
+          if (changes.length === 0) onClose()
+          else
+            save.mutate(changes, {
+              onSuccess: () => {
+                form.finish(onClose)
+              },
+            })
+        }}
+      >
+        {t('wallets.reorder.done')}
+      </SubmitButton>
     </>
   )
 }

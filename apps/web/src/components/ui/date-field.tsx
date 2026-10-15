@@ -1,12 +1,31 @@
 import { addMonths, calendarWeeks, toCalendarDate } from '@repo/core'
-import { useId, useState } from 'react'
+import { type ReactNode, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocale } from '../../lib/format'
+import { invalidRow } from './field-row'
 import { CaretLeftIcon, CaretRightIcon } from './icons'
 
 // DL-CMP-09: a date or a day of the month is never typed. The row shows the value in a
 // tinted pill; tapping it opens a calendar (or the days 1 to 31) right under the row,
 // as iOS forms do, and picking a day closes it again. Use these rows inside FieldRows.
+// The picker opens and closes in place, growing to its height (DL-MOT-07).
+
+/** The row under a field that holds its picker, open or folded away. */
+function PickerRow({ id, open, children }: { id: string; open: boolean; children: ReactNode }) {
+  return (
+    <li
+      id={id}
+      className="fold"
+      data-closed={open ? undefined : ''}
+      aria-hidden={open ? undefined : true}
+      inert={!open}
+    >
+      <div>
+        <div className="px-2 pb-2">{children}</div>
+      </div>
+    </li>
+  )
+}
 
 /** The first day of the week where the person lives: Sunday in Mexico and the US. */
 function firstDayOfWeek(locale: string): number {
@@ -88,7 +107,9 @@ export function DateRow({
     : t('pickers.choose')
   return (
     <>
-      <li className="flex min-h-[3.25rem] items-center gap-3 border-separator pr-2 pl-4 not-first:border-t">
+      <li
+        className={`flex min-h-[3.25rem] items-center gap-3 border-separator pr-2 pl-4 not-first:border-t ${invalidRow}`}
+      >
         <span id={`${id}-label`} className="flex-1 text-[0.9375rem] text-text">
           {label}
         </span>
@@ -104,20 +125,18 @@ export function DateRow({
           {shown}
         </Pill>
       </li>
-      {open && (
-        <li id={`${id}-picker`} className="px-2 pb-2">
-          <Calendar
-            value={value}
-            label={label}
-            {...(min ? { min } : {})}
-            {...(max ? { max } : {})}
-            onPick={(date) => {
-              onChange(date)
-              setOpen(false)
-            }}
-          />
-        </li>
-      )}
+      <PickerRow id={`${id}-picker`} open={open}>
+        <Calendar
+          value={value}
+          label={label}
+          {...(min ? { min } : {})}
+          {...(max ? { max } : {})}
+          onPick={(date) => {
+            onChange(date)
+            setOpen(false)
+          }}
+        />
+      </PickerRow>
     </>
   )
 }
@@ -281,7 +300,9 @@ export function DayOfMonthRow({
   const [open, setOpen] = useState(false)
   return (
     <>
-      <li className="flex min-h-[3.25rem] items-center gap-3 border-separator pr-2 pl-4 not-first:border-t">
+      <li
+        className={`flex min-h-[3.25rem] items-center gap-3 border-separator pr-2 pl-4 not-first:border-t ${invalidRow}`}
+      >
         <span id={`${id}-label`} className="flex-1 text-[0.9375rem] text-text">
           {label}
         </span>
@@ -297,29 +318,23 @@ export function DayOfMonthRow({
           {value === null ? t('pickers.choose') : t('pickers.day', { day: value })}
         </Pill>
       </li>
-      {open && (
-        <li id={`${id}-picker`} className="px-2 pb-2">
-          <div
-            role="group"
-            aria-label={label}
-            className="grid grid-cols-7 rounded-xl bg-surface p-2"
-          >
-            {Array.from({ length: 31 }, (_, index) => index + 1).map((day) => (
-              <DayButton
-                key={day}
-                label={t('pickers.day', { day })}
-                selected={day === value}
-                onPick={() => {
-                  onChange(day)
-                  setOpen(false)
-                }}
-              >
-                {String(day)}
-              </DayButton>
-            ))}
-          </div>
-        </li>
-      )}
+      <PickerRow id={`${id}-picker`} open={open}>
+        <div role="group" aria-label={label} className="grid grid-cols-7 rounded-xl bg-surface p-2">
+          {Array.from({ length: 31 }, (_, index) => index + 1).map((day) => (
+            <DayButton
+              key={day}
+              label={t('pickers.day', { day })}
+              selected={day === value}
+              onPick={() => {
+                onChange(day)
+                setOpen(false)
+              }}
+            >
+              {String(day)}
+            </DayButton>
+          ))}
+        </div>
+      </PickerRow>
     </>
   )
 }

@@ -13,7 +13,9 @@ export function AppShell() {
         <div className="min-h-dvh bg-background text-text lg:pl-64">
           <Sidebar />
           {/* Room for the floating tab bar, so the last row can scroll above it. */}
-          <main className="pb-[calc(6.5rem+env(safe-area-inset-bottom))] lg:pb-8">
+          {/* The part that slides when a screen opens (DL-MOT-06), on the page's own
+              background so the screen under it doesn't show through. */}
+          <main className="bg-background pb-[calc(6.5rem+env(safe-area-inset-bottom))] lg:pb-8">
             <Outlet />
           </main>
           <TabBar />

@@ -16,8 +16,11 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '../../components/ui/button'
 import { DateRow, DayOfMonthRow } from '../../components/ui/date-field'
 import { FieldNote, FieldRow, FieldRows, MoneyRow } from '../../components/ui/field-row'
+import { Fold } from '../../components/ui/fold'
 import { SegmentedControl } from '../../components/ui/segmented-control'
-import { Sheet, SheetFooter } from '../../components/ui/sheet'
+import { Sheet } from '../../components/ui/sheet'
+import { SubmitButton } from '../../components/ui/submit-button'
+import { useSubmit } from '../../components/ui/use-submit'
 import { useLocale, useMoney } from '../../lib/format'
 import type { FeatureSheet } from './feature-cards'
 import { type LedgerWallet, newId, useSaveRecords, walletChange } from './use-ledger'
@@ -71,35 +74,42 @@ function Intro({ children }: { children: ReactNode }) {
   return <p className="px-2 text-center text-[0.9375rem] text-text-muted">{children}</p>
 }
 
-/** Saves the wallet with `patch`, and closes when it's saved. */
+/**
+ * Saves the wallet with `patch` and closes with the save sequence. With fields still
+ * missing (`patch` is null), tapping it points at them instead (DL-PAT-02).
+ */
 function SaveButton({
   wallet,
+  form,
   patch,
-  disabled,
   onClose,
 }: {
   wallet: LedgerWallet
+  form: ReturnType<typeof useSubmit>
   patch: Partial<WalletRecord> | null
-  disabled?: boolean
   onClose: () => void
 }) {
   const { t } = useTranslation()
   const save = useSaveRecords()
   return (
-    <>
-      {save.isError && <FieldNote error>{t('wallets.saveFailed')}</FieldNote>}
-      <SheetFooter>
-        <Button
-          className="w-full"
-          disabled={patch === null || disabled === true || save.isPending}
-          onClick={() => {
-            if (patch) save.mutate([walletChange(wallet, patch)], { onSuccess: onClose })
-          }}
-        >
-          {t('wallets.form.save')}
-        </Button>
-      </SheetFooter>
-    </>
+    <SubmitButton
+      button={form.button}
+      done={form.done}
+      pending={save.isPending}
+      before={save.isError && <FieldNote error>{t('wallets.saveFailed')}</FieldNote>}
+      onClick={() => {
+        form.submit(patch !== null, () => {
+          if (patch)
+            save.mutate([walletChange(wallet, patch)], {
+              onSuccess: () => {
+                form.finish(onClose)
+              },
+            })
+        })
+      }}
+    >
+      {t('wallets.form.save')}
+    </SubmitButton>
   )
 }
 
@@ -121,24 +131,14 @@ function InterestForm({ wallet, onClose }: { wallet: LedgerWallet; onClose: () =
   const [text, setText] = useState(percentText(wallet.interest?.rate, locale))
   const [type, setType] = useState(start.type)
   const [compounding, setCompounding] = useState(start.compounding)
-  const [touched, setTouched] = useState(false)
+  const form = useSubmit()
   const rate = parseDecimal(text, locale, percentDecimals)
   const valid = rate !== null && rate <= 100_000
   return (
     <>
       <Intro>{t('wallets.interest.intro')}</Intro>
       <FieldRows
-        note={
-          touched && !valid ? (
-            <FieldNote error>{t('wallets.interest.invalid')}</FieldNote>
-          ) : (
-            <FieldNote>
-              {type === 'effective'
-                ? t('wallets.interest.effectiveHint')
-                : t('wallets.interest.nominalHint')}
-            </FieldNote>
-          )
-        }
+        note={form.tried && !valid && <FieldNote error>{t('wallets.interest.invalid')}</FieldNote>}
       >
         <FieldRow
           label={t('wallets.interest.rate')}
@@ -146,43 +146,51 @@ function InterestForm({ wallet, onClose }: { wallet: LedgerWallet; onClose: () =
           onChange={(event) => {
             setText(event.target.value)
           }}
-          onBlur={() => {
-            setTouched(true)
-          }}
           inputMode="decimal"
-          placeholder="0.00"
+          placeholder="0"
           suffix="%"
           autoFocus
-          error={touched && !valid}
+          error={form.tried && !valid}
         />
       </FieldRows>
-      <SegmentedControl
-        label={t('wallets.interest.type')}
-        options={[
-          { value: 'effective', label: t('wallets.interest.effective') },
-          { value: 'nominal', label: t('wallets.interest.nominal') },
-        ]}
-        value={type}
-        onChange={setType}
-      />
-      {type === 'nominal' && (
-        <div className="flex flex-col gap-1.5">
-          <p className="px-4 text-xs tracking-[0.04em] text-text-muted uppercase">
-            {t('wallets.interest.compoundingLabel')}
-          </p>
-          <SegmentedControl
-            label={t('wallets.interest.compoundingLabel')}
-            options={(['daily', 'monthly', 'yearly'] as const).map((value) => ({
-              value,
-              label: t(`wallets.interest.compounding.${value}`),
-            }))}
-            value={compounding}
-            onChange={setCompounding}
-          />
-        </div>
-      )}
+      {/* Which kind of rate it is, in the bank's own words, and how to tell. */}
+      <div className="flex flex-col">
+        <p className="px-4 pb-1.5 text-xs tracking-[0.04em] text-text-muted uppercase">
+          {t('wallets.interest.type')}
+        </p>
+        <SegmentedControl
+          label={t('wallets.interest.type')}
+          options={[
+            { value: 'effective', label: t('wallets.interest.effective') },
+            { value: 'nominal', label: t('wallets.interest.nominal') },
+          ]}
+          value={type}
+          onChange={setType}
+        />
+        <p className="px-4 pt-1.5 text-[0.8125rem] text-text-muted">
+          {t('wallets.interest.typeHint')}
+        </p>
+        {/* A nominal rate also needs how often interest is added. */}
+        <Fold open={type === 'nominal'}>
+          <div className="flex flex-col gap-1.5 pt-3">
+            <p className="px-4 text-xs tracking-[0.04em] text-text-muted uppercase">
+              {t('wallets.interest.compoundingLabel')}
+            </p>
+            <SegmentedControl
+              label={t('wallets.interest.compoundingLabel')}
+              options={(['daily', 'monthly', 'yearly'] as const).map((value) => ({
+                value,
+                label: t(`wallets.interest.compounding.${value}`),
+              }))}
+              value={compounding}
+              onChange={setCompounding}
+            />
+          </div>
+        </Fold>
+      </div>
       <SaveButton
         wallet={wallet}
+        form={form}
         patch={valid ? { interest: { rate, type, compounding } } : null}
         onClose={onClose}
       />
@@ -207,7 +215,7 @@ function CreditForm({
   )
   const [closingDay, setClosingDay] = useState(wallet.credit?.closingDay ?? null)
   const [dueDay, setDueDay] = useState(wallet.credit?.dueDay ?? null)
-  const [touched, setTouched] = useState(false)
+  const form = useSubmit()
   const limitMinor = parseAmount(limit, wallet.currency, money.locale)
   const valid = limitMinor !== null && limitMinor > 0 && closingDay !== null && dueDay !== null
   return (
@@ -215,7 +223,7 @@ function CreditForm({
       <Intro>{t('wallets.credit.intro')}</Intro>
       <FieldRows
         note={
-          touched && !valid ? (
+          form.tried && !valid ? (
             <FieldNote error>{t('wallets.credit.invalid')}</FieldNote>
           ) : (
             <FieldNote>{t('wallets.credit.hint')}</FieldNote>
@@ -226,30 +234,28 @@ function CreditForm({
           label={t('wallets.credit.limit')}
           value={limit}
           onChange={setLimit}
-          onBlur={() => {
-            setTouched(true)
-          }}
           locale={money.locale}
           decimals={fractionDigits(wallet.currency)}
           suffix={wallet.currency}
           autoFocus
-          error={touched && (limitMinor === null || limitMinor === 0)}
+          error={form.tried && (limitMinor === null || limitMinor === 0)}
         />
         <DayOfMonthRow
           label={t('wallets.credit.closingDay')}
           value={closingDay}
           onChange={setClosingDay}
-          error={touched && closingDay === null}
+          error={form.tried && closingDay === null}
         />
         <DayOfMonthRow
           label={t('wallets.credit.dueDay')}
           value={dueDay}
           onChange={setDueDay}
-          error={touched && dueDay === null}
+          error={form.tried && dueDay === null}
         />
       </FieldRows>
       <SaveButton
         wallet={wallet}
+        form={form}
         patch={valid ? { credit: { limit: limitMinor, closingDay, dueDay } } : null}
         onClose={onClose}
       />
@@ -284,7 +290,7 @@ function LoanForm({
     loan ? amountText(loan.payment, wallet.currency, locale) : '',
   )
   const [paymentDay, setPaymentDay] = useState(loan?.paymentDay ?? null)
-  const [touched, setTouched] = useState(false)
+  const form = useSubmit()
   const principalMinor = parseAmount(principal, wallet.currency, locale)
   const rateValue = rate.trim() === '' ? 0 : parseDecimal(rate, locale, percentDecimals)
   const termMonths = /^\d{1,3}$/.test(term.trim()) ? Number(term.trim()) : null
@@ -315,7 +321,7 @@ function LoanForm({
       <Intro>{t('wallets.loan.intro')}</Intro>
       <FieldRows
         note={
-          touched && !valid ? (
+          form.tried && !valid ? (
             <FieldNote error>{t('wallets.loan.invalid')}</FieldNote>
           ) : suggested && payment.trim() === '' ? (
             <FieldNote>
@@ -330,14 +336,11 @@ function LoanForm({
           label={t('wallets.loan.principal')}
           value={principal}
           onChange={setPrincipal}
-          onBlur={() => {
-            setTouched(true)
-          }}
           locale={locale}
           decimals={fractionDigits(wallet.currency)}
           suffix={wallet.currency}
           autoFocus
-          error={touched && (principalMinor === null || principalMinor === 0)}
+          error={form.tried && (principalMinor === null || principalMinor === 0)}
         />
         <FieldRow
           label={t('wallets.interest.rate')}
@@ -346,9 +349,9 @@ function LoanForm({
             setRate(event.target.value)
           }}
           inputMode="decimal"
-          placeholder="0.00"
+          placeholder="0"
           suffix="%"
-          error={touched && rateValue === null}
+          error={form.tried && rateValue === null}
         />
         <FieldRow
           label={t('wallets.loan.term')}
@@ -357,9 +360,9 @@ function LoanForm({
             setTerm(event.target.value)
           }}
           inputMode="numeric"
-          placeholder="48"
+          placeholder="0"
           suffix={t('wallets.loan.months')}
-          error={touched && (termMonths === null || termMonths === 0)}
+          error={form.tried && (termMonths === null || termMonths === 0)}
         />
         {/* Left empty, the suggested payment (in the note below) is used. */}
         <MoneyRow
@@ -369,17 +372,18 @@ function LoanForm({
           locale={locale}
           decimals={fractionDigits(wallet.currency)}
           suffix={wallet.currency}
-          error={touched && payment.trim() !== '' && typed === null}
+          error={form.tried && payment.trim() !== '' && typed === null}
         />
         <DayOfMonthRow
           label={t('wallets.loan.paymentDay')}
           value={paymentDay}
           onChange={setPaymentDay}
-          error={touched && paymentDay === null}
+          error={form.tried && paymentDay === null}
         />
       </FieldRows>
       <SaveButton
         wallet={wallet}
+        form={form}
         patch={
           valid && interest
             ? {
@@ -427,7 +431,7 @@ function FeeForm({
   const [note, setNote] = useState(fee?.note ?? '')
   const [every, setEvery] = useState<Fee['every']>(fee?.every ?? 'month')
   const [start, setStart] = useState(fee?.start ?? today)
-  const [touched, setTouched] = useState(false)
+  const form = useSubmit()
   const minor = parseAmount(amount, wallet.currency, money.locale)
   const valid = name.trim() !== '' && minor !== null && minor > 0 && start !== ''
   const fees = wallet.fees ?? []
@@ -460,7 +464,7 @@ function FeeForm({
     <>
       <FieldRows
         note={
-          touched && !valid ? (
+          form.tried && !valid ? (
             <FieldNote error>{t('wallets.fees.invalid')}</FieldNote>
           ) : (
             <FieldNote>{t('wallets.fees.hint')}</FieldNote>
@@ -473,13 +477,10 @@ function FeeForm({
           onChange={(event) => {
             setName(event.target.value)
           }}
-          onBlur={() => {
-            setTouched(true)
-          }}
           maxLength={60}
           placeholder={t('wallets.fees.namePlaceholder')}
           autoFocus
-          error={touched && name.trim() === ''}
+          error={form.tried && name.trim() === ''}
         />
         <MoneyRow
           label={t('wallets.fees.amount')}
@@ -488,13 +489,13 @@ function FeeForm({
           locale={money.locale}
           decimals={fractionDigits(wallet.currency)}
           suffix={wallet.currency}
-          error={touched && (minor === null || minor === 0)}
+          error={form.tried && (minor === null || minor === 0)}
         />
         <DateRow
           label={t('wallets.fees.start')}
           value={start}
           onChange={setStart}
-          error={touched && start === ''}
+          error={form.tried && start === ''}
         />
       </FieldRows>
       <SegmentedControl
@@ -519,7 +520,7 @@ function FeeForm({
           maxLength={200}
           rows={2}
           placeholder={t('wallets.fees.notePlaceholder')}
-          className="min-h-[3.25rem] resize-none rounded-2xl bg-inset px-4 py-3 text-[0.9375rem] text-text placeholder:text-text-faint focus:outline-2 focus:outline-brand"
+          className="min-h-[3.25rem] resize-none rounded-2xl bg-inset px-4 py-3 text-[0.9375rem] text-text caret-brand placeholder:text-text-faint focus:outline-none"
         />
       </label>
       {fee && (
@@ -538,7 +539,7 @@ function FeeForm({
           {t('wallets.fees.delete')}
         </Button>
       )}
-      <SaveButton wallet={wallet} patch={patch} onClose={onClose} />
+      <SaveButton wallet={wallet} form={form} patch={patch} onClose={onClose} />
     </>
   )
 }
