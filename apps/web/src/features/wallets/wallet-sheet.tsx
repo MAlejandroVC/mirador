@@ -12,6 +12,7 @@ import {
   openingBalance,
   parseAmount,
   presetDefaults,
+  rateInUse,
   toCalendarDate,
   toggleFeature,
 } from '@repo/core'
@@ -28,11 +29,13 @@ import { Sheet, SheetFooter } from '../../components/ui/sheet'
 import { tileStyle } from '../../components/ui/tile-style'
 import { useLocale } from '../../lib/format'
 import { CurrencyList } from './currency-list'
+import { RateSheet } from './rate-sheet'
 import {
   type LedgerWallet,
   newId,
   type RecordChange,
   transactionBody,
+  useLedger,
   useSaveRecords,
   walletBody,
 } from './use-ledger'
@@ -59,29 +62,52 @@ export function WalletSheet({
   onDelete?: () => void
 }) {
   const { t } = useTranslation()
+  const { data: ledger } = useLedger()
   // The form decides whether closing needs to ask first (DL-CMP-08).
   const requestCloseRef = useRef<(() => void) | null>(null)
+  // SYS-04: a wallet saved in another currency with no rate yet asks for one next.
+  const [rateFor, setRateFor] = useState<string | null>(null)
   return (
-    <Sheet
-      open={open}
-      title={mode.kind === 'new' ? t('wallets.form.newTitle') : t('wallets.form.editTitle')}
-      cancelLabel={t('nav.cancel')}
-      onClose={() => {
-        ;(requestCloseRef.current ?? onClose)()
-      }}
-    >
-      {/* Mounted only while open, so it starts fresh each time. */}
-      {open && (
-        <WalletForm
-          mode={mode}
-          defaultCurrency={defaultCurrency}
-          onClose={onClose}
-          requestCloseRef={requestCloseRef}
-          {...(onSaved ? { onSaved } : {})}
-          {...(onDelete ? { onDelete } : {})}
-        />
-      )}
-    </Sheet>
+    <>
+      <Sheet
+        open={open}
+        title={mode.kind === 'new' ? t('wallets.form.newTitle') : t('wallets.form.editTitle')}
+        cancelLabel={t('nav.cancel')}
+        onClose={() => {
+          ;(requestCloseRef.current ?? onClose)()
+        }}
+      >
+        {/* Mounted only while open, so it starts fresh each time. */}
+        {open && (
+          <WalletForm
+            mode={mode}
+            defaultCurrency={defaultCurrency}
+            onClose={onClose}
+            requestCloseRef={requestCloseRef}
+            onSaved={(id, currency) => {
+              const today = toCalendarDate(new Date())
+              if (
+                currency !== defaultCurrency &&
+                !rateInUse(currency, defaultCurrency, ledger?.rates ?? [], today)
+              )
+                setRateFor(currency)
+              onSaved?.(id)
+            }}
+            {...(onDelete ? { onDelete } : {})}
+          />
+        )}
+      </Sheet>
+      <RateSheet
+        open={rateFor !== null}
+        currency={rateFor ?? defaultCurrency}
+        defaultCurrency={defaultCurrency}
+        rates={ledger?.rates ?? []}
+        prompt
+        onClose={() => {
+          setRateFor(null)
+        }}
+      />
+    </>
   )
 }
 
@@ -97,7 +123,7 @@ function WalletForm({
   defaultCurrency: string
   onClose: () => void
   requestCloseRef: RefObject<(() => void) | null>
-  onSaved?: (id: string) => void
+  onSaved: (id: string, currency: string) => void
   onDelete?: () => void
 }) {
   const { t } = useTranslation()
@@ -140,7 +166,7 @@ function WalletForm({
       })
     save.mutate(changes, {
       onSuccess: () => {
-        onSaved?.(id)
+        onSaved(id, wallet.currency)
         onClose()
       },
     })

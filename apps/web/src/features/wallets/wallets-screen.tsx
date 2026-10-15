@@ -1,5 +1,5 @@
 import type { WalletPreset } from '@repo/api'
-import { netWorth, walletBalances } from '@repo/core'
+import { currencyName, netWorth, toCalendarDate, unitsPerOne, walletBalances } from '@repo/core'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AccountButton } from '../../components/shell'
@@ -8,11 +8,13 @@ import { Button } from '../../components/ui/button'
 import { EmptyState } from '../../components/ui/empty-state'
 import { HeroCard } from '../../components/ui/hero-card'
 import { IconTile } from '../../components/ui/icon-tile'
-import { BinocularsIcon, PlusIcon } from '../../components/ui/icons'
+import { ArrowsDownUpIcon, BinocularsIcon, PlusIcon } from '../../components/ui/icons'
 import { List, ListButtonRow, ListLinkRow, ListRow } from '../../components/ui/list'
 import { Page } from '../../components/ui/page'
 import { SegmentedControl } from '../../components/ui/segmented-control'
-import { formatShare, useMoney } from '../../lib/format'
+import { formatDay, formatRate, formatShare, useMoney } from '../../lib/format'
+import { RateSheet } from './rate-sheet'
+import { ReorderSheet } from './reorder-sheet'
 import { type LedgerWallet, useLedger } from './use-ledger'
 import { presetLooks, walletIconComponents } from './wallet-look'
 import { WalletSheet } from './wallet-sheet'
@@ -27,14 +29,19 @@ export function WalletsScreen() {
   const { data: ledger } = useLedger()
   const [adding, setAdding] = useState(false)
   const [view, setView] = useState<View>('wallets')
+  const [reordering, setReordering] = useState(false)
+  const [rateFor, setRateFor] = useState<string | null>(null)
   const defaultCurrency = ledger?.defaultCurrency ?? 'USD'
   const money = useMoney(defaultCurrency)
 
   const add = () => {
     setAdding(true)
   }
+  // The same key on both screens (empty and listed), so React keeps the sheet when the
+  // first wallet turns one into the other, with the rate it may be asking for (SYS-04).
   const sheet = (
     <WalletSheet
+      key="new-wallet"
       open={adding}
       mode={{ kind: 'new' }}
       defaultCurrency={defaultCurrency}
@@ -65,8 +72,9 @@ export function WalletsScreen() {
       </Page>
     )
 
+  const today = toCalendarDate(new Date())
   const balances = walletBalances(ledger.wallets, ledger.transactions)
-  const worth = netWorth(ledger.wallets, balances, defaultCurrency)
+  const worth = netWorth(ledger.wallets, balances, defaultCurrency, ledger.rates, today)
   const amount = (wallet: LedgerWallet) => balances.get(wallet.id) ?? 0
   const shares = new Map(
     [...worth.haveSpread.byWallet, ...worth.oweSpread.byWallet].map((share) => [
@@ -86,7 +94,7 @@ export function WalletsScreen() {
       t(`wallets.presets.${wallet.preset}`),
       share === undefined
         ? wallet.inNetWorth
-          ? t('wallets.otherCurrency')
+          ? t('wallets.noRate')
           : t('wallets.notInNetWorth')
         : formatShare(share, money.locale),
       ...(wallet.active ? [] : [t('wallets.inactive')]),
@@ -128,6 +136,15 @@ export function WalletsScreen() {
       />
     )
   }
+
+  // Currencies of wallets counted in net worth other than the default one.
+  const otherCurrencies = [
+    ...new Set(
+      ledger.wallets
+        .filter((wallet) => wallet.inNetWorth && wallet.currency !== defaultCurrency)
+        .map((wallet) => wallet.currency),
+    ),
+  ]
 
   const context = [
     t('wallets.across', { count: worth.counted }),
@@ -178,10 +195,40 @@ export function WalletsScreen() {
           )}
         </>
       )}
-      {worth.otherCurrency.length > 0 && (
-        <p className="-mt-1 px-4 text-[0.8125rem] text-text-muted">
-          {t('wallets.otherCurrencyNote', { currency: defaultCurrency })}
-        </p>
+      {/* SYS-04, SYS-05: each other currency's rate and its date, or a way to add one. */}
+      {otherCurrencies.length > 0 && (
+        <List label={t('rates.section')}>
+          {otherCurrencies.map((currency) => {
+            const inUse = worth.ratesUsed.get(currency)
+            return (
+              <ListButtonRow
+                key={currency}
+                tone="text"
+                title={
+                  inUse
+                    ? `1 ${currency} = ${formatRate(unitsPerOne(inUse), money.locale)} ${defaultCurrency}`
+                    : currencyName(currency, money.locale)
+                }
+                subtitle={
+                  inUse
+                    ? formatDay(inUse.rate.date, today, money.locale, {
+                        today: t('dates.today'),
+                        yesterday: t('dates.yesterday'),
+                      })
+                    : t('rates.missing')
+                }
+                trailing={
+                  <span className={`text-[0.9375rem] ${inUse ? 'text-text-muted' : 'text-brand'}`}>
+                    {inUse ? t('rates.change') : t('rates.add')}
+                  </span>
+                }
+                onClick={() => {
+                  setRateFor(currency)
+                }}
+              />
+            )
+          })}
+        </List>
       )}
       <List>
         <ListButtonRow
@@ -189,8 +236,33 @@ export function WalletsScreen() {
           title={t('wallets.add')}
           onClick={add}
         />
+        {ledger.wallets.length > 1 && (
+          <ListButtonRow
+            leading={<ArrowsDownUpIcon aria-hidden className="size-[1.375rem] text-brand" />}
+            title={t('wallets.reorder.button')}
+            onClick={() => {
+              setReordering(true)
+            }}
+          />
+        )}
       </List>
       {sheet}
+      <ReorderSheet
+        open={reordering}
+        wallets={ledger.wallets}
+        onClose={() => {
+          setReordering(false)
+        }}
+      />
+      <RateSheet
+        open={rateFor !== null}
+        currency={rateFor ?? defaultCurrency}
+        defaultCurrency={defaultCurrency}
+        rates={ledger.rates}
+        onClose={() => {
+          setRateFor(null)
+        }}
+      />
     </Page>
   )
 }

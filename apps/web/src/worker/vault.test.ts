@@ -21,7 +21,7 @@ import { createApi, type Fetch } from '../lib/api'
 import { vaultErrorCode } from './errors'
 import { Vault } from './vault'
 import { openingBalance } from '@repo/core'
-import { transactionBody, walletBody } from '../features/wallets/use-ledger'
+import { exchangeRateBody, transactionBody, walletBody } from '../features/wallets/use-ledger'
 import { newWalletRecord } from '../features/wallets/wallet-look'
 
 const password = 'a sunny day in Monterrey'
@@ -330,6 +330,46 @@ describe('vault', () => {
     // Not even which kind of record each one is (SEC-04).
     expect(everything).not.toContain('wallet')
     expect(everything).not.toContain('transaction')
+  })
+
+  it('SYS-04, WAL-13, WAL-15, WAL-16, WAL-17: rates and feature details reach the server only encrypted', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    await phone.signUp({ username: 'ana', password })
+
+    await phone.saveRecords([
+      {
+        id: newRecordId(),
+        body: walletBody({
+          ...newWalletRecord('Tarjeta Oro', 'MXN'),
+          interest: { rate: 4321, type: 'nominal', compounding: 'monthly' },
+          fees: [
+            { id: 'f1', name: 'Anualidad', amount: 89_900, every: 'year', start: '2026-01-07' },
+          ],
+          credit: { limit: 7_654_300, closingDay: 23, dueDay: 13 },
+          loan: { principal: 9_876_500, termMonths: 37, payment: 345_600, paymentDay: 9 },
+        }),
+      },
+      {
+        id: newRecordId(),
+        body: exchangeRateBody({ from: 'USD', to: 'MXN', rate: 18_450_000, date: '2026-10-15' }),
+      },
+    ])
+
+    const everything = server.sent.join('\n')
+    for (const plaintext of [
+      'Tarjeta',
+      'Anualidad',
+      '4321',
+      '7654300',
+      '9876500',
+      '18450000',
+      'USD',
+      'exchangeRate',
+      'nominal',
+      'closingDay',
+    ])
+      expect(everything).not.toContain(plaintext)
   })
 
   it('SEC-01: records are encrypted before they leave, and only the owner reads them', async () => {

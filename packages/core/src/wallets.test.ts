@@ -3,11 +3,13 @@ import {
   applyPreset,
   balanceAdjustment,
   canChangeCurrency,
+  reorderedWallets,
   netWorth,
   newWallet,
   openingBalance,
   pickableWallets,
   presetDefaults,
+  sortWallets,
   toggleFeature,
   type Transaction,
   type Wallet,
@@ -222,5 +224,37 @@ describe('wallets', () => {
     expect(canChangeCurrency('MXN', 'USD', 5)).toBe(true)
     expect(canChangeCurrency('MXN', 'JPY', 5)).toBe(false)
     expect(canChangeCurrency('MXN', 'JPY', 0)).toBe(true)
+  })
+
+  it('WAL-10: keeps the order the person set, and saves only the wallets that moved', () => {
+    const a = wallet('a', 'cash')
+    const b = wallet('b', 'savings')
+    const c = wallet('c', 'checking', { order: 0 })
+    const ordered = sortWallets([a, b, c])
+    expect(ordered.map((w) => w.id)).toEqual(['c', 'a', 'b'])
+    // Moving the last wallet to the top saves every wallet whose place changed.
+    const moved = reorderedWallets([b, c, a])
+    expect(moved.map((w) => [w.id, w.order])).toEqual([
+      ['b', 0],
+      ['c', 1],
+      ['a', 2],
+    ])
+    expect(reorderedWallets(moved)).toEqual([])
+  })
+
+  it('SYS-04: other-currency wallets count in net worth at the rate in use', () => {
+    const dollars = wallet('b', 'savings', { currency: 'USD', features: ['liquid'] })
+    const rates = [{ id: 'r', from: 'USD', to: 'MXN', rate: 18_450_000, date: '2026-10-01' }]
+    const balances = new Map([
+      ['a', 100_000],
+      ['b', 10_000],
+    ])
+    const worth = netWorth([wallet('a', 'cash'), dollars], balances, 'MXN', rates, '2026-10-15')
+    // 100.00 USD at 18.45 is 1,845.00 MXN.
+    expect([worth.netWorth, worth.liquid, worth.otherCurrency]).toEqual([284_500, 184_500, []])
+    expect(worth.ratesUsed.get('USD')?.rate.id).toBe('r')
+    // A rate dated after today is not in use yet.
+    const early = netWorth([dollars], balances, 'MXN', rates, '2026-09-30')
+    expect(early.otherCurrency).toEqual([dollars])
   })
 })

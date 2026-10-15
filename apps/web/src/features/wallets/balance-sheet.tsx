@@ -10,14 +10,18 @@ import { type LedgerWallet, newId, transactionBody, useSaveRecords } from './use
 
 // WAL-07: the person types the balance their bank or their pocket shows; when it
 // differs from Mirador's, the difference is recorded as an adjustment dated today.
+// WAL-18: with valuations on, it is the investment's value, and the difference is a
+// market-value update, counted as a gain or loss rather than money put in.
 export function BalanceSheet({
   open,
+  kind = 'adjustment',
   wallet,
   balance,
   defaultCurrency,
   onClose,
 }: {
   open: boolean
+  kind?: 'adjustment' | 'valuation'
   wallet: LedgerWallet
   balance: number
   defaultCurrency: string
@@ -27,12 +31,13 @@ export function BalanceSheet({
   return (
     <Sheet
       open={open}
-      title={t('wallets.balance.title')}
+      title={kind === 'valuation' ? t('wallets.valuation.update') : t('wallets.balance.title')}
       cancelLabel={t('nav.cancel')}
       onClose={onClose}
     >
       {open && (
         <BalanceForm
+          kind={kind}
           wallet={wallet}
           balance={balance}
           defaultCurrency={defaultCurrency}
@@ -44,11 +49,13 @@ export function BalanceSheet({
 }
 
 function BalanceForm({
+  kind,
   wallet,
   balance,
   defaultCurrency,
   onClose,
 }: {
+  kind: 'adjustment' | 'valuation'
   wallet: LedgerWallet
   balance: number
   defaultCurrency: string
@@ -65,7 +72,8 @@ function BalanceForm({
   const adjustment =
     actual === null
       ? null
-      : balanceAdjustment(wallet.id, balance, actual, toCalendarDate(new Date()))
+      : balanceAdjustment(wallet.id, balance, actual, toCalendarDate(new Date()), kind)
+  const valuation = kind === 'valuation'
   const invalid = text.trim() !== '' && magnitude === null
   const parts = money.parts({ minor: 0, currency: wallet.currency })
   const now = money.text({ minor: balance, currency: wallet.currency })
@@ -73,7 +81,9 @@ function BalanceForm({
   return (
     <>
       <p className="px-2 text-center text-[0.9375rem] text-text-muted">
-        {t('wallets.balance.intro', { balance: now })}
+        {valuation
+          ? t('wallets.valuation.intro', { balance: now })
+          : t('wallets.balance.intro', { balance: now })}
       </p>
       <SegmentedControl
         label={t('wallets.form.balance')}
@@ -87,7 +97,7 @@ function BalanceForm({
         }}
       />
       <AmountField
-        label={t('wallets.balance.actual')}
+        label={valuation ? t('wallets.valuation.actual') : t('wallets.balance.actual')}
         value={text}
         onChange={setText}
         onBlur={() => {
@@ -102,7 +112,7 @@ function BalanceForm({
         {actual === null
           ? ''
           : adjustment
-            ? t('wallets.balance.willAdjust', {
+            ? t(valuation ? 'wallets.valuation.willChange' : 'wallets.balance.willAdjust', {
                 amount: money.text(
                   { minor: adjustment.amount, currency: wallet.currency },
                   'always',
@@ -124,7 +134,7 @@ function BalanceForm({
             })
           }}
         >
-          {t('wallets.balance.record')}
+          {valuation ? t('wallets.valuation.record') : t('wallets.balance.record')}
         </Button>
       </SheetFooter>
     </>

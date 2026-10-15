@@ -13,15 +13,33 @@ import { Amount } from '../../components/ui/amount'
 import { Button } from '../../components/ui/button'
 import { EmptyState } from '../../components/ui/empty-state'
 import { IconTile } from '../../components/ui/icon-tile'
-import { FlagBannerIcon, ScalesIcon, WalletIcon } from '../../components/ui/icons'
+import {
+  FlagBannerIcon,
+  type Icon,
+  PercentIcon,
+  ReceiptIcon,
+  ScalesIcon,
+  TrendUpIcon,
+  WalletIcon,
+} from '../../components/ui/icons'
 import { List, ListButtonRow } from '../../components/ui/list'
 import { Page } from '../../components/ui/page'
 import { useUndo } from '../../components/ui/use-undo'
 import { formatDay, useMoney } from '../../lib/format'
 import { BalanceSheet } from './balance-sheet'
+import {
+  CreditLimitCard,
+  type FeatureSheet,
+  FeesCard,
+  InterestCard,
+  LoanCard,
+  ValuationCard,
+} from './feature-cards'
+import { FeatureSheets } from './feature-sheets'
 import { TransactionSheet } from './transaction-sheet'
 import {
   type RecordChange,
+  newId,
   transactionBody,
   useLedger,
   useSaveRecords,
@@ -30,9 +48,19 @@ import {
 import { walletIconComponents } from './wallet-look'
 import { WalletSheet } from './wallet-sheet'
 
-// WAL-01: one wallet, pushed in from the list (DL-PAT-01): its balance (WAL-06), the
-// transactions that make it up (WAL-05), updating the balance (WAL-07), and Edit at the
-// top right, which is also where it is deleted (WAL-08).
+// The icon of each kind of transaction the wallets epic makes (DL-ICO-01).
+const kindIcons: Record<Transaction['kind'], Icon> = {
+  openingBalance: FlagBannerIcon,
+  adjustment: ScalesIcon,
+  interest: PercentIcon,
+  fee: ReceiptIcon,
+  valuation: TrendUpIcon,
+}
+
+// WAL-01: one wallet, pushed in from the list (DL-PAT-01): its balance (WAL-06), a card
+// for each feature switched on (WAL-13 to WAL-18), the transactions that make up the
+// balance (WAL-05), updating the balance (WAL-07), and Edit at the top right, which is
+// also where it is deleted (WAL-08).
 export function WalletScreen({ walletId }: { walletId: string }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -42,7 +70,8 @@ export function WalletScreen({ walletId }: { walletId: string }) {
   const [editing, setEditing] = useState(false)
   const [updating, setUpdating] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
-  const [opened, setOpened] = useState<Transaction | null>(null)
+  const [opened, setOpened] = useState<{ transaction: Transaction; isNew: boolean } | null>(null)
+  const [feature, setFeature] = useState<FeatureSheet | null>(null)
   const defaultCurrency = ledger?.defaultCurrency ?? 'USD'
   const money = useMoney(defaultCurrency)
   const back = {
@@ -70,6 +99,14 @@ export function WalletScreen({ walletId }: { walletId: string }) {
   const balance = walletBalance(wallet.id, ledger.transactions)
   const today = toCalendarDate(new Date())
   const shown = { minor: balance, currency: wallet.currency }
+  const on = (name: (typeof wallet.features)[number]) => wallet.features.includes(name)
+  const cardProps = {
+    wallet,
+    balance,
+    today,
+    defaultCurrency,
+    onEdit: setFeature,
+  }
 
   const deleteChanges = (): RecordChange[] => [
     ...transactions.map((transaction) => ({
@@ -157,9 +194,40 @@ export function WalletScreen({ walletId }: { walletId: string }) {
             setUpdating(true)
           }}
         >
-          {t('wallets.balance.update')}
+          {/* WAL-18: an investment's balance moves with the market, so it is its value. */}
+          {on('valuations') ? t('wallets.valuation.update') : t('wallets.balance.update')}
         </Button>
       </section>
+
+      {on('creditLimit') && <CreditLimitCard {...cardProps} />}
+      {on('loanSchedule') && <LoanCard {...cardProps} />}
+      {on('interest') && (
+        <InterestCard
+          {...cardProps}
+          transactions={transactions}
+          onRecord={(amount) => {
+            // WAL-14: the estimate, to confirm or correct before it is saved.
+            setOpened({
+              transaction: {
+                id: newId(),
+                kind: 'interest',
+                walletId: wallet.id,
+                date: today,
+                amount,
+              },
+              isNew: true,
+            })
+          }}
+        />
+      )}
+      {on('valuations') && (
+        <ValuationCard
+          wallet={wallet}
+          defaultCurrency={defaultCurrency}
+          transactions={transactions}
+        />
+      )}
+      {on('fees') && <FeesCard {...cardProps} />}
 
       {transactions.length > 0 ? (
         <List label={t('wallets.transactions.title')}>
@@ -167,13 +235,14 @@ export function WalletScreen({ walletId }: { walletId: string }) {
             const value = { minor: transaction.amount, currency: wallet.currency }
             const opening = transaction.kind === 'openingBalance'
             const signs = opening ? 'negative' : 'always'
+            const KindIcon = kindIcons[transaction.kind]
             return (
               <ListButtonRow
                 key={transaction.id}
                 tone="text"
                 // System transactions (CAT-05) take Stone, the quietest category color.
-                leading={<IconTile icon={opening ? FlagBannerIcon : ScalesIcon} color="stone" />}
-                title={t(`wallets.transactions.${transaction.kind}`)}
+                leading={<IconTile icon={KindIcon} color="stone" />}
+                title={transaction.note ?? t(`wallets.transactions.${transaction.kind}`)}
                 subtitle={formatDay(transaction.date, today, money.locale, {
                   today: t('dates.today'),
                   yesterday: t('dates.yesterday'),
@@ -182,7 +251,7 @@ export function WalletScreen({ walletId }: { walletId: string }) {
                   <Amount parts={money.parts(value, signs)} label={money.text(value, signs)} />
                 }
                 onClick={() => {
-                  setOpened(transaction)
+                  setOpened({ transaction, isNew: false })
                 }}
               />
             )
@@ -232,8 +301,17 @@ export function WalletScreen({ walletId }: { walletId: string }) {
           setConfirmingDelete(false)
         }}
       />
+      <FeatureSheets
+        open={feature}
+        wallet={wallet}
+        defaultCurrency={defaultCurrency}
+        onClose={() => {
+          setFeature(null)
+        }}
+      />
       <BalanceSheet
         open={updating}
+        kind={on('valuations') ? 'valuation' : 'adjustment'}
         wallet={wallet}
         balance={balance}
         defaultCurrency={defaultCurrency}
@@ -242,7 +320,8 @@ export function WalletScreen({ walletId }: { walletId: string }) {
         }}
       />
       <TransactionSheet
-        transaction={opened}
+        transaction={opened?.transaction ?? null}
+        isNew={opened?.isNew ?? false}
         wallet={wallet}
         defaultCurrency={defaultCurrency}
         onClose={() => {

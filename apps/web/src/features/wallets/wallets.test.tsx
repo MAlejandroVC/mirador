@@ -62,7 +62,13 @@ describe('wallets', () => {
     for (const preset of walletPresets)
       for (const feature of presetDefaults[preset].features)
         expect(walletFeatures).toContain(feature)
-    expect(transactionKinds).toEqual(['openingBalance', 'adjustment'])
+    expect(transactionKinds).toEqual([
+      'openingBalance',
+      'adjustment',
+      'interest',
+      'fee',
+      'valuation',
+    ])
   })
 
   it('DL-CMP-14: with no wallets yet, the empty state offers to add one', async () => {

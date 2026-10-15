@@ -1,4 +1,6 @@
+import { convert, type ExchangeRate, rateInUse, type RateInUse } from './exchange.ts'
 import { fractionDigits } from './money.ts'
+import type { CreditSettings, Fee, InterestSettings, LoanSettings } from './wallet-features.ts'
 
 // Epic 1: wallets, their balances, net worth and net debt. Pure functions over the
 // decrypted records; the caller passes everything in, "today" included. The types
@@ -20,13 +22,24 @@ export interface WalletFields {
   active: boolean
   inNetWorth: boolean
   inBudget: boolean
+  /** WAL-10: where the person put it; wallets without one follow, oldest first. */
+  order?: number
+  /** WAL-13 to WAL-17: each feature's details, kept when it is switched off. */
+  interest?: InterestSettings
+  fees?: Fee[]
+  credit?: CreditSettings
+  loan?: LoanSettings
 }
 
 export interface Wallet extends WalletFields {
   id: string
 }
 
-export type TransactionKind = 'openingBalance' | 'adjustment'
+/**
+ * The kinds the wallets epic makes: the opening balance (WAL-05), adjustments (WAL-07),
+ * posted interest (WAL-14), confirmed fees (WAL-15) and market-value updates (WAL-18).
+ */
+export type TransactionKind = 'openingBalance' | 'adjustment' | 'interest' | 'fee' | 'valuation'
 
 export interface TransactionFields {
   kind: TransactionKind
@@ -140,16 +153,35 @@ export function openingBalance(walletId: string, amount: number, today: string):
 
 /**
  * WAL-07: the adjustment that brings the computed balance to the actual one, or null
- * when they already match.
+ * when they already match. With valuations on (WAL-18) it is a market-value update, so
+ * it counts as a gain or loss rather than money put in.
  */
 export function balanceAdjustment(
   walletId: string,
   computed: number,
   actual: number,
   today: string,
+  kind: 'adjustment' | 'valuation' = 'adjustment',
 ): TransactionFields | null {
   if (computed === actual) return null
-  return { kind: 'adjustment', walletId, date: today, amount: actual - computed }
+  return { kind, walletId, date: today, amount: actual - computed }
+}
+
+/** WAL-10: wallets in the order the person set; the rest after, oldest first. */
+export function sortWallets<W extends Wallet>(wallets: readonly W[]): W[] {
+  return [...wallets].sort(
+    (a, b) =>
+      (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER) ||
+      a.id.localeCompare(b.id),
+  )
+}
+
+/**
+ * WAL-10: after the person puts wallets in a new order, the ones whose place changed,
+ * with their new `order`: all that needs saving.
+ */
+export function reorderedWallets<W extends Wallet>(ordered: readonly W[]): W[] {
+  return ordered.flatMap((wallet, order) => (wallet.order === order ? [] : [{ ...wallet, order }]))
 }
 
 /** WAL-04: the wallets a picker offers. Inactive ones stay everywhere else. */
@@ -202,10 +234,12 @@ export interface NetWorth<W extends Wallet = Wallet> {
   /** How many wallets the totals count. */
   counted: number
   /**
-   * Wallets in another currency, left out until SYS-04 exchange rates arrive.
-   * Wallets the person left out (WAL-09) are not listed here.
+   * Wallets in another currency with no exchange rate yet (SYS-04), left out until one
+   * is entered. Wallets the person left out (WAL-09) are not listed here.
    */
   otherCurrency: W[]
+  /** SYS-04, SYS-05: the rate used for each other currency, to show it and its date. */
+  ratesUsed: Map<string, RateInUse>
 }
 
 /**
@@ -216,18 +250,27 @@ export function netWorth<W extends Wallet>(
   wallets: readonly W[],
   balances: ReadonlyMap<string, number>,
   currency: string,
+  rates: readonly ExchangeRate[] = [],
+  today = '9999-12-31',
 ): NetWorth<W> {
   const otherCurrency: W[] = []
+  const ratesUsed = new Map<string, RateInUse>()
   const have: WalletShare<W>[] = []
   const owe: WalletShare<W>[] = []
   let liquid = 0
   for (const wallet of wallets) {
     if (!wallet.inNetWorth) continue
+    let balance = balances.get(wallet.id) ?? 0
     if (wallet.currency !== currency) {
-      otherCurrency.push(wallet)
-      continue
+      // SYS-04: shown in the default currency at the rate in use.
+      const inUse = rateInUse(wallet.currency, currency, rates, today)
+      if (!inUse) {
+        otherCurrency.push(wallet)
+        continue
+      }
+      ratesUsed.set(wallet.currency, inUse)
+      balance = convert(balance, wallet.currency, currency, inUse)
     }
-    const balance = balances.get(wallet.id) ?? 0
     if (balance < 0) owe.push({ wallet, balance: -balance, share: 0 })
     else have.push({ wallet, balance, share: 0 })
     if (balance > 0 && wallet.features.includes('liquid')) liquid += balance
@@ -246,6 +289,7 @@ export function netWorth<W extends Wallet>(
     oweSpread,
     counted: have.length + owe.length,
     otherCurrency,
+    ratesUsed,
   }
 }
 

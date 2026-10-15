@@ -350,8 +350,6 @@
     "count_other": "{{count}} carteras",
     "inactive": "Inactiva",
     "notInNetWorth": "Fuera del patrimonio",
-    "otherCurrency": "Otra moneda",
-    "otherCurrencyNote": "Las carteras en otras monedas no cuentan en tu patrimonio, que está en {{currency}}.",
     "saveFailed": "No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.",
     "missing": {
       "title": "No encontramos esta cartera",
@@ -409,7 +407,8 @@
       "liquid": {
         "title": "Disponible hoy",
         "body": "Puedes usar este dinero hoy."
-      }
+      },
+      "setUp": "Configurar"
     },
     "form": {
       "newTitle": "Nueva cartera",
@@ -429,7 +428,7 @@
       "color": "Color",
       "icon": "Ícono",
       "features": "Funciones",
-      "featuresHint": "El tipo activa lo que suele aplicar. Los detalles, como tasas y límites, llegarán en una próxima versión.",
+      "featuresHint": "El tipo activa lo que suele aplicar. Cada una se configura en la página de la cartera.",
       "countIn": "Contar en",
       "netWorth": "Patrimonio",
       "budget": "Presupuesto",
@@ -474,7 +473,141 @@
       "delete": "Eliminar movimiento",
       "deleted": "Movimiento eliminado",
       "emptyTitle": "Aún no hay movimientos",
-      "emptyBody": "Su saldo empieza en cero. Actualízalo para que coincida con lo que ves en tu banco."
+      "emptyBody": "Su saldo empieza en cero. Actualízalo para que coincida con lo que ves en tu banco.",
+      "interest": "Intereses",
+      "fee": "Comisión",
+      "valuation": "Cambio de mercado",
+      "record": "Registrar"
+    },
+    "noRate": "Sin tipo de cambio",
+    "reorder": {
+      "title": "Ordenar carteras",
+      "intro": "Arrastra las agarraderas para poner tus carteras en el orden que quieras.",
+      "handle": "Mover {{name}}",
+      "help": "Usa las flechas arriba y abajo para moverla.",
+      "moved": "{{name}}: lugar {{place}} de {{count}}",
+      "done": "Listo",
+      "button": "Ordenar carteras"
+    },
+    "credit": {
+      "title": "Límite de crédito",
+      "empty": "Agrega el límite y los días de corte y de pago para ver cuánto te queda y cuándo pagar.",
+      "utilization": "Crédito usado",
+      "used": "{{used}} de {{limit}}",
+      "over": "{{amount}} arriba del límite",
+      "available": "Te quedan {{amount}} para gastar",
+      "closes": "Fecha de corte",
+      "payBy": "Fecha límite de pago",
+      "intro": "Como vienen en tu estado de cuenta.",
+      "hint": "Los días van del 1 al 31; en meses más cortos cuenta el último día.",
+      "invalid": "Escribe un límite mayor que cero y días del 1 al 31.",
+      "limit": "Límite de crédito",
+      "closingDay": "Día de corte",
+      "dueDay": "Día límite de pago"
+    },
+    "loan": {
+      "title": "Préstamo",
+      "empty": "Agrega el monto, la tasa y el plazo de tu contrato para ver cuándo terminas de pagarlo.",
+      "paidOff": "Liquidado",
+      "never": "Un pago de {{payment}} no cubre los {{interest}} de interés al mes, así que el préstamo nunca se termina de pagar.",
+      "payoff": "Lo terminas de pagar en {{date}}",
+      "left_one": "Te queda 1 pago de {{payment}}",
+      "left_other": "Te quedan {{count}} pagos de {{payment}}",
+      "interestLeft": "Intereses por pagar",
+      "contractInterest": "Intereses de todo el préstamo",
+      "noRate": "Sin tasa, se calcula sin intereses.",
+      "intro": "Como vienen en tu contrato.",
+      "invalid": "Llena el monto, la tasa, el plazo y el día de pago.",
+      "suggested": "Deja el pago vacío para usar {{amount}}, calculado con la tasa.",
+      "principal": "Monto del préstamo",
+      "term": "Plazo",
+      "months": "meses",
+      "payment": "Pago mensual",
+      "paymentDay": "Día de pago"
+    },
+    "interest": {
+      "title": "Intereses",
+      "empty": "Agrega la tasa para ver cuánto gana o te cuesta este saldo cada mes.",
+      "describe": {
+        "effective": "{{rate}} anual, efectiva (GAT)",
+        "daily": "{{rate}} anual, capitalizable diariamente",
+        "monthly": "{{rate}} anual, capitalizable mensualmente",
+        "yearly": "{{rate}} anual, capitalizable anualmente"
+      },
+      "compounding": {
+        "daily": "Diaria",
+        "monthly": "Mensual",
+        "yearly": "Anual"
+      },
+      "earns": "Gana cerca de",
+      "costs": "Cuesta cerca de",
+      "thisMonth": "este mes",
+      "recorded": "Registrado este mes: {{amount}}",
+      "record": "Registrar los intereses del mes",
+      "intro": "La tasa anual, como la da tu banco.",
+      "invalid": "Escribe una tasa como 10.5.",
+      "effectiveHint": "Las cuentas de ahorro en México dan la GAT, que ya incluye la capitalización.",
+      "nominalHint": "Las tarjetas y los préstamos dan una tasa anual que se divide según cada cuándo se capitaliza.",
+      "rate": "Tasa anual",
+      "type": "Tipo de tasa",
+      "effective": "Efectiva (GAT)",
+      "nominal": "Nominal",
+      "compoundingLabel": "Capitalización"
+    },
+    "valuation": {
+      "title": "Inversión",
+      "contributed": "Lo que has puesto",
+      "gain": "Ganancia",
+      "loss": "Pérdida",
+      "hint": "Actualiza el valor cuando lo revises. El cambio cuenta como ganancia o pérdida, no como dinero que pusiste.",
+      "update": "Actualizar valor",
+      "intro": "Mirador tiene {{balance}}. Escribe cuánto vale ahora.",
+      "actual": "Valor actual",
+      "willChange": "Se registra un cambio de mercado de {{amount}}.",
+      "record": "Registrar valor"
+    },
+    "fees": {
+      "title": "Comisiones",
+      "empty": "Agrega comisiones como la anualidad, y Mirador te pide confirmar cada una cuando se cobre.",
+      "dueOn": "{{date}} · por confirmar",
+      "confirm": "Confirmar",
+      "skip": "Omitir",
+      "every": {
+        "month": "Cada mes",
+        "year": "Cada año"
+      },
+      "next": "próxima: {{date}}",
+      "add": "Agregar comisión",
+      "editTitle": "Editar comisión",
+      "newTitle": "Nueva comisión",
+      "invalid": "Escribe un nombre y un monto mayor que cero.",
+      "hint": "Los cargos antes de hoy cuentan como pagados; Mirador te pregunta por cada uno después.",
+      "name": "Nombre",
+      "namePlaceholder": "Anualidad",
+      "amount": "Monto",
+      "start": "Primer cargo",
+      "everyLabel": "Cada cuándo",
+      "delete": "Eliminar comisión"
     }
+  },
+  "rates": {
+    "title": "Tipo de cambio",
+    "later": "Después",
+    "prompt": "Para contar esta cartera en tu patrimonio, Mirador necesita el tipo de cambio. También puedes agregarlo después en Configuración > Moneda.",
+    "intro": "El tipo de cambio que te da tu banco o casa de cambio para {{currency}}. Cada uno se guarda con su fecha.",
+    "one": "1 {{currency}} =",
+    "hint": "Los totales usan el tipo de cambio más reciente hasta hoy.",
+    "invalid": "Escribe un tipo de cambio mayor que cero, como 18.45.",
+    "history": "Historial",
+    "inUse": "En uso",
+    "save": "Guardar",
+    "deleteTitle": "¿Eliminar el tipo de cambio del {{date}}?",
+    "deleteMessage": "Los totales usarán el anterior.",
+    "delete": "Eliminar",
+    "deleted": "Tipo de cambio eliminado",
+    "section": "Tipos de cambio",
+    "missing": "Sin tipo de cambio, no cuenta en tu patrimonio",
+    "change": "Cambiar",
+    "add": "Agregar"
   }
 }

@@ -24,7 +24,7 @@ export function SegmentedControl<Value extends string>({
               onChange(option.value)
             }}
             className={`min-h-11 flex-1 rounded-[0.4375rem] text-[0.8125rem] font-medium text-text focus-visible:outline-2 focus-visible:outline-brand ${
-              on ? 'bg-surface shadow-[0_1px_3px_rgb(0_0_0/18%)]' : ''
+              on ? 'bg-thumb shadow-[0_1px_3px_rgb(0_0_0/18%)]' : ''
             }`}
           >
             {option.label}

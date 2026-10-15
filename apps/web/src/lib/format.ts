@@ -1,4 +1,12 @@
-import { type FormatOptions, formatMoney, type Money, moneyParts } from '@repo/core'
+import {
+  type FormatOptions,
+  formatDecimal,
+  formatMoney,
+  type Money,
+  moneyParts,
+  percentDecimals,
+  rateDecimals,
+} from '@repo/core'
 import { useTranslation } from 'react-i18next'
 
 // DL-NUM-05: amounts and dates are formatted for the app language by the platform.
@@ -64,4 +72,14 @@ export function formatDay(
     day: 'numeric',
     ...(sameYear ? {} : { year: 'numeric' }),
   }).replace('.', '')
+}
+
+/** SYS-04: an exchange rate for reading, such as "18.45", with at least two decimals. */
+export function formatRate(rate: number, locale: string): string {
+  return formatDecimal(rate, rateDecimals, locale, 2)
+}
+
+/** WAL-13: an interest rate in hundredths of a percent, such as "10.5%". */
+export function formatPercent(basisPoints: number, locale: string): string {
+  return `${formatDecimal(basisPoints, percentDecimals, locale)}%`
 }

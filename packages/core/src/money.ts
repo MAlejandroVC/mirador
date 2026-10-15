@@ -113,23 +113,62 @@ function decimalSeparator(locale: string) {
 }
 
 /**
- * Reads what the person typed, such as "1,250.5", as minor units, or null when it is
- * not an amount. Only a magnitude: the screen asks for the direction separately.
- * Group separators are ignored; the locale's decimal separator splits the cents.
+ * Reads a decimal number the person typed, such as "1,250.5", as an integer scaled by
+ * 10^`decimals` (12505000 for decimals 4), or null when it is not one, has more decimals,
+ * or is negative. Group separators are ignored; the locale's decimal separator splits
+ * the fraction. Spaces and a "$" or "%" around it are ignored too.
  */
-export function parseAmount(text: string, currency: string, locale: string): number | null {
+export function parseDecimal(text: string, locale: string, decimals: number): number | null {
   const decimal = decimalSeparator(locale)
-  const cleaned = text.replace(/[\s\u00a0\u202f$]/g, '')
+  const cleaned = text.replace(/[\s\u00a0\u202f$%]/g, '')
   if (cleaned === '') return null
   const [whole = '', fraction = '', ...rest] = cleaned.split(decimal)
   if (rest.length > 0) return null
   const digitsOnly = whole.replace(decimal === '.' ? /,/g : /\./g, '')
   if (!/^\d*$/.test(digitsOnly) || !/^\d*$/.test(fraction)) return null
   if (digitsOnly === '' && fraction === '') return null
-  const digits = fractionDigits(currency)
-  if (fraction.length > digits) return null
-  const minor = Number(`${digitsOnly || '0'}${fraction.padEnd(digits, '0')}`)
-  return Number.isSafeInteger(minor) ? minor : null
+  if (fraction.length > decimals) return null
+  const scaled = Number(`${digitsOnly || '0'}${fraction.padEnd(decimals, '0')}`)
+  return Number.isSafeInteger(scaled) ? scaled : null
+}
+
+/**
+ * Reads what the person typed, such as "1,250.5", as minor units, or null when it is
+ * not an amount. Only a magnitude: the screen asks for the direction separately.
+ */
+export function parseAmount(text: string, currency: string, locale: string): number | null {
+  return parseDecimal(text, locale, fractionDigits(currency))
+}
+
+/** A scaled integer (see parseDecimal) as the person would type it: "18.45", no grouping. */
+export function decimalInput(scaled: number, decimals: number, locale: string): string {
+  const units = Math.abs(scaled)
+    .toString()
+    .padStart(decimals + 1, '0')
+  if (decimals === 0) return units
+  const fraction = units.slice(-decimals).replace(/0+$/, '')
+  return fraction === ''
+    ? units.slice(0, -decimals)
+    : `${units.slice(0, -decimals)}${decimalSeparator(locale)}${fraction}`
+}
+
+/** A scaled integer formatted for reading, such as "18.45" or "18,45", with grouping. */
+export function formatDecimal(
+  scaled: number,
+  decimals: number,
+  locale: string,
+  minimum = 0,
+): string {
+  const units = Math.abs(scaled)
+    .toString()
+    .padStart(decimals + 1, '0')
+  const exact = (
+    decimals === 0 ? units : `${units.slice(0, -decimals)}.${units.slice(-decimals)}`
+  ) as `${number}`
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: minimum,
+    maximumFractionDigits: decimals,
+  }).format(exact)
 }
 
 /** The amount as the person would type it to edit it: "1250.50", no grouping. */

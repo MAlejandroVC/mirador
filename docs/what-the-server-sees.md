@@ -6,7 +6,7 @@ It covers everything that exists in this version. Whenever the server starts sto
 
 ## In short
 
-**The server can never read:** your wallets, transactions, amounts, categories, tags, budgets, goals or notes. It also can't tell what kind of thing each record is or whether you deleted it. It never receives your password, your recovery key, the secret a passkey gives your browser, or the key that encrypts your data.
+**The server can never read:** your wallets and their details (rates, limits, fees, loans), transactions, amounts, exchange rates, categories, tags, budgets, goals or notes. It also can't tell what kind of thing each record is or whether you deleted it. It never receives your password, your recovery key, the secret a passkey gives your browser, or the key that encrypts your data.
 
 **The server can see:**
 

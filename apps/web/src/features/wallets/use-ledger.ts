@@ -1,4 +1,7 @@
 import {
+  type ExchangeRateRecord,
+  exchangeRateRecord,
+  exchangeRateRecordType,
   maxPushChanges,
   preferencesRecord,
   preferencesRecordType,
@@ -10,7 +13,7 @@ import {
   walletRecord,
   walletRecordType,
 } from '@repo/api'
-import { guessCurrency, type Transaction } from '@repo/core'
+import { type ExchangeRate, guessCurrency, sortWallets, type Transaction } from '@repo/core'
 import { newRecordId } from '@repo/crypto'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { VaultClient } from '../../lib/vault'
@@ -30,6 +33,8 @@ export interface LedgerWallet extends WalletRecord {
 export interface Ledger {
   wallets: LedgerWallet[]
   transactions: Transaction[]
+  /** SYS-04, SYS-05: every exchange rate entered, with its date. */
+  rates: ExchangeRate[]
   /** SYS-01: the person's choice, or a guess from the device language until they make one. */
   defaultCurrency: string
   preferencesId: string | null
@@ -38,6 +43,7 @@ export interface Ledger {
 async function readLedger(vault: VaultClient): Promise<Ledger> {
   const wallets: LedgerWallet[] = []
   const transactions: Transaction[] = []
+  const rates: ExchangeRate[] = []
   let preferences: { id: string; defaultCurrency: string } | null = null
   for (const { id, body } of await vault.listRecords()) {
     if (body.deleted) continue
@@ -52,6 +58,11 @@ async function readLedger(vault: VaultClient): Promise<Ledger> {
         if (parsed.success) transactions.push({ id, ...parsed.data })
         break
       }
+      case exchangeRateRecordType: {
+        const parsed = exchangeRateRecord.safeParse(body.data)
+        if (parsed.success) rates.push({ id, ...parsed.data })
+        break
+      }
       case preferencesRecordType: {
         const parsed = preferencesRecord.safeParse(body.data)
         if (parsed.success) preferences = { id, defaultCurrency: parsed.data.defaultCurrency }
@@ -61,11 +72,12 @@ async function readLedger(vault: VaultClient): Promise<Ledger> {
         break
     }
   }
-  // UUIDv7 ids start with their creation time, so this is the order they were added.
-  wallets.sort((a, b) => a.id.localeCompare(b.id))
   return {
-    wallets,
+    // WAL-10: the person's order; the rest in the order they were added (UUIDv7 ids
+    // start with their creation time).
+    wallets: sortWallets(wallets),
     transactions,
+    rates,
     defaultCurrency: preferences?.defaultCurrency ?? guessCurrency(globalThis.navigator.language),
     preferencesId: preferences?.id ?? null,
   }
@@ -86,6 +98,13 @@ export const walletBody = (data: WalletRecord): RecordBody => ({
 export const transactionBody = (data: TransactionRecord): RecordBody => ({
   deleted: false,
   type: transactionRecordType,
+  schema: 1,
+  data,
+})
+
+export const exchangeRateBody = (data: ExchangeRateRecord): RecordBody => ({
+  deleted: false,
+  type: exchangeRateRecordType,
   schema: 1,
   data,
 })
@@ -124,4 +143,10 @@ export function preferencesChange(id: string | null, defaultCurrency: string): R
       data: preferencesRecord.parse({ defaultCurrency }),
     },
   }
+}
+
+/** A wallet saved with some of its fields changed, such as one feature's details. */
+export function walletChange(wallet: LedgerWallet, patch: Partial<WalletRecord>): RecordChange {
+  const { id, ...record } = wallet
+  return { id, body: walletBody(walletRecord.parse({ ...record, ...patch })) }
 }

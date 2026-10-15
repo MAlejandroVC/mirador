@@ -509,7 +509,7 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 
 **DL-CMP-10** **Switches.** The iOS switch, `brand` when on. Only for settings that take effect immediately; anything that needs Save is not a switch.
 
-**DL-CMP-11** **Segmented control.** Two to five equal options that switch a mode or a view, such as Expense, Income and Transfer. More than five becomes a list.
+**DL-CMP-11** **Segmented control.** Two to five equal options that switch a mode or a view, such as Expense, Income and Transfer. More than five becomes a list. The selected option sits on `thumb`: `surface` in light mode, and in dark mode `surface` mixed with 24% `text`, so it stands out from the track as in iOS.
 
 **DL-CMP-12** **Action sheet.** Confirms a destructive or irreversible step. It slides up, states the consequence in one sentence, and offers the destructive action in `danger` with Cancel set apart below it.
 

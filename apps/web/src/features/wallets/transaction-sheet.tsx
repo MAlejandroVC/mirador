@@ -13,12 +13,15 @@ import { type LedgerWallet, transactionBody, useSaveRecords } from './use-ledger
 // can be deleted.
 export function TransactionSheet({
   transaction,
+  isNew = false,
   wallet,
   defaultCurrency,
   onClose,
   onDelete,
 }: {
   transaction: Transaction | null
+  /** WAL-14: a transaction to confirm before it is saved, such as estimated interest. */
+  isNew?: boolean
   wallet: LedgerWallet
   defaultCurrency: string
   onClose: () => void
@@ -36,6 +39,7 @@ export function TransactionSheet({
         <TransactionForm
           key={transaction.id}
           transaction={transaction}
+          isNew={isNew}
           wallet={wallet}
           defaultCurrency={defaultCurrency}
           onClose={onClose}
@@ -48,12 +52,14 @@ export function TransactionSheet({
 
 function TransactionForm({
   transaction,
+  isNew,
   wallet,
   defaultCurrency,
   onClose,
   onDelete,
 }: {
   transaction: Transaction
+  isNew: boolean
   wallet: LedgerWallet
   defaultCurrency: string
   onClose: () => void
@@ -139,14 +145,16 @@ function TransactionForm({
           )
         )}
       </div>
-      <Button
-        variant="danger"
-        onClick={() => {
-          onDelete(transaction)
-        }}
-      >
-        {t('wallets.transactions.delete')}
-      </Button>
+      {!isNew && (
+        <Button
+          variant="danger"
+          onClick={() => {
+            onDelete(transaction)
+          }}
+        >
+          {t('wallets.transactions.delete')}
+        </Button>
+      )}
       {save.isError && (
         <p className="px-4 text-[0.8125rem] text-warning">{t('wallets.saveFailed')}</p>
       )}
@@ -172,7 +180,7 @@ function TransactionForm({
             )
           }}
         >
-          {t('wallets.form.save')}
+          {isNew ? t('wallets.transactions.record') : t('wallets.form.save')}
         </Button>
       </SheetFooter>
     </>

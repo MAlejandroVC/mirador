@@ -44,12 +44,16 @@
   /* DL-COL-08: how strongly a color tints its tile and its bar. */
   --mirador-tile-mix: 14%;
   --mirador-bar-mix: 52%;
+  /* DL-CMP-11: the selected option of a segmented control. White in light mode; in dark
+     mode a lighter grey than the track, as in iOS, since a dark surface would sink into it. */
+  --mirador-thumb: var(--mirador-surface);
 
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
+    --mirador-thumb: color-mix(in srgb, var(--mirador-text) 24%, var(--mirador-surface));
     --mirador-background: #0a0a09;
     --mirador-surface: #191917;
     --mirador-inset: #242321;
@@ -89,6 +93,7 @@
 }
 
 :root[data-theme='dark'] {
+  --mirador-thumb: color-mix(in srgb, var(--mirador-text) 24%, var(--mirador-surface));
   --mirador-background: #0a0a09;
   --mirador-surface: #191917;
   --mirador-inset: #242321;
@@ -498,6 +503,7 @@
   --color-text-faint: var(--mirador-text-faint);
   --color-separator: var(--mirador-separator);
   --color-fill: var(--mirador-fill);
+  --color-thumb: var(--mirador-thumb);
   --color-brand: var(--mirador-brand);
   --color-on-brand: var(--mirador-on-brand);
   --color-hero: var(--mirador-hero);

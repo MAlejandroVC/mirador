@@ -75,6 +75,43 @@ export const calendarDate = z.iso.date()
 
 export const walletRecordType = 'wallet'
 
+/** A day of the month, 1 to 31; shorter months use their last day. */
+const dayOfMonth = z.int().min(1).max(31)
+/** Minor units that can only be positive, such as a limit or a fee. */
+const positiveMinor = z.int().positive()
+
+/** WAL-13: an annual rate in hundredths of a percent (1050 is 10.50%). */
+export const interestSettings = z.object({
+  rate: z.int().min(0).max(100_000),
+  type: z.enum(['nominal', 'effective']),
+  compounding: z.enum(['daily', 'monthly', 'yearly']),
+})
+
+/** WAL-15: a fee and the last date confirmed or skipped. */
+export const feeSettings = z.object({
+  id: z.string().min(1).max(40),
+  name: z.string().trim().min(1).max(60),
+  amount: positiveMinor,
+  every: z.enum(['month', 'year']),
+  start: calendarDate,
+  handled: calendarDate.optional(),
+})
+
+/** WAL-16: the credit limit and the statement and payment days. */
+export const creditSettings = z.object({
+  limit: positiveMinor,
+  closingDay: dayOfMonth,
+  dueDay: dayOfMonth,
+})
+
+/** WAL-17: the loan contract; its rate is the wallet's interest (WAL-13). */
+export const loanSettings = z.object({
+  principal: positiveMinor,
+  termMonths: z.int().min(1).max(600),
+  payment: positiveMinor,
+  paymentDay: dayOfMonth,
+})
+
 export const walletRecord = z.object({
   name: z.string().trim().min(1).max(60),
   preset: z.enum(walletPresets),
@@ -89,14 +126,30 @@ export const walletRecord = z.object({
   // WAL-09: left out of net worth, or out of the budget, each on its own.
   inNetWorth: z.boolean(),
   inBudget: z.boolean(),
+  // WAL-10: its place in the list; wallets without one follow, oldest first.
+  order: z.int().min(0).optional(),
+  // WAL-13 to WAL-17: each feature's details. They stay when the feature is switched
+  // off, so switching it back on brings them back.
+  interest: interestSettings.optional(),
+  fees: z.array(feeSettings).max(20).optional(),
+  credit: creditSettings.optional(),
+  loan: loanSettings.optional(),
 })
 export type WalletRecord = z.infer<typeof walletRecord>
 
 export const transactionRecordType = 'transaction'
 
-// The kinds of transaction the wallets epic makes. The transactions epic (TXN) adds
-// expenses, income and transfers, with categories and tags, in a later schema version.
-export const transactionKinds = ['openingBalance', 'adjustment'] as const
+// The kinds of transaction the wallets epic makes: the opening balance (WAL-05),
+// adjustments (WAL-07), posted interest (WAL-14), confirmed fees (WAL-15) and
+// market-value updates (WAL-18). The transactions epic (TXN) adds expenses, income and
+// transfers, with categories and tags, in a later schema version.
+export const transactionKinds = [
+  'openingBalance',
+  'adjustment',
+  'interest',
+  'fee',
+  'valuation',
+] as const
 export type TransactionKind = (typeof transactionKinds)[number]
 
 export const transactionRecord = z.object({
@@ -109,3 +162,17 @@ export const transactionRecord = z.object({
   note: z.string().max(500).optional(),
 })
 export type TransactionRecord = z.infer<typeof transactionRecord>
+
+export const exchangeRateRecordType = 'exchangeRate'
+
+// SYS-04, SYS-05: a rate the person entered, kept as dated history. One unit of `from`
+// buys `rate` millionths of a unit of `to` (18.45 is 18_450_000), an integer like money.
+export const exchangeRateRecord = z
+  .object({
+    from: currencyCode,
+    to: currencyCode,
+    rate: z.int().positive(),
+    date: calendarDate,
+  })
+  .refine((rate) => rate.from !== rate.to)
+export type ExchangeRateRecord = z.infer<typeof exchangeRateRecord>
