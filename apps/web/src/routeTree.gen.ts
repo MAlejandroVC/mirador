@@ -9,17 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as InvitesRouteImport } from './routes/invites'
 import { Route as RecoverRouteImport } from './routes/recover'
 import { Route as SecurityRouteImport } from './routes/security'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as UnlockRouteImport } from './routes/unlock'
+import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppActivityRouteImport } from './routes/_app/activity'
+import { Route as AppBudgetRouteImport } from './routes/_app/budget'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppWalletsRouteImport } from './routes/_app/wallets'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvitesRoute = InvitesRouteImport.update({
@@ -52,34 +56,72 @@ const UnlockRoute = UnlockRouteImport.update({
   path: '/unlock',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppActivityRoute = AppActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBudgetRoute = AppBudgetRouteImport.update({
+  id: '/budget',
+  path: '/budget',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWalletsRoute = AppWalletsRouteImport.update({
+  id: '/wallets',
+  path: '/wallets',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof AppIndexRoute
   '/invites': typeof InvitesRoute
   '/recover': typeof RecoverRoute
   '/security': typeof SecurityRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/unlock': typeof UnlockRoute
+  '/activity': typeof AppActivityRoute
+  '/budget': typeof AppBudgetRoute
+  '/settings': typeof AppSettingsRoute
+  '/wallets': typeof AppWalletsRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/invites': typeof InvitesRoute
   '/recover': typeof RecoverRoute
   '/security': typeof SecurityRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/unlock': typeof UnlockRoute
+  '/activity': typeof AppActivityRoute
+  '/budget': typeof AppBudgetRoute
+  '/settings': typeof AppSettingsRoute
+  '/wallets': typeof AppWalletsRoute
+  '/': typeof AppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
   '/invites': typeof InvitesRoute
   '/recover': typeof RecoverRoute
   '/security': typeof SecurityRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/unlock': typeof UnlockRoute
+  '/_app/activity': typeof AppActivityRoute
+  '/_app/budget': typeof AppBudgetRoute
+  '/_app/settings': typeof AppSettingsRoute
+  '/_app/wallets': typeof AppWalletsRoute
+  '/_app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,28 +133,41 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/unlock'
+    | '/activity'
+    | '/budget'
+    | '/settings'
+    | '/wallets'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
     | '/invites'
     | '/recover'
     | '/security'
     | '/sign-in'
     | '/sign-up'
     | '/unlock'
+    | '/activity'
+    | '/budget'
+    | '/settings'
+    | '/wallets'
+    | '/'
   id:
     | '__root__'
-    | '/'
+    | '/_app'
     | '/invites'
     | '/recover'
     | '/security'
     | '/sign-in'
     | '/sign-up'
     | '/unlock'
+    | '/_app/activity'
+    | '/_app/budget'
+    | '/_app/settings'
+    | '/_app/wallets'
+    | '/_app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   InvitesRoute: typeof InvitesRoute
   RecoverRoute: typeof RecoverRoute
   SecurityRoute: typeof SecurityRoute
@@ -123,11 +178,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
+    '/_app': {
+      id: '/_app'
+      path: ''
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invites': {
@@ -172,11 +227,64 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UnlockRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/': {
+      id: '/_app/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/activity': {
+      id: '/_app/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof AppActivityRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/budget': {
+      id: '/_app/budget'
+      path: '/budget'
+      fullPath: '/budget'
+      preLoaderRoute: typeof AppBudgetRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/wallets': {
+      id: '/_app/wallets'
+      path: '/wallets'
+      fullPath: '/wallets'
+      preLoaderRoute: typeof AppWalletsRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppActivityRoute: typeof AppActivityRoute
+  AppBudgetRoute: typeof AppBudgetRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppWalletsRoute: typeof AppWalletsRoute
+  AppIndexRoute: typeof AppIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppActivityRoute: AppActivityRoute,
+  AppBudgetRoute: AppBudgetRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppWalletsRoute: AppWalletsRoute,
+  AppIndexRoute: AppIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   InvitesRoute: InvitesRoute,
   RecoverRoute: RecoverRoute,
   SecurityRoute: SecurityRoute,

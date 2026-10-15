@@ -28,11 +28,11 @@ function section(name: string) {
 }
 
 describe('password and security', () => {
-  it('SEC-08: is one tap from home, and only while unlocked', async () => {
+  it('SEC-08: is one tap from Settings, and only while unlocked', async () => {
     const user = userEvent.setup()
     const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
-    const { router } = renderApp('/', unlockedVault(server))
+    const { router } = renderApp('/settings', unlockedVault(server))
 
     await user.click(await screen.findByRole('link', { name: 'Password and security' }))
     expect(

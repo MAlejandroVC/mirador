@@ -3,6 +3,50 @@
     "name": "Mirador",
     "tagline": "Know where you stand. See where you're going."
   },
+  "nav": {
+    "label": "Places",
+    "home": "Home",
+    "activity": "Activity",
+    "budget": "Budget",
+    "wallets": "Wallets",
+    "settings": "Settings",
+    "new": "New",
+    "back": "Back",
+    "cancel": "Cancel"
+  },
+  "quickAdd": {
+    "title": "New transaction",
+    "placeholder": {
+      "title": "Almost here",
+      "body": "Soon you'll add an expense here in a few taps, from any screen."
+    }
+  },
+  "placeholder": {
+    "home": {
+      "title": "Your money at a glance",
+      "body": "How this period is going, your goals and anything that needs a look will show up here."
+    },
+    "activity": {
+      "title": "Nothing here yet",
+      "body": "Every expense, income and transfer will be listed here, newest first."
+    },
+    "budget": {
+      "title": "Your budget is on its way",
+      "body": "It will grow from your own spending habits, one small step at a time."
+    },
+    "wallets": {
+      "title": "No wallets yet",
+      "body": "Your cash, cards, savings and loans will live here, with your net worth on top."
+    }
+  },
+  "settings": {
+    "signedInAs": "Signed in as {{username}}",
+    "encrypted": "Your data is end-to-end encrypted. Only this device can read it while it's unlocked.",
+    "lock": "Lock",
+    "signOut": "Sign out",
+    "security": "Password and security",
+    "invites": "Invite someone"
+  },
   "health": {
     "checking": "Checking the server…",
     "ok": "Server connected",
@@ -82,14 +126,6 @@
       "submit": "Set new password",
       "working": "Opening your data with the recovery key…",
       "back": "Back to sign in"
-    },
-    "home": {
-      "signedInAs": "Signed in as {{username}}",
-      "encrypted": "Your data is end-to-end encrypted. Only this device can read it while it's unlocked.",
-      "lock": "Lock",
-      "signOut": "Sign out",
-      "security": "Password and security",
-      "invites": "Invite someone"
     },
     "settings": {
       "title": "Password and security",

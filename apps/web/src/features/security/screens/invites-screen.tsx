@@ -27,7 +27,7 @@ export function InvitesScreen() {
     <main className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-8 sm:py-12">
       <div className="flex flex-col items-start gap-2">
         <Link
-          to="/"
+          to="/settings"
           className="-ml-1 inline-flex min-h-11 items-center px-1 font-medium text-slate-700 underline-offset-4 hover:underline"
         >
           ← {t('security.settings.back')}

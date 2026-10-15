@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
     "@repo/api": "workspace:*",
     "@repo/crypto": "workspace:*",
     "@repo/i18n": "workspace:*",

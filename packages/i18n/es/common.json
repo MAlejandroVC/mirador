@@ -3,6 +3,50 @@
     "name": "Mirador",
     "tagline": "Conoce dónde estás. Mira a dónde vas."
   },
+  "nav": {
+    "label": "Secciones",
+    "home": "Inicio",
+    "activity": "Movimientos",
+    "budget": "Presupuesto",
+    "wallets": "Carteras",
+    "settings": "Configuración",
+    "new": "Nuevo",
+    "back": "Atrás",
+    "cancel": "Cancelar"
+  },
+  "quickAdd": {
+    "title": "Nuevo movimiento",
+    "placeholder": {
+      "title": "Ya casi",
+      "body": "Muy pronto podrás agregar un gasto aquí en unos cuantos toques, desde cualquier pantalla."
+    }
+  },
+  "placeholder": {
+    "home": {
+      "title": "Tu dinero de un vistazo",
+      "body": "Aquí verás cómo va tu periodo, tus metas y lo que necesite tu atención."
+    },
+    "activity": {
+      "title": "Aún no hay nada aquí",
+      "body": "Aquí aparecerán todos tus gastos, ingresos y transferencias, del más reciente al más antiguo."
+    },
+    "budget": {
+      "title": "Tu presupuesto viene en camino",
+      "body": "Se irá armando con tus propios hábitos de gasto, un pasito a la vez."
+    },
+    "wallets": {
+      "title": "Aún no tienes carteras",
+      "body": "Aquí vivirán tu efectivo, tarjetas, ahorros y créditos, con tu patrimonio hasta arriba."
+    }
+  },
+  "settings": {
+    "signedInAs": "Sesión iniciada como {{username}}",
+    "encrypted": "Tus datos están cifrados de extremo a extremo. Solo este dispositivo puede leerlos mientras está desbloqueado.",
+    "lock": "Bloquear",
+    "signOut": "Cerrar sesión",
+    "security": "Contraseña y seguridad",
+    "invites": "Invitar a alguien"
+  },
   "health": {
     "checking": "Comprobando el servidor…",
     "ok": "Servidor conectado",
@@ -82,14 +126,6 @@
       "submit": "Guardar contraseña nueva",
       "working": "Abriendo tus datos con la clave de recuperación…",
       "back": "Volver a iniciar sesión"
-    },
-    "home": {
-      "signedInAs": "Sesión iniciada como {{username}}",
-      "encrypted": "Tus datos están cifrados de extremo a extremo. Solo este dispositivo puede leerlos mientras está desbloqueado.",
-      "lock": "Bloquear",
-      "signOut": "Cerrar sesión",
-      "security": "Contraseña y seguridad",
-      "invites": "Invitar a alguien"
     },
     "settings": {
       "title": "Contraseña y seguridad",

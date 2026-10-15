@@ -13,11 +13,11 @@ afterEach(() => {
 })
 
 describe('invites', () => {
-  it('SYS-13: the operator makes an invite link from home and sees it listed', async () => {
+  it('SYS-13: the operator makes an invite link from Settings and sees it listed', async () => {
     const user = userEvent.setup()
     const server: FakeServer = { signedIn: 'ana', operator: true }
     stubServer(server)
-    const { router } = renderApp('/', unlockedVault(server))
+    const { router } = renderApp('/settings', unlockedVault(server))
 
     await user.click(await screen.findByRole('link', { name: 'Invite someone' }))
     expect(await screen.findByRole('heading', { name: 'Invites' })).toBeInTheDocument()
@@ -106,7 +106,7 @@ describe('invites', () => {
     stubServer(server)
     const { router } = renderApp('/invites', unlockedVault(server))
 
-    expect(await screen.findByText('Signed in as ben')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Home', level: 1 })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
     expect(screen.queryByRole('link', { name: 'Invite someone' })).not.toBeInTheDocument()
   })

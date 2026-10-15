@@ -146,7 +146,7 @@ describe('passkeys and Face ID', () => {
     expect(vault.openWithPasskey).toHaveBeenCalledWith(
       expect.objectContaining({ challengeId: 'sign-in', response: { id: 'used' } }),
     )
-    expect(await screen.findByText('Signed in as ana')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Home', level: 1 })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
   })
 
@@ -182,7 +182,7 @@ describe('passkeys and Face ID', () => {
     )
 
     await user.click(button)
-    expect(await screen.findByText('Sesión iniciada como ana')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Inicio', level: 1 })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
   })
 })
