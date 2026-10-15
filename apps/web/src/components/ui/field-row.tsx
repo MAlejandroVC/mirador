@@ -11,7 +11,7 @@ import { MoneyInput } from './money-input'
  * For any row holding a control marked aria-invalid.
  */
 export const invalidRow =
-  'rounded-xl has-[[aria-invalid=true]]:outline-2 has-[[aria-invalid=true]]:-outline-offset-2 has-[[aria-invalid=true]]:outline-warning'
+  'has-[[aria-invalid=true]]:rounded-xl has-[[aria-invalid=true]]:outline-2 has-[[aria-invalid=true]]:-outline-offset-2 has-[[aria-invalid=true]]:outline-warning'
 export function FieldRow({
   label,
   suffix,

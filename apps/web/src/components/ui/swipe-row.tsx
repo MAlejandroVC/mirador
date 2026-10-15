@@ -124,11 +124,15 @@ export function SwipeRow({
           type="button"
           {...handlers}
           onClickCapture={(event) => {
-            // The click that ends a swipe, or a tap that closes the pill, opens nothing.
-            if (swiped.current || offset !== 0) {
+            // The click that ends a swipe opens nothing; a tap on a row whose pill is
+            // showing closes the pill instead of opening the row.
+            if (swiped.current) {
               event.preventDefault()
               event.stopPropagation()
               swiped.current = false
+            } else if (offset !== 0) {
+              event.preventDefault()
+              event.stopPropagation()
               setOffset(0)
             }
           }}

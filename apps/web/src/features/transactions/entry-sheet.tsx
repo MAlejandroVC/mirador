@@ -376,115 +376,124 @@ function EntryForm({
         autoFocus={mode.kind === 'new'}
       />
 
-      <FieldRows
-        note={
-          form.tried && (walletError ?? toError ?? dateError) ? (
-            <FieldNote error>{walletError ?? toError ?? dateError}</FieldNote>
-          ) : null
-        }
-      >
-        <PickerRow
-          label={transfer ? t('transactions.from') : t('transactions.wallet')}
-          value={from?.name ?? t('pickers.choose')}
-          error={form.tried && walletError !== null}
-          onClick={() => {
-            setChoosing('from')
-          }}
-        />
-        {/* DL-MOT-07: the destination opens in place when the type becomes a transfer. */}
-        <li
-          className="fold"
-          data-closed={transfer ? undefined : ''}
-          aria-hidden={!transfer || undefined}
-          inert={!transfer}
+      {/* Folds that are closed take no room, so the gaps live inside them. */}
+      <div className="flex flex-col">
+        <FieldRows
+          note={
+            form.tried && (walletError ?? toError ?? dateError) ? (
+              <FieldNote error>{walletError ?? toError ?? dateError}</FieldNote>
+            ) : null
+          }
         >
-          <ul>
-            <PickerRow
-              label={t('transactions.to')}
-              value={to?.name ?? t('pickers.choose')}
-              error={form.tried && toError !== null}
-              separator
-              onClick={() => {
-                setChoosing('to')
-              }}
-            />
-          </ul>
-        </li>
-        <DateRow
-          label={t('transactions.date')}
-          value={date}
-          max={today}
-          onChange={setDate}
-          error={form.tried && dateError !== null}
-        />
-      </FieldRows>
-
-      {/* TXN-05: between currencies, what arrived or the rate; the other is worked out. */}
-      <Fold open={crossCurrency}>
-        {from && to && (
-          <FieldRows
-            note={
-              form.tried && receivedError ? (
-                <FieldNote error>{receivedError}</FieldNote>
-              ) : (
-                <FieldNote>{t('transactions.rateHint')}</FieldNote>
-              )
-            }
-          >
-            <MoneyRow
-              label={t('transactions.received')}
-              value={receivedText}
-              onChange={(next) => {
-                setReceivedText(next)
-                fromReceived(parseAmount(next, to.currency, locale))
-              }}
-              locale={locale}
-              decimals={fractionDigits(to.currency)}
-              suffix={to.currency}
-              error={form.tried && receivedError !== null}
-            />
-            <FieldRow
-              label={t('rates.one', { currency: from.currency })}
-              value={rateText}
-              onChange={(event) => {
-                setRateText(event.target.value)
-                fromRate(parseDecimal(event.target.value, locale, rateDecimals))
-              }}
-              inputMode="decimal"
-              placeholder="0"
-              suffix={to.currency}
-            />
-          </FieldRows>
-        )}
-      </Fold>
-
-      <label className="flex flex-col">
-        <span className="sr-only">{t('transactions.note')}</span>
-        <textarea
-          value={note}
-          onChange={(event) => {
-            setNote(event.target.value)
-          }}
-          maxLength={500}
-          rows={1}
-          placeholder={t('transactions.notePlaceholder')}
-          className="min-h-[3.25rem] resize-none rounded-2xl bg-inset px-4 py-3.5 text-[0.9375rem] text-text caret-brand placeholder:text-text-faint focus:outline-none"
-        />
-      </label>
-
-      {/* TXN-06: transfers are never in the budget, so only expenses and income ask. */}
-      <Fold open={!transfer}>
-        <List inset>
-          <ChoiceRow
-            title={t('transactions.excluded')}
-            subtitle={t('transactions.excludedHint')}
-            checked={excluded}
-            onToggle={() => {
-              setExcluded(!excluded)
+          <PickerRow
+            label={transfer ? t('transactions.from') : t('transactions.wallet')}
+            value={from?.name ?? t('pickers.choose')}
+            error={form.tried && walletError !== null}
+            onClick={() => {
+              setChoosing('from')
             }}
           />
-        </List>
-      </Fold>
+          {/* DL-MOT-07: the destination opens in place when the type becomes a transfer. */}
+          <li
+            className="fold"
+            data-closed={transfer ? undefined : ''}
+            aria-hidden={!transfer || undefined}
+            inert={!transfer}
+          >
+            <ul>
+              <PickerRow
+                label={t('transactions.to')}
+                value={to?.name ?? t('pickers.choose')}
+                error={form.tried && toError !== null}
+                separator
+                onClick={() => {
+                  setChoosing('to')
+                }}
+              />
+            </ul>
+          </li>
+          <DateRow
+            label={t('transactions.date')}
+            value={date}
+            max={today}
+            onChange={setDate}
+            error={form.tried && dateError !== null}
+          />
+        </FieldRows>
+
+        {/* TXN-05: between currencies, what arrived or the rate; the other is worked out. */}
+        <Fold open={crossCurrency}>
+          {from && to && (
+            <div className="pt-3">
+              <FieldRows
+                note={
+                  form.tried && receivedError ? (
+                    <FieldNote error>{receivedError}</FieldNote>
+                  ) : (
+                    <FieldNote>{t('transactions.rateHint')}</FieldNote>
+                  )
+                }
+              >
+                <MoneyRow
+                  label={t('transactions.received')}
+                  value={receivedText}
+                  onChange={(next) => {
+                    setReceivedText(next)
+                    fromReceived(parseAmount(next, to.currency, locale))
+                  }}
+                  locale={locale}
+                  decimals={fractionDigits(to.currency)}
+                  suffix={to.currency}
+                  error={form.tried && receivedError !== null}
+                />
+                <FieldRow
+                  label={t('rates.one', { currency: from.currency })}
+                  value={rateText}
+                  onChange={(event) => {
+                    setRateText(event.target.value)
+                    fromRate(parseDecimal(event.target.value, locale, rateDecimals))
+                  }}
+                  inputMode="decimal"
+                  placeholder="0"
+                  suffix={to.currency}
+                />
+              </FieldRows>
+            </div>
+          )}
+        </Fold>
+      </div>
+
+      <div className="flex flex-col">
+        <label className="flex flex-col">
+          <span className="sr-only">{t('transactions.note')}</span>
+          <textarea
+            value={note}
+            onChange={(event) => {
+              setNote(event.target.value)
+            }}
+            maxLength={500}
+            rows={1}
+            placeholder={t('transactions.notePlaceholder')}
+            className="min-h-[3.25rem] resize-none rounded-2xl bg-inset px-4 py-3.5 text-[0.9375rem] text-text caret-brand placeholder:text-text-faint focus:outline-none"
+          />
+        </label>
+
+        {/* TXN-06: transfers are never in the budget, so only expenses and income ask. */}
+        <Fold open={!transfer}>
+          <div className="pt-3">
+            <List inset>
+              <ChoiceRow
+                title={t('transactions.excluded')}
+                subtitle={t('transactions.excludedHint')}
+                checked={excluded}
+                onToggle={() => {
+                  setExcluded(!excluded)
+                }}
+              />
+            </List>
+          </div>
+        </Fold>
+      </div>
 
       {mode.kind === 'edit' && onDelete && (
         <Button
