@@ -1,11 +1,12 @@
 import type { Invite } from '@repo/api'
 import { inviteLifetimeDays } from '@repo/api'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert } from '../../../components/ui/alert'
 import { Button } from '../../../components/ui/button'
+import { Page } from '../../../components/ui/page'
+import { useSettingsBack } from '../../../components/shell/settings-back'
 import { api } from '../../../lib/api'
 import { inviteLink, invitesQuery } from '../hooks/invites'
 
@@ -13,6 +14,7 @@ import { inviteLink, invitesQuery } from '../hooks/invites'
 // invite and sends its link to the person. Mirador sends no messages itself (NFR-05).
 export function InvitesScreen() {
   const { t } = useTranslation()
+  const settingsBack = useSettingsBack()
   const queryClient = useQueryClient()
   const { data: invites } = useSuspenseQuery(invitesQuery)
   // Whether an invite is still waiting, as of opening the screen.
@@ -24,19 +26,10 @@ export function InvitesScreen() {
   })
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-8 sm:py-12">
-      <div className="flex flex-col items-start gap-2">
-        <Link
-          to="/settings"
-          className="-ml-1 inline-flex min-h-11 items-center px-1 font-medium text-slate-700 underline-offset-4 hover:underline"
-        >
-          ← {t('security.settings.back')}
-        </Link>
-        <h1 className="text-2xl font-semibold text-slate-900">{t('security.invites.title')}</h1>
-        <p className="text-slate-600">
-          {t('security.invites.intro', { count: inviteLifetimeDays })}
-        </p>
-      </div>
+    <Page title={t('security.invites.title')} back={settingsBack}>
+      <p className="px-1 text-[0.9375rem] text-text-muted">
+        {t('security.invites.intro', { count: inviteLifetimeDays })}
+      </p>
       {create.data ? (
         <NewInvite code={create.data.code} />
       ) : (
@@ -51,18 +44,20 @@ export function InvitesScreen() {
       )}
       {create.isError && <Alert>{t('security.errors.unknown')}</Alert>}
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold text-slate-900">{t('security.invites.listTitle')}</h2>
+        <h2 className="text-[1.0625rem] font-semibold text-text">
+          {t('security.invites.listTitle')}
+        </h2>
         {invites.length === 0 ? (
-          <p className="text-slate-600">{t('security.invites.none')}</p>
+          <p className="text-text-muted">{t('security.invites.none')}</p>
         ) : (
-          <ul className="flex flex-col divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
+          <ul className="flex flex-col divide-y divide-separator rounded-2xl bg-surface">
             {invites.map((invite) => (
               <InviteRow key={invite.id} invite={invite} now={now} />
             ))}
           </ul>
         )}
       </section>
-    </main>
+    </Page>
   )
 }
 
@@ -76,10 +71,10 @@ function NewInvite({ code }: { code: string }) {
   return (
     <section
       aria-label={t('security.invites.newTitle')}
-      className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5"
+      className="flex flex-col gap-4 rounded-2xl bg-surface px-4 py-3.5"
     >
-      <h2 className="text-lg font-semibold text-slate-900">{t('security.invites.newTitle')}</h2>
-      <p className="rounded-lg border border-slate-300 bg-slate-100 p-3 font-mono text-sm break-all text-slate-900 select-all">
+      <h2 className="text-[1.0625rem] font-semibold text-text">{t('security.invites.newTitle')}</h2>
+      <p className="rounded-xl bg-inset p-3 font-mono text-sm break-all text-text select-all">
         {link}
       </p>
       <div className={`grid gap-3 ${canShare ? 'grid-cols-2' : 'grid-cols-1'}`}>
@@ -138,8 +133,8 @@ function InviteRow({ invite, now }: { invite: Invite; now: number }) {
   return (
     <li className="flex min-h-14 items-center justify-between gap-3 px-4 py-2">
       <div className="flex flex-col">
-        <span className="text-slate-900">{status}</span>
-        <span className="text-sm text-slate-500">
+        <span className="text-text">{status}</span>
+        <span className="text-sm text-text-muted">
           {t('security.invites.made', { date: date(invite.createdAt) })}
         </span>
       </div>

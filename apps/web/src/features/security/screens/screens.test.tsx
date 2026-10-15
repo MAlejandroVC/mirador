@@ -98,7 +98,17 @@ describe('sign-up', () => {
 
     await user.click(screen.getByLabelText('I saved my recovery key somewhere safe'))
     await user.click(proceed)
+
+    // SYS-18: then a profile picture, with the initial already chosen.
+    expect(
+      await screen.findByRole('heading', { name: 'Pick a profile picture' }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('radio', { name: 'Butterfly' }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
     expect(await screen.findByRole('heading', { name: 'Home', level: 1 })).toBeInTheDocument()
+    expect(server.records?.map((record) => record.body)).toEqual([
+      { deleted: false, type: 'profile', schema: 1, data: { picture: 'butterfly' } },
+    ])
   })
 
   it('SYS-13: asks for an invite code, and an invite link fills it in', async () => {

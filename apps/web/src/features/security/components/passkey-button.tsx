@@ -45,10 +45,10 @@ export function PasskeyButton({
 
 export function OrDivider({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-3 text-sm text-slate-500" role="separator">
-      <span className="h-px flex-1 bg-slate-200" />
+    <div className="flex items-center gap-3 text-sm text-text-muted" role="separator">
+      <span className="h-px flex-1 bg-separator" />
       {label}
-      <span className="h-px flex-1 bg-slate-200" />
+      <span className="h-px flex-1 bg-separator" />
     </div>
   )
 }

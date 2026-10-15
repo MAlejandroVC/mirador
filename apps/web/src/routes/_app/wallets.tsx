@@ -14,7 +14,7 @@ function Wallets() {
   const { t } = useTranslation()
   return (
     <Page title={t('nav.wallets')} actions={<AccountButton />}>
-      <EmptyState icon={WalletIcon} color="moss" title={t('placeholder.wallets.title')}>
+      <EmptyState icon={WalletIcon} title={t('placeholder.wallets.title')}>
         {t('placeholder.wallets.body')}
       </EmptyState>
     </Page>

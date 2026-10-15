@@ -15,6 +15,7 @@ import { api } from '../../../lib/api'
 import { vaultErrorCode } from '../../../worker/errors'
 import { AuthLayout } from '../components/auth-layout'
 import { ErrorMessage } from '../components/error-message'
+import { PictureStep } from '../components/picture-step'
 import { RecoveryKeyStep } from '../components/recovery-key-step'
 import { sessionQuery } from '../hooks/session'
 import { signUpStatusQuery } from '../hooks/sign-up'
@@ -44,6 +45,7 @@ export function SignUpScreen() {
   const { invite } = useSearch({ from: '/sign-up' })
   const [inviteCode, setInviteCode] = useState(invite ?? '')
   const [problems, setProblems] = useState<Problems>({})
+  const [keySaved, setKeySaved] = useState(false)
   const usernameRules = useUsernameChecks(username)
   const passwordRules = usePasswordChecks(password)
   const repeatRules = useRepeatChecks(password, confirm)
@@ -98,11 +100,10 @@ export function SignUpScreen() {
     if (Object.keys(found).length === 0) signUp.mutate()
   }
 
-  if (signUp.data) {
+  if (keySaved) {
     return (
-      <RecoveryKeyStep
-        username={username.trim().toLowerCase()}
-        recoveryKey={signUp.data.recoveryKey}
+      <PictureStep
+        username={wanted}
         onDone={async () => {
           queryClient.removeQueries(sessionQuery)
           await navigate({ to: '/' })
@@ -111,13 +112,23 @@ export function SignUpScreen() {
     )
   }
 
+  if (signUp.data) {
+    return (
+      <RecoveryKeyStep
+        username={wanted}
+        recoveryKey={signUp.data.recoveryKey}
+        onDone={() => {
+          setKeySaved(true)
+          return Promise.resolve()
+        }}
+      />
+    )
+  }
+
   const signInLink = (
-    <p className="text-center text-sm text-slate-600">
+    <p className="text-center text-sm text-text-muted">
       {t('security.signUp.haveAccount')}{' '}
-      <Link
-        to="/sign-in"
-        className="inline-flex min-h-11 items-center font-medium text-slate-900 underline"
-      >
+      <Link to="/sign-in" className="inline-flex min-h-11 items-center font-medium text-brand">
         {t('security.signUp.signIn')}
       </Link>
     </p>

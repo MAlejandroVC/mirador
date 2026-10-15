@@ -21,6 +21,8 @@ export type VaultClient = Pick<
   | 'addPasskey'
   | 'passkeySignInOptions'
   | 'openWithPasskey'
+  | 'listRecords'
+  | 'saveRecords'
 >
 
 export function startVault(): VaultClient {

@@ -48,7 +48,7 @@ describe('passkeys and Face ID', () => {
     const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
     const vault = unlockedVault(server)
-    renderApp('/security', vault)
+    renderApp('/settings/security', vault)
 
     await screen.findByRole('heading', { name: 'Password and security' })
     const passkeys = section('Passkeys and Face ID')
@@ -79,7 +79,7 @@ describe('passkeys and Face ID', () => {
       addPasskey: vi.fn(() => Promise.reject(new VaultError('passkey-unsupported'))),
     })
     await vault.unlock('')
-    renderApp('/security', vault)
+    renderApp('/settings/security', vault)
 
     await screen.findByRole('heading', { name: 'Password and security' })
     const passkeys = section('Passkeys and Face ID')
@@ -104,7 +104,7 @@ describe('passkeys and Face ID', () => {
       ],
     }
     stubServer(server)
-    renderApp('/security', unlockedVault(server))
+    renderApp('/settings/security', unlockedVault(server))
 
     await screen.findByRole('heading', { name: 'Password and security' })
     const passkeys = section('Passkeys and Face ID')
@@ -121,7 +121,7 @@ describe('passkeys and Face ID', () => {
     device.supported = false
     const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
-    renderApp('/security', unlockedVault(server))
+    renderApp('/settings/security', unlockedVault(server))
 
     await screen.findByRole('heading', { name: 'Password and security' })
     const passkeys = section('Passkeys and Face ID')

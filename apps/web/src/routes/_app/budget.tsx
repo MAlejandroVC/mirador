@@ -14,7 +14,7 @@ function Budget() {
   const { t } = useTranslation()
   return (
     <Page title={t('nav.budget')} actions={<AccountButton />}>
-      <EmptyState icon={ChartPieSliceIcon} color="lagoon" title={t('placeholder.budget.title')}>
+      <EmptyState icon={ChartPieSliceIcon} title={t('placeholder.budget.title')}>
         {t('placeholder.budget.body')}
       </EmptyState>
     </Page>

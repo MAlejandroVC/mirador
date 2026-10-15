@@ -3,9 +3,13 @@ import { RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import { applyAppearance, readAppearance } from './lib/appearance'
 import './lib/i18n'
 import { startVault } from './lib/vault'
 import { createAppRouter } from './router'
+
+// SYS-16, SYS-17: before the first paint, so the app never flashes the default palette.
+applyAppearance(readAppearance())
 
 const queryClient = new QueryClient()
 const router = createAppRouter(queryClient, startVault())

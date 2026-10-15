@@ -38,12 +38,12 @@ export function RecoveryKeyStep({ username, recoveryKey, onDone }: RecoveryKeySt
   return (
     <AuthLayout title={t('security.recoveryKey.title')} intro={t('security.recoveryKey.intro')}>
       <figure className="flex flex-col gap-2">
-        <figcaption className="text-sm font-medium text-slate-800">
+        <figcaption className="text-sm font-medium text-text">
           {t('security.recoveryKey.label')}
         </figcaption>
         <p
           aria-label={recoveryKey}
-          className="grid grid-cols-4 gap-x-3 gap-y-1 rounded-lg border border-slate-300 bg-slate-100 p-4 font-mono text-lg tracking-wider text-slate-900 select-all sm:grid-cols-5"
+          className="grid grid-cols-4 gap-x-3 gap-y-1 rounded-xl bg-inset p-4 font-mono text-lg tracking-wider text-text select-all sm:grid-cols-5"
         >
           {groups.map((group, index) => (
             <span key={index}>{group}</span>
@@ -66,10 +66,10 @@ export function RecoveryKeyStep({ username, recoveryKey, onDone }: RecoveryKeySt
         </Button>
       </div>
       <Alert tone="warning">{t('security.recoveryKey.warning')}</Alert>
-      <label className="flex min-h-11 cursor-pointer items-center gap-3 text-slate-800">
+      <label className="flex min-h-11 cursor-pointer items-center gap-3 text-text">
         <input
           type="checkbox"
-          className="size-5 accent-slate-900"
+          className="size-5 accent-brand"
           checked={saved}
           onChange={(event) => {
             setSaved(event.target.checked)

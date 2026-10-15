@@ -45,7 +45,45 @@
     "lock": "Lock",
     "signOut": "Sign out",
     "security": "Password and security",
-    "invites": "Invite someone"
+    "invites": "Invite someone",
+    "account": {
+      "title": "Account",
+      "summary": "Profile picture and username"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "mode": "Mode",
+      "modes": {
+        "automatic": "Automatic",
+        "light": "Light",
+        "dark": "Dark"
+      },
+      "palette": "Palette",
+      "categoryNote": "Your category colors stay the same in every palette."
+    }
+  },
+  "profile": {
+    "picture": "Profile picture",
+    "pictureIntro": "It shows at the top of every page. Keep your initial or pick an icon.",
+    "pictures": {
+      "initial": "Your initial",
+      "mountains": "Mountains",
+      "tree": "Tree",
+      "leaf": "Leaf",
+      "flower": "Flower",
+      "cactus": "Cactus",
+      "sun": "Sun",
+      "moon": "Moon and stars",
+      "bird": "Bird",
+      "butterfly": "Butterfly",
+      "cat": "Cat",
+      "dog": "Dog"
+    },
+    "signUp": {
+      "title": "Pick a profile picture",
+      "intro": "It shows at the top of every page. You can change it any time in Settings.",
+      "continue": "Continue"
+    }
   },
   "health": {
     "checking": "Checking the server…",

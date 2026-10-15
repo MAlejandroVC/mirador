@@ -1,9 +1,11 @@
 import { usernamePattern } from '@repo/api'
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { type ReactNode, type SubmitEvent, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert } from '../../../components/ui/alert'
+import { Page } from '../../../components/ui/page'
+import { useSettingsBack } from '../../../components/shell/settings-back'
 import { Button } from '../../../components/ui/button'
 import { TextField } from '../../../components/ui/text-field'
 import { api } from '../../../lib/api'
@@ -28,6 +30,7 @@ export function SecurityScreen() {
   const username = session?.user.username ?? ''
   const [newRecoveryKey, setNewRecoveryKey] = useState<string | null>(null)
   const [recoveryKeySaved, setRecoveryKeySaved] = useState(false)
+  const settingsBack = useSettingsBack()
 
   // Shown once, like at sign-up; the old key already stopped working.
   if (newRecoveryKey) {
@@ -45,17 +48,7 @@ export function SecurityScreen() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-8 sm:py-12">
-      <div className="flex flex-col items-start gap-2">
-        <Link
-          to="/settings"
-          className="-ml-1 inline-flex min-h-11 items-center px-1 font-medium text-slate-700 underline-offset-4 hover:underline"
-        >
-          ← {t('security.settings.back')}
-        </Link>
-        <h1 className="text-2xl font-semibold text-slate-900">{t('security.settings.title')}</h1>
-      </div>
-      <ChangeUsername username={username} />
+    <Page title={t('security.settings.title')} back={settingsBack}>
       <Passkeys username={username} />
       <AutoLockSetting />
       <ChangePassword username={username} />
@@ -68,12 +61,11 @@ export function SecurityScreen() {
         }}
       />
       <SignOutOthers />
-      <DeleteAccount username={username} operator={session?.user.operator ?? false} />
-    </main>
+    </Page>
   )
 }
 
-function Section({
+export function Section({
   title,
   intro,
   children,
@@ -86,13 +78,14 @@ function Section({
   return (
     <section
       aria-labelledby={id}
-      className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5"
+      // DL-LAY-05, DL-SHP-03: a card on the background, set apart by its surface alone.
+      className="flex flex-col gap-4 rounded-2xl bg-surface px-4 py-3.5"
     >
       <div className="flex flex-col gap-1">
-        <h2 id={id} className="text-lg font-semibold text-slate-900">
+        <h2 id={id} className="text-[1.0625rem] font-semibold text-text">
           {title}
         </h2>
-        <p className="text-sm text-slate-600">{intro}</p>
+        <p className="text-sm text-text-muted">{intro}</p>
       </div>
       {children}
     </section>
@@ -110,7 +103,7 @@ interface UsernameProblems {
 }
 
 // SYS-06: the keys don't depend on the username, so changing it touches nothing else.
-function ChangeUsername({ username }: { username: string }) {
+export function ChangeUsername({ username }: { username: string }) {
   const { t } = useTranslation()
   const vault = useVault()
   const queryClient = useQueryClient()
@@ -368,7 +361,7 @@ interface DeleteProblems {
 
 // Deleting the account can't be undone, so it asks for the username typed out as well as
 // the current password, which the server checks too.
-function DeleteAccount({ username, operator }: { username: string; operator: boolean }) {
+export function DeleteAccount({ username, operator }: { username: string; operator: boolean }) {
   const { t } = useTranslation()
   const vault = useVault()
   const navigate = useNavigate()
@@ -481,17 +474,17 @@ function Passkeys({ username }: { username: string }) {
       intro={t('security.settings.passkeys.intro')}
     >
       {passkeys.data?.length === 0 && (
-        <p className="text-sm text-slate-600">{t('security.settings.passkeys.none')}</p>
+        <p className="text-sm text-text-muted">{t('security.settings.passkeys.none')}</p>
       )}
       {passkeys.data && passkeys.data.length > 0 && (
-        <ul className="flex flex-col divide-y divide-slate-200 rounded-xl border border-slate-200">
+        <ul className="flex flex-col divide-y divide-separator rounded-xl bg-inset">
           {passkeys.data.map((passkey, index) => (
             <li key={passkey.id} className="flex items-center justify-between gap-3 py-2 pr-2 pl-4">
               <div className="flex min-w-0 flex-col">
-                <span className="font-medium text-slate-900">
+                <span className="font-medium text-text">
                   {t('security.settings.passkeys.name', { number: index + 1 })}
                 </span>
-                <span className="text-sm text-slate-600">
+                <span className="text-sm text-text-muted">
                   {t('security.settings.passkeys.added', { date: date(passkey.createdAt) })}
                   {passkey.lastUsedAt &&
                     `, ${t('security.settings.passkeys.lastUsed', { date: date(passkey.lastUsedAt) })}`}
@@ -552,7 +545,7 @@ function AutoLockSetting() {
       intro={t('security.settings.autoLock.intro')}
     >
       <div className="flex flex-col gap-1">
-        <label htmlFor={id} className="text-sm font-medium text-slate-800">
+        <label htmlFor={id} className="text-sm font-medium text-text">
           {t('security.settings.autoLock.label')}
         </label>
         <select
@@ -564,7 +557,7 @@ function AutoLockSetting() {
             setChoice(picked)
             setSaved(saveAutoLock(picked))
           }}
-          className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-900 focus:outline-2 focus:outline-offset-1 focus:outline-slate-900"
+          className="min-h-11 w-full rounded-xl bg-inset px-3 text-[1.0625rem] text-text focus:outline-2 focus:outline-offset-1 focus:outline-brand"
         >
           {autoLockChoices.map((option) => (
             <option key={option} value={String(option)}>
@@ -576,7 +569,7 @@ function AutoLockSetting() {
         </select>
       </div>
       {saved && (
-        <p role="status" className="text-sm text-slate-600">
+        <p role="status" className="text-sm text-text-muted">
           {t('security.settings.autoLock.done')}
         </p>
       )}

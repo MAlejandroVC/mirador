@@ -1,25 +1,28 @@
-import {
-  LockSimpleIcon,
-  ShieldCheckIcon,
-  SignOutIcon,
-  UserPlusIcon,
-} from '../../components/ui/icons'
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { IconTile } from '../../components/ui/icon-tile'
-import { List, ListButtonRow, ListLinkRow, ListRow } from '../../components/ui/list'
-import { Page } from '../../components/ui/page'
-import { sessionQuery, useVault } from '../../features/security'
-import { api } from '../../lib/api'
+import { IconTile } from '../../../components/ui/icon-tile'
+import {
+  LockSimpleIcon,
+  PaletteIcon,
+  ShieldCheckIcon,
+  SignOutIcon,
+  UserPlusIcon,
+} from '../../../components/ui/icons'
+import { List, ListButtonRow, ListLinkRow } from '../../../components/ui/list'
+import { Page } from '../../../components/ui/page'
+import { ProfilePicture, useProfilePicture } from '../../../features/profile'
+import { sessionQuery, useVault } from '../../../features/security'
+import { api } from '../../../lib/api'
 
-export const Route = createFileRoute('/_app/settings')({
+export const Route = createFileRoute('/_app/settings/')({
   component: Settings,
 })
 
-// Epic 10: Settings gathers what used to sit on Home (the account, security, invites,
-// lock and sign out). Appearance (SYS-16, SYS-17), language and the rest of the SYS
-// settings join it as they are built.
+// Epic 10: Settings opens with the account, then one row per area: Appearance
+// (SYS-16, SYS-17), Password and security (SEC) and, for the person who runs the
+// server, Invites (SYS-13). Areas such as currencies, budget defaults, categories and
+// data join as they are built. Lock and Sign out close the list, as in iOS.
 function Settings() {
   const { t } = useTranslation()
   const vault = useVault()
@@ -27,6 +30,7 @@ function Settings() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { data: session } = useSuspenseQuery(sessionQuery)
+  const picture = useProfilePicture()
   const health = useQuery({ queryKey: ['health'], queryFn: () => api.health(), retry: false })
 
   const lock = useMutation({
@@ -62,29 +66,28 @@ function Settings() {
       }}
     >
       <List>
-        <ListRow
-          leading={
-            <span
-              aria-hidden
-              className="grid size-11 shrink-0 place-items-center rounded-full bg-[color-mix(in_srgb,var(--color-brand)_14%,var(--color-surface))] text-[1.0625rem] font-semibold text-brand"
-            >
-              {username.charAt(0).toUpperCase()}
-            </span>
-          }
-          title={t('settings.signedInAs', { username })}
-          subtitle={t('settings.encrypted')}
+        <ListLinkRow
+          to="/settings/account"
+          leading={<ProfilePicture picture={picture} username={username} size={3.5} />}
+          title={<span className="text-[1.0625rem] font-semibold">{username}</span>}
+          subtitle={t('settings.account.summary')}
         />
       </List>
       <List>
         <ListLinkRow
-          to="/security"
-          leading={<IconTile icon={ShieldCheckIcon} color="lagoon" />}
+          to="/settings/appearance"
+          leading={<IconTile icon={PaletteIcon} />}
+          title={t('settings.appearance.title')}
+        />
+        <ListLinkRow
+          to="/settings/security"
+          leading={<IconTile icon={ShieldCheckIcon} />}
           title={t('settings.security')}
         />
         {session?.user.operator && (
           <ListLinkRow
-            to="/invites"
-            leading={<IconTile icon={UserPlusIcon} color="lake" />}
+            to="/settings/invites"
+            leading={<IconTile icon={UserPlusIcon} />}
             title={t('settings.invites')}
           />
         )}
@@ -107,10 +110,11 @@ function Settings() {
         />
       </List>
       {/* DL-VOC-07: where Mirador introduces itself, the slogan sits under its name. */}
-      <footer className="flex flex-col items-center gap-1 pt-4 text-center">
+      <footer className="flex flex-col items-center gap-1 px-4 pt-4 text-center">
         <img src="/favicon.svg" alt="" className="mb-1 size-12 rounded-xl" />
         <p className="text-[0.9375rem] font-semibold text-text">{t('app.name')}</p>
         <p className="text-[0.8125rem] text-text-muted">{t('app.tagline')}</p>
+        <p className="pt-2 text-[0.8125rem] text-text-muted">{t('settings.encrypted')}</p>
         <p role="status" className="text-[0.8125rem] text-text-muted">
           {status}
         </p>

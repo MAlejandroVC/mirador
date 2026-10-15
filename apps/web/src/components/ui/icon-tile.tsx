@@ -1,9 +1,9 @@
 import type { Icon } from './icons'
 import { type TileColor, tileStyle } from './tile-style'
 
-// DL-CMP-02, DL-ICO-04: a 34 px tile with a 20 px Duotone icon, beside a text label,
+// DL-CMP-02, DL-ICO-04: a 34 px tile, in a category color or the app's `brand`, with a 20 px Duotone icon, beside a text label,
 // so screen readers skip it (DL-A11Y-04).
-export function IconTile({ icon: IconComponent, color }: { icon: Icon; color: TileColor }) {
+export function IconTile({ icon: IconComponent, color }: { icon: Icon; color?: TileColor }) {
   return (
     <span
       aria-hidden

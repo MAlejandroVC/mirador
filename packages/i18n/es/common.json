@@ -45,7 +45,45 @@
     "lock": "Bloquear",
     "signOut": "Cerrar sesión",
     "security": "Contraseña y seguridad",
-    "invites": "Invitar a alguien"
+    "invites": "Invitar a alguien",
+    "account": {
+      "title": "Cuenta",
+      "summary": "Foto de perfil y nombre de usuario"
+    },
+    "appearance": {
+      "title": "Apariencia",
+      "mode": "Modo",
+      "modes": {
+        "automatic": "Automático",
+        "light": "Claro",
+        "dark": "Oscuro"
+      },
+      "palette": "Paleta",
+      "categoryNote": "Los colores de tus categorías son los mismos en todas las paletas."
+    }
+  },
+  "profile": {
+    "picture": "Foto de perfil",
+    "pictureIntro": "Aparece arriba en cada página. Deja tu inicial o elige un ícono.",
+    "pictures": {
+      "initial": "Tu inicial",
+      "mountains": "Montañas",
+      "tree": "Árbol",
+      "leaf": "Hoja",
+      "flower": "Flor",
+      "cactus": "Cactus",
+      "sun": "Sol",
+      "moon": "Luna y estrellas",
+      "bird": "Pájaro",
+      "butterfly": "Mariposa",
+      "cat": "Gato",
+      "dog": "Perro"
+    },
+    "signUp": {
+      "title": "Elige tu foto de perfil",
+      "intro": "Aparece arriba en cada página. Puedes cambiarla cuando quieras en Configuración.",
+      "continue": "Continuar"
+    }
   },
   "health": {
     "checking": "Comprobando el servidor…",

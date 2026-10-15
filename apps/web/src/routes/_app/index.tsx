@@ -14,7 +14,7 @@ function Home() {
   const { t } = useTranslation()
   return (
     <Page title={t('nav.home')} actions={<AccountButton />}>
-      <EmptyState icon={HouseIcon} color="lake" title={t('placeholder.home.title')}>
+      <EmptyState icon={HouseIcon} title={t('placeholder.home.title')}>
         {t('placeholder.home.body')}
       </EmptyState>
     </Page>

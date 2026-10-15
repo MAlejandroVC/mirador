@@ -55,7 +55,7 @@ export function UnlockScreen() {
       intro={withPasskey ? t('security.unlock.introPasskey') : t('security.unlock.intro')}
     >
       {session && (
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-text-muted">
           {t('security.unlock.signedInAs', { username: session.user.username })}
         </p>
       )}
@@ -97,10 +97,7 @@ export function UnlockScreen() {
         </Button>
       </form>
       <p className="text-center text-sm">
-        <Link
-          to="/recover"
-          className="inline-flex min-h-11 items-center font-medium text-slate-900 underline"
-        >
+        <Link to="/recover" className="inline-flex min-h-11 items-center font-medium text-brand">
           {t('security.signIn.forgot')}
         </Link>
       </p>

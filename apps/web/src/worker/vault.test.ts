@@ -283,6 +283,23 @@ describe('vault', () => {
     expect(everything).not.toContain(recoveryKey.replaceAll('-', ''))
   })
 
+  it('SYS-18: the profile picture reaches the server only encrypted', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    await phone.signUp({ username: 'ana', password })
+
+    await phone.saveRecords([
+      {
+        id: newRecordId(),
+        body: { deleted: false, type: 'profile', schema: 1, data: { picture: 'butterfly' } },
+      },
+    ])
+
+    const everything = server.sent.join('\n')
+    expect(everything).not.toContain('butterfly')
+    expect(everything).not.toContain('profile')
+  })
+
   it('SEC-01: records are encrypted before they leave, and only the owner reads them', async () => {
     const server = fakeServer()
     const phone = new Vault(server.api)

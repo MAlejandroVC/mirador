@@ -13,8 +13,6 @@ export type PlacePath = (typeof places)[number]['to']
 
 /** DL-PAT-01: tapping the place you're already on takes you back to its top. */
 export function scrollToTop() {
-  // jsdom and very old browsers have no matchMedia; jump straight there in that case.
-  const reduce =
-    !('matchMedia' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })
 }

@@ -33,7 +33,7 @@ function QuickAddSheet({ open, onClose }: { open: boolean; onClose: () => void }
   const { t } = useTranslation()
   return (
     <Sheet open={open} title={t('quickAdd.title')} cancelLabel={t('nav.cancel')} onClose={onClose}>
-      <EmptyState icon={ShoppingBagIcon} color="clay" title={t('quickAdd.placeholder.title')}>
+      <EmptyState icon={ShoppingBagIcon} title={t('quickAdd.placeholder.title')}>
         {t('quickAdd.placeholder.body')}
       </EmptyState>
     </Sheet>

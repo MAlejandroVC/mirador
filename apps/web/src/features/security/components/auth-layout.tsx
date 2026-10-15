@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-// The frame of the sign-in, sign-up and unlock screens: one column on a phone, a
-// card on wider screens.
+// The frame of the sign-in, sign-up and unlock screens. Mirador introduces itself at the
+// top with its icon, name and slogan (DL-VOC-07); the form sits in a card (DL-LAY-05),
+// whose `surface` sets the `inset` fields apart (DL-CMP-09).
 export function AuthLayout({
   title,
   intro,
@@ -14,15 +15,22 @@ export function AuthLayout({
 }) {
   const { t } = useTranslation()
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-6 px-4 py-10 sm:py-16">
-      <p className="text-lg font-semibold tracking-tight text-slate-500">{t('app.name')}</p>
-      <div className="flex flex-col gap-6 sm:rounded-2xl sm:border sm:border-slate-200 sm:bg-white sm:p-8 sm:shadow-sm">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
-          {intro && <p className="text-slate-600">{intro}</p>}
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-5 px-4 pt-[max(2.5rem,env(safe-area-inset-top))] pb-10 sm:py-16">
+      <div className="flex items-center gap-3">
+        <img src="/favicon.svg" alt="" className="size-12 rounded-xl" />
+        <div className="flex flex-col">
+          <p className="text-[1.0625rem] font-semibold text-text">{t('app.name')}</p>
+          <p className="text-[0.8125rem] text-text-muted">{t('app.tagline')}</p>
         </div>
-        {children}
       </div>
+      <div className="flex flex-col gap-2 pt-3">
+        {/* DL-TYP-03: large title. */}
+        <h1 className="text-[1.875rem] leading-tight font-bold tracking-[-0.02em] text-text">
+          {title}
+        </h1>
+        {intro && <p className="text-[0.9375rem] text-text-muted">{intro}</p>}
+      </div>
+      <div className="flex flex-col gap-5 rounded-2xl bg-surface p-4 sm:p-6">{children}</div>
     </main>
   )
 }

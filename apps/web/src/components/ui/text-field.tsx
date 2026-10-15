@@ -48,7 +48,7 @@ export function TextField({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-1">
-        <label htmlFor={id} className="text-sm font-medium text-slate-800">
+        <label htmlFor={id} className="text-sm font-medium text-text">
           {label}
         </label>
         {info && (
@@ -61,7 +61,7 @@ export function TextField({
             aria-expanded={infoOpen}
             aria-controls={`${id}-info`}
             aria-label={t('form.info', { label })}
-            className="-my-3 flex min-h-11 min-w-11 items-center justify-center text-slate-500 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-slate-900"
+            className="-my-3 flex min-h-11 min-w-11 items-center justify-center text-text-muted hover:text-text focus-visible:outline-2 focus-visible:outline-brand"
           >
             <InfoIcon />
           </button>
@@ -71,7 +71,7 @@ export function TextField({
         <p
           id={`${id}-info`}
           hidden={!infoOpen}
-          className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700"
+          className="rounded-lg bg-fill px-3 py-2 text-sm text-text-muted"
         >
           {info}
         </p>
@@ -91,7 +91,7 @@ export function TextField({
           type={isPassword && revealed ? 'text' : type}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy || undefined}
-          className={`min-h-11 w-full rounded-lg border bg-white px-3 text-base text-slate-900 focus:outline-2 focus:outline-offset-1 focus:outline-slate-900 ${isPassword ? 'pr-12' : ''} ${error ? 'border-red-600' : 'border-slate-300'}`}
+          className={`min-h-11 w-full rounded-xl border bg-inset px-3 text-[1.0625rem] text-text focus:outline-2 focus:outline-offset-1 focus:outline-brand ${isPassword ? 'pr-12' : ''} ${error ? 'border-warning' : 'border-transparent'}`}
           {...props}
         />
         {isPassword && (
@@ -102,14 +102,14 @@ export function TextField({
             }}
             aria-pressed={revealed}
             aria-label={revealed ? t('form.hide') : t('form.show')}
-            className="absolute inset-y-0 right-0 flex min-w-11 items-center justify-center text-slate-500 hover:text-slate-900"
+            className="absolute inset-y-0 right-0 flex min-w-11 items-center justify-center text-text-muted hover:text-text"
           >
             <EyeIcon crossed={revealed} />
           </button>
         )}
       </div>
       {hint && (
-        <p id={`${id}-hint`} className="text-sm text-slate-600">
+        <p id={`${id}-hint`} className="text-sm text-text-muted">
           {hint}
         </p>
       )}
@@ -118,7 +118,7 @@ export function TextField({
           {checks.map((check) => (
             <li
               key={check.label}
-              className={`flex items-center gap-2 text-sm ${check.met ? 'text-emerald-700' : 'text-slate-600'}`}
+              className={`flex items-center gap-2 text-sm ${check.met ? 'text-brand' : 'text-text-muted'}`}
             >
               <CheckIcon met={check.met} />
               <span>
@@ -133,12 +133,12 @@ export function TextField({
         </ul>
       )}
       {error && (
-        <p id={`${id}-error`} className="text-sm text-red-700">
+        <p id={`${id}-error`} className="text-sm text-warning">
           {error}
         </p>
       )}
       {success && !error && (
-        <p id={`${id}-success`} role="status" className="text-sm text-emerald-700">
+        <p id={`${id}-success`} role="status" className="text-sm text-brand">
           {success}
         </p>
       )}

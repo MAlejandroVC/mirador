@@ -16,3 +16,15 @@ if (typeof HTMLDialogElement !== 'undefined' && !('showModal' in HTMLDialogEleme
     },
   })
 }
+
+// jsdom has no media queries; answer as a light-mode device that allows motion.
+if (typeof window !== 'undefined' && typeof (window.matchMedia as unknown) !== 'function') {
+  Object.assign(window, {
+    matchMedia: (query: string) => ({
+      matches: false,
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }),
+  })
+}

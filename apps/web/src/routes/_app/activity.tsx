@@ -14,7 +14,7 @@ function Activity() {
   const { t } = useTranslation()
   return (
     <Page title={t('nav.activity')} actions={<AccountButton />}>
-      <EmptyState icon={ReceiptIcon} color="heather" title={t('placeholder.activity.title')}>
+      <EmptyState icon={ReceiptIcon} title={t('placeholder.activity.title')}>
         {t('placeholder.activity.body')}
       </EmptyState>
     </Page>
