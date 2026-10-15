@@ -4,6 +4,8 @@ import { useNavigate } from '@tanstack/react-router'
 import { type ReactNode, type SubmitEvent, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert } from '../../../components/ui/alert'
+import { IconTile } from '../../../components/ui/icon-tile'
+import { ShieldCheckIcon } from '../../../components/ui/icons'
 import { Page } from '../../../components/ui/page'
 import { useSettingsBack } from '../../../components/shell/settings-back'
 import { Button } from '../../../components/ui/button'
@@ -48,7 +50,14 @@ export function SecurityScreen() {
   }
 
   return (
-    <Page title={t('security.settings.title')} back={settingsBack}>
+    <Page
+      title={t('security.settings.title')}
+      back={settingsBack}
+      card={{
+        icon: <IconTile icon={ShieldCheckIcon} size="large" />,
+        description: t('security.settings.description'),
+      }}
+    >
       <Passkeys username={username} />
       <AutoLockSetting />
       <ChangePassword username={username} />

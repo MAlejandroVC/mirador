@@ -29,11 +29,15 @@ function Account() {
   const shown = save.isPending ? save.variables : picture
 
   return (
-    <Page title={t('settings.account.title')} back={back}>
-      <div className="flex flex-col items-center gap-2 pb-2">
-        <ProfilePicture picture={shown} username={username} size={5.5} />
-        <p className="text-[1.0625rem] font-semibold text-text">{username}</p>
-      </div>
+    <Page
+      title={t('settings.account.title')}
+      back={back}
+      card={{
+        // The picture itself heads the card, so a new pick shows here at once.
+        icon: <ProfilePicture picture={shown} username={username} size={3.5} />,
+        description: t('settings.account.description'),
+      }}
+    >
       <Section title={t('profile.picture')} intro={t('profile.pictureIntro')}>
         <PicturePicker
           value={shown}

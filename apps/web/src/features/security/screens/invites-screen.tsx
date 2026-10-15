@@ -5,7 +5,11 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert } from '../../../components/ui/alert'
 import { Button } from '../../../components/ui/button'
+import { IconTile } from '../../../components/ui/icon-tile'
+import { UserPlusIcon } from '../../../components/ui/icons'
+import { List } from '../../../components/ui/list'
 import { Page } from '../../../components/ui/page'
+import { Section } from './security-screen'
 import { useSettingsBack } from '../../../components/shell/settings-back'
 import { api } from '../../../lib/api'
 import { inviteLink, invitesQuery } from '../hooks/invites'
@@ -26,37 +30,43 @@ export function InvitesScreen() {
   })
 
   return (
-    <Page title={t('security.invites.title')} back={settingsBack}>
-      <p className="px-1 text-[0.9375rem] text-text-muted">
-        {t('security.invites.intro', { count: inviteLifetimeDays })}
-      </p>
+    <Page
+      title={t('security.invites.title')}
+      back={settingsBack}
+      card={{
+        icon: <IconTile icon={UserPlusIcon} size="large" />,
+        description: t('security.invites.description'),
+      }}
+    >
       {create.data ? (
         <NewInvite code={create.data.code} />
       ) : (
-        <Button
-          disabled={create.isPending}
-          onClick={() => {
-            create.mutate()
-          }}
+        // DL-LAY-05: the same section cards as Password and security.
+        <Section
+          title={t('security.invites.newSection')}
+          intro={t('security.invites.intro', { count: inviteLifetimeDays })}
         >
-          {create.isPending ? t('security.invites.working') : t('security.invites.create')}
-        </Button>
+          <Button
+            disabled={create.isPending}
+            onClick={() => {
+              create.mutate()
+            }}
+          >
+            {create.isPending ? t('security.invites.working') : t('security.invites.create')}
+          </Button>
+          {create.isError && <Alert>{t('security.errors.unknown')}</Alert>}
+        </Section>
       )}
-      {create.isError && <Alert>{t('security.errors.unknown')}</Alert>}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-[1.0625rem] font-semibold text-text">
-          {t('security.invites.listTitle')}
-        </h2>
+      {/* DL-CMP-07: the invites are rows in an inset list. */}
+      <List label={t('security.invites.listTitle')}>
         {invites.length === 0 ? (
-          <p className="text-text-muted">{t('security.invites.none')}</p>
+          <li className="flex min-h-[3.25rem] items-center px-4 text-[0.9375rem] text-text-muted">
+            {t('security.invites.none')}
+          </li>
         ) : (
-          <ul className="flex flex-col divide-y divide-separator rounded-2xl bg-surface">
-            {invites.map((invite) => (
-              <InviteRow key={invite.id} invite={invite} now={now} />
-            ))}
-          </ul>
+          invites.map((invite) => <InviteRow key={invite.id} invite={invite} now={now} />)
         )}
-      </section>
+      </List>
     </Page>
   )
 }
@@ -131,10 +141,10 @@ function InviteRow({ invite, now }: { invite: Invite; now: number }) {
   }
 
   return (
-    <li className="flex min-h-14 items-center justify-between gap-3 px-4 py-2">
+    <li className="flex min-h-14 items-center justify-between gap-3 border-t-[0.5px] border-separator px-4 py-2 first:border-t-0">
       <div className="flex flex-col">
-        <span className="text-text">{status}</span>
-        <span className="text-sm text-text-muted">
+        <span className="text-[0.9375rem] text-text">{status}</span>
+        <span className="text-[0.8125rem] text-text-muted">
           {t('security.invites.made', { date: date(invite.createdAt) })}
         </span>
       </div>

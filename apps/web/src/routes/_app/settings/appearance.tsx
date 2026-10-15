@@ -2,7 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSettingsBack } from '../../../components/shell/settings-back'
-import { CheckIcon } from '../../../components/ui/icons'
+import { IconTile } from '../../../components/ui/icon-tile'
+import { CheckIcon, PaletteIcon } from '../../../components/ui/icons'
 import { List } from '../../../components/ui/list'
 import { Page } from '../../../components/ui/page'
 import { SegmentedControl } from '../../../components/ui/segmented-control'
@@ -39,7 +40,14 @@ function Appearance() {
   }
 
   return (
-    <Page title={t('settings.appearance.title')} back={back}>
+    <Page
+      title={t('settings.appearance.title')}
+      back={back}
+      card={{
+        icon: <IconTile icon={PaletteIcon} size="large" />,
+        description: t('settings.appearance.description'),
+      }}
+    >
       <List label={t('settings.appearance.mode')}>
         <li className="p-2.5">
           <SegmentedControl<Mode>

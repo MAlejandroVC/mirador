@@ -125,4 +125,21 @@ describe('settings', () => {
     expect(document.documentElement).not.toHaveAttribute('data-theme')
     localStorage.clear()
   })
+
+  it('opens each page with a header card and a round back button to Settings', async () => {
+    await i18n.changeLanguage('en')
+    const user = userEvent.setup()
+    const server: FakeServer = { signedIn: 'ana' }
+    stubServer(server)
+    const { router } = renderApp('/settings/appearance', unlockedVault(server))
+
+    const title = await screen.findByRole('heading', { name: 'Appearance', level: 1 })
+    expect(title.closest('header')).toHaveTextContent(
+      "Choose light or dark and the app's colors on this device.",
+    )
+    const back = screen.getByRole('button', { name: 'Settings' })
+    expect(back).not.toHaveTextContent('Settings')
+    await user.click(back)
+    expect(router.state.location.pathname).toBe('/settings')
+  })
 })

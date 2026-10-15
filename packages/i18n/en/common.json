@@ -48,10 +48,12 @@
     "invites": "Invite someone",
     "account": {
       "title": "Account",
+      "description": "Your profile picture and username, and deleting your account.",
       "summary": "Profile picture and username"
     },
     "appearance": {
       "title": "Appearance",
+      "description": "Choose light or dark and the app's colors on this device.",
       "mode": "Mode",
       "modes": {
         "automatic": "Automatic",
@@ -167,6 +169,7 @@
     },
     "settings": {
       "title": "Password and security",
+      "description": "Your password, passkeys and recovery key, and when this device locks.",
       "back": "Back",
       "username": {
         "title": "Username",
@@ -240,7 +243,9 @@
     },
     "invites": {
       "title": "Invites",
-      "intro": "Only people you invite can create an account on this server. Make an invite link and send it to them yourself. Each link works once, for {{count}} days.",
+      "description": "Only people you invite can create an account on this server.",
+      "newSection": "New invite",
+      "intro": "Make an invite link and send it to them yourself. Each link works once, for {{count}} days.",
       "create": "Make an invite link",
       "working": "Making an invite…",
       "newTitle": "New invite link",
