@@ -28,23 +28,23 @@ function section(name: string) {
 }
 
 describe('password and security', () => {
-  it('SEC-08: is one tap from home, and only while unlocked', async () => {
+  it('SEC-08: is one tap from Settings, and only while unlocked', async () => {
     const user = userEvent.setup()
     const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
-    const { router } = renderApp('/', unlockedVault(server))
+    const { router } = renderApp('/settings', unlockedVault(server))
 
     await user.click(await screen.findByRole('link', { name: 'Password and security' }))
     expect(
       await screen.findByRole('heading', { name: 'Password and security' }),
     ).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/security')
+    expect(router.state.location.pathname).toBe('/settings/security')
   })
 
   it('SEC-12: asks for the password first when locked', async () => {
     const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
-    renderApp('/security', fakeVault(server))
+    renderApp('/settings/security', fakeVault(server))
 
     expect(await screen.findByRole('heading', { name: 'Unlock Mirador' })).toBeInTheDocument()
   })
@@ -54,7 +54,7 @@ describe('password and security', () => {
     const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
     const vault = unlockedVault(server)
-    renderApp('/security', vault)
+    renderApp('/settings/security', vault)
 
     await screen.findByRole('heading', { name: 'Password and security' })
     const form = section('Password')
@@ -82,7 +82,7 @@ describe('password and security', () => {
       changePassword: vi.fn(() => Promise.reject(new VaultError('wrong-password'))),
     })
     await vault.unlock('')
-    renderApp('/security', vault)
+    renderApp('/settings/security', vault)
 
     await screen.findByRole('heading', { name: 'Password and security' })
     const form = section('Password')
@@ -101,9 +101,9 @@ describe('password and security', () => {
     const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
     const vault = unlockedVault(server)
-    renderApp('/security', vault)
+    renderApp('/settings/account', vault)
 
-    await screen.findByRole('heading', { name: 'Password and security' })
+    await screen.findByRole('heading', { name: 'Account', level: 1 })
     const form = section('Username')
     expect(form.getByText(/You sign in as ana\./)).toBeInTheDocument()
     await user.type(form.getByLabelText('New username'), 'ana maria')
@@ -144,9 +144,9 @@ describe('password and security', () => {
       changeUsername: vi.fn(() => Promise.reject(new VaultError('username-taken'))),
     })
     await vault.unlock('')
-    renderApp('/security', vault)
+    renderApp('/settings/account', vault)
 
-    await screen.findByRole('heading', { name: 'Password and security' })
+    await screen.findByRole('heading', { name: 'Account', level: 1 })
     const form = section('Username')
     await user.type(form.getByLabelText('New username'), 'ben')
     await user.type(form.getByLabelText('Current password'), password)
@@ -164,9 +164,9 @@ describe('password and security', () => {
     const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
     const vault = unlockedVault(server)
-    const { router } = renderApp('/security', vault)
+    const { router } = renderApp('/settings/account', vault)
 
-    await screen.findByRole('heading', { name: 'Password and security' })
+    await screen.findByRole('heading', { name: 'Account', level: 1 })
     const form = section('Delete account')
     expect(form.getByText(/backups may keep a copy until they expire/)).toBeInTheDocument()
     expect(form.queryByText(/You run this server/)).not.toBeInTheDocument()
@@ -203,9 +203,9 @@ describe('password and security', () => {
       deleteAccount: vi.fn(() => Promise.reject(new VaultError('wrong-password'))),
     })
     await vault.unlock('')
-    renderApp('/security', vault)
+    renderApp('/settings/account', vault)
 
-    await screen.findByRole('heading', { name: 'Contraseña y seguridad' })
+    await screen.findByRole('heading', { name: 'Cuenta', level: 1 })
     const form = section('Borrar cuenta')
     expect(form.getByText(/Tú administras este servidor/)).toBeInTheDocument()
     await user.type(form.getByLabelText(/Escribe tu nombre de usuario, ana/), 'ana')
@@ -213,7 +213,7 @@ describe('password and security', () => {
     await user.click(form.getByRole('button', { name: 'Borrar mi cuenta para siempre' }))
 
     expect(await form.findByRole('alert')).toHaveTextContent('Contraseña incorrecta.')
-    expect(screen.getByRole('heading', { name: 'Contraseña y seguridad' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Cuenta', level: 1 })).toBeInTheDocument()
   })
 
   it('SEC-08: shows a new recovery key once, then confirms the old one stopped working', async () => {
@@ -221,7 +221,7 @@ describe('password and security', () => {
     const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
     const vault = unlockedVault(server)
-    renderApp('/security', vault)
+    renderApp('/settings/security', vault)
 
     await screen.findByRole('heading', { name: 'Password and security' })
     const form = section('Recovery key')
@@ -247,7 +247,7 @@ describe('password and security', () => {
     const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
     const vault = unlockedVault(server)
-    renderApp('/security', vault)
+    renderApp('/settings/security', vault)
 
     await screen.findByRole('heading', { name: 'Contraseña y seguridad' })
     await user.click(screen.getByRole('button', { name: 'Cerrar sesión en otros dispositivos' }))
@@ -260,7 +260,7 @@ describe('password and security', () => {
     const user = userEvent.setup()
     const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
-    renderApp('/security', unlockedVault(server))
+    renderApp('/settings/security', unlockedVault(server))
 
     await screen.findByRole('heading', { name: 'Password and security' })
     const autoLock = section('Lock automatically')

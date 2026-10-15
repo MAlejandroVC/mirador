@@ -1,4 +1,11 @@
-import { type CreationOptions, type Invite, type Passkey, usernameCheckRequest } from '@repo/api'
+import {
+  type CreationOptions,
+  type Invite,
+  type Passkey,
+  type RecordBody,
+  usernameCheckRequest,
+} from '@repo/api'
+import type { SyncedRecord } from '@repo/sync'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryHistory, RouterProvider } from '@tanstack/react-router'
 import { render } from '@testing-library/react'
@@ -14,6 +21,8 @@ export const shownRecoveryKey =
 // answers. The real one is tested in worker/vault.test.ts.
 export function fakeVault(server: FakeServer, overrides: Partial<VaultClient> = {}) {
   let unlocked = false
+  // Records as the worker holds them once decrypted; server.records seeds them.
+  const records = new Map((server.records ?? []).map((record) => [record.id, record]))
   const vault: VaultClient = {
     status: vi.fn(() => Promise.resolve(unlocked ? ('unlocked' as const) : ('locked' as const))),
     signUp: vi.fn(({ username }: SignUpInput) => {
@@ -78,6 +87,14 @@ export function fakeVault(server: FakeServer, overrides: Partial<VaultClient> = 
       server.signedIn = null
       return Promise.resolve()
     }),
+    listRecords: vi.fn(() => Promise.resolve([...records.values()])),
+    saveRecords: vi.fn((saved: { id: string; body: RecordBody }[]) => {
+      for (const { id, body } of saved) {
+        records.set(id, { id, revision: (records.get(id)?.revision ?? 0) + 1, body })
+      }
+      server.records = [...records.values()]
+      return Promise.resolve([])
+    }),
     ...overrides,
   }
   return vault
@@ -106,6 +123,8 @@ export interface FakeServer {
   // SYS-06: the signed-in user's passkeys, and usernames other people have.
   passkeys?: Passkey[]
   takenUsernames?: string[]
+  // Decrypted records the account already has, such as its profile (SYS-18).
+  records?: SyncedRecord[]
 }
 
 // Answers the page's own requests (the vault's go through the fake vault).

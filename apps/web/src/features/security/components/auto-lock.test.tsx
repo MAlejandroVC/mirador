@@ -28,7 +28,7 @@ async function home() {
   stubServer(server)
   const vault = unlockedVault(server)
   const app = renderApp('/', vault)
-  await screen.findByText('Signed in as ana')
+  await screen.findByRole('heading', { name: 'Home', level: 1 })
   return { vault, ...app }
 }
 

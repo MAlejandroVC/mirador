@@ -36,6 +36,7 @@ Mirador is **cool**: it sits comfortably within what people already know and gen
 - an icon and a color for each wallet
 - a color for each category group and an icon for each category
 - a color for each tag
+- a profile picture: their initial or one of Mirador's icons (SYS-18)
 - the app's palette and its light or dark mode, from eight designed palettes (DL-COL-01)
 - which cards the dashboard shows, and their order (from Mirador's own cards; there is no card builder)
 - the app icon, from a few designed options
@@ -296,6 +297,8 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 
 **DL-COL-11** Category colors color icons, bars and color dots. Text uses them only for money in (Moss, DL-COL-07). *Why:* in light mode Marigold and Meadow reach 3:1, enough for shapes but not for text; a yellow dark enough for text turns brown.
 
+**DL-COL-13** Category colors belong to categories, category groups, wallets and tags, and to what shows them: their tiles, bars, dots and chart series. The app itself never uses them: its own tiles (Settings rows, empty states, the profile picture) take `brand`, and everything else takes the palette tokens. Money in keeps Moss (DL-COL-07). *Why:* when a color can mean either a category or the app, it stops meaning anything, and the app should look like its palette.
+
 | Name | Light | Dark |
 |---|---|---|
 | Clay | #C1462D | #E18E7D |
@@ -377,7 +380,7 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 
 **DL-ICO-02** A category or wallet is shown as an icon tile: its icon in its color, on a rounded square tinted with that same color.
 
-**DL-ICO-03** The icon set is [Phosphor](https://phosphoricons.com) (MIT license). Duotone appears only inside category and wallet tiles. Everything else uses the Regular (line) style: buttons, the quick-add plus, chevrons, swipe actions and banners. The selected tab uses Fill, as iOS does. Inside a tile, use only icons whose second tone shades part of the drawing itself. If an icon's second tone is just a box or circle behind the drawing, pick another icon. *Why:* a background box reads as a rendering glitch, not as shading.
+**DL-ICO-03** The icon set is [Phosphor](https://phosphoricons.com) (MIT license). Duotone appears only inside tiles: category and wallet tiles in their color, and the app's own tiles and profile picture in `brand` (DL-COL-13). Everything else uses the Regular (line) style: buttons, the quick-add plus, chevrons, swipe actions and banners. The selected tab uses Fill, as iOS does. Inside a tile, use only icons whose second tone shades part of the drawing itself. If an icon's second tone is just a box or circle behind the drawing, pick another icon. *Why:* a background box reads as a rendering glitch, not as shading.
 
 **DL-ICO-04** Icon tiles are 34 px with a 20 px icon. Tab bar icons are 23 px.
 
@@ -482,7 +485,7 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 
 **DL-CMP-01 Hero card.** At most one per screen, at the top. It is filled with `hero` and holds the screen's hero amount (DL-NUM-01) in `on-hero`, with its label and one line of context. It is the only loud element on the screen; everything around it stays quiet.
 
-**DL-CMP-02 Icon tile.** A Duotone icon in its color on a tinted rounded square (DL-ICO-02, DL-COL-08, DL-ICO-04).
+**DL-CMP-02 Icon tile.** A Duotone icon in its color on a tinted rounded square (DL-ICO-02, DL-COL-08, DL-ICO-04). A tile that belongs to the app rather than a category, such as a Settings row, uses `brand` (DL-COL-13).
 
 **DL-CMP-03 Progress row.** Icon tile, name, and "$212 left" or "$18 over" on the first line; a 5 px bar in the category's softer tone below (DL-COL-05, DL-COL-06).
 
@@ -496,7 +499,7 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 
 Full-width buttons are 50 px tall; any button is at least 44 px. A destructive button uses `danger` text, plain or tinted, never filled. The label is a verb (DL-VOC-05).
 
-**DL-CMP-06** **Navigation bar.** Each tab opens with a large title. Once the page scrolls, the title shrinks into the bar, centered. A screen reached from another has a back button at the top left: a chevron and the previous screen's title. At most two plain actions sit at the top right.
+**DL-CMP-06** **Navigation bar.** Each tab opens with a large title. The tab's actions share the title's row on the right, as in the App Store: on every tab that is the profile picture, 40 px, which opens Settings. No row is spent on buttons alone. Once the page scrolls, the title shrinks into the bar, centered. A screen reached from another, such as a Settings page, has a round back button at the top left: a 44 px `surface` circle with a chevron only, as in iOS Settings (its accessible name is the previous screen's title). Instead of the large title it opens with a header card: a `surface` card holding a 56 px icon tile (or, for Account, the profile picture), the screen's title in 24 px bold and one short line in `text-muted` on what you can do there. At most two plain actions sit at the top right.
 
 **DL-CMP-07** **List rows.** Rows sit in inset lists (a `surface` card with 16 px corners), at least 52 px tall: icon tile, title, an optional second line in `text-muted`, and a value or amount on the right. A chevron appears only when the row opens another screen. Tapping a row opens it, which is also where it is edited. Swiping a row to the left is only for deleting, as in iOS. A short swipe slides the row aside and leaves a small red Delete pill showing; tapping the pill deletes the row. A long swipe deletes it straight away. Tapping anywhere else closes the pill. Delete can also be reached from the row's own screen (DL-A11Y-07).
 
@@ -516,7 +519,7 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 
 ## Patterns
 
-**DL-PAT-01** **Navigation.** The tabs are Home, Activity, Budget and Wallets. Opening an item pushes a screen in from the right, and swiping from the left edge goes back. Creating or editing opens a sheet (DL-CMP-08). Tapping the current tab returns to its top.
+**DL-PAT-01** **Navigation.** The tabs are Home, Activity, Budget and Wallets. Opening an item pushes a screen in from the right, and swiping from the left edge goes back. Creating or editing opens a sheet (DL-CMP-08). Tapping the current tab returns to its top. Settings is not a place, so it is not a tab: it opens from the profile picture beside each tab's title, or from the bottom of the sidebar (DL-LAY-06). It lists Account, then Appearance, Password and security, and Invites for the person who runs the server, then Lock and Sign out; more areas join as they are built.
 
 **DL-PAT-02** **Forms.** Fill in everything that can be guessed: today's date, the last wallet used, the suggested category. Show the required fields first. Check a field when the person leaves it or taps Save, never while they type. The main button stays disabled until the required fields are filled.
 

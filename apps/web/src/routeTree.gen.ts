@@ -9,32 +9,28 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as InvitesRouteImport } from './routes/invites'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as RecoverRouteImport } from './routes/recover'
-import { Route as SecurityRouteImport } from './routes/security'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as UnlockRouteImport } from './routes/unlock'
+import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppActivityRouteImport } from './routes/_app/activity'
+import { Route as AppBudgetRouteImport } from './routes/_app/budget'
+import { Route as AppWalletsRouteImport } from './routes/_app/wallets'
+import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
+import { Route as AppSettingsAccountRouteImport } from './routes/_app/settings/account'
+import { Route as AppSettingsAppearanceRouteImport } from './routes/_app/settings/appearance'
+import { Route as AppSettingsInvitesRouteImport } from './routes/_app/settings/invites'
+import { Route as AppSettingsSecurityRouteImport } from './routes/_app/settings/security'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InvitesRoute = InvitesRouteImport.update({
-  id: '/invites',
-  path: '/invites',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecoverRoute = RecoverRouteImport.update({
   id: '/recover',
   path: '/recover',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SecurityRoute = SecurityRouteImport.update({
-  id: '/security',
-  path: '/security',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignInRoute = SignInRouteImport.update({
@@ -52,70 +48,151 @@ const UnlockRoute = UnlockRouteImport.update({
   path: '/unlock',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppActivityRoute = AppActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBudgetRoute = AppBudgetRouteImport.update({
+  id: '/budget',
+  path: '/budget',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWalletsRoute = AppWalletsRouteImport.update({
+  id: '/wallets',
+  path: '/wallets',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsAccountRoute = AppSettingsAccountRouteImport.update({
+  id: '/settings/account',
+  path: '/settings/account',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsAppearanceRoute = AppSettingsAppearanceRouteImport.update({
+  id: '/settings/appearance',
+  path: '/settings/appearance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsInvitesRoute = AppSettingsInvitesRouteImport.update({
+  id: '/settings/invites',
+  path: '/settings/invites',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsSecurityRoute = AppSettingsSecurityRouteImport.update({
+  id: '/settings/security',
+  path: '/settings/security',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/invites': typeof InvitesRoute
+  '/': typeof AppIndexRoute
   '/recover': typeof RecoverRoute
-  '/security': typeof SecurityRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/unlock': typeof UnlockRoute
+  '/activity': typeof AppActivityRoute
+  '/budget': typeof AppBudgetRoute
+  '/wallets': typeof AppWalletsRoute
+  '/settings/account': typeof AppSettingsAccountRoute
+  '/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/settings/invites': typeof AppSettingsInvitesRoute
+  '/settings/security': typeof AppSettingsSecurityRoute
+  '/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/invites': typeof InvitesRoute
   '/recover': typeof RecoverRoute
-  '/security': typeof SecurityRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/unlock': typeof UnlockRoute
+  '/activity': typeof AppActivityRoute
+  '/budget': typeof AppBudgetRoute
+  '/wallets': typeof AppWalletsRoute
+  '/': typeof AppIndexRoute
+  '/settings/account': typeof AppSettingsAccountRoute
+  '/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/settings/invites': typeof AppSettingsInvitesRoute
+  '/settings/security': typeof AppSettingsSecurityRoute
+  '/settings': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/invites': typeof InvitesRoute
+  '/_app': typeof AppRouteWithChildren
   '/recover': typeof RecoverRoute
-  '/security': typeof SecurityRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/unlock': typeof UnlockRoute
+  '/_app/activity': typeof AppActivityRoute
+  '/_app/budget': typeof AppBudgetRoute
+  '/_app/wallets': typeof AppWalletsRoute
+  '/_app/': typeof AppIndexRoute
+  '/_app/settings/account': typeof AppSettingsAccountRoute
+  '/_app/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/_app/settings/invites': typeof AppSettingsInvitesRoute
+  '/_app/settings/security': typeof AppSettingsSecurityRoute
+  '/_app/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/invites'
     | '/recover'
-    | '/security'
     | '/sign-in'
     | '/sign-up'
     | '/unlock'
+    | '/activity'
+    | '/budget'
+    | '/wallets'
+    | '/settings/account'
+    | '/settings/appearance'
+    | '/settings/invites'
+    | '/settings/security'
+    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
-    | '/invites'
     | '/recover'
-    | '/security'
     | '/sign-in'
     | '/sign-up'
     | '/unlock'
+    | '/activity'
+    | '/budget'
+    | '/wallets'
+    | '/'
+    | '/settings/account'
+    | '/settings/appearance'
+    | '/settings/invites'
+    | '/settings/security'
+    | '/settings'
   id:
     | '__root__'
-    | '/'
-    | '/invites'
+    | '/_app'
     | '/recover'
-    | '/security'
     | '/sign-in'
     | '/sign-up'
     | '/unlock'
+    | '/_app/activity'
+    | '/_app/budget'
+    | '/_app/wallets'
+    | '/_app/'
+    | '/_app/settings/account'
+    | '/_app/settings/appearance'
+    | '/_app/settings/invites'
+    | '/_app/settings/security'
+    | '/_app/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  InvitesRoute: typeof InvitesRoute
+  AppRoute: typeof AppRouteWithChildren
   RecoverRoute: typeof RecoverRoute
-  SecurityRoute: typeof SecurityRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
   UnlockRoute: typeof UnlockRoute
@@ -123,18 +200,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
+    '/_app': {
+      id: '/_app'
+      path: ''
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/invites': {
-      id: '/invites'
-      path: '/invites'
-      fullPath: '/invites'
-      preLoaderRoute: typeof InvitesRouteImport
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recover': {
@@ -142,13 +212,6 @@ declare module '@tanstack/react-router' {
       path: '/recover'
       fullPath: '/recover'
       preLoaderRoute: typeof RecoverRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/security': {
-      id: '/security'
-      path: '/security'
-      fullPath: '/security'
-      preLoaderRoute: typeof SecurityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sign-in': {
@@ -172,14 +235,101 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UnlockRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/': {
+      id: '/_app/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/activity': {
+      id: '/_app/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof AppActivityRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/budget': {
+      id: '/_app/budget'
+      path: '/budget'
+      fullPath: '/budget'
+      preLoaderRoute: typeof AppBudgetRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/wallets': {
+      id: '/_app/wallets'
+      path: '/wallets'
+      fullPath: '/wallets'
+      preLoaderRoute: typeof AppWalletsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings/': {
+      id: '/_app/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AppSettingsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings/account': {
+      id: '/_app/settings/account'
+      path: '/settings/account'
+      fullPath: '/settings/account'
+      preLoaderRoute: typeof AppSettingsAccountRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings/appearance': {
+      id: '/_app/settings/appearance'
+      path: '/settings/appearance'
+      fullPath: '/settings/appearance'
+      preLoaderRoute: typeof AppSettingsAppearanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings/invites': {
+      id: '/_app/settings/invites'
+      path: '/settings/invites'
+      fullPath: '/settings/invites'
+      preLoaderRoute: typeof AppSettingsInvitesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings/security': {
+      id: '/_app/settings/security'
+      path: '/settings/security'
+      fullPath: '/settings/security'
+      preLoaderRoute: typeof AppSettingsSecurityRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppActivityRoute: typeof AppActivityRoute
+  AppBudgetRoute: typeof AppBudgetRoute
+  AppWalletsRoute: typeof AppWalletsRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppSettingsAccountRoute: typeof AppSettingsAccountRoute
+  AppSettingsAppearanceRoute: typeof AppSettingsAppearanceRoute
+  AppSettingsInvitesRoute: typeof AppSettingsInvitesRoute
+  AppSettingsSecurityRoute: typeof AppSettingsSecurityRoute
+  AppSettingsIndexRoute: typeof AppSettingsIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppActivityRoute: AppActivityRoute,
+  AppBudgetRoute: AppBudgetRoute,
+  AppWalletsRoute: AppWalletsRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppSettingsAccountRoute: AppSettingsAccountRoute,
+  AppSettingsAppearanceRoute: AppSettingsAppearanceRoute,
+  AppSettingsInvitesRoute: AppSettingsInvitesRoute,
+  AppSettingsSecurityRoute: AppSettingsSecurityRoute,
+  AppSettingsIndexRoute: AppSettingsIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  InvitesRoute: InvitesRoute,
+  AppRoute: AppRouteWithChildren,
   RecoverRoute: RecoverRoute,
-  SecurityRoute: SecurityRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
   UnlockRoute: UnlockRoute,

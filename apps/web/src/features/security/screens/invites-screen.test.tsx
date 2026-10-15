@@ -13,15 +13,15 @@ afterEach(() => {
 })
 
 describe('invites', () => {
-  it('SYS-13: the operator makes an invite link from home and sees it listed', async () => {
+  it('SYS-13: the operator makes an invite link from Settings and sees it listed', async () => {
     const user = userEvent.setup()
     const server: FakeServer = { signedIn: 'ana', operator: true }
     stubServer(server)
-    const { router } = renderApp('/', unlockedVault(server))
+    const { router } = renderApp('/settings', unlockedVault(server))
 
     await user.click(await screen.findByRole('link', { name: 'Invite someone' }))
     expect(await screen.findByRole('heading', { name: 'Invites' })).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/invites')
+    expect(router.state.location.pathname).toBe('/settings/invites')
     expect(screen.getByText('No invites yet.')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Make an invite link' }))
@@ -41,7 +41,7 @@ describe('invites', () => {
     try {
       const server: FakeServer = { signedIn: 'ana', operator: true }
       stubServer(server)
-      renderApp('/invites', unlockedVault(server))
+      renderApp('/settings/invites', unlockedVault(server))
 
       await user.click(await screen.findByRole('button', { name: 'Make an invite link' }))
       const made = within(await screen.findByRole('region', { name: 'New invite link' }))
@@ -87,7 +87,7 @@ describe('invites', () => {
       ],
     }
     stubServer(server)
-    renderApp('/invites', unlockedVault(server))
+    renderApp('/settings/invites', unlockedVault(server))
 
     expect(await screen.findByText('Used by ben on Oct 2, 2026')).toBeInTheDocument()
     expect(screen.getByText('Expired on Sep 8, 2026')).toBeInTheDocument()
@@ -104,9 +104,9 @@ describe('invites', () => {
   it('SYS-13: someone who does not run the server has no invites', async () => {
     const server: FakeServer = { signedIn: 'ben', operator: false }
     stubServer(server)
-    const { router } = renderApp('/invites', unlockedVault(server))
+    const { router } = renderApp('/settings/invites', unlockedVault(server))
 
-    expect(await screen.findByText('Signed in as ben')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Home', level: 1 })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
     expect(screen.queryByRole('link', { name: 'Invite someone' })).not.toBeInTheDocument()
   })
@@ -115,7 +115,7 @@ describe('invites', () => {
     await i18n.changeLanguage('es')
     const server: FakeServer = { signedIn: 'ana', operator: true }
     stubServer(server)
-    renderApp('/invites', unlockedVault(server))
+    renderApp('/settings/invites', unlockedVault(server))
 
     expect(await screen.findByRole('heading', { name: 'Invitaciones' })).toBeInTheDocument()
     expect(screen.getByText(/durante 7 días/)).toBeInTheDocument()

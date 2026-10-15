@@ -533,3 +533,100 @@
     ),
     var(--mirador-hero);
 }
+
+/* DL-LAY-06: how wide a screen's content gets: the full phone, then one centered
+   column on tablets and computers. */
+:root {
+  --page-width: 100%;
+}
+@media (min-width: 768px) {
+  :root {
+    --page-width: 640px;
+  }
+}
+@media (min-width: 1024px) {
+  :root {
+    --page-width: 720px;
+  }
+}
+
+body {
+  background-color: var(--mirador-background);
+}
+
+/* DL-MOT-06: a sheet slides up over a dimmed background with the system's spring timing,
+   and fades instead when the device asks for less motion (DL-A11Y-08). */
+.sheet {
+  translate: 0 100%;
+  transition:
+    translate 350ms cubic-bezier(0.32, 0.72, 0, 1),
+    overlay 350ms allow-discrete,
+    display 350ms allow-discrete;
+}
+.sheet[open] {
+  translate: 0 0;
+}
+@starting-style {
+  .sheet[open] {
+    translate: 0 100%;
+  }
+}
+.sheet::backdrop {
+  background: rgb(0 0 0 / 0%);
+  transition:
+    background 350ms,
+    overlay 350ms allow-discrete,
+    display 350ms allow-discrete;
+}
+.sheet[open]::backdrop {
+  background: rgb(0 0 0 / 32%);
+}
+@starting-style {
+  .sheet[open]::backdrop {
+    background: rgb(0 0 0 / 0%);
+  }
+}
+@media (min-width: 768px) {
+  .sheet,
+  .sheet[open] {
+    translate: 0 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet {
+    translate: 0 0;
+    opacity: 0;
+    transition:
+      opacity 200ms,
+      overlay 200ms allow-discrete,
+      display 200ms allow-discrete;
+  }
+  .sheet[open] {
+    opacity: 1;
+  }
+  @starting-style {
+    .sheet[open] {
+      opacity: 0;
+    }
+  }
+}
+
+/* DL-ICO-05: the dark app icon in dark mode, whether it comes from the device or from
+   Settings > Appearance (SYS-16). */
+.app-icon-dark {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .app-icon-light {
+    display: none;
+  }
+  :root:not([data-theme='light']) .app-icon-dark {
+    display: block;
+  }
+}
+:root[data-theme='dark'] .app-icon-light {
+  display: none;
+}
+:root[data-theme='dark'] .app-icon-dark {
+  display: block;
+}

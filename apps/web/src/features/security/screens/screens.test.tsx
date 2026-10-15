@@ -98,7 +98,17 @@ describe('sign-up', () => {
 
     await user.click(screen.getByLabelText('I saved my recovery key somewhere safe'))
     await user.click(proceed)
-    expect(await screen.findByText('Signed in as ana')).toBeInTheDocument()
+
+    // SYS-18: then a profile picture, with the initial already chosen.
+    expect(
+      await screen.findByRole('heading', { name: 'Pick a profile picture' }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('radio', { name: 'Butterfly' }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
+    expect(await screen.findByRole('heading', { name: 'Home', level: 1 })).toBeInTheDocument()
+    expect(server.records?.map((record) => record.body)).toEqual([
+      { deleted: false, type: 'profile', schema: 1, data: { picture: 'butterfly' } },
+    ])
   })
 
   it('SYS-13: asks for an invite code, and an invite link fills it in', async () => {
@@ -233,7 +243,7 @@ describe('sign-in', () => {
     await user.type(screen.getByLabelText('Password'), password)
     await user.click(screen.getByRole('button', { name: 'Sign in' }))
 
-    expect(await screen.findByText('Signed in as ana')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Home', level: 1 })).toBeInTheDocument()
     expect(vault.signIn).toHaveBeenCalledWith('ana', password)
   })
 
@@ -290,8 +300,7 @@ describe('unlock', () => {
     await user.clear(screen.getByLabelText('Password'))
     await user.type(screen.getByLabelText('Password'), password)
     await user.click(screen.getByRole('button', { name: 'Unlock' }))
-    expect(await screen.findByText('Signed in as ana')).toBeInTheDocument()
-    expect(await screen.findByRole('button', { name: 'Lock' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Home', level: 1 })).toBeInTheDocument()
   })
 })
 
@@ -330,7 +339,7 @@ describe('recover', () => {
     await user.type(screen.getByLabelText('Repeat new password'), password)
     await user.click(screen.getByRole('button', { name: 'Set new password' }))
 
-    expect(await screen.findByText('Signed in as ana')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Home', level: 1 })).toBeInTheDocument()
     expect(vault.recover).toHaveBeenCalledWith({
       username: 'ana',
       recoveryKey: shownKey,

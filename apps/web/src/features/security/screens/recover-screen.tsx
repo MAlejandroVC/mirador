@@ -110,10 +110,7 @@ export function RecoverScreen() {
         </Button>
       </form>
       <p className="text-center text-sm">
-        <Link
-          to="/sign-in"
-          className="inline-flex min-h-11 items-center font-medium text-slate-900 underline"
-        >
+        <Link to="/sign-in" className="inline-flex min-h-11 items-center font-medium text-brand">
           {t('security.recover.back')}
         </Link>
       </p>

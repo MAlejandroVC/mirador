@@ -82,19 +82,13 @@ export function SignInScreen() {
         </>
       )}
       <p className="text-center text-sm">
-        <Link
-          to="/recover"
-          className="inline-flex min-h-11 items-center font-medium text-slate-900 underline"
-        >
+        <Link to="/recover" className="inline-flex min-h-11 items-center font-medium text-brand">
           {t('security.signIn.forgot')}
         </Link>
       </p>
-      <p className="text-center text-sm text-slate-600">
+      <p className="text-center text-sm text-text-muted">
         {t('security.signIn.noAccount')}{' '}
-        <Link
-          to="/sign-up"
-          className="inline-flex min-h-11 items-center font-medium text-slate-900 underline"
-        >
+        <Link to="/sign-up" className="inline-flex min-h-11 items-center font-medium text-brand">
           {t('security.signIn.createAccount')}
         </Link>
       </p>

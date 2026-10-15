@@ -3,6 +3,90 @@
     "name": "Mirador",
     "tagline": "Conoce dónde estás. Mira a dónde vas."
   },
+  "nav": {
+    "label": "Secciones",
+    "home": "Inicio",
+    "activity": "Movimientos",
+    "budget": "Presupuesto",
+    "wallets": "Carteras",
+    "settings": "Configuración",
+    "new": "Nuevo",
+    "back": "Atrás",
+    "cancel": "Cancelar"
+  },
+  "quickAdd": {
+    "title": "Nuevo movimiento",
+    "placeholder": {
+      "title": "Ya casi",
+      "body": "Muy pronto podrás agregar un gasto aquí en unos cuantos toques, desde cualquier pantalla."
+    }
+  },
+  "placeholder": {
+    "home": {
+      "title": "Tu dinero de un vistazo",
+      "body": "Aquí verás cómo va tu periodo, tus metas y lo que necesite tu atención."
+    },
+    "activity": {
+      "title": "Aún no hay nada aquí",
+      "body": "Aquí aparecerán todos tus gastos, ingresos y transferencias, del más reciente al más antiguo."
+    },
+    "budget": {
+      "title": "Tu presupuesto viene en camino",
+      "body": "Se irá armando con tus propios hábitos de gasto, un pasito a la vez."
+    },
+    "wallets": {
+      "title": "Aún no tienes carteras",
+      "body": "Aquí vivirán tu efectivo, tarjetas, ahorros y créditos, con tu patrimonio hasta arriba."
+    }
+  },
+  "settings": {
+    "signedInAs": "Sesión iniciada como {{username}}",
+    "encrypted": "Tus datos están cifrados de extremo a extremo. Solo este dispositivo puede leerlos mientras está desbloqueado.",
+    "lock": "Bloquear",
+    "signOut": "Cerrar sesión",
+    "security": "Contraseña y seguridad",
+    "invites": "Invitar a alguien",
+    "account": {
+      "title": "Cuenta",
+      "description": "Tu foto de perfil y tu nombre de usuario, y borrar tu cuenta.",
+      "summary": "Foto de perfil y nombre de usuario"
+    },
+    "appearance": {
+      "title": "Apariencia",
+      "description": "Elige modo claro u oscuro y los colores de la app en este dispositivo.",
+      "mode": "Modo",
+      "modes": {
+        "automatic": "Automático",
+        "light": "Claro",
+        "dark": "Oscuro"
+      },
+      "palette": "Paleta",
+      "categoryNote": "Los colores de tus categorías son los mismos en todas las paletas."
+    }
+  },
+  "profile": {
+    "picture": "Foto de perfil",
+    "pictureIntro": "Aparece arriba en cada página. Deja tu inicial o elige un ícono.",
+    "pictures": {
+      "initial": "Tu inicial",
+      "mountains": "Montañas",
+      "tree": "Árbol",
+      "leaf": "Hoja",
+      "flower": "Flor",
+      "cactus": "Cactus",
+      "sun": "Sol",
+      "moon": "Luna y estrellas",
+      "bird": "Pájaro",
+      "butterfly": "Mariposa",
+      "cat": "Gato",
+      "dog": "Perro"
+    },
+    "signUp": {
+      "title": "Elige tu foto de perfil",
+      "intro": "Aparece arriba en cada página. Puedes cambiarla cuando quieras en Configuración.",
+      "continue": "Continuar"
+    }
+  },
   "health": {
     "checking": "Comprobando el servidor…",
     "ok": "Servidor conectado",
@@ -83,16 +167,9 @@
       "working": "Abriendo tus datos con la clave de recuperación…",
       "back": "Volver a iniciar sesión"
     },
-    "home": {
-      "signedInAs": "Sesión iniciada como {{username}}",
-      "encrypted": "Tus datos están cifrados de extremo a extremo. Solo este dispositivo puede leerlos mientras está desbloqueado.",
-      "lock": "Bloquear",
-      "signOut": "Cerrar sesión",
-      "security": "Contraseña y seguridad",
-      "invites": "Invitar a alguien"
-    },
     "settings": {
       "title": "Contraseña y seguridad",
+      "description": "Tu contraseña, llaves de acceso y clave de recuperación, y cuándo se bloquea este dispositivo.",
       "back": "Volver",
       "username": {
         "title": "Nombre de usuario",
@@ -166,7 +243,9 @@
     },
     "invites": {
       "title": "Invitaciones",
-      "intro": "Solo las personas que invites pueden crear una cuenta en este servidor. Crea un enlace de invitación y envíaselo tú. Cada enlace sirve una vez, durante {{count}} días.",
+      "description": "Solo las personas que invites pueden crear una cuenta en este servidor.",
+      "newSection": "Nueva invitación",
+      "intro": "Crea un enlace de invitación y envíaselo tú. Cada enlace sirve una vez, durante {{count}} días.",
       "create": "Crear enlace de invitación",
       "working": "Creando la invitación…",
       "newTitle": "Enlace de invitación nuevo",

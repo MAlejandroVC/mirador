@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import doc from '../../../docs/design-language.md?raw'
 import reference from '../../../docs/design-language-palettes.html?raw'
 import css from './index.css?raw'
-import { defaultPalette, palettes } from './lib/appearance'
+import { defaultPalette, paletteNames, palettes, swatches } from './lib/appearance'
 
 // DL-COL-11, DL-COL-12: the tokens in index.css must match the tables in the design
 // language, so a color can't change in one place and not the other, and every palette
@@ -191,6 +191,20 @@ describe('design tokens', () => {
           ]),
         ),
       ).toEqual(categoryColors[mode])
+    }
+  })
+
+  it('SYS-17: the palette picker draws each palette with its own colors and name', () => {
+    for (const id of palettes) {
+      const palette = cssPalette(id)
+      for (const mode of ['light', 'dark'] as const) {
+        for (const [name, value] of Object.entries<string>({ ...swatches[id][mode] })) {
+          expect(normalize(value), `${id} ${mode} ${name}`).toBe(palette[mode][name])
+        }
+      }
+      expect(documentedPalettes.find((documented) => documented.id === id)?.name).toBe(
+        paletteNames[id],
+      )
     }
   })
 
