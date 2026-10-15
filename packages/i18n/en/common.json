@@ -59,6 +59,17 @@
       "palette": "Palette",
       "categoryNote": "Your category colors stay the same in every palette."
     },
+    "language": {
+      "title": "Language",
+      "description": "Choose the language Mirador speaks on this device.",
+      "automatic": "Automatic",
+      "device": "Follows your device: {{language}}",
+      "names": {
+        "es": "Spanish",
+        "en": "English"
+      },
+      "deviceNote": "This setting is for this device only."
+    },
     "currency": {
       "title": "Currency",
       "description": "New wallets start with it and every total is shown in it."

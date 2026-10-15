@@ -22,6 +22,7 @@ import { Route as AppSettingsAccountRouteImport } from './routes/_app/settings/a
 import { Route as AppSettingsAppearanceRouteImport } from './routes/_app/settings/appearance'
 import { Route as AppSettingsCurrencyRouteImport } from './routes/_app/settings/currency'
 import { Route as AppSettingsInvitesRouteImport } from './routes/_app/settings/invites'
+import { Route as AppSettingsLanguageRouteImport } from './routes/_app/settings/language'
 import { Route as AppSettingsSecurityRouteImport } from './routes/_app/settings/security'
 import { Route as AppWalletsIndexRouteImport } from './routes/_app/wallets/index'
 import { Route as AppWalletsWalletIdIndexRouteImport } from './routes/_app/wallets/$walletId/index'
@@ -91,6 +92,11 @@ const AppSettingsInvitesRoute = AppSettingsInvitesRouteImport.update({
   path: '/settings/invites',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsLanguageRoute = AppSettingsLanguageRouteImport.update({
+  id: '/settings/language',
+  path: '/settings/language',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsSecurityRoute = AppSettingsSecurityRouteImport.update({
   id: '/settings/security',
   path: '/settings/security',
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/settings/appearance': typeof AppSettingsAppearanceRoute
   '/settings/currency': typeof AppSettingsCurrencyRoute
   '/settings/invites': typeof AppSettingsInvitesRoute
+  '/settings/language': typeof AppSettingsLanguageRoute
   '/settings/security': typeof AppSettingsSecurityRoute
   '/settings/': typeof AppSettingsIndexRoute
   '/wallets/': typeof AppWalletsIndexRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/settings/appearance': typeof AppSettingsAppearanceRoute
   '/settings/currency': typeof AppSettingsCurrencyRoute
   '/settings/invites': typeof AppSettingsInvitesRoute
+  '/settings/language': typeof AppSettingsLanguageRoute
   '/settings/security': typeof AppSettingsSecurityRoute
   '/settings': typeof AppSettingsIndexRoute
   '/wallets': typeof AppWalletsIndexRoute
@@ -163,6 +171,7 @@ export interface FileRoutesById {
   '/_app/settings/appearance': typeof AppSettingsAppearanceRoute
   '/_app/settings/currency': typeof AppSettingsCurrencyRoute
   '/_app/settings/invites': typeof AppSettingsInvitesRoute
+  '/_app/settings/language': typeof AppSettingsLanguageRoute
   '/_app/settings/security': typeof AppSettingsSecurityRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
   '/_app/wallets/': typeof AppWalletsIndexRoute
@@ -183,6 +192,7 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/currency'
     | '/settings/invites'
+    | '/settings/language'
     | '/settings/security'
     | '/settings/'
     | '/wallets/'
@@ -201,6 +211,7 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/currency'
     | '/settings/invites'
+    | '/settings/language'
     | '/settings/security'
     | '/settings'
     | '/wallets'
@@ -220,6 +231,7 @@ export interface FileRouteTypes {
     | '/_app/settings/appearance'
     | '/_app/settings/currency'
     | '/_app/settings/invites'
+    | '/_app/settings/language'
     | '/_app/settings/security'
     | '/_app/settings/'
     | '/_app/wallets/'
@@ -328,6 +340,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsInvitesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings/language': {
+      id: '/_app/settings/language'
+      path: '/settings/language'
+      fullPath: '/settings/language'
+      preLoaderRoute: typeof AppSettingsLanguageRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings/security': {
       id: '/_app/settings/security'
       path: '/settings/security'
@@ -367,6 +386,7 @@ interface AppRouteChildren {
   AppSettingsAppearanceRoute: typeof AppSettingsAppearanceRoute
   AppSettingsCurrencyRoute: typeof AppSettingsCurrencyRoute
   AppSettingsInvitesRoute: typeof AppSettingsInvitesRoute
+  AppSettingsLanguageRoute: typeof AppSettingsLanguageRoute
   AppSettingsSecurityRoute: typeof AppSettingsSecurityRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
   AppWalletsIndexRoute: typeof AppWalletsIndexRoute
@@ -382,6 +402,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsAppearanceRoute: AppSettingsAppearanceRoute,
   AppSettingsCurrencyRoute: AppSettingsCurrencyRoute,
   AppSettingsInvitesRoute: AppSettingsInvitesRoute,
+  AppSettingsLanguageRoute: AppSettingsLanguageRoute,
   AppSettingsSecurityRoute: AppSettingsSecurityRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
   AppWalletsIndexRoute: AppWalletsIndexRoute,
