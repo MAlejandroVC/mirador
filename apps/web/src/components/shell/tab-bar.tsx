@@ -20,7 +20,8 @@ export function TabBar() {
         className="flex h-[3.375rem] flex-1 items-center justify-around rounded-full border-[0.5px] border-separator bg-surface"
       >
         {places.map(({ to, label, icon: Icon }) => {
-          const current = Boolean(matchRoute({ to }))
+          // A wallet's own screen still belongs to Wallets.
+          const current = Boolean(matchRoute({ to, fuzzy: to !== '/' }))
           return (
             <Link
               key={to}

@@ -33,10 +33,6 @@
     "budget": {
       "title": "Your budget is on its way",
       "body": "It will grow from your own spending habits, one small step at a time."
-    },
-    "wallets": {
-      "title": "No wallets yet",
-      "body": "Your cash, cards, savings and loans will live here, with your net worth on top."
     }
   },
   "settings": {
@@ -62,6 +58,10 @@
       },
       "palette": "Palette",
       "categoryNote": "Your category colors stay the same in every palette."
+    },
+    "currency": {
+      "title": "Currency",
+      "description": "New wallets start with it and every total is shown in it."
     }
   },
   "profile": {
@@ -299,6 +299,182 @@
       "passkey-unsupported": "This passkey can't unlock encrypted data. Use one saved in iCloud Keychain, Google Password Manager or another passkey app that supports it.",
       "passkey-cancelled": "The passkey wasn't used. Try again when you're ready.",
       "too-many-passkeys": "This account already has as many passkeys as it can. Remove one first."
+    }
+  },
+  "common": {
+    "undo": "Undo"
+  },
+  "dates": {
+    "today": "Today",
+    "yesterday": "Yesterday"
+  },
+  "colors": {
+    "clay": "Clay",
+    "bark": "Bark",
+    "marigold": "Marigold",
+    "meadow": "Meadow",
+    "moss": "Moss",
+    "lagoon": "Lagoon",
+    "lake": "Lake",
+    "dusk": "Dusk",
+    "heather": "Heather",
+    "plum": "Plum",
+    "berry": "Berry",
+    "stone": "Stone"
+  },
+  "currency": {
+    "search": "Search currencies",
+    "none": "No currency matches that.",
+    "common": "Common",
+    "all": "All currencies"
+  },
+  "wallets": {
+    "add": "Add a wallet",
+    "edit": "Edit",
+    "empty": {
+      "title": "A clear view starts here",
+      "body": "Add your first wallet and everything you have shows up in one place."
+    },
+    "netWorth": "Net worth",
+    "across_one": "Across {{count}} wallet",
+    "across_other": "Across {{count}} wallets",
+    "liquid": "{{amount}} available now",
+    "view": "Show",
+    "views": {
+      "wallets": "Wallets",
+      "types": "Types"
+    },
+    "have": "What you have",
+    "owe": "What you owe",
+    "count_one": "{{count}} wallet",
+    "count_other": "{{count}} wallets",
+    "inactive": "Inactive",
+    "notInNetWorth": "Not in net worth",
+    "otherCurrency": "Other currency",
+    "otherCurrencyNote": "Wallets in other currencies don't count in net worth, which is in {{currency}}.",
+    "saveFailed": "Couldn't save. Check your connection and try again.",
+    "missing": {
+      "title": "Wallet not found",
+      "body": "It may have been deleted on another device."
+    },
+    "presets": {
+      "cash": "Cash",
+      "checking": "Checking",
+      "savings": "Savings",
+      "investment": "Investment",
+      "creditCard": "Credit card",
+      "loan": "Loan",
+      "voucher": "Voucher card",
+      "generic": "Other"
+    },
+    "icons": {
+      "wallet": "Wallet",
+      "money": "Bills",
+      "coins": "Coins",
+      "bank": "Bank",
+      "piggyBank": "Piggy bank",
+      "vault": "Safe",
+      "creditCard": "Card",
+      "handCoins": "Hand with coins",
+      "chartLineUp": "Chart",
+      "gift": "Gift",
+      "storefront": "Store",
+      "briefcase": "Briefcase",
+      "house": "House",
+      "car": "Car",
+      "graduationCap": "School",
+      "airplane": "Travel"
+    },
+    "features": {
+      "interest": {
+        "title": "Interest",
+        "body": "It earns or charges interest."
+      },
+      "fees": {
+        "title": "Fees",
+        "body": "It charges fees, like an annual fee."
+      },
+      "creditLimit": {
+        "title": "Credit limit",
+        "body": "It has a limit, a statement date and a due date."
+      },
+      "loanSchedule": {
+        "title": "Loan schedule",
+        "body": "It's paid off in fixed payments."
+      },
+      "valuations": {
+        "title": "Market value",
+        "body": "Its value goes up and down with the market."
+      },
+      "liquid": {
+        "title": "Available now",
+        "body": "You can spend this money today."
+      }
+    },
+    "form": {
+      "newTitle": "New wallet",
+      "editTitle": "Edit wallet",
+      "name": "Name",
+      "namePlaceholder": "Name, like BBVA Debit",
+      "type": "Type",
+      "balance": "Balance",
+      "have": "I have",
+      "owe": "I owe",
+      "balanceToday": "Balance today",
+      "balanceHint": "Saved as the opening balance, dated today. You can change both later.",
+      "balanceInvalid": "That isn't an amount. Type only numbers, like 1250.50.",
+      "currency": "Currency",
+      "currencyDecimals": "It has a different number of decimals, so this wallet's amounts would change.",
+      "look": "Icon and color",
+      "color": "Color",
+      "icon": "Icon",
+      "features": "Features",
+      "featuresHint": "The type switches on what usually applies. Details such as rates and limits come in a later update.",
+      "countIn": "Count in",
+      "netWorth": "Net worth",
+      "budget": "Budget",
+      "active": "Active",
+      "activeHint": "Inactive wallets are hidden when you add transactions, and still count in net worth.",
+      "save": "Save",
+      "discardTitle": "Discard changes?",
+      "discardMessage": "Your changes to this wallet won't be saved.",
+      "discard": "Discard changes",
+      "keepEditing": "Keep editing"
+    },
+    "delete": {
+      "button": "Delete wallet",
+      "title": "Delete {{name}}?",
+      "message_one": "This also deletes its one transaction. This can't be undone.",
+      "message_other": "This also deletes its {{count}} transactions. This can't be undone.",
+      "inactive": "Make it inactive instead",
+      "confirm": "Delete wallet",
+      "done": "{{name}} deleted"
+    },
+    "balance": {
+      "label": "Balance",
+      "update": "Update balance",
+      "title": "Update balance",
+      "intro": "Mirador has {{balance}}. Type the balance you see now.",
+      "actual": "Balance now",
+      "willAdjust": "An adjustment of {{amount}} will be added today.",
+      "matches": "That's what Mirador has. Nothing to adjust.",
+      "record": "Record adjustment"
+    },
+    "transactions": {
+      "title": "Transactions",
+      "openingBalance": "Opening balance",
+      "adjustment": "Balance adjustment",
+      "amount": "Amount",
+      "added": "Money in",
+      "removed": "Money out",
+      "date": "Date",
+      "dateMissing": "Pick a date.",
+      "dateFuture": "That date is in the future. Pick today or earlier.",
+      "openingHint": "Move it back to when your records start to load older history.",
+      "delete": "Delete transaction",
+      "deleted": "Transaction deleted",
+      "emptyTitle": "No transactions yet",
+      "emptyBody": "Its balance starts at zero. Update it to match what you see in your bank."
     }
   }
 }

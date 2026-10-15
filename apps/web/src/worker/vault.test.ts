@@ -20,6 +20,9 @@ import { newRecordId } from '@repo/crypto'
 import { createApi, type Fetch } from '../lib/api'
 import { vaultErrorCode } from './errors'
 import { Vault } from './vault'
+import { openingBalance } from '@repo/core'
+import { transactionBody, walletBody } from '../features/wallets/use-ledger'
+import { newWalletRecord } from '../features/wallets/wallet-look'
 
 const password = 'a sunny day in Monterrey'
 
@@ -298,6 +301,35 @@ describe('vault', () => {
     const everything = server.sent.join('\n')
     expect(everything).not.toContain('butterfly')
     expect(everything).not.toContain('profile')
+  })
+
+  it('WAL-01, WAL-05: wallets and their balances reach the server only encrypted', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    await phone.signUp({ username: 'ana', password })
+    const walletId = newRecordId()
+
+    await phone.saveRecords([
+      {
+        id: walletId,
+        body: walletBody({
+          ...newWalletRecord('Banorte Nómina', 'MXN'),
+          preset: 'checking',
+          features: ['fees', 'liquid'],
+        }),
+      },
+      {
+        id: newRecordId(),
+        body: transactionBody(openingBalance(walletId, 4827391, '2026-10-15')),
+      },
+    ])
+
+    const everything = server.sent.join('\n')
+    for (const plaintext of ['Banorte', 'MXN', 'checking', 'liquid', '4827391', 'openingBalance'])
+      expect(everything).not.toContain(plaintext)
+    // Not even which kind of record each one is (SEC-04).
+    expect(everything).not.toContain('wallet')
+    expect(everything).not.toContain('transaction')
   })
 
   it('SEC-01: records are encrypted before they leave, and only the owner reads them', async () => {

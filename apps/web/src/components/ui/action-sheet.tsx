@@ -1,0 +1,95 @@
+import { useEffect, useId, useRef } from 'react'
+
+export interface Action {
+  label: string
+  onSelect: () => void
+  /** `danger` only for what deletes (DL-COL-07). */
+  tone?: 'brand' | 'danger'
+}
+
+// DL-CMP-12: confirms a destructive step. It slides up, states the consequence in one
+// sentence and offers the actions, with Cancel set apart below them, as in iOS.
+export function ActionSheet({
+  open,
+  title,
+  message,
+  actions,
+  cancelLabel,
+  onClose,
+}: {
+  open: boolean
+  title: string
+  message: string
+  actions: Action[]
+  cancelLabel: string
+  onClose: () => void
+}) {
+  const ref = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+  const messageId = useId()
+
+  // Closing because `open` turned false is not the person closing it.
+  const openRef = useRef(open)
+  useEffect(() => {
+    openRef.current = open
+    const dialog = ref.current
+    if (!dialog) return
+    if (open && !dialog.open) dialog.showModal()
+    if (!open && dialog.open) dialog.close()
+  }, [open])
+
+  const option =
+    'min-h-14 w-full border-t-[0.5px] border-separator px-4 text-[1.0625rem] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand'
+
+  return (
+    <dialog
+      ref={ref}
+      aria-labelledby={titleId}
+      aria-describedby={messageId}
+      // React passes a nested sheet's close and cancel events up to this one; only
+      // this dialog's own count.
+      onClose={(event) => {
+        if (event.target === event.currentTarget && openRef.current) onClose()
+      }}
+      onCancel={(event) => {
+        if (event.target !== event.currentTarget) return
+        event.preventDefault()
+        onClose()
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
+      className="sheet m-0 mt-auto w-full max-w-none bg-transparent p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:m-auto md:max-w-[22rem]"
+    >
+      <div className="flex flex-col gap-2">
+        <div className="overflow-hidden rounded-[0.875rem] bg-surface text-center">
+          <div className="flex flex-col gap-1 px-4 py-3.5">
+            <h2 id={titleId} className="text-[0.8125rem] font-semibold text-text-muted">
+              {title}
+            </h2>
+            <p id={messageId} className="text-[0.8125rem] text-text-muted">
+              {message}
+            </p>
+          </div>
+          {actions.map((action) => (
+            <button
+              key={action.label}
+              type="button"
+              onClick={action.onSelect}
+              className={`${option} ${action.tone === 'danger' ? 'text-danger' : 'text-brand'}`}
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="min-h-14 w-full rounded-[0.875rem] bg-surface text-[1.0625rem] font-semibold text-brand focus-visible:outline-2 focus-visible:outline-brand"
+        >
+          {cancelLabel}
+        </button>
+      </div>
+    </dialog>
+  )
+}

@@ -33,10 +33,6 @@
     "budget": {
       "title": "Tu presupuesto viene en camino",
       "body": "Se irá armando con tus propios hábitos de gasto, un pasito a la vez."
-    },
-    "wallets": {
-      "title": "Aún no tienes carteras",
-      "body": "Aquí vivirán tu efectivo, tarjetas, ahorros y créditos, con tu patrimonio hasta arriba."
     }
   },
   "settings": {
@@ -62,6 +58,10 @@
       },
       "palette": "Paleta",
       "categoryNote": "Los colores de tus categorías son los mismos en todas las paletas."
+    },
+    "currency": {
+      "title": "Moneda",
+      "description": "Las carteras nuevas empiezan con ella y todos los totales se muestran en ella."
     }
   },
   "profile": {
@@ -299,6 +299,182 @@
       "passkey-unsupported": "Esta llave de acceso no puede desbloquear datos cifrados. Usa una guardada en el llavero de iCloud, el Gestor de contraseñas de Google u otra app de llaves de acceso que lo permita.",
       "passkey-cancelled": "No se usó la llave de acceso. Inténtalo de nuevo cuando quieras.",
       "too-many-passkeys": "Esta cuenta ya tiene todas las llaves de acceso que puede tener. Quita una primero."
+    }
+  },
+  "common": {
+    "undo": "Deshacer"
+  },
+  "dates": {
+    "today": "Hoy",
+    "yesterday": "Ayer"
+  },
+  "colors": {
+    "clay": "Arcilla",
+    "bark": "Corteza",
+    "marigold": "Cempasúchil",
+    "meadow": "Pradera",
+    "moss": "Musgo",
+    "lagoon": "Laguna",
+    "lake": "Lago",
+    "dusk": "Anochecer",
+    "heather": "Brezo",
+    "plum": "Ciruela",
+    "berry": "Mora",
+    "stone": "Piedra"
+  },
+  "currency": {
+    "search": "Buscar moneda",
+    "none": "Ninguna moneda coincide.",
+    "common": "Más usadas",
+    "all": "Todas las monedas"
+  },
+  "wallets": {
+    "add": "Agregar cartera",
+    "edit": "Editar",
+    "empty": {
+      "title": "Aquí empieza una vista clara",
+      "body": "Agrega tu primera cartera y verás todo lo que tienes en un solo lugar."
+    },
+    "netWorth": "Patrimonio",
+    "across_one": "En {{count}} cartera",
+    "across_other": "En {{count}} carteras",
+    "liquid": "{{amount}} disponibles hoy",
+    "view": "Ver",
+    "views": {
+      "wallets": "Carteras",
+      "types": "Tipos"
+    },
+    "have": "Lo que tienes",
+    "owe": "Lo que debes",
+    "count_one": "{{count}} cartera",
+    "count_other": "{{count}} carteras",
+    "inactive": "Inactiva",
+    "notInNetWorth": "Fuera del patrimonio",
+    "otherCurrency": "Otra moneda",
+    "otherCurrencyNote": "Las carteras en otras monedas no cuentan en tu patrimonio, que está en {{currency}}.",
+    "saveFailed": "No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.",
+    "missing": {
+      "title": "No encontramos esta cartera",
+      "body": "Quizá se eliminó en otro dispositivo."
+    },
+    "presets": {
+      "cash": "Efectivo",
+      "checking": "Débito",
+      "savings": "Ahorro",
+      "investment": "Inversión",
+      "creditCard": "Tarjeta de crédito",
+      "loan": "Préstamo",
+      "voucher": "Vales",
+      "generic": "Otra"
+    },
+    "icons": {
+      "wallet": "Cartera",
+      "money": "Billetes",
+      "coins": "Monedas",
+      "bank": "Banco",
+      "piggyBank": "Alcancía",
+      "vault": "Caja fuerte",
+      "creditCard": "Tarjeta",
+      "handCoins": "Mano con monedas",
+      "chartLineUp": "Gráfica",
+      "gift": "Regalo",
+      "storefront": "Tienda",
+      "briefcase": "Portafolio",
+      "house": "Casa",
+      "car": "Auto",
+      "graduationCap": "Escuela",
+      "airplane": "Viajes"
+    },
+    "features": {
+      "interest": {
+        "title": "Intereses",
+        "body": "Genera o cobra intereses."
+      },
+      "fees": {
+        "title": "Comisiones",
+        "body": "Cobra comisiones, como la anualidad."
+      },
+      "creditLimit": {
+        "title": "Límite de crédito",
+        "body": "Tiene límite, fecha de corte y fecha límite de pago."
+      },
+      "loanSchedule": {
+        "title": "Plan de pagos",
+        "body": "Se paga en mensualidades fijas."
+      },
+      "valuations": {
+        "title": "Valor de mercado",
+        "body": "Su valor sube y baja con el mercado."
+      },
+      "liquid": {
+        "title": "Disponible hoy",
+        "body": "Puedes usar este dinero hoy."
+      }
+    },
+    "form": {
+      "newTitle": "Nueva cartera",
+      "editTitle": "Editar cartera",
+      "name": "Nombre",
+      "namePlaceholder": "Nombre, como Débito BBVA",
+      "type": "Tipo",
+      "balance": "Saldo",
+      "have": "Tengo",
+      "owe": "Debo",
+      "balanceToday": "Saldo de hoy",
+      "balanceHint": "Se guarda como saldo inicial con fecha de hoy. Puedes cambiar ambos después.",
+      "balanceInvalid": "Eso no es una cantidad. Escribe solo números, como 1250.50.",
+      "currency": "Moneda",
+      "currencyDecimals": "Tiene otro número de decimales, así que los montos de esta cartera cambiarían.",
+      "look": "Ícono y color",
+      "color": "Color",
+      "icon": "Ícono",
+      "features": "Funciones",
+      "featuresHint": "El tipo activa lo que suele aplicar. Los detalles, como tasas y límites, llegarán en una próxima versión.",
+      "countIn": "Contar en",
+      "netWorth": "Patrimonio",
+      "budget": "Presupuesto",
+      "active": "Activa",
+      "activeHint": "Las carteras inactivas no aparecen al agregar movimientos y siguen contando en tu patrimonio.",
+      "save": "Guardar",
+      "discardTitle": "¿Descartar cambios?",
+      "discardMessage": "Los cambios a esta cartera no se guardarán.",
+      "discard": "Descartar cambios",
+      "keepEditing": "Seguir editando"
+    },
+    "delete": {
+      "button": "Eliminar cartera",
+      "title": "¿Eliminar {{name}}?",
+      "message_one": "También se elimina su único movimiento. No se puede deshacer.",
+      "message_other": "También se eliminan sus {{count}} movimientos. No se puede deshacer.",
+      "inactive": "Mejor dejarla inactiva",
+      "confirm": "Eliminar cartera",
+      "done": "Se eliminó {{name}}"
+    },
+    "balance": {
+      "label": "Saldo",
+      "update": "Actualizar saldo",
+      "title": "Actualizar saldo",
+      "intro": "Mirador tiene {{balance}}. Escribe el saldo que ves ahora.",
+      "actual": "Saldo actual",
+      "willAdjust": "Se agregará un ajuste de {{amount}} con fecha de hoy.",
+      "matches": "Coincide con lo que tiene Mirador. No hay nada que ajustar.",
+      "record": "Registrar ajuste"
+    },
+    "transactions": {
+      "title": "Movimientos",
+      "openingBalance": "Saldo inicial",
+      "adjustment": "Ajuste de saldo",
+      "amount": "Monto",
+      "added": "Entra",
+      "removed": "Sale",
+      "date": "Fecha",
+      "dateMissing": "Elige una fecha.",
+      "dateFuture": "Esa fecha es futura. Elige hoy o antes.",
+      "openingHint": "Muévelo a cuando empiezan tus registros para cargar historial anterior.",
+      "delete": "Eliminar movimiento",
+      "deleted": "Movimiento eliminado",
+      "emptyTitle": "Aún no hay movimientos",
+      "emptyBody": "Su saldo empieza en cero. Actualízalo para que coincida con lo que ves en tu banco."
     }
   }
 }

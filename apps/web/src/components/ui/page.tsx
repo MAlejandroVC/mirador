@@ -8,6 +8,7 @@ import { CaretLeftIcon } from './icons'
 // with a header card (`card`): its icon, its title and one line on what it is for.
 // Once the page scrolls, the title shrinks into the bar at the top, centered. A screen
 // the sidebar lists, like Settings, hides `back` once the sidebar shows (DL-LAY-06).
+// On a screen with a header card, `actions` sit at the top right of the bar.
 export function Page({
   title,
   back,
@@ -59,7 +60,8 @@ export function Page({
           >
             {title}
           </p>
-          <div />
+          {/* A pushed screen's plain actions, such as Edit, sit at the top right. */}
+          <div className="flex justify-end">{card && actions}</div>
         </div>
       </div>
       <div
