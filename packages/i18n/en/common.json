@@ -12,7 +12,8 @@
     "settings": "Settings",
     "new": "New",
     "back": "Back",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "done": "Done"
   },
   "quickAdd": {
     "title": "New transaction",
@@ -73,6 +74,21 @@
         "en": "English"
       },
       "deviceNote": "This setting is for this device only."
+    },
+    "install": {
+      "title": "Add to Home Screen",
+      "summary": "Open Mirador full screen, like an app",
+      "intro": "Mirador will open from its own icon, full screen, without the browser's bars.",
+      "ios": {
+        "share": "Tap Share in the browser's toolbar",
+        "add": "Scroll down and tap Add to Home Screen",
+        "confirm": "Tap Add"
+      },
+      "android": {
+        "menu": "Tap the browser's menu",
+        "add": "Tap Add to Home screen or Install app",
+        "confirm": "Tap Install or Add"
+      }
     }
   },
   "profile": {
