@@ -653,6 +653,7 @@ Settings cover what makes one installation fit one person: currencies, budget pe
 | SYS-17 | The app shall let the user choose one of eight curated palettes under Settings > Appearance > Palette, next to the appearance mode: Paper (plain black and white), Sage Grove (the default), Cami, Coronado, Glacier, Mesa, Jacaranda and Sierra, each with a light and a dark version. A palette shall change only the app colors (background, surface, text, brand, and the hero and its glow); the 12 category colors and the warning, danger and goal colors shall stay the same in every palette. | Should |
 | SYS-18 | The app shall let the user choose a profile picture, either their initial (the default) or one of a curated set of icons, when creating an account and later under Settings > Account, and show it beside each tab's title and in Settings. The choice shall be stored encrypted like other user data (SEC-01), so it is the same on every device. | Should |
 | SYS-19 | The app shall let the user choose its language under Settings > Language: Automatic (follows the device, the default), Español or English. The choice is kept per device, like the appearance (SYS-16), so it applies before signing in. | Must |
+| SYS-20 | The app shall offer, under Settings, to add Mirador to the device's Home Screen so it opens full screen like an app: through the browser's own install dialog where the browser has one, otherwise by showing the browser's steps. The offer shall be hidden once Mirador runs from the Home Screen. | Should |
 
 ## Epic 11: Security and encryption
 

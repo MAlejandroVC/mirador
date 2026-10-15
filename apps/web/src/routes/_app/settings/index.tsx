@@ -13,6 +13,7 @@ import {
 } from '../../../components/ui/icons'
 import { List, ListButtonRow, ListLinkRow } from '../../../components/ui/list'
 import { Page } from '../../../components/ui/page'
+import { InstallRow } from '../../../features/install'
 import { ProfilePicture, useProfilePicture } from '../../../features/profile'
 import { sessionQuery, useVault } from '../../../features/security'
 import { api } from '../../../lib/api'
@@ -26,7 +27,8 @@ export const Route = createFileRoute('/_app/settings/')({
 // Epic 10: Settings opens with the account, then one row per area: Appearance
 // (SYS-16, SYS-17), Language (SYS-19), Currency (SYS-01), Password and security (SEC) and, for the
 // person who runs the server, Invites (SYS-13). Areas such as budget defaults, categories and
-// data join as they are built. Lock and Sign out close the list, as in iOS.
+// data join as they are built. Add to Home Screen follows until Mirador runs from there
+// (SYS-20). Lock and Sign out close the list, as in iOS.
 function Settings() {
   const { t } = useTranslation()
   const vault = useVault()
@@ -112,6 +114,7 @@ function Settings() {
           />
         )}
       </List>
+      <InstallRow />
       <List>
         <ListButtonRow
           leading={<LockSimpleIcon aria-hidden className="size-[1.375rem] text-brand" />}

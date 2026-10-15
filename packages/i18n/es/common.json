@@ -12,7 +12,8 @@
     "settings": "Configuración",
     "new": "Nuevo",
     "back": "Atrás",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "done": "Listo"
   },
   "quickAdd": {
     "title": "Nuevo movimiento",
@@ -73,6 +74,21 @@
     "currency": {
       "title": "Moneda",
       "description": "Las carteras nuevas empiezan con ella y todos los totales se muestran en ella."
+    },
+    "install": {
+      "title": "Agregar a inicio",
+      "summary": "Abre Mirador en pantalla completa, como una app",
+      "intro": "Mirador se abrirá desde su propio ícono, en pantalla completa y sin las barras del navegador.",
+      "ios": {
+        "share": "Toca Compartir en la barra del navegador",
+        "add": "Desliza hacia abajo y toca Agregar a inicio",
+        "confirm": "Toca Agregar"
+      },
+      "android": {
+        "menu": "Toca el menú del navegador",
+        "add": "Toca Agregar a la pantalla principal o Instalar app",
+        "confirm": "Toca Instalar o Agregar"
+      }
     }
   },
   "profile": {
