@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Mirador",
-    "tagline": "Tu dinero, privado y en tus manos."
+    "tagline": "Conoce dónde estás. Mira a dónde vas."
   },
   "health": {
     "checking": "Comprobando el servidor…",

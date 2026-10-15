@@ -72,7 +72,7 @@ Mirador feels **polished, familiar and calm, ****refined with a touch of whimsy*
 
 **DL-COL-01** The app palette is fixed and the same for everyone; people color their wallets, category groups and tags from Mirador's curated set (DL-PRI-04).
 
-**DL-COL-02** No decorative gradients. A gradient is allowed only where it shows a quantity, such as a chart fill, plus the one sunlight glow on the hero card (DL-COL-10).
+**DL-COL-02** No decorative gradients. A gradient is allowed only where it shows a quantity, such as a chart fill, plus the one sunlight glow on the hero card (DL-COL-10). The app icon is the one exception (DL-ICO-05).
 
 **DL-COL-03** The palette is **Sage Grove**: neutrals with a whisper of warm brown, and **Pine**, a deep forest green, as the brand color. Pine marks the main action, the selected tab and the hero card. *Why:* calm and steady, it stands out without shouting, and it belongs to the outdoors that the name Mirador comes from.
 
@@ -204,7 +204,7 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 
 **DL-ICO-04** Icon tiles are 34 px with a 20 px icon. Tab bar icons are 23 px.
 
-**DL-ICO-05** **App icon.** To be decided; it will be designed separately.
+**DL-ICO-05** **App icon.** The app icon is **Coin stacks**: three stacks of gold coins growing like a chart, on a white tile, or a near-black one in dark mode. It keeps its own colors in every app palette. Unlike the interface, it may use shading and highlights, as Apple's own app icons do. The masters are `docs/brand/app-icon.svg` and `docs/brand/app-icon-dark.svg`; the web app serves its copies from `apps/web/public`. The options that were considered are kept in [app-icon.html](app-icon.html). *Why:* people should know it is a money app at a glance, the way Notes looks like a notepad and Wallet looks like cards.
 
 ## Motion and feedback
 
@@ -298,6 +298,8 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 | Goal | Meta |
 | Net worth | Patrimonio |
 | Recovery key | Clave de recuperación |
+
+**DL-VOC-07** **Slogan.** "Know where you stand. See where you're going." In Spanish: "Conoce dónde estás. Mira a dónde vas." It appears under the name where Mirador introduces itself. *Why:* the first half is your wallets and spending today, the second is your goals, which is the whole app in two sentences.
 
 ## Components
 
