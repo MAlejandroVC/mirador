@@ -2,6 +2,8 @@
 
 ## What changed
 
+<!-- Before: and After: in a sentence or two each, then up to six bullets about what a person sees, then a short How. -->
+
 ## Issue and requirements
 
 Closes #
@@ -11,7 +13,7 @@ Refs: <!-- requirement IDs, e.g. BUD-35 -->
 
 ## Screenshots
 
-<!-- Phone (375 px wide) and desktop, when the UI changes. -->
+<!-- When the UI changes: phone (375 px wide), English, light mode, each changed screen once, three to a row. See .claude/skills/pull-request/SKILL.md. -->
 
 ## Checklist
 

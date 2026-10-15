@@ -30,7 +30,8 @@ export function Sidebar() {
       </button>
       <nav aria-label={t('nav.label')} className="flex flex-1 flex-col gap-0.5">
         {places.map(({ to, label, icon }) => {
-          const current = Boolean(matchRoute({ to }))
+          // A wallet's own screen still belongs to Wallets.
+          const current = Boolean(matchRoute({ to, fuzzy: to !== '/' }))
           return <SidebarLink key={to} to={to} icon={icon} label={t(label)} current={current} />
         })}
       </nav>

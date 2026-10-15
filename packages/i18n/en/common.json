@@ -34,10 +34,6 @@
     "budget": {
       "title": "Your budget is on its way",
       "body": "It will grow from your own spending habits, one small step at a time."
-    },
-    "wallets": {
-      "title": "No wallets yet",
-      "body": "Your cash, cards, savings and loans will live here, with your net worth on top."
     }
   },
   "settings": {
@@ -74,6 +70,10 @@
         "en": "English"
       },
       "deviceNote": "This setting is for this device only."
+    },
+    "currency": {
+      "title": "Currency",
+      "description": "New wallets start with it and every total is shown in it."
     },
     "install": {
       "title": "Add to Home Screen",
@@ -327,5 +327,330 @@
       "passkey-cancelled": "The passkey wasn't used. Try again when you're ready.",
       "too-many-passkeys": "This account already has as many passkeys as it can. Remove one first."
     }
+  },
+  "common": {
+    "undo": "Undo"
+  },
+  "dates": {
+    "today": "Today",
+    "yesterday": "Yesterday"
+  },
+  "colors": {
+    "clay": "Clay",
+    "bark": "Bark",
+    "marigold": "Marigold",
+    "meadow": "Meadow",
+    "moss": "Moss",
+    "lagoon": "Lagoon",
+    "lake": "Lake",
+    "dusk": "Dusk",
+    "heather": "Heather",
+    "plum": "Plum",
+    "berry": "Berry",
+    "stone": "Stone"
+  },
+  "currency": {
+    "search": "Search currencies",
+    "none": "No currency matches that.",
+    "showAll": "Show all currencies",
+    "showFewer": "Show fewer"
+  },
+  "wallets": {
+    "add": "Add a wallet",
+    "edit": "Edit",
+    "empty": {
+      "title": "A clear view starts here",
+      "body": "Add your first wallet and everything you have shows up in one place."
+    },
+    "netWorth": "Net worth",
+    "across_one": "Across {{count}} wallet",
+    "across_other": "Across {{count}} wallets",
+    "liquid": "{{amount}} available now",
+    "view": "Show",
+    "views": {
+      "wallets": "Wallets",
+      "types": "Types"
+    },
+    "have": "What you have",
+    "owe": "What you owe",
+    "count_one": "{{count}} wallet",
+    "count_other": "{{count}} wallets",
+    "inactive": "Inactive",
+    "notInNetWorth": "Not in net worth",
+    "saveFailed": "Couldn't save. Check your connection and try again.",
+    "missing": {
+      "title": "Wallet not found",
+      "body": "It may have been deleted on another device."
+    },
+    "presets": {
+      "cash": "Cash",
+      "checking": "Debit",
+      "savings": "Savings",
+      "investment": "Investment",
+      "creditCard": "Credit card",
+      "loan": "Loan",
+      "voucher": "Voucher card",
+      "generic": "Other"
+    },
+    "icons": {
+      "wallet": "Wallet",
+      "money": "Bills",
+      "coins": "Coins",
+      "bank": "Bank",
+      "piggyBank": "Piggy bank",
+      "vault": "Safe",
+      "creditCard": "Card",
+      "handCoins": "Hand with coins",
+      "chartLineUp": "Chart",
+      "gift": "Gift",
+      "storefront": "Store",
+      "briefcase": "Briefcase",
+      "house": "House",
+      "car": "Car",
+      "graduationCap": "School",
+      "airplane": "Travel"
+    },
+    "features": {
+      "interest": {
+        "title": "Interest",
+        "body": "See what it earns or costs each month."
+      },
+      "fees": {
+        "title": "Fees",
+        "body": "Get reminded of fees, like a monthly or annual fee."
+      },
+      "creditLimit": {
+        "title": "Credit limit",
+        "body": "See what's left to spend, when the statement closes and when to pay."
+      },
+      "loanSchedule": {
+        "title": "Loan schedule",
+        "body": "See when it's paid off and how much interest is left."
+      },
+      "valuations": {
+        "title": "Market value",
+        "body": "Its value moves with the market. See your gain or loss apart from what you put in."
+      },
+      "liquid": {
+        "title": "Available now",
+        "body": "Money you can use today, like cash or a debit account. Leave it off for investments or retirement savings."
+      },
+      "setUp": "Set up"
+    },
+    "form": {
+      "newTitle": "New wallet",
+      "editTitle": "Edit wallet",
+      "name": "Name",
+      "namePlaceholder": "Name",
+      "type": "Type",
+      "balance": "Balance",
+      "have": "I have",
+      "owe": "I owe",
+      "balanceToday": "Balance today",
+      "balanceHint": "Saved as the opening balance, dated today. You can change both later.",
+      "balanceInvalid": "That isn't an amount. Type only numbers, like 1250.50.",
+      "currency": "Currency",
+      "currencyDecimals": "It has a different number of decimals, so this wallet's amounts would change.",
+      "look": "Icon and color",
+      "color": "Color",
+      "icon": "Icon",
+      "features": "Features",
+      "countIn": "Count in",
+      "netWorth": "Net worth",
+      "budget": "Budget",
+      "active": "Active",
+      "activeHint": "Inactive wallets are hidden when you add transactions, and still count in net worth.",
+      "save": "Save",
+      "discardTitle": "Discard changes?",
+      "discardMessage": "Your changes to this wallet won't be saved.",
+      "discard": "Discard changes",
+      "keepEditing": "Keep editing",
+      "featuresMore": "Show all features",
+      "featuresLess": "Show fewer",
+      "default": "Default wallet",
+      "defaultHint": "New transactions start in this wallet. You can still pick another one each time.",
+      "nameMissing": "Give the wallet a name."
+    },
+    "delete": {
+      "button": "Delete wallet",
+      "title": "Delete {{name}}?",
+      "message_one": "This also deletes its one transaction. This can't be undone.",
+      "message_other": "This also deletes its {{count}} transactions. This can't be undone.",
+      "inactive": "Make it inactive instead",
+      "confirm": "Delete wallet",
+      "done": "{{name}} deleted"
+    },
+    "balance": {
+      "label": "Balance",
+      "update": "Update balance",
+      "title": "Update balance",
+      "intro": "Mirador has {{balance}}. Type the balance you see now.",
+      "actual": "Balance now",
+      "willAdjust": "An adjustment of {{amount}} will be added today.",
+      "matches": "That's what Mirador has. Nothing to adjust.",
+      "record": "Record adjustment"
+    },
+    "transactions": {
+      "title": "Transactions",
+      "openingBalance": "Opening balance",
+      "adjustment": "Balance adjustment",
+      "amount": "Amount",
+      "added": "Money in",
+      "removed": "Money out",
+      "date": "Date",
+      "dateMissing": "Pick a date.",
+      "dateFuture": "That date is in the future. Pick today or earlier.",
+      "openingHint": "Move it back to when your records start to load older history.",
+      "delete": "Delete transaction",
+      "deleted": "Transaction deleted",
+      "emptyTitle": "No transactions yet",
+      "emptyBody": "Its balance starts at zero. Update it to match what you see in your bank.",
+      "interest": "Interest",
+      "fee": "Fee",
+      "valuation": "Market change",
+      "record": "Record",
+      "seeMore": "See more"
+    },
+    "noRate": "No exchange rate",
+    "reorder": {
+      "title": "Reorder wallets",
+      "intro": "Drag the handles to put your wallets in the order you like.",
+      "handle": "Move {{name}}",
+      "help": "Use the up and down arrow keys to move it.",
+      "moved": "{{name}} moved to {{place}} of {{count}}",
+      "done": "Done",
+      "button": "Reorder wallets"
+    },
+    "credit": {
+      "title": "Credit limit",
+      "empty": "Add the limit and the statement days to see what's left to spend and when to pay.",
+      "utilization": "Credit used",
+      "used": "{{used}} of {{limit}}",
+      "over": "{{amount}} over the limit",
+      "available": "{{amount}} left to spend",
+      "closes": "Statement closes",
+      "payBy": "Pay by",
+      "intro": "As your statement shows them.",
+      "hint": "Days run 1 to 31; in shorter months, the last day counts.",
+      "invalid": "Type a limit above zero and days from 1 to 31.",
+      "limit": "Credit limit",
+      "closingDay": "Statement closes on day",
+      "dueDay": "Payment due on day"
+    },
+    "loan": {
+      "title": "Loan",
+      "empty": "Add the contract's amount, rate and term to see when it's paid off.",
+      "paidOff": "Paid off",
+      "never": "A payment of {{payment}} doesn't cover the {{interest}} of interest each month, so this loan never gets paid off.",
+      "payoff": "Paid off in {{date}}",
+      "left_one": "1 payment of {{payment}} left",
+      "left_other": "{{count}} payments of {{payment}} left",
+      "interestLeft": "Interest still to pay",
+      "contractInterest": "Interest over the whole loan",
+      "noRate": "Without a rate, this assumes no interest.",
+      "intro": "As your contract shows them.",
+      "invalid": "Fill in the amount, rate, term and payment day.",
+      "suggested": "Leave the payment empty to use {{amount}}, worked out from the rate.",
+      "principal": "Amount borrowed",
+      "term": "Term",
+      "months": "months",
+      "payment": "Monthly payment",
+      "paymentDay": "Paid on day"
+    },
+    "interest": {
+      "title": "Interest",
+      "empty": "Add the rate to see what this balance earns or costs each month.",
+      "describe": {
+        "effective": "{{rate}} a year, effective (GAT)",
+        "daily": "{{rate}} a year, compounded daily",
+        "monthly": "{{rate}} a year, compounded monthly",
+        "yearly": "{{rate}} a year, compounded yearly"
+      },
+      "compounding": {
+        "daily": "Daily",
+        "monthly": "Monthly",
+        "yearly": "Yearly"
+      },
+      "earns": "Earns about",
+      "costs": "Costs about",
+      "thisMonth": "this month",
+      "recorded": "Recorded this month: {{amount}}",
+      "record": "Record this month's interest",
+      "intro": "The annual rate, as your bank quotes it.",
+      "invalid": "Type a rate like 10.5.",
+      "rate": "Rate a year",
+      "type": "How it's quoted",
+      "effective": "Effective (GAT)",
+      "nominal": "Nominal",
+      "compoundingLabel": "Compounds",
+      "typeHint": "Use the one on your statement. Savings show an effective rate, like the GAT, which already counts the interest earned on interest. Cards and loans show a nominal yearly rate."
+    },
+    "valuation": {
+      "title": "Investment",
+      "contributed": "Put in",
+      "gain": "Gain",
+      "loss": "Loss",
+      "hint": "Each time you check what it's worth, tap Update value. Mirador shows the change as a gain or loss, apart from the money you put in.",
+      "update": "Update value",
+      "intro": "Mirador has {{balance}}. Type what it's worth now.",
+      "actual": "Value now",
+      "willChange": "This records a market change of {{amount}}.",
+      "record": "Record new value"
+    },
+    "fees": {
+      "title": "Fees",
+      "empty": "Add fees such as an annual fee, and Mirador asks you to confirm each one when it's charged.",
+      "dueOn": "{{date}} · to confirm",
+      "confirm": "Confirm",
+      "skip": "Skip",
+      "every": {
+        "month": "Every month",
+        "year": "Every year"
+      },
+      "next": "next {{date}}",
+      "add": "Add a fee",
+      "editTitle": "Edit fee",
+      "newTitle": "New fee",
+      "invalid": "Type a name and an amount above zero.",
+      "hint": "Charges before today count as paid; Mirador asks about each one after.",
+      "name": "Name",
+      "namePlaceholder": "Annual fee",
+      "amount": "Amount",
+      "start": "First charge",
+      "everyLabel": "How often",
+      "delete": "Delete fee",
+      "note": "Note",
+      "notePlaceholder": "Like: waived if I use the card every month"
+    },
+    "default": "Default"
+  },
+  "rates": {
+    "title": "Exchange rate",
+    "later": "Later",
+    "prompt": "To count this wallet in your net worth, Mirador needs the exchange rate. You can also add it later on the wallet's page or in Settings > Currency.",
+    "intro": "The rate your bank or exchange office gives for {{currency}}. Each one is kept with its date.",
+    "one": "1 {{currency}} =",
+    "hint": "Totals use the newest rate up to today.",
+    "invalid": "Type a rate above zero, like 18.45.",
+    "history": "History",
+    "inUse": "In use",
+    "save": "Save rate",
+    "deleteTitle": "Delete the rate from {{date}}?",
+    "deleteMessage": "Totals will use the rate before it.",
+    "delete": "Delete rate",
+    "deleted": "Rate deleted",
+    "section": "Exchange rates",
+    "missing": "No rate yet, so it isn't in net worth",
+    "change": "Change",
+    "add": "Add",
+    "worth": "About {{amount}}",
+    "missingWallet": "No exchange rate yet, so it isn't in your net worth.",
+    "addRate": "Add exchange rate"
+  },
+  "pickers": {
+    "choose": "Choose",
+    "day": "Day {{day}}",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month"
   }
 }

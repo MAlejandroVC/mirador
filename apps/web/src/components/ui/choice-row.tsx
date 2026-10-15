@@ -3,12 +3,17 @@ import { CheckIcon } from './icons'
 
 // A row that is on or off inside a form that needs Save, so a check rather than a
 // switch (DL-CMP-10), as iOS does in its own pickers. `radio` when only one can be on.
+// In a list that folds (DL-CMP-15), `folded` hides the row in place, shrinking it away
+// (DL-MOT-07), and `separator` says whether the hairline above it shows, since the first
+// row in view isn't always the first in the list.
 export function ChoiceRow({
   title,
   subtitle,
   leading,
   checked,
   role = 'checkbox',
+  folded,
+  separator,
   onToggle,
 }: {
   title: string
@@ -16,31 +21,50 @@ export function ChoiceRow({
   leading?: ReactNode
   checked: boolean
   role?: 'checkbox' | 'radio'
+  folded?: boolean
+  separator?: boolean
   onToggle: () => void
 }) {
-  return (
-    <li className="group">
-      <button
-        type="button"
-        role={role}
-        aria-checked={checked}
-        onClick={onToggle}
-        className="flex min-h-[3.25rem] w-full items-center gap-3 pl-4 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
+  const hairline =
+    separator === undefined
+      ? 'border-t-[0.5px] group-first:border-t-0'
+      : separator
+        ? 'border-t-[0.5px]'
+        : ''
+  const row = (
+    <button
+      type="button"
+      role={role}
+      aria-checked={checked}
+      onClick={onToggle}
+      className="flex min-h-[3.25rem] w-full items-center gap-3 pl-4 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
+    >
+      {leading}
+      {/* DL-SHP-04: the hairline starts where the text starts. */}
+      <span
+        className={`flex min-h-[3.25rem] flex-1 items-center gap-2 self-stretch border-separator py-2 pr-4 ${hairline}`}
       >
-        {leading}
-        {/* DL-SHP-04: the hairline starts where the text starts. */}
-        <span className="flex min-h-[3.25rem] flex-1 items-center gap-2 self-stretch border-t-[0.5px] border-separator py-2 pr-4 group-first:border-t-0">
-          <span className="flex flex-1 flex-col">
-            <span className="text-[0.9375rem] text-text">{title}</span>
-            {subtitle && <span className="text-[0.8125rem] text-text-muted">{subtitle}</span>}
-          </span>
-          <CheckIcon
-            aria-hidden
-            weight="bold"
-            className={`size-5 shrink-0 text-brand ${checked ? '' : 'invisible'}`}
-          />
+        <span className="flex flex-1 flex-col">
+          <span className="text-[0.9375rem] text-text">{title}</span>
+          {subtitle && <span className="text-[0.8125rem] text-text-muted">{subtitle}</span>}
         </span>
-      </button>
+        <CheckIcon
+          aria-hidden
+          weight="bold"
+          className={`size-5 shrink-0 text-brand ${checked ? '' : 'invisible'}`}
+        />
+      </span>
+    </button>
+  )
+  if (folded === undefined) return <li className="group">{row}</li>
+  return (
+    <li
+      className="group fold"
+      data-closed={folded ? '' : undefined}
+      aria-hidden={folded || undefined}
+      inert={folded}
+    >
+      <div>{row}</div>
     </li>
   )
 }

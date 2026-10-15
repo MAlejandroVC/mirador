@@ -247,7 +247,7 @@ Example: `feat(bud): cap suggested cuts at the proven level` with `Refs: BUD-35`
 
 - One issue per pull request, small enough to review in 15 minutes. Split big work behind a feature flag rather than opening a huge PR.
 - The title is a Conventional Commit line, because PRs are squash-merged and the title becomes the commit on `main`.
-- The description follows the template: what changed, which issue and requirement IDs, how it was tested, and phone and desktop screenshots when the UI changes.
+- The description follows the template and stays high level: what changed, which issue and requirement IDs, how it was tested, and screenshots when the UI changes, at phone width in English and light mode, each changed screen once. [.claude/skills/pull-request/SKILL.md](.claude/skills/pull-request/SKILL.md) has the details and an example; Claude Code uses it automatically.
 - Open it as a draft early if you want feedback; mark it ready when CI is green. A pull request from a branch of this repository gets a preview at `pr-<number>.<preview domain>` that updates a few minutes after each push, so open the draft as soon as there is something to try.
 - To merge: CI green, one approving review (the maintainer, for now), every conversation resolved, branch up to date with `main`.
 - Reviewers comment on behaviour, the requirement and the rules above; formatting is the tools' job. Prefix optional remarks with `nit:`.

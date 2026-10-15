@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { IconTile } from '../../../components/ui/icon-tile'
 import {
+  CurrencyCircleDollarIcon,
   LockSimpleIcon,
   PaletteIcon,
   ShieldCheckIcon,
@@ -24,10 +25,10 @@ export const Route = createFileRoute('/_app/settings/')({
 })
 
 // Epic 10: Settings opens with the account, then one row per area: Appearance
-// (SYS-16, SYS-17), Language (SYS-19), Password and security (SEC) and, for the person
-// who runs the server, Invites (SYS-13). Areas such as currencies, budget defaults,
-// categories and data join as they are built. Add to Home Screen follows until Mirador
-// runs from there (SYS-20). Lock and Sign out close the list, as in iOS.
+// (SYS-16, SYS-17), Language (SYS-19), Currency (SYS-01), Password and security (SEC) and, for the
+// person who runs the server, Invites (SYS-13). Areas such as budget defaults, categories and
+// data join as they are built. Add to Home Screen follows until Mirador runs from there
+// (SYS-20). Lock and Sign out close the list, as in iOS.
 function Settings() {
   const { t } = useTranslation()
   const vault = useVault()
@@ -94,6 +95,11 @@ function Settings() {
               {language === 'automatic' ? t('settings.language.automatic') : nativeNames[language]}
             </span>
           }
+        />
+        <ListLinkRow
+          to="/settings/currency"
+          leading={<IconTile icon={CurrencyCircleDollarIcon} />}
+          title={t('settings.currency.title')}
         />
         <ListLinkRow
           to="/settings/security"

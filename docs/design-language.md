@@ -405,7 +405,19 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 | New row opens into the list | 360 ms | `cubic-bezier(.32,.72,0,1)` |
 | Row highlight fades | 1.4 s | ease-out, runs in the background |
 
-**DL-MOT-06** Screens move like iOS: a new screen slides in from the right and back slides it out, a sheet slides up from the bottom over a dimmed background, all with the system's spring timing (about 350 ms). With animations off (DL-MOT-04), they fade instead.
+**DL-MOT-06** Screens move like iOS: a new screen slides in from the right and back slides it out, a sheet slides up from the bottom over a dimmed background, all with the system's spring timing (about 350 ms). Closing slides the sheet back down (350 ms). From 768 px, where a sheet is a centered dialog, it fades and grows in (250 ms) and closes with a quick 150 ms fade. The screen under a closing sheet answers the next tap at once (DL-MOT-03). With animations off (DL-MOT-04), they fade instead. Switching tabs doesn't move anything.
+
+**DL-MOT-07** Everything else that changes in place moves too, quickly, with the same curve (`cubic-bezier(.32,.72,0,1)`), so the person sees where it went:
+
+| What | Duration |
+|---|---|
+| Rows that open and close in place: "Show all", a date or day picker, a part of a form that appears | 300 ms |
+| The segmented control's thumb slides to the option tapped | 250 ms |
+| Rows moved in a list, such as reordering wallets, slide to their new place | 250 ms |
+| The undo banner rises into place, and fades away | 250 ms in, 150 ms out |
+| A missing field shakes when Save is tapped (DL-PAT-02) | 300 ms, `ease-out` |
+
+The save sequence (DL-MOT-02) plays for every Save that adds or changes something, not only transactions: a new wallet or transaction row opens into its list with its highlight. With animations off (DL-MOT-04), nothing moves: rows appear and go at once, and missing fields don't shake.
 
 ## Money and numbers
 
@@ -505,11 +517,15 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 
 **DL-CMP-08** **Sheets.** Creating or editing something opens a sheet that slides up, with a grabber, Cancel at the top left, the title in the middle, and the main action as a filled button at the bottom, within reach of the thumb. Settings-like sheets put Done at the top right instead. Swiping a sheet down closes it, unless it holds unsaved changes; then an action sheet asks "Discard changes?".
 
-**DL-CMP-09** **Fields.** Fields are rows in an inset list, as in iOS Settings: label on the left, value on the right, chevron when it opens a picker. Free text fields use the `inset` fill. The amount is entered as a big number with the decimal keypad. A field's error appears right under it in `warning` (DL-PAT-05).
+**DL-CMP-09** **Fields.** Fields are rows in an inset list, as in iOS Settings: label on the left, value on the right, chevron when it opens a picker. Free text fields use the `inset` fill. The amount is entered as a big number with the decimal keypad. A field's error appears right under it in `warning` (DL-PAT-05), only after Save was tapped (DL-PAT-02). A field being typed in shows only its caret, in `brand`, never a box around it, as in iOS.
+
+- **Money.** Every field that holds an amount groups the digits as they are typed, the way the language writes them ("25,000"), and shows the cents still to come in `text-faint` (".00"). Typed cents take the normal text color. The field is as wide as its text, so the faint cents sit right beside it.
+- **Other numbers.** A rate, a percent, an exchange rate or a count of months is a plain number: no faint decimals, which belong to money only. Its placeholder is a faint "0".
+- **Dates and days.** A date, month, year, day of the week or day of the month is picked, never typed. The row shows the value in a small `fill` pill; tapping it opens the picker right under the row, as iOS forms do: a calendar a month at a time (the chosen day a filled `brand` circle, today in `brand`), or the days 1 to 31 in a grid. Picking closes it.
 
 **DL-CMP-10** **Switches.** The iOS switch, `brand` when on. Only for settings that take effect immediately; anything that needs Save is not a switch.
 
-**DL-CMP-11** **Segmented control.** Two to five equal options that switch a mode or a view, such as Expense, Income and Transfer. More than five becomes a list.
+**DL-CMP-11** **Segmented control.** Two to five equal options that switch a mode or a view, such as Expense, Income and Transfer. More than five becomes a list. The selected option sits on `thumb`: `surface` in light mode, and in dark mode `surface` mixed with 24% `text`, so it stands out from the track as in iOS.
 
 **DL-CMP-12** **Action sheet.** Confirms a destructive or irreversible step. It slides up, states the consequence in one sentence, and offers the destructive action in `danger` with Cancel set apart below it.
 
@@ -517,11 +533,13 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 
 **DL-CMP-14** **Empty state.** A large icon tile, a short title, one sentence on what will appear here, and the filled button that fills it ("Add a wallet"). This is a place for a touch of whimsy (DL-VOC-02).
 
+**DL-CMP-15** **Show more.** A long list of options that are mostly off, such as a wallet's features, shows only the ones that are on, then a last row in `brand` with a chevron pointing down: "Show all features". Opened, it shows every option and the row reads "Show fewer". An option turned off stays in view until the list is folded again, so a row never vanishes under the finger. A long list of choices, such as currencies, shows the common ones and the chosen one, then "Show all currencies". A list of items, such as transactions, shows the latest few (5 on a phone, 10 from 768 px) and a "See more" row that opens the full list on its own screen.
+
 ## Patterns
 
 **DL-PAT-01** **Navigation.** The tabs are Home, Activity, Budget and Wallets. Opening an item pushes a screen in from the right, and swiping from the left edge goes back. Creating or editing opens a sheet (DL-CMP-08). Tapping the current tab returns to its top. Settings is not a place, so it is not a tab: it opens from the profile picture beside each tab's title, or from the bottom of the sidebar (DL-LAY-06). It lists Account, then Appearance, Password and security, and Invites for the person who runs the server, then Lock and Sign out; more areas join as they are built.
 
-**DL-PAT-02** **Forms.** Fill in everything that can be guessed: today's date, the last wallet used, the suggested category. Show the required fields first. Check a field when the person leaves it or taps Save, never while they type. The main button stays disabled until the required fields are filled.
+**DL-PAT-02** **Forms.** Fill in everything that can be guessed: today's date, the last wallet used, the suggested category. Show the required fields first. Check the fields only when the person taps the main button, never while they type or when they leave a field. The main button always looks ready. Tapped with a required field missing, it saves nothing: each missing field gives a quick small shake (DL-MOT-07), gets a `warning` outline and its error under it, and the caret goes to the first one. From then on each mark clears as soon as its field is filled. *Why:* a warning for a field the person hasn't reached yet feels like being scolded for something they were about to do.
 
 **DL-PAT-03** **Empty states.** Every list and screen that can be empty has an empty state (DL-CMP-14). It is never a blank screen.
 

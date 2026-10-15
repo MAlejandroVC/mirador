@@ -17,13 +17,16 @@ import { Route as UnlockRouteImport } from './routes/unlock'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppActivityRouteImport } from './routes/_app/activity'
 import { Route as AppBudgetRouteImport } from './routes/_app/budget'
-import { Route as AppWalletsRouteImport } from './routes/_app/wallets'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
 import { Route as AppSettingsAccountRouteImport } from './routes/_app/settings/account'
 import { Route as AppSettingsAppearanceRouteImport } from './routes/_app/settings/appearance'
+import { Route as AppSettingsCurrencyRouteImport } from './routes/_app/settings/currency'
 import { Route as AppSettingsInvitesRouteImport } from './routes/_app/settings/invites'
 import { Route as AppSettingsLanguageRouteImport } from './routes/_app/settings/language'
 import { Route as AppSettingsSecurityRouteImport } from './routes/_app/settings/security'
+import { Route as AppWalletsIndexRouteImport } from './routes/_app/wallets/index'
+import { Route as AppWalletsWalletIdIndexRouteImport } from './routes/_app/wallets/$walletId/index'
+import { Route as AppWalletsWalletIdTransactionsRouteImport } from './routes/_app/wallets/$walletId/transactions'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -64,11 +67,6 @@ const AppBudgetRoute = AppBudgetRouteImport.update({
   path: '/budget',
   getParentRoute: () => AppRoute,
 } as any)
-const AppWalletsRoute = AppWalletsRouteImport.update({
-  id: '/wallets',
-  path: '/wallets',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
   id: '/settings/',
   path: '/settings/',
@@ -82,6 +80,11 @@ const AppSettingsAccountRoute = AppSettingsAccountRouteImport.update({
 const AppSettingsAppearanceRoute = AppSettingsAppearanceRouteImport.update({
   id: '/settings/appearance',
   path: '/settings/appearance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsCurrencyRoute = AppSettingsCurrencyRouteImport.update({
+  id: '/settings/currency',
+  path: '/settings/currency',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsInvitesRoute = AppSettingsInvitesRouteImport.update({
@@ -99,6 +102,22 @@ const AppSettingsSecurityRoute = AppSettingsSecurityRouteImport.update({
   path: '/settings/security',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWalletsIndexRoute = AppWalletsIndexRouteImport.update({
+  id: '/wallets/',
+  path: '/wallets/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWalletsWalletIdIndexRoute = AppWalletsWalletIdIndexRouteImport.update({
+  id: '/wallets/$walletId/',
+  path: '/wallets/$walletId/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWalletsWalletIdTransactionsRoute =
+  AppWalletsWalletIdTransactionsRouteImport.update({
+    id: '/wallets/$walletId/transactions',
+    path: '/wallets/$walletId/transactions',
+    getParentRoute: () => AppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -108,13 +127,16 @@ export interface FileRoutesByFullPath {
   '/unlock': typeof UnlockRoute
   '/activity': typeof AppActivityRoute
   '/budget': typeof AppBudgetRoute
-  '/wallets': typeof AppWalletsRoute
   '/settings/account': typeof AppSettingsAccountRoute
   '/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/settings/currency': typeof AppSettingsCurrencyRoute
   '/settings/invites': typeof AppSettingsInvitesRoute
   '/settings/language': typeof AppSettingsLanguageRoute
   '/settings/security': typeof AppSettingsSecurityRoute
   '/settings/': typeof AppSettingsIndexRoute
+  '/wallets/': typeof AppWalletsIndexRoute
+  '/wallets/$walletId/transactions': typeof AppWalletsWalletIdTransactionsRoute
+  '/wallets/$walletId/': typeof AppWalletsWalletIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/recover': typeof RecoverRoute
@@ -123,14 +145,17 @@ export interface FileRoutesByTo {
   '/unlock': typeof UnlockRoute
   '/activity': typeof AppActivityRoute
   '/budget': typeof AppBudgetRoute
-  '/wallets': typeof AppWalletsRoute
   '/': typeof AppIndexRoute
   '/settings/account': typeof AppSettingsAccountRoute
   '/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/settings/currency': typeof AppSettingsCurrencyRoute
   '/settings/invites': typeof AppSettingsInvitesRoute
   '/settings/language': typeof AppSettingsLanguageRoute
   '/settings/security': typeof AppSettingsSecurityRoute
   '/settings': typeof AppSettingsIndexRoute
+  '/wallets': typeof AppWalletsIndexRoute
+  '/wallets/$walletId/transactions': typeof AppWalletsWalletIdTransactionsRoute
+  '/wallets/$walletId': typeof AppWalletsWalletIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -141,14 +166,17 @@ export interface FileRoutesById {
   '/unlock': typeof UnlockRoute
   '/_app/activity': typeof AppActivityRoute
   '/_app/budget': typeof AppBudgetRoute
-  '/_app/wallets': typeof AppWalletsRoute
   '/_app/': typeof AppIndexRoute
   '/_app/settings/account': typeof AppSettingsAccountRoute
   '/_app/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/_app/settings/currency': typeof AppSettingsCurrencyRoute
   '/_app/settings/invites': typeof AppSettingsInvitesRoute
   '/_app/settings/language': typeof AppSettingsLanguageRoute
   '/_app/settings/security': typeof AppSettingsSecurityRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
+  '/_app/wallets/': typeof AppWalletsIndexRoute
+  '/_app/wallets/$walletId/transactions': typeof AppWalletsWalletIdTransactionsRoute
+  '/_app/wallets/$walletId/': typeof AppWalletsWalletIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -160,13 +188,16 @@ export interface FileRouteTypes {
     | '/unlock'
     | '/activity'
     | '/budget'
-    | '/wallets'
     | '/settings/account'
     | '/settings/appearance'
+    | '/settings/currency'
     | '/settings/invites'
     | '/settings/language'
     | '/settings/security'
     | '/settings/'
+    | '/wallets/'
+    | '/wallets/$walletId/transactions'
+    | '/wallets/$walletId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/recover'
@@ -175,14 +206,17 @@ export interface FileRouteTypes {
     | '/unlock'
     | '/activity'
     | '/budget'
-    | '/wallets'
     | '/'
     | '/settings/account'
     | '/settings/appearance'
+    | '/settings/currency'
     | '/settings/invites'
     | '/settings/language'
     | '/settings/security'
     | '/settings'
+    | '/wallets'
+    | '/wallets/$walletId/transactions'
+    | '/wallets/$walletId'
   id:
     | '__root__'
     | '/_app'
@@ -192,14 +226,17 @@ export interface FileRouteTypes {
     | '/unlock'
     | '/_app/activity'
     | '/_app/budget'
-    | '/_app/wallets'
     | '/_app/'
     | '/_app/settings/account'
     | '/_app/settings/appearance'
+    | '/_app/settings/currency'
     | '/_app/settings/invites'
     | '/_app/settings/language'
     | '/_app/settings/security'
     | '/_app/settings/'
+    | '/_app/wallets/'
+    | '/_app/wallets/$walletId/transactions'
+    | '/_app/wallets/$walletId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -268,13 +305,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBudgetRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/wallets': {
-      id: '/_app/wallets'
-      path: '/wallets'
-      fullPath: '/wallets'
-      preLoaderRoute: typeof AppWalletsRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/settings/': {
       id: '/_app/settings/'
       path: '/settings'
@@ -294,6 +324,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/appearance'
       fullPath: '/settings/appearance'
       preLoaderRoute: typeof AppSettingsAppearanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings/currency': {
+      id: '/_app/settings/currency'
+      path: '/settings/currency'
+      fullPath: '/settings/currency'
+      preLoaderRoute: typeof AppSettingsCurrencyRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings/invites': {
@@ -317,33 +354,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsSecurityRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/wallets/': {
+      id: '/_app/wallets/'
+      path: '/wallets'
+      fullPath: '/wallets/'
+      preLoaderRoute: typeof AppWalletsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/wallets/$walletId/': {
+      id: '/_app/wallets/$walletId/'
+      path: '/wallets/$walletId'
+      fullPath: '/wallets/$walletId/'
+      preLoaderRoute: typeof AppWalletsWalletIdIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/wallets/$walletId/transactions': {
+      id: '/_app/wallets/$walletId/transactions'
+      path: '/wallets/$walletId/transactions'
+      fullPath: '/wallets/$walletId/transactions'
+      preLoaderRoute: typeof AppWalletsWalletIdTransactionsRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
   AppActivityRoute: typeof AppActivityRoute
   AppBudgetRoute: typeof AppBudgetRoute
-  AppWalletsRoute: typeof AppWalletsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppSettingsAccountRoute: typeof AppSettingsAccountRoute
   AppSettingsAppearanceRoute: typeof AppSettingsAppearanceRoute
+  AppSettingsCurrencyRoute: typeof AppSettingsCurrencyRoute
   AppSettingsInvitesRoute: typeof AppSettingsInvitesRoute
   AppSettingsLanguageRoute: typeof AppSettingsLanguageRoute
   AppSettingsSecurityRoute: typeof AppSettingsSecurityRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
+  AppWalletsIndexRoute: typeof AppWalletsIndexRoute
+  AppWalletsWalletIdTransactionsRoute: typeof AppWalletsWalletIdTransactionsRoute
+  AppWalletsWalletIdIndexRoute: typeof AppWalletsWalletIdIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppActivityRoute: AppActivityRoute,
   AppBudgetRoute: AppBudgetRoute,
-  AppWalletsRoute: AppWalletsRoute,
   AppIndexRoute: AppIndexRoute,
   AppSettingsAccountRoute: AppSettingsAccountRoute,
   AppSettingsAppearanceRoute: AppSettingsAppearanceRoute,
+  AppSettingsCurrencyRoute: AppSettingsCurrencyRoute,
   AppSettingsInvitesRoute: AppSettingsInvitesRoute,
   AppSettingsLanguageRoute: AppSettingsLanguageRoute,
   AppSettingsSecurityRoute: AppSettingsSecurityRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
+  AppWalletsIndexRoute: AppWalletsIndexRoute,
+  AppWalletsWalletIdTransactionsRoute: AppWalletsWalletIdTransactionsRoute,
+  AppWalletsWalletIdIndexRoute: AppWalletsWalletIdIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

@@ -257,6 +257,9 @@ importers:
       '@repo/api':
         specifier: workspace:*
         version: link:../../packages/api
+      '@repo/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@repo/crypto':
         specifier: workspace:*
         version: link:../../packages/crypto

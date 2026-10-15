@@ -44,12 +44,16 @@
   /* DL-COL-08: how strongly a color tints its tile and its bar. */
   --mirador-tile-mix: 14%;
   --mirador-bar-mix: 52%;
+  /* DL-CMP-11: the selected option of a segmented control. White in light mode; in dark
+     mode a lighter grey than the track, as in iOS, since a dark surface would sink into it. */
+  --mirador-thumb: var(--mirador-surface);
 
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
+    --mirador-thumb: color-mix(in srgb, var(--mirador-text) 24%, var(--mirador-surface));
     --mirador-background: #0a0a09;
     --mirador-surface: #191917;
     --mirador-inset: #242321;
@@ -89,6 +93,7 @@
 }
 
 :root[data-theme='dark'] {
+  --mirador-thumb: color-mix(in srgb, var(--mirador-text) 24%, var(--mirador-surface));
   --mirador-background: #0a0a09;
   --mirador-surface: #191917;
   --mirador-inset: #242321;
@@ -498,6 +503,7 @@
   --color-text-faint: var(--mirador-text-faint);
   --color-separator: var(--mirador-separator);
   --color-fill: var(--mirador-fill);
+  --color-thumb: var(--mirador-thumb);
   --color-brand: var(--mirador-brand);
   --color-on-brand: var(--mirador-on-brand);
   --color-hero: var(--mirador-hero);
@@ -554,60 +560,191 @@ body {
   background-color: var(--mirador-background);
 }
 
-/* DL-MOT-06: a sheet slides up over a dimmed background with the system's spring timing,
-   and fades instead when the device asks for less motion (DL-A11Y-08). */
-.sheet {
-  translate: 0 100%;
-  transition:
-    translate 350ms cubic-bezier(0.32, 0.72, 0, 1),
-    overlay 350ms allow-discrete,
-    display 350ms allow-discrete;
-}
+/* DL-MOT-06: a sheet slides up over a dimmed background with the system's spring timing.
+   From 768 px, where it is a centered dialog, it fades and grows in. With less motion
+   (DL-A11Y-08) it fades. The way out is played by lib/motion.ts once it has closed. */
 .sheet[open] {
-  translate: 0 0;
+  animation: sheet-up 350ms cubic-bezier(0.32, 0.72, 0, 1);
 }
-@starting-style {
+.sheet::backdrop {
+  background: rgb(0 0 0 / 32%);
+}
+.sheet[open]::backdrop {
+  animation: fade-in 350ms ease-out;
+}
+/* The copy of a sheet that is leaving keeps its dimmed background while it goes. */
+.sheet-ghost-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 32%);
+  pointer-events: none;
+}
+@media (min-width: 768px) {
   .sheet[open] {
+    animation: sheet-grow 250ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .sheet[open]::backdrop {
+    animation-duration: 250ms;
+  }
+}
+@keyframes sheet-up {
+  from {
     translate: 0 100%;
   }
 }
-.sheet::backdrop {
-  background: rgb(0 0 0 / 0%);
-  transition:
-    background 350ms,
-    overlay 350ms allow-discrete,
-    display 350ms allow-discrete;
-}
-.sheet[open]::backdrop {
-  background: rgb(0 0 0 / 32%);
-}
-@starting-style {
-  .sheet[open]::backdrop {
-    background: rgb(0 0 0 / 0%);
-  }
-}
-@media (min-width: 768px) {
-  .sheet,
-  .sheet[open] {
-    translate: 0 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .sheet {
-    translate: 0 0;
+@keyframes sheet-grow {
+  from {
     opacity: 0;
-    transition:
-      opacity 200ms,
-      overlay 200ms allow-discrete,
-      display 200ms allow-discrete;
+    scale: 0.96;
   }
-  .sheet[open] {
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+/* DL-MOT-07: the undo banner rises into place. */
+@keyframes banner-in {
+  from {
+    opacity: 0;
+    translate: 0 0.75rem;
+  }
+}
+/* DL-MOT-05: Save turns into a check. */
+@keyframes check-in {
+  from {
+    opacity: 0;
+    scale: 0.4;
+  }
+}
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* DL-MOT-06: opening a screen slides it in from the right over the one before, which
+   moves a little to the left; back reverses it. Only the page moves: the tab bar and
+   the sidebar stay put, and switching tabs is instant, as in iOS. */
+main {
+  view-transition-name: page;
+}
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-group(page) {
+  animation: none;
+}
+::view-transition-old(page),
+::view-transition-new(page) {
+  mix-blend-mode: normal;
+  animation-duration: 350ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  animation-fill-mode: both;
+}
+:root[data-nav='forward']::view-transition-old(page) {
+  animation-name: page-aside;
+}
+:root[data-nav='forward']::view-transition-new(page) {
+  animation-name: page-in;
+}
+:root[data-nav='back']::view-transition-old(page) {
+  z-index: 1;
+  animation-name: page-out;
+}
+:root[data-nav='back']::view-transition-new(page) {
+  animation-name: page-return;
+}
+:root[data-nav='none']::view-transition-old(page),
+:root[data-nav='none']::view-transition-new(page) {
+  animation: none;
+}
+@keyframes page-in {
+  from {
+    translate: 100% 0;
+  }
+}
+@keyframes page-aside {
+  to {
+    translate: -30% 0;
+    opacity: 0.6;
+  }
+}
+@keyframes page-out {
+  to {
+    translate: 100% 0;
+  }
+}
+@keyframes page-return {
+  from {
+    translate: -30% 0;
+    opacity: 0.6;
+  }
+}
+
+/* DL-MOT-02: a row that was just saved opens into its list, and its highlight fades. */
+.row-new {
+  overflow: hidden;
+  animation:
+    row-open 360ms cubic-bezier(0.32, 0.72, 0, 1) 300ms both,
+    row-highlight 1.4s ease-out 300ms both;
+}
+@keyframes row-open {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 6rem;
     opacity: 1;
   }
-  @starting-style {
-    .sheet[open] {
-      opacity: 0;
-    }
+}
+@keyframes row-highlight {
+  from {
+    background-color: color-mix(in srgb, var(--mirador-brand) 16%, transparent);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+/* DL-MOT-07: rows that open and close in place, such as "Show all features" or a date
+   picker, grow and shrink to their height. The row is a one-cell grid whose only child
+   clips; hidden, it takes no room and nothing in it can be reached. */
+.fold {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition:
+    grid-template-rows 300ms cubic-bezier(0.32, 0.72, 0, 1),
+    visibility 300ms;
+}
+.fold > * {
+  min-height: 0;
+  overflow: hidden;
+}
+.fold[data-closed] {
+  grid-template-rows: 0fr;
+  visibility: hidden;
+}
+
+/* DL-MOT-04, DL-A11Y-08: with less motion, things fade or change at once. */
+@media (prefers-reduced-motion: reduce) {
+  .sheet[open] {
+    animation: fade-in 200ms ease-out;
+  }
+  .sheet[open]::backdrop {
+    animation-duration: 200ms;
+  }
+  ::view-transition-old(page) {
+    animation: fade-out 200ms ease both;
+  }
+  ::view-transition-new(page) {
+    animation: fade-in 200ms ease both;
+  }
+  .row-new {
+    animation: row-highlight 1.4s ease-out both;
+  }
+  .fold {
+    transition: none;
   }
 }
 
