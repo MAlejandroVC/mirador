@@ -8,7 +8,7 @@ import {
 import { openingBalance, presetDefaults } from '@repo/core'
 import { newRecordId } from '@repo/crypto'
 import type { SyncedRecord } from '@repo/sync'
-import { screen, waitFor, within } from '@testing-library/react'
+import { configure, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../lib/i18n'
@@ -41,6 +41,10 @@ function saved(server: FakeServer, type: string) {
 
 // Whole pesos in, minor units out.
 const pesos = (amount: number) => amount * 100
+
+// The first test pays for loading the wallet screens and decrypting records, which can
+// take longer than Testing Library's 1 s default on a busy CI runner.
+configure({ asyncUtilTimeout: 5000 })
 
 describe('wallets', () => {
   beforeEach(async () => {
