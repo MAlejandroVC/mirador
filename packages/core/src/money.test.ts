@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { guessCurrency } from './currencies.ts'
-import { amountInput, formatMoney, fractionDigits, moneyParts, parseAmount } from './money.ts'
+import {
+  amountInput,
+  amountText,
+  formatMoney,
+  fractionDigits,
+  moneyParts,
+  parseAmount,
+  typedAmount,
+} from './money.ts'
 
 const mxn = { locale: 'es-MX', mainCurrency: 'MXN' }
 
@@ -70,5 +78,23 @@ describe('money', () => {
     expect(guessCurrency('es-ES')).toBe('EUR')
     expect(guessCurrency('es-CO')).toBe('COP')
     expect(guessCurrency('xx')).toBe('USD')
+  })
+
+  it('DL-CMP-09: an amount is grouped as it is typed, with the decimals to come faint', () => {
+    expect(typedAmount('1234567', 'en-US', 2)).toEqual({ text: '1,234,567', rest: '.00' })
+    expect(typedAmount('1,2345.5', 'en-US', 2)).toEqual({ text: '12,345.5', rest: '0' })
+    expect(typedAmount('12.345', 'en-US', 2)).toEqual({ text: '12.34', rest: '' })
+    expect(typedAmount('.5', 'en-US', 2)).toEqual({ text: '0.5', rest: '0' })
+    expect(typedAmount('007', 'en-US', 2)).toEqual({ text: '7', rest: '.00' })
+    expect(typedAmount('', 'en-US', 2)).toEqual({ text: '', rest: '' })
+    expect(typedAmount('$ 1.2.3', 'en-US', 2)).toEqual({ text: '1.23', rest: '' })
+    // Yen have no decimals; Mexico writes like the US.
+    expect(typedAmount('1500.5', 'ja-JP', 0)).toEqual({ text: '15,005', rest: '' })
+    expect(typedAmount('25000', 'es-MX', 2)).toEqual({ text: '25,000', rest: '.00' })
+    // An exchange rate keeps up to six decimals and fills in two.
+    expect(typedAmount('18.4521', 'en-US', 6, 2)).toEqual({ text: '18.4521', rest: '' })
+    // What is shown still reads back as the same amount.
+    expect(parseAmount(typedAmount('1234567.8', 'en-US', 2).text, 'USD', 'en-US')).toBe(123456780)
+    expect(amountText(123456780, 'USD', 'en-US')).toBe('1,234,567.80')
   })
 })

@@ -332,7 +332,7 @@ describe('vault', () => {
     expect(everything).not.toContain('transaction')
   })
 
-  it('SYS-04, WAL-13, WAL-15, WAL-16, WAL-17: rates and feature details reach the server only encrypted', async () => {
+  it('SYS-04, WAL-13, WAL-15, WAL-16, WAL-17: rates, feature details and fee notes reach the server only encrypted', async () => {
     const server = fakeServer()
     const phone = new Vault(server.api)
     await phone.signUp({ username: 'ana', password })
@@ -344,7 +344,14 @@ describe('vault', () => {
           ...newWalletRecord('Tarjeta Oro', 'MXN'),
           interest: { rate: 4321, type: 'nominal', compounding: 'monthly' },
           fees: [
-            { id: 'f1', name: 'Anualidad', amount: 89_900, every: 'year', start: '2026-01-07' },
+            {
+              id: 'f1',
+              name: 'Anualidad',
+              amount: 89_900,
+              every: 'year',
+              start: '2026-01-07',
+              note: 'Exenta con 3 compras al mes',
+            },
           ],
           credit: { limit: 7_654_300, closingDay: 23, dueDay: 13 },
           loan: { principal: 9_876_500, termMonths: 37, payment: 345_600, paymentDay: 9 },
@@ -360,6 +367,7 @@ describe('vault', () => {
     for (const plaintext of [
       'Tarjeta',
       'Anualidad',
+      'Exenta',
       '4321',
       '7654300',
       '9876500',

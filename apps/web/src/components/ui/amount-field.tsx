@@ -1,12 +1,16 @@
 import { useId } from 'react'
+import { MoneyInput } from './money-input'
 
 // DL-CMP-09: the amount is entered as a big number with the decimal keypad, its
-// currency beside it. An error shows right under it in `warning` (DL-PAT-05).
+// currency beside it, grouped as it is typed with the cents to come faint. An error
+// shows right under it in `warning` (DL-PAT-05).
 export function AmountField({
   label,
   value,
   onChange,
   onBlur,
+  locale,
+  decimals,
   prefix,
   suffix,
   error,
@@ -16,6 +20,9 @@ export function AmountField({
   value: string
   onChange: (value: string) => void
   onBlur?: () => void
+  locale: string
+  /** The currency's decimals. */
+  decimals: number
   prefix?: string
   suffix?: string
   error?: string | null
@@ -27,24 +34,19 @@ export function AmountField({
       <label htmlFor={id} className="text-[0.8125rem] text-text-muted">
         {label}
       </label>
-      <div className="flex max-w-full items-baseline justify-center gap-1 tabular-nums">
+      <div className="flex max-w-full items-baseline justify-center gap-1">
         {prefix && <span className="text-[1.4375rem] font-medium text-text-muted">{prefix}</span>}
-        <input
+        <MoneyInput
           id={id}
           value={value}
-          onChange={(event) => {
-            onChange(event.target.value)
-          }}
-          onBlur={onBlur}
-          inputMode="decimal"
-          autoComplete="off"
+          onChange={onChange}
+          locale={locale}
+          decimals={decimals}
+          {...(onBlur ? { onBlur } : {})}
           autoFocus={autoFocus}
-          placeholder="0.00"
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${id}-error` : undefined}
-          // As wide as what is typed, so the currency sits right beside the number.
-          style={{ width: `${String(Math.max(4, value.length) + 0.5)}ch` }}
-          className="min-h-14 max-w-full min-w-0 bg-transparent text-left text-[2.875rem] leading-none font-semibold tracking-[-0.03em] text-text placeholder:text-text-faint focus:outline-none"
+          className="min-h-14 max-w-full text-[2.875rem] leading-none font-semibold tracking-[-0.03em] text-text"
         />
         {suffix && <span className="text-[1.4375rem] font-medium text-text-muted">{suffix}</span>}
       </div>

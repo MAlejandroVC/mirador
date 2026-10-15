@@ -8,13 +8,15 @@ import {
   rateHistory,
   rateInUse,
   toCalendarDate,
+  typedAmount,
   unitsPerOne,
 } from '@repo/core'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActionSheet } from '../../components/ui/action-sheet'
 import { Button } from '../../components/ui/button'
-import { FieldNote, FieldRow, FieldRows } from '../../components/ui/field-row'
+import { DateRow } from '../../components/ui/date-field'
+import { FieldNote, FieldRows, MoneyRow } from '../../components/ui/field-row'
 import { List, ListButtonRow } from '../../components/ui/list'
 import { Sheet, SheetFooter } from '../../components/ui/sheet'
 import { useUndo } from '../../components/ui/use-undo'
@@ -82,7 +84,10 @@ function RateForm({
   const today = toCalendarDate(new Date())
   const inUse = rateInUse(currency, defaultCurrency, rates, today)
   const [text, setText] = useState(
-    inUse ? decimalInput(unitsPerOne(inUse), rateDecimals, locale) : '',
+    inUse
+      ? typedAmount(decimalInput(unitsPerOne(inUse), rateDecimals, locale), locale, rateDecimals, 2)
+          .text
+      : '',
   )
   const [date, setDate] = useState(today)
   const [touched, setTouched] = useState(false)
@@ -113,29 +118,26 @@ function RateForm({
           )
         }
       >
-        <FieldRow
+        <MoneyRow
           label={t('rates.one', { currency })}
           value={text}
-          onChange={(event) => {
-            setText(event.target.value)
-          }}
+          onChange={setText}
           onBlur={() => {
             setTouched(true)
           }}
-          inputMode="decimal"
-          placeholder="0.00"
+          locale={locale}
+          // A rate can have up to six decimals; "18.45" fills in two.
+          decimals={rateDecimals}
+          shownDecimals={2}
           suffix={defaultCurrency}
           autoFocus
           error={touched && rateError !== null}
         />
-        <FieldRow
+        <DateRow
           label={t('wallets.transactions.date')}
-          type="date"
           value={date}
           max={today}
-          onChange={(event) => {
-            setDate(event.target.value)
-          }}
+          onChange={setDate}
           error={dateError !== null}
         />
       </FieldRows>

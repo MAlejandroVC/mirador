@@ -62,6 +62,8 @@ export interface Fee {
   /** Minor units, positive; it is taken from the balance. */
   amount: number
   every: 'month' | 'year'
+  /** A reminder for the person, such as "Waived if I use the card every month". */
+  note?: string
   /** The first time it is charged; later ones fall on the same day of the month. */
   start: string
   /** The last date confirmed or skipped, so it is offered only once. */

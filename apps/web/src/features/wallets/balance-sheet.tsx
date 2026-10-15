@@ -1,4 +1,4 @@
-import { balanceAdjustment, parseAmount, toCalendarDate } from '@repo/core'
+import { balanceAdjustment, fractionDigits, parseAmount, toCalendarDate } from '@repo/core'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AmountField } from '../../components/ui/amount-field'
@@ -103,6 +103,8 @@ function BalanceForm({
         onBlur={() => {
           setTouched(true)
         }}
+        locale={money.locale}
+        decimals={fractionDigits(wallet.currency)}
         prefix={parts.prefix.trim()}
         suffix={parts.suffix.trim()}
         error={touched && invalid ? t('wallets.form.balanceInvalid') : null}

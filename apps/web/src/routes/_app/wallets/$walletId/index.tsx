@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { WalletScreen } from '../../../features/wallets'
+import { WalletScreen } from '../../../../features/wallets'
 
-export const Route = createFileRoute('/_app/wallets/$walletId')({
+export const Route = createFileRoute('/_app/wallets/$walletId/')({
   component: Wallet,
 })
 

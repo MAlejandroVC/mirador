@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addMonths, monthOf, nextDayOfMonth } from './dates.ts'
+import { addMonths, calendarWeeks, monthOf, nextDayOfMonth } from './dates.ts'
 import {
   creditSummary,
   dueFees,
@@ -14,6 +14,33 @@ import {
 } from './wallet-features.ts'
 
 describe('dates', () => {
+  it('DL-CMP-09: a month laid out in weeks for the date picker', () => {
+    // October 2026 starts on a Thursday.
+    const sunday = calendarWeeks('2026-10-15')
+    expect(sunday).toHaveLength(5)
+    expect(sunday[0]).toEqual([null, null, null, null, '2026-10-01', '2026-10-02', '2026-10-03'])
+    expect(sunday[4]).toEqual([
+      '2026-10-25',
+      '2026-10-26',
+      '2026-10-27',
+      '2026-10-28',
+      '2026-10-29',
+      '2026-10-30',
+      '2026-10-31',
+    ])
+    const monday = calendarWeeks('2026-10-15', 1)
+    expect(monday[0]?.slice(0, 4)).toEqual([null, null, null, '2026-10-01'])
+    expect(monday.at(-1)).toEqual([
+      '2026-10-26',
+      '2026-10-27',
+      '2026-10-28',
+      '2026-10-29',
+      '2026-10-30',
+      '2026-10-31',
+      null,
+    ])
+  })
+
   it('WAL-15: a month later keeps the day, or the month end when it is shorter', () => {
     expect(addMonths('2026-01-31', 1)).toBe('2026-02-28')
     expect(addMonths('2026-02-28', 1, 31)).toBe('2026-03-31')

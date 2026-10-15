@@ -82,7 +82,7 @@ function Currency() {
         <CurrencyList
           value={ledger.defaultCurrency}
           onChoose={(currency) => {
-            save.mutate([preferencesChange(ledger.preferencesId, currency)])
+            save.mutate([preferencesChange(ledger, { defaultCurrency: currency })])
           }}
         />
       )}

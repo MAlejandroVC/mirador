@@ -76,3 +76,27 @@ export function monthOf(date: string): Period {
   const [year, month] = parts(date)
   return { start: format(year, month, 1), end: format(year, month, daysInMonth(year, month)) }
 }
+
+/** The day of the week, 0 for Sunday to 6 for Saturday. */
+export function weekday(date: string): number {
+  const [year, month, day] = parts(date)
+  return new Date(Date.UTC(year, month - 1, day)).getUTCDay()
+}
+
+/**
+ * The weeks of the month that holds `date`, for a date picker: each week has seven
+ * slots starting on `firstDay` (0 is Sunday), with null before the 1st and after the
+ * last day.
+ */
+export function calendarWeeks(date: string, firstDay = 0): (string | null)[][] {
+  const [year, month] = parts(date)
+  const lead = (weekday(format(year, month, 1)) - firstDay + 7) % 7
+  const slots: (string | null)[] = [
+    ...Array.from({ length: lead }, () => null),
+    ...Array.from({ length: daysInMonth(year, month) }, (_, index) =>
+      format(year, month, index + 1),
+    ),
+  ]
+  while (slots.length % 7 !== 0) slots.push(null)
+  return Array.from({ length: slots.length / 7 }, (_, week) => slots.slice(week * 7, week * 7 + 7))
+}

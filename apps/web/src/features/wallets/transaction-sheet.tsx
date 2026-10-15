@@ -1,8 +1,16 @@
-import { amountInput, parseAmount, toCalendarDate, type Transaction } from '@repo/core'
-import { useId, useState } from 'react'
+import {
+  amountText,
+  fractionDigits,
+  parseAmount,
+  toCalendarDate,
+  type Transaction,
+} from '@repo/core'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AmountField } from '../../components/ui/amount-field'
 import { Button } from '../../components/ui/button'
+import { DateRow } from '../../components/ui/date-field'
+import { FieldNote, FieldRows } from '../../components/ui/field-row'
 import { SegmentedControl } from '../../components/ui/segmented-control'
 import { Sheet, SheetFooter } from '../../components/ui/sheet'
 import { useMoney } from '../../lib/format'
@@ -68,8 +76,7 @@ function TransactionForm({
   const { t } = useTranslation()
   const money = useMoney(defaultCurrency)
   const save = useSaveRecords()
-  const dateId = useId()
-  const [text, setText] = useState(amountInput(transaction.amount, wallet.currency, money.locale))
+  const [text, setText] = useState(amountText(transaction.amount, wallet.currency, money.locale))
   const [negative, setNegative] = useState(transaction.amount < 0)
   const [date, setDate] = useState(transaction.date)
   const [touched, setTouched] = useState(false)
@@ -112,39 +119,29 @@ function TransactionForm({
         onBlur={() => {
           setTouched(true)
         }}
+        locale={money.locale}
+        decimals={fractionDigits(wallet.currency)}
         prefix={parts.prefix.trim()}
         suffix={parts.suffix.trim()}
         error={touched ? amountError : null}
       />
-      <div className="flex flex-col gap-1.5">
-        <ul className="rounded-2xl bg-inset">
-          <li className="flex min-h-[3.25rem] items-center gap-3 px-4">
-            <label htmlFor={dateId} className="flex-1 text-[0.9375rem] text-text">
-              {t('wallets.transactions.date')}
-            </label>
-            <input
-              id={dateId}
-              type="date"
-              value={date}
-              max={today}
-              onChange={(event) => {
-                setDate(event.target.value)
-              }}
-              aria-invalid={dateError ? true : undefined}
-              className="min-h-11 bg-transparent text-right text-[0.9375rem] text-text focus:outline-2 focus:outline-brand"
-            />
-          </li>
-        </ul>
-        {dateError ? (
-          <p className="px-4 text-[0.8125rem] text-warning">{dateError}</p>
-        ) : (
-          opening && (
-            <p className="px-4 text-[0.8125rem] text-text-muted">
-              {t('wallets.transactions.openingHint')}
-            </p>
-          )
-        )}
-      </div>
+      <FieldRows
+        note={
+          dateError ? (
+            <FieldNote error>{dateError}</FieldNote>
+          ) : opening ? (
+            <FieldNote>{t('wallets.transactions.openingHint')}</FieldNote>
+          ) : null
+        }
+      >
+        <DateRow
+          label={t('wallets.transactions.date')}
+          value={date}
+          max={today}
+          onChange={setDate}
+          error={dateError !== null}
+        />
+      </FieldRows>
       {!isNew && (
         <Button
           variant="danger"

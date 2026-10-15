@@ -105,7 +105,7 @@ export function formatMoney(money: Money, options: FormatOptions): string {
   return `${sign}${prefix}${whole}${cents}${suffix}`
 }
 
-function decimalSeparator(locale: string) {
+export function decimalSeparator(locale: string) {
   return (
     new Intl.NumberFormat(locale).formatToParts(1.5).find((part) => part.type === 'decimal')
       ?.value ?? '.'
@@ -174,4 +174,51 @@ export function formatDecimal(
 /** The amount as the person would type it to edit it: "1250.50", no grouping. */
 export function amountInput(minor: number, currency: string, locale: string): string {
   return toDecimalString(Math.abs(minor), currency).replace('.', decimalSeparator(locale))
+}
+
+/** What an amount field shows while the person types: their text, and the faint rest. */
+export interface TypedAmount {
+  /** The digits typed, grouped every three as the locale writes them: "1,250.5". */
+  text: string
+  /** The decimals still to come, shown faint after the text: "0" here, ".00" for "1,250". */
+  rest: string
+}
+
+/**
+ * Tidies what the person typed in an amount field, as they type: only digits and one
+ * decimal separator, at most `decimals` decimals, grouped as the locale writes numbers.
+ * `shown` is how many decimals the faint rest fills in, so "12" reads as "12.00".
+ */
+export function typedAmount(
+  typed: string,
+  locale: string,
+  decimals: number,
+  shown = decimals,
+): TypedAmount {
+  const decimal = decimalSeparator(locale)
+  let whole = ''
+  let fraction: string | null = null
+  for (const char of typed) {
+    if (char >= '0' && char <= '9') {
+      if (fraction === null) whole += char
+      else if (fraction.length < decimals) fraction += char
+    } else if (char === decimal && fraction === null && decimals > 0) fraction = ''
+  }
+  // Leading zeros go, and so do digits past what an amount can hold exactly.
+  whole = whole.replace(/^0+(?=\d)/, '').slice(0, 13)
+  if (whole === '' && fraction === null) return { text: '', rest: '' }
+  const grouped = new Intl.NumberFormat(locale, { useGrouping: true }).format(BigInt(whole || '0'))
+  const text = fraction === null ? grouped : `${grouped}${decimal}${fraction}`
+  const rest =
+    fraction === null
+      ? shown > 0
+        ? `${decimal}${'0'.repeat(shown)}`
+        : ''
+      : '0'.repeat(Math.max(0, shown - fraction.length))
+  return { text, rest }
+}
+
+/** An amount ready to edit, as typedAmount shows it: "1,250.50". */
+export function amountText(minor: number, currency: string, locale: string): string {
+  return typedAmount(amountInput(minor, currency, locale), locale, fractionDigits(currency)).text
 }

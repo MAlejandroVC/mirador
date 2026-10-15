@@ -1,8 +1,9 @@
 import type { WalletRecord } from '@repo/api'
 import {
-  amountInput,
+  amountText,
   decimalInput,
   type Fee,
+  fractionDigits,
   type InterestSettings,
   loanPayment,
   parseAmount,
@@ -13,7 +14,8 @@ import {
 import { type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../../components/ui/button'
-import { FieldNote, FieldRow, FieldRows } from '../../components/ui/field-row'
+import { DateRow, DayOfMonthRow } from '../../components/ui/date-field'
+import { FieldNote, FieldRow, FieldRows, MoneyRow } from '../../components/ui/field-row'
 import { SegmentedControl } from '../../components/ui/segmented-control'
 import { Sheet, SheetFooter } from '../../components/ui/sheet'
 import { useLocale, useMoney } from '../../lib/format'
@@ -103,13 +105,6 @@ function SaveButton({
 
 const percentText = (rate: number | undefined, locale: string) =>
   rate === undefined ? '' : decimalInput(rate, percentDecimals, locale)
-
-/** A day of the month typed as text: 1 to 31, or null. */
-function parseDay(text: string): number | null {
-  if (!/^\d{1,2}$/.test(text.trim())) return null
-  const day = Number(text.trim())
-  return day >= 1 && day <= 31 ? day : null
-}
 
 /** WAL-13: the annual rate and how the bank quotes it. */
 function InterestForm({ wallet, onClose }: { wallet: LedgerWallet; onClose: () => void }) {
@@ -208,14 +203,12 @@ function CreditForm({
   const { t } = useTranslation()
   const money = useMoney(defaultCurrency)
   const [limit, setLimit] = useState(
-    wallet.credit ? amountInput(wallet.credit.limit, wallet.currency, money.locale) : '',
+    wallet.credit ? amountText(wallet.credit.limit, wallet.currency, money.locale) : '',
   )
-  const [closing, setClosing] = useState(wallet.credit ? String(wallet.credit.closingDay) : '')
-  const [due, setDue] = useState(wallet.credit ? String(wallet.credit.dueDay) : '')
+  const [closingDay, setClosingDay] = useState(wallet.credit?.closingDay ?? null)
+  const [dueDay, setDueDay] = useState(wallet.credit?.dueDay ?? null)
   const [touched, setTouched] = useState(false)
   const limitMinor = parseAmount(limit, wallet.currency, money.locale)
-  const closingDay = parseDay(closing)
-  const dueDay = parseDay(due)
   const valid = limitMinor !== null && limitMinor > 0 && closingDay !== null && dueDay !== null
   return (
     <>
@@ -229,39 +222,29 @@ function CreditForm({
           )
         }
       >
-        <FieldRow
+        <MoneyRow
           label={t('wallets.credit.limit')}
           value={limit}
-          onChange={(event) => {
-            setLimit(event.target.value)
-          }}
+          onChange={setLimit}
           onBlur={() => {
             setTouched(true)
           }}
-          inputMode="decimal"
-          placeholder="0.00"
+          locale={money.locale}
+          decimals={fractionDigits(wallet.currency)}
           suffix={wallet.currency}
           autoFocus
           error={touched && (limitMinor === null || limitMinor === 0)}
         />
-        <FieldRow
+        <DayOfMonthRow
           label={t('wallets.credit.closingDay')}
-          value={closing}
-          onChange={(event) => {
-            setClosing(event.target.value)
-          }}
-          inputMode="numeric"
-          placeholder="1–31"
+          value={closingDay}
+          onChange={setClosingDay}
           error={touched && closingDay === null}
         />
-        <FieldRow
+        <DayOfMonthRow
           label={t('wallets.credit.dueDay')}
-          value={due}
-          onChange={(event) => {
-            setDue(event.target.value)
-          }}
-          inputMode="numeric"
-          placeholder="1–31"
+          value={dueDay}
+          onChange={setDueDay}
           error={touched && dueDay === null}
         />
       </FieldRows>
@@ -293,19 +276,18 @@ function LoanForm({
   const locale = money.locale
   const loan = wallet.loan
   const [principal, setPrincipal] = useState(
-    loan ? amountInput(loan.principal, wallet.currency, locale) : '',
+    loan ? amountText(loan.principal, wallet.currency, locale) : '',
   )
   const [rate, setRate] = useState(percentText(wallet.interest?.rate, locale))
   const [term, setTerm] = useState(loan ? String(loan.termMonths) : '')
   const [payment, setPayment] = useState(
-    loan ? amountInput(loan.payment, wallet.currency, locale) : '',
+    loan ? amountText(loan.payment, wallet.currency, locale) : '',
   )
-  const [day, setDay] = useState(loan ? String(loan.paymentDay) : '')
+  const [paymentDay, setPaymentDay] = useState(loan?.paymentDay ?? null)
   const [touched, setTouched] = useState(false)
   const principalMinor = parseAmount(principal, wallet.currency, locale)
   const rateValue = rate.trim() === '' ? 0 : parseDecimal(rate, locale, percentDecimals)
   const termMonths = /^\d{1,3}$/.test(term.trim()) ? Number(term.trim()) : null
-  const paymentDay = parseDay(day)
   const interest: InterestSettings | undefined =
     rateValue === null
       ? undefined
@@ -344,17 +326,15 @@ function LoanForm({
           ) : null
         }
       >
-        <FieldRow
+        <MoneyRow
           label={t('wallets.loan.principal')}
           value={principal}
-          onChange={(event) => {
-            setPrincipal(event.target.value)
-          }}
+          onChange={setPrincipal}
           onBlur={() => {
             setTouched(true)
           }}
-          inputMode="decimal"
-          placeholder="0.00"
+          locale={locale}
+          decimals={fractionDigits(wallet.currency)}
           suffix={wallet.currency}
           autoFocus
           error={touched && (principalMinor === null || principalMinor === 0)}
@@ -381,25 +361,20 @@ function LoanForm({
           suffix={t('wallets.loan.months')}
           error={touched && (termMonths === null || termMonths === 0)}
         />
-        <FieldRow
+        {/* Left empty, the suggested payment (in the note below) is used. */}
+        <MoneyRow
           label={t('wallets.loan.payment')}
           value={payment}
-          onChange={(event) => {
-            setPayment(event.target.value)
-          }}
-          inputMode="decimal"
-          placeholder={suggested ? amountInput(suggested, wallet.currency, locale) : '0.00'}
+          onChange={setPayment}
+          locale={locale}
+          decimals={fractionDigits(wallet.currency)}
           suffix={wallet.currency}
           error={touched && payment.trim() !== '' && typed === null}
         />
-        <FieldRow
+        <DayOfMonthRow
           label={t('wallets.loan.paymentDay')}
-          value={day}
-          onChange={(event) => {
-            setDay(event.target.value)
-          }}
-          inputMode="numeric"
-          placeholder="1–31"
+          value={paymentDay}
+          onChange={setPaymentDay}
           error={touched && paymentDay === null}
         />
       </FieldRows>
@@ -422,6 +397,13 @@ function LoanForm({
   )
 }
 
+/** The fee without its note, so a note that was cleared is gone, not kept. */
+function withoutNote(fee: Fee): Fee {
+  const copy = { ...fee }
+  delete copy.note
+  return copy
+}
+
 /** WAL-15: one fee: its name, amount, how often, and when it is first charged. */
 function FeeForm({
   wallet,
@@ -440,20 +422,23 @@ function FeeForm({
   const today = toCalendarDate(new Date())
   const [name, setName] = useState(fee?.name ?? '')
   const [amount, setAmount] = useState(
-    fee ? amountInput(fee.amount, wallet.currency, money.locale) : '',
+    fee ? amountText(fee.amount, wallet.currency, money.locale) : '',
   )
+  const [note, setNote] = useState(fee?.note ?? '')
   const [every, setEvery] = useState<Fee['every']>(fee?.every ?? 'month')
   const [start, setStart] = useState(fee?.start ?? today)
   const [touched, setTouched] = useState(false)
   const minor = parseAmount(amount, wallet.currency, money.locale)
   const valid = name.trim() !== '' && minor !== null && minor > 0 && start !== ''
   const fees = wallet.fees ?? []
+  // An empty note is left out rather than saved blank.
+  const noted = note.trim() === '' ? {} : { note: note.trim() }
   const patch: Partial<WalletRecord> | null = valid
     ? {
         fees: fee
           ? fees.map((each) =>
               each.id === fee.id
-                ? { ...each, name: name.trim(), amount: minor, every, start }
+                ? { ...withoutNote(each), name: name.trim(), amount: minor, every, start, ...noted }
                 : each,
             )
           : [
@@ -465,6 +450,7 @@ function FeeForm({
                 amount: minor,
                 every,
                 start,
+                ...noted,
                 ...(start < today ? { handled: today } : {}),
               },
             ],
@@ -495,24 +481,19 @@ function FeeForm({
           autoFocus
           error={touched && name.trim() === ''}
         />
-        <FieldRow
+        <MoneyRow
           label={t('wallets.fees.amount')}
           value={amount}
-          onChange={(event) => {
-            setAmount(event.target.value)
-          }}
-          inputMode="decimal"
-          placeholder="0.00"
+          onChange={setAmount}
+          locale={money.locale}
+          decimals={fractionDigits(wallet.currency)}
           suffix={wallet.currency}
           error={touched && (minor === null || minor === 0)}
         />
-        <FieldRow
+        <DateRow
           label={t('wallets.fees.start')}
-          type="date"
           value={start}
-          onChange={(event) => {
-            setStart(event.target.value)
-          }}
+          onChange={setStart}
           error={touched && start === ''}
         />
       </FieldRows>
@@ -525,6 +506,22 @@ function FeeForm({
         value={every}
         onChange={setEvery}
       />
+      {/* A reminder of the fee's terms, such as when the bank waives it. */}
+      <label className="flex flex-col gap-1.5">
+        <span className="px-4 text-xs tracking-[0.04em] text-text-muted uppercase">
+          {t('wallets.fees.note')}
+        </span>
+        <textarea
+          value={note}
+          onChange={(event) => {
+            setNote(event.target.value)
+          }}
+          maxLength={200}
+          rows={2}
+          placeholder={t('wallets.fees.notePlaceholder')}
+          className="min-h-[3.25rem] resize-none rounded-2xl bg-inset px-4 py-3 text-[0.9375rem] text-text placeholder:text-text-faint focus:outline-2 focus:outline-brand"
+        />
+      </label>
       {fee && (
         <Button
           variant="danger"

@@ -1,5 +1,6 @@
 import {
   curatedColors,
+  type WalletFeature,
   walletFeatures,
   walletIcons,
   walletPresets,
@@ -9,6 +10,7 @@ import {
 import {
   canChangeCurrency,
   currencyName,
+  fractionDigits,
   openingBalance,
   parseAmount,
   presetDefaults,
@@ -24,6 +26,7 @@ import { ChoiceRow } from '../../components/ui/choice-row'
 import { IconTile } from '../../components/ui/icon-tile'
 import { CaretRightIcon } from '../../components/ui/icons'
 import { List } from '../../components/ui/list'
+import { MoneyInput } from '../../components/ui/money-input'
 import { SegmentedControl } from '../../components/ui/segmented-control'
 import { Sheet, SheetFooter } from '../../components/ui/sheet'
 import { tileStyle } from '../../components/ui/tile-style'
@@ -33,6 +36,7 @@ import { RateSheet } from './rate-sheet'
 import {
   type LedgerWallet,
   newId,
+  preferencesChange,
   type RecordChange,
   transactionBody,
   useLedger,
@@ -129,6 +133,7 @@ function WalletForm({
   const { t } = useTranslation()
   const locale = useLocale()
   const save = useSaveRecords()
+  const { data: ledger } = useLedger()
   const initial =
     mode.kind === 'edit' ? walletRecord.parse(mode.wallet) : newWalletRecord('', defaultCurrency)
   const [draft, setDraft] = useState<WalletRecord>(initial)
@@ -137,8 +142,14 @@ function WalletForm({
   const [balanceError, setBalanceError] = useState<string | null>(null)
   const [choosingCurrency, setChoosingCurrency] = useState(false)
   const [discarding, setDiscarding] = useState(false)
+  // WAL-24: one wallet can be where new transactions start.
+  const wasDefault = mode.kind === 'edit' && ledger?.defaultWalletId === mode.wallet.id
+  const [isDefault, setIsDefault] = useState(wasDefault)
   const transactionCount = mode.kind === 'edit' ? mode.transactionCount : 0
-  const dirty = JSON.stringify(draft) !== JSON.stringify(initial) || balanceText.trim() !== ''
+  const dirty =
+    JSON.stringify(draft) !== JSON.stringify(initial) ||
+    balanceText.trim() !== '' ||
+    isDefault !== wasDefault
   const named = draft.name.trim().length > 0
 
   function checkBalance() {
@@ -155,6 +166,10 @@ function WalletForm({
     const id = mode.kind === 'edit' ? mode.wallet.id : newId()
     const wallet = { ...draft, name: draft.name.trim() }
     const changes: RecordChange[] = [{ id, body: walletBody(wallet) }]
+    // An inactive wallet is left out of pickers (WAL-04), so it can't be the default.
+    const nowDefault = isDefault && wallet.active
+    if (ledger && nowDefault !== wasDefault)
+      changes.push(preferencesChange(ledger, { defaultWalletId: nowDefault ? id : undefined }))
     const amount = parseAmount(balanceText, draft.currency, locale)
     // WAL-05: the opening balance is an ordinary transaction, dated today.
     if (mode.kind === 'new' && amount)
@@ -263,18 +278,17 @@ function WalletForm({
             <li>
               <label className="flex min-h-[3.25rem] items-center gap-3 px-4">
                 <span className="text-[0.9375rem] text-text">{t('wallets.form.balanceToday')}</span>
-                <input
-                  value={balanceText}
-                  onChange={(event) => {
-                    setBalanceText(event.target.value)
-                  }}
-                  onBlur={checkBalance}
-                  inputMode="decimal"
-                  autoComplete="off"
-                  placeholder="0.00"
-                  aria-invalid={balanceError ? true : undefined}
-                  className="min-h-11 min-w-0 flex-1 bg-transparent text-right text-[0.9375rem] text-text tabular-nums placeholder:text-text-muted focus:outline-none"
-                />
+                <span className="flex min-w-0 flex-1 justify-end">
+                  <MoneyInput
+                    value={balanceText}
+                    onChange={setBalanceText}
+                    onBlur={checkBalance}
+                    locale={locale}
+                    decimals={fractionDigits(draft.currency)}
+                    aria-invalid={balanceError ? true : undefined}
+                    className="min-h-11 max-w-full text-right text-[0.9375rem] text-text"
+                  />
+                </span>
               </label>
             </li>
           </ul>
@@ -363,22 +377,12 @@ function WalletForm({
         </div>
       </section>
 
-      <List label={t('wallets.form.features')} inset>
-        {walletFeatures.map((feature) => (
-          <ChoiceRow
-            key={feature}
-            title={t(`wallets.features.${feature}.title`)}
-            subtitle={t(`wallets.features.${feature}.body`)}
-            checked={draft.features.includes(feature)}
-            onToggle={() => {
-              setDraft(toggleFeature(draft, feature))
-            }}
-          />
-        ))}
-      </List>
-      <p className="-mt-1.5 px-4 text-[0.8125rem] text-text-muted">
-        {t('wallets.form.featuresHint')}
-      </p>
+      <FeatureList
+        features={draft.features}
+        onToggle={(feature) => {
+          setDraft(toggleFeature(draft, feature))
+        }}
+      />
 
       <List label={t('wallets.form.countIn')} inset>
         <ChoiceRow
@@ -396,6 +400,21 @@ function WalletForm({
           }}
         />
       </List>
+
+      {draft.active && (
+        <div className="flex flex-col gap-1.5">
+          <List inset>
+            <ChoiceRow
+              title={t('wallets.form.default')}
+              checked={isDefault}
+              onToggle={() => {
+                setIsDefault(!isDefault)
+              }}
+            />
+          </List>
+          <p className="px-4 text-[0.8125rem] text-text-muted">{t('wallets.form.defaultHint')}</p>
+        </div>
+      )}
 
       {mode.kind === 'edit' && (
         <>
@@ -463,5 +482,67 @@ function WalletForm({
         }}
       />
     </>
+  )
+}
+
+/**
+ * WAL-12: the features as a list that shows only the ones switched on, and all of them
+ * with "Show all features", as an iOS disclosure. A feature turned off while folded stays
+ * in view until the list is folded again, so a row never vanishes under the finger.
+ */
+function FeatureList({
+  features,
+  onToggle,
+}: {
+  features: readonly WalletFeature[]
+  onToggle: (feature: WalletFeature) => void
+}) {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const [shown, setShown] = useState<readonly WalletFeature[]>(features)
+  // A new type switches on other features; those are the ones to show.
+  if (!features.every((feature) => shown.includes(feature))) setShown(features)
+  const rows = open ? walletFeatures : walletFeatures.filter((feature) => shown.includes(feature))
+  return (
+    <section className="flex flex-col gap-1.5">
+      <h3 className="px-4 text-xs tracking-[0.04em] text-text-muted uppercase">
+        {t('wallets.form.features')}
+      </h3>
+      <ul className="overflow-hidden rounded-2xl bg-inset">
+        {rows.map((feature) => (
+          <ChoiceRow
+            key={feature}
+            title={t(`wallets.features.${feature}.title`)}
+            subtitle={t(`wallets.features.${feature}.body`)}
+            checked={features.includes(feature)}
+            onToggle={() => {
+              onToggle(feature)
+            }}
+          />
+        ))}
+        <li className="group">
+          <button
+            type="button"
+            aria-expanded={open}
+            onClick={() => {
+              if (open) setShown(features)
+              setOpen(!open)
+            }}
+            className="flex min-h-11 w-full items-center gap-2 pl-4 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
+          >
+            <span className="flex min-h-11 flex-1 items-center gap-2 self-stretch border-t-[0.5px] border-separator pr-4 group-first:border-t-0">
+              <span className="flex-1 text-[0.9375rem] text-brand">
+                {open ? t('wallets.form.featuresLess') : t('wallets.form.featuresMore')}
+              </span>
+              <CaretRightIcon
+                aria-hidden
+                className={`size-4 text-text-faint transition-transform motion-reduce:transition-none ${open ? '-rotate-90' : 'rotate-90'}`}
+              />
+            </span>
+          </button>
+        </li>
+      </ul>
+      <p className="px-4 text-[0.8125rem] text-text-muted">{t('wallets.form.featuresHint')}</p>
+    </section>
   )
 }

@@ -405,7 +405,7 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 | New row opens into the list | 360 ms | `cubic-bezier(.32,.72,0,1)` |
 | Row highlight fades | 1.4 s | ease-out, runs in the background |
 
-**DL-MOT-06** Screens move like iOS: a new screen slides in from the right and back slides it out, a sheet slides up from the bottom over a dimmed background, all with the system's spring timing (about 350 ms). With animations off (DL-MOT-04), they fade instead.
+**DL-MOT-06** Screens move like iOS: a new screen slides in from the right and back slides it out, a sheet slides up from the bottom over a dimmed background, all with the system's spring timing (about 350 ms). From 768 px, where a sheet is a centered dialog, it fades and grows in, and closes with a quick 150 ms fade, so Cancel never seems to wait. With animations off (DL-MOT-04), they fade instead.
 
 ## Money and numbers
 
@@ -507,6 +507,9 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 
 **DL-CMP-09** **Fields.** Fields are rows in an inset list, as in iOS Settings: label on the left, value on the right, chevron when it opens a picker. Free text fields use the `inset` fill. The amount is entered as a big number with the decimal keypad. A field's error appears right under it in `warning` (DL-PAT-05).
 
+- **Money.** Every field that holds an amount groups the digits as they are typed, the way the language writes them ("25,000"), and shows the cents still to come in `text-faint` (".00"). Typed cents take the normal text color. The field is as wide as its text, so the faint cents sit right beside it.
+- **Dates and days.** A date, month, year, day of the week or day of the month is picked, never typed. The row shows the value in a small `fill` pill; tapping it opens the picker right under the row, as iOS forms do: a calendar a month at a time (the chosen day a filled `brand` circle, today in `brand`), or the days 1 to 31 in a grid. Picking closes it.
+
 **DL-CMP-10** **Switches.** The iOS switch, `brand` when on. Only for settings that take effect immediately; anything that needs Save is not a switch.
 
 **DL-CMP-11** **Segmented control.** Two to five equal options that switch a mode or a view, such as Expense, Income and Transfer. More than five becomes a list. The selected option sits on `thumb`: `surface` in light mode, and in dark mode `surface` mixed with 24% `text`, so it stands out from the track as in iOS.
@@ -516,6 +519,8 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 **DL-CMP-13** **Undo banner.** After a delete that can be undone: one line and an Undo button, on `surface`, just above the tab bar, for 5 seconds. Only one at a time.
 
 **DL-CMP-14** **Empty state.** A large icon tile, a short title, one sentence on what will appear here, and the filled button that fills it ("Add a wallet"). This is a place for a touch of whimsy (DL-VOC-02).
+
+**DL-CMP-15** **Show more.** A long list of options that are mostly off, such as a wallet's features, shows only the ones that are on, then a last row in `brand` with a chevron pointing down: "Show all features". Opened, it shows every option and the row reads "Show fewer". An option turned off stays in view until the list is folded again, so a row never vanishes under the finger. A list of items, such as transactions, shows the latest few (5 on a phone, 10 from 768 px) and a "See more" row that opens the full list on its own screen.
 
 ## Patterns
 

@@ -386,27 +386,27 @@
     "features": {
       "interest": {
         "title": "Intereses",
-        "body": "Genera o cobra intereses."
+        "body": "Ve cuánto genera o cuesta cada mes."
       },
       "fees": {
         "title": "Comisiones",
-        "body": "Cobra comisiones, como la anualidad."
+        "body": "Te recuerda comisiones, como la mensual o la anualidad."
       },
       "creditLimit": {
         "title": "Límite de crédito",
-        "body": "Tiene límite, fecha de corte y fecha límite de pago."
+        "body": "Ve cuánto te queda, cuándo es el corte y cuándo pagar."
       },
       "loanSchedule": {
         "title": "Plan de pagos",
-        "body": "Se paga en mensualidades fijas."
+        "body": "Ve cuándo terminas de pagar y cuánto interés falta."
       },
       "valuations": {
         "title": "Valor de mercado",
-        "body": "Su valor sube y baja con el mercado."
+        "body": "Su valor cambia con el mercado. Ve lo que ganas o pierdes, aparte de lo que metes."
       },
       "liquid": {
         "title": "Disponible hoy",
-        "body": "Puedes usar este dinero hoy."
+        "body": "Cuenta como dinero que puedes gastar hoy."
       },
       "setUp": "Configurar"
     },
@@ -414,7 +414,7 @@
       "newTitle": "Nueva cartera",
       "editTitle": "Editar cartera",
       "name": "Nombre",
-      "namePlaceholder": "Nombre, como Débito BBVA",
+      "namePlaceholder": "Nombre",
       "type": "Tipo",
       "balance": "Saldo",
       "have": "Tengo",
@@ -428,7 +428,7 @@
       "color": "Color",
       "icon": "Ícono",
       "features": "Funciones",
-      "featuresHint": "El tipo activa lo que suele aplicar. Cada una se configura en la página de la cartera.",
+      "featuresHint": "Cada una agrega una tarjeta a la página de la cartera, donde la configuras. El tipo elige las de siempre.",
       "countIn": "Contar en",
       "netWorth": "Patrimonio",
       "budget": "Presupuesto",
@@ -438,7 +438,11 @@
       "discardTitle": "¿Descartar cambios?",
       "discardMessage": "Los cambios a esta cartera no se guardarán.",
       "discard": "Descartar cambios",
-      "keepEditing": "Seguir editando"
+      "keepEditing": "Seguir editando",
+      "featuresMore": "Ver todas las funciones",
+      "featuresLess": "Ver menos",
+      "default": "Cartera predeterminada",
+      "defaultHint": "Los movimientos nuevos empiezan en esta cartera. Aun así puedes elegir otra cada vez."
     },
     "delete": {
       "button": "Eliminar cartera",
@@ -477,7 +481,8 @@
       "interest": "Intereses",
       "fee": "Comisión",
       "valuation": "Cambio de mercado",
-      "record": "Registrar"
+      "record": "Registrar",
+      "seeMore": "Ver más"
     },
     "noRate": "Sin tipo de cambio",
     "reorder": {
@@ -587,13 +592,16 @@
       "amount": "Monto",
       "start": "Primer cargo",
       "everyLabel": "Cada cuándo",
-      "delete": "Eliminar comisión"
-    }
+      "delete": "Eliminar comisión",
+      "note": "Nota",
+      "notePlaceholder": "Como: no la cobran si uso la tarjeta cada mes"
+    },
+    "default": "Predeterminada"
   },
   "rates": {
     "title": "Tipo de cambio",
     "later": "Después",
-    "prompt": "Para contar esta cartera en tu patrimonio, Mirador necesita el tipo de cambio. También puedes agregarlo después en Configuración > Moneda.",
+    "prompt": "Para contar esta cartera en tu patrimonio, Mirador necesita el tipo de cambio. También puedes agregarlo después en la página de la cartera o en Configuración > Moneda.",
     "intro": "El tipo de cambio que te da tu banco o casa de cambio para {{currency}}. Cada uno se guarda con su fecha.",
     "one": "1 {{currency}} =",
     "hint": "Los totales usan el tipo de cambio más reciente hasta hoy.",
@@ -608,6 +616,15 @@
     "section": "Tipos de cambio",
     "missing": "Sin tipo de cambio, no cuenta en tu patrimonio",
     "change": "Cambiar",
-    "add": "Agregar"
+    "add": "Agregar",
+    "worth": "Unos {{amount}}",
+    "missingWallet": "Aún sin tipo de cambio, así que no cuenta en tu patrimonio.",
+    "addRate": "Agregar tipo de cambio"
+  },
+  "pickers": {
+    "choose": "Elegir",
+    "day": "Día {{day}}",
+    "previousMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente"
   }
 }

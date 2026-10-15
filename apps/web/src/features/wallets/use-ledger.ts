@@ -3,6 +3,7 @@ import {
   exchangeRateRecord,
   exchangeRateRecordType,
   maxPushChanges,
+  type PreferencesRecord,
   preferencesRecord,
   preferencesRecordType,
   type RecordBody,
@@ -37,14 +38,17 @@ export interface Ledger {
   rates: ExchangeRate[]
   /** SYS-01: the person's choice, or a guess from the device language until they make one. */
   defaultCurrency: string
+  /** WAL-24: the wallet new transactions start in, if the person chose one. */
+  defaultWalletId: string | null
   preferencesId: string | null
+  preferences: PreferencesRecord | null
 }
 
 async function readLedger(vault: VaultClient): Promise<Ledger> {
   const wallets: LedgerWallet[] = []
   const transactions: Transaction[] = []
   const rates: ExchangeRate[] = []
-  let preferences: { id: string; defaultCurrency: string } | null = null
+  let preferences: (PreferencesRecord & { id: string }) | null = null
   for (const { id, body } of await vault.listRecords()) {
     if (body.deleted) continue
     switch (body.type) {
@@ -65,7 +69,7 @@ async function readLedger(vault: VaultClient): Promise<Ledger> {
       }
       case preferencesRecordType: {
         const parsed = preferencesRecord.safeParse(body.data)
-        if (parsed.success) preferences = { id, defaultCurrency: parsed.data.defaultCurrency }
+        if (parsed.success) preferences = { id, ...parsed.data }
         break
       }
       default:
@@ -79,7 +83,9 @@ async function readLedger(vault: VaultClient): Promise<Ledger> {
     transactions,
     rates,
     defaultCurrency: preferences?.defaultCurrency ?? guessCurrency(globalThis.navigator.language),
+    defaultWalletId: preferences?.defaultWalletId ?? null,
     preferencesId: preferences?.id ?? null,
+    preferences: preferences && preferencesRecord.parse(preferences),
   }
 }
 
@@ -133,14 +139,29 @@ export function newId() {
   return newRecordId()
 }
 
-export function preferencesChange(id: string | null, defaultCurrency: string): RecordChange {
+/**
+ * The preferences record with some settings changed and the rest kept as they are.
+ * Until the person changes one, there is no record yet, and the default currency is
+ * the guess they have been seeing.
+ */
+export function preferencesChange(
+  ledger: Pick<Ledger, 'preferencesId' | 'preferences' | 'defaultCurrency'>,
+  patch: Partial<PreferencesRecord> & { defaultWalletId?: string | undefined },
+): RecordChange {
+  const merged: Record<string, unknown> = {
+    defaultCurrency: ledger.defaultCurrency,
+    ...ledger.preferences,
+    ...patch,
+  }
+  // Clearing the default wallet leaves the setting out.
+  if (merged.defaultWalletId === undefined) delete merged.defaultWalletId
   return {
-    id: id ?? newRecordId(),
+    id: ledger.preferencesId ?? newRecordId(),
     body: {
       deleted: false,
       type: preferencesRecordType,
       schema: 1,
-      data: preferencesRecord.parse({ defaultCurrency }),
+      data: preferencesRecord.parse(merged),
     },
   }
 }

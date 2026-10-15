@@ -93,6 +93,8 @@ export const feeSettings = z.object({
   name: z.string().trim().min(1).max(60),
   amount: positiveMinor,
   every: z.enum(['month', 'year']),
+  // A reminder of the fee's conditions, such as when it is waived.
+  note: z.string().trim().max(200).optional(),
   start: calendarDate,
   handled: calendarDate.optional(),
 })

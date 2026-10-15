@@ -184,6 +184,20 @@ export function reorderedWallets<W extends Wallet>(ordered: readonly W[]): W[] {
   return ordered.flatMap((wallet, order) => (wallet.order === order ? [] : [{ ...wallet, order }]))
 }
 
+/**
+ * WAL-24: the wallet new transactions start in: the one the person made the default,
+ * while it exists and is active (WAL-04), or else the last one used (WID-03).
+ */
+export function startingWallet<W extends Pick<Wallet, 'id' | 'active'>>(
+  wallets: readonly W[],
+  defaultWalletId: string | null | undefined,
+  lastUsedId?: string | null,
+): W | null {
+  const usable = (id: string | null | undefined) =>
+    wallets.find((wallet) => wallet.id === id && wallet.active) ?? null
+  return usable(defaultWalletId) ?? usable(lastUsedId) ?? null
+}
+
 /** WAL-04: the wallets a picker offers. Inactive ones stay everywhere else. */
 export function pickableWallets<W extends Pick<Wallet, 'active'>>(wallets: readonly W[]): W[] {
   return wallets.filter((wallet) => wallet.active)

@@ -8,6 +8,7 @@ import {
   newWallet,
   openingBalance,
   pickableWallets,
+  startingWallet,
   presetDefaults,
   sortWallets,
   toggleFeature,
@@ -109,6 +110,18 @@ describe('wallets', () => {
       transaction('4', 'w', 1, '2026-03-01'),
     ])
     expect(list.map((item) => item.id)).toEqual(['4', '2', '1'])
+  })
+
+  it('WAL-24: new transactions start in the default wallet, else the last one used', () => {
+    const cash = wallet('a', 'cash')
+    const card = wallet('b', 'creditCard')
+    const closed = wallet('c', 'checking', { active: false })
+    const all = [cash, card, closed]
+    expect(startingWallet(all, 'b', 'a')).toBe(card)
+    expect(startingWallet(all, null, 'a')).toBe(cash)
+    // An inactive or deleted default doesn't count (WAL-04).
+    expect(startingWallet(all, 'c', 'a')).toBe(cash)
+    expect(startingWallet(all, 'gone', null)).toBeNull()
   })
 
   it('WAL-04: inactive wallets are left out of pickers only', () => {

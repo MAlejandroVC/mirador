@@ -26,7 +26,12 @@ export function Sheet({
     openRef.current = open
     const dialog = ref.current
     if (!dialog) return
-    if (open && !dialog.open) dialog.showModal()
+    if (open && !dialog.open) {
+      dialog.showModal()
+      // showModal focuses the first control, such as Cancel; the field meant to be
+      // typed in first takes it instead (React's autoFocus runs before the dialog opens).
+      dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus()
+    }
     if (!open && dialog.open) dialog.close()
   }, [open])
 

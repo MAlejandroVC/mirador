@@ -90,7 +90,7 @@ describe('wallets', () => {
     const save = screen.getByRole('button', { name: 'Save' })
     expect(save).toBeDisabled()
     await user.type(screen.getByRole('textbox', { name: 'Name' }), 'BBVA')
-    await user.click(screen.getByRole('radio', { name: 'Checking' }))
+    await user.click(screen.getByRole('radio', { name: 'Debit' }))
     await user.type(screen.getByRole('textbox', { name: 'Balance today' }), '3,250.50')
     await user.click(save)
 
@@ -247,14 +247,18 @@ describe('wallets', () => {
     const amount = screen.getByRole('textbox', { name: 'Amount' })
     await user.clear(amount)
     await user.type(amount, '40')
-    const date = screen.getByLabelText('Date')
-    await user.clear(date)
-    await user.type(date, '2024-01-31')
+    // DL-CMP-09: the date is picked from a calendar, a month at a time.
+    await user.click(screen.getByRole('button', { name: /Date/ }))
+    expect(screen.getByText('October 2026')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Previous month' }))
+    await user.click(screen.getByRole('button', { name: 'Previous month' }))
+    await user.click(screen.getByRole('button', { name: /August 31, 2026/ }))
+    expect(screen.getByRole('button', { name: /Date/ })).toHaveTextContent('Aug 31, 2026')
     await user.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => {
       expect(server.records?.find((record) => record.id === first.id)?.body).toMatchObject({
-        data: { kind: 'openingBalance', amount: 4000, date: '2024-01-31' },
+        data: { kind: 'openingBalance', amount: 4000, date: '2026-08-31' },
       })
     })
   })
@@ -269,6 +273,9 @@ describe('wallets', () => {
     await user.click(await screen.findByRole('button', { name: 'Edit' }))
     await user.click(screen.getByRole('radio', { name: 'Car' }))
     await user.click(screen.getByRole('radio', { name: 'Berry' }))
+    // Features show only the ones on, until "Show all features" (DL-CMP-15).
+    expect(screen.queryByRole('checkbox', { name: /Available now/ })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Show all features' }))
     await user.click(screen.getByRole('checkbox', { name: /Available now/ }))
     await user.click(screen.getByRole('checkbox', { name: /Active/ }))
     await user.click(screen.getByRole('button', { name: 'Save' }))

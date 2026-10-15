@@ -110,7 +110,11 @@ describe('wallet features, exchange rates and order', () => {
     })
     // 1,000.00 MXN plus 100.00 USD at 18.45.
     expect((await screen.findAllByText('$2,845.00')).length).toBeGreaterThan(0)
-    expect(screen.getByText('1 USD = 18.45 MXN')).toBeVisible()
+    // The rate is the wallet's business, on its own page (and in Settings).
+    expect(screen.queryByText(/1 USD =/)).not.toBeInTheDocument()
+    await user.click(screen.getByRole('link', { name: /Dollars/ }))
+    expect(await screen.findByText('About $1,845.00')).toBeVisible()
+    expect(screen.getByText('1 USD = 18.45 MXN · Today')).toBeVisible()
   })
 
   it('SYS-04: the rate can wait; until then the wallet is listed apart', async () => {
@@ -126,7 +130,13 @@ describe('wallet features, exchange rates and order', () => {
     await user.click(within(prompt).getByRole('button', { name: 'Later' }))
 
     expect(await screen.findByText(/No exchange rate/)).toBeVisible()
-    expect(screen.getByText("No rate yet, so it isn't in net worth")).toBeVisible()
+    await user.click(screen.getByRole('link', { name: /Euros/ }))
+    await user.click(
+      await screen.findByRole('button', {
+        name: /No exchange rate yet, so it isn't in your net worth/,
+      }),
+    )
+    expect(await screen.findByRole('dialog', { name: 'Exchange rate' })).toBeVisible()
   })
 
   it('SYS-05: Settings > Currency shows each rate with its date and keeps the history', async () => {
@@ -220,6 +230,10 @@ describe('wallet features, exchange rates and order', () => {
     await user.type(within(sheet).getByRole('textbox', { name: 'Name' }), 'Card replacement')
     await user.type(within(sheet).getByRole('textbox', { name: 'Amount' }), '150')
     await user.click(within(sheet).getByRole('button', { name: 'Every year' }))
+    await user.type(
+      within(sheet).getByRole('textbox', { name: 'Note' }),
+      'Free if I report it stolen',
+    )
     await user.click(within(sheet).getByRole('button', { name: 'Save' }))
     await waitFor(() => {
       expect(savedWallet(server, 'Checking')?.fees?.[1]).toMatchObject({
@@ -227,8 +241,11 @@ describe('wallet features, exchange rates and order', () => {
         amount: 15_000,
         every: 'year',
         start: '2026-10-15',
+        note: 'Free if I report it stolen',
       })
     })
+    // The note stays in view as a reminder: on the charge due today and in the list.
+    expect(await screen.findAllByText('Free if I report it stolen')).toHaveLength(2)
   })
 
   it('WAL-16: a credit limit shows what is used, what is left and when to pay', async () => {
@@ -237,9 +254,16 @@ describe('wallet features, exchange rates and order', () => {
     const { server } = start([card, opening(card.id, -438_510)], `/wallets/${card.id}`)
 
     await user.click(await screen.findByRole('button', { name: 'Set up' }))
-    await user.type(screen.getByRole('textbox', { name: 'Credit limit' }), '30000')
-    await user.type(screen.getByRole('textbox', { name: 'Statement closes on day' }), '20')
-    await user.type(screen.getByRole('textbox', { name: 'Payment due on day' }), '10')
+    const limit = screen.getByRole('textbox', { name: 'Credit limit' })
+    await user.type(limit, '30000')
+    // DL-CMP-09: grouped as it is typed.
+    expect(limit).toHaveValue('30,000')
+    // Days are picked from 1 to 31, never typed.
+    await user.click(screen.getByRole('button', { name: /Statement closes on day/ }))
+    await user.click(screen.getByRole('button', { name: 'Day 20' }))
+    await user.click(screen.getByRole('button', { name: /Payment due on day/ }))
+    await user.click(screen.getByRole('button', { name: 'Day 10' }))
+    expect(screen.getByRole('button', { name: /Payment due on day/ })).toHaveTextContent('Day 10')
     await user.click(screen.getByRole('button', { name: 'Save' }))
     await waitFor(() => {
       expect(savedWallet(server, 'Nu')?.credit).toEqual({
@@ -268,7 +292,8 @@ describe('wallet features, exchange rates and order', () => {
     await user.type(screen.getByRole('textbox', { name: 'Amount borrowed' }), '200000')
     await user.type(screen.getByRole('textbox', { name: 'Rate a year' }), '12')
     await user.type(screen.getByRole('textbox', { name: 'Term' }), '48')
-    await user.type(screen.getByRole('textbox', { name: 'Paid on day' }), '5')
+    await user.click(screen.getByRole('button', { name: /Paid on day/ }))
+    await user.click(screen.getByRole('button', { name: 'Day 5' }))
     // Left empty, the payment is worked out from the rate.
     expect(screen.getByText(/Leave the payment empty to use \$5,266\.77/)).toBeVisible()
     await user.click(screen.getByRole('button', { name: 'Save' }))
@@ -304,5 +329,53 @@ describe('wallet features, exchange rates and order', () => {
     expect(within(card).getByText('$10,000.00')).toBeVisible()
     expect(within(card).getByText('+$250.00')).toBeVisible()
     expect(within(card).getByText('+2.5%')).toBeVisible()
+  })
+
+  it('WAL-24: one wallet can be the default for new transactions', async () => {
+    const user = userEvent.setup()
+    const cash = wallet('Cash')
+    const card = wallet('Nu', { preset: 'creditCard' })
+    const preferences: SyncedRecord = {
+      id: newRecordId(),
+      revision: 1,
+      body: { deleted: false, type: 'preferences', schema: 1, data: { defaultCurrency: 'MXN' } },
+    }
+    const { server } = start([cash, card, preferences], `/wallets/${card.id}`)
+
+    await user.click(await screen.findByRole('button', { name: 'Edit' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Default wallet' }))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    // The other preferences are kept as they were.
+    await waitFor(() => {
+      expect(saved(server, 'preferences').map((body) => body.data)).toEqual([
+        { defaultCurrency: 'MXN', defaultWalletId: card.id },
+      ])
+    })
+    expect(await screen.findByText(/· Default$/)).toBeVisible()
+  })
+
+  it('WAL-05: a wallet shows its latest transactions, and the rest on their own screen', async () => {
+    const user = userEvent.setup()
+    const cash = wallet('Cash')
+    const adjustments = Array.from({ length: 6 }, (_, index) => ({
+      id: newRecordId(),
+      revision: 1,
+      body: transactionBody({
+        kind: 'adjustment',
+        walletId: cash.id,
+        date: `2026-10-0${String(index + 1)}`,
+        amount: 1_000,
+      }),
+    }))
+    start([cash, opening(cash.id, 100_000, '2026-09-01'), ...adjustments], `/wallets/${cash.id}`)
+
+    // On a phone, the latest five, right under the balance.
+    expect(await screen.findAllByRole('button', { name: /Balance adjustment/ })).toHaveLength(5)
+    expect(screen.queryByRole('button', { name: /Opening balance/ })).toBeNull()
+    await user.click(screen.getByRole('link', { name: 'See more' }))
+
+    expect(await screen.findByRole('button', { name: /Opening balance/ })).toBeVisible()
+    expect(screen.getAllByRole('button', { name: /Balance adjustment/ })).toHaveLength(6)
   })
 })

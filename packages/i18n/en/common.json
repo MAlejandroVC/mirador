@@ -357,7 +357,7 @@
     },
     "presets": {
       "cash": "Cash",
-      "checking": "Checking",
+      "checking": "Debit",
       "savings": "Savings",
       "investment": "Investment",
       "creditCard": "Credit card",
@@ -386,27 +386,27 @@
     "features": {
       "interest": {
         "title": "Interest",
-        "body": "It earns or charges interest."
+        "body": "See what it earns or costs each month."
       },
       "fees": {
         "title": "Fees",
-        "body": "It charges fees, like an annual fee."
+        "body": "Get reminded of fees, like a monthly or annual fee."
       },
       "creditLimit": {
         "title": "Credit limit",
-        "body": "It has a limit, a statement date and a due date."
+        "body": "See what's left to spend, when the statement closes and when to pay."
       },
       "loanSchedule": {
         "title": "Loan schedule",
-        "body": "It's paid off in fixed payments."
+        "body": "See when it's paid off and how much interest is left."
       },
       "valuations": {
         "title": "Market value",
-        "body": "Its value goes up and down with the market."
+        "body": "Its value moves with the market. See your gain or loss apart from what you put in."
       },
       "liquid": {
         "title": "Available now",
-        "body": "You can spend this money today."
+        "body": "Counts as money you can spend today."
       },
       "setUp": "Set up"
     },
@@ -414,7 +414,7 @@
       "newTitle": "New wallet",
       "editTitle": "Edit wallet",
       "name": "Name",
-      "namePlaceholder": "Name, like BBVA Debit",
+      "namePlaceholder": "Name",
       "type": "Type",
       "balance": "Balance",
       "have": "I have",
@@ -428,7 +428,7 @@
       "color": "Color",
       "icon": "Icon",
       "features": "Features",
-      "featuresHint": "The type switches on what usually applies. You set each one up on the wallet's page.",
+      "featuresHint": "Each one adds a card to the wallet's page, where you set it up. The type picks the usual ones.",
       "countIn": "Count in",
       "netWorth": "Net worth",
       "budget": "Budget",
@@ -438,7 +438,11 @@
       "discardTitle": "Discard changes?",
       "discardMessage": "Your changes to this wallet won't be saved.",
       "discard": "Discard changes",
-      "keepEditing": "Keep editing"
+      "keepEditing": "Keep editing",
+      "featuresMore": "Show all features",
+      "featuresLess": "Show fewer",
+      "default": "Default wallet",
+      "defaultHint": "New transactions start in this wallet. You can still pick another one each time."
     },
     "delete": {
       "button": "Delete wallet",
@@ -477,7 +481,8 @@
       "interest": "Interest",
       "fee": "Fee",
       "valuation": "Market change",
-      "record": "Record"
+      "record": "Record",
+      "seeMore": "See more"
     },
     "noRate": "No exchange rate",
     "reorder": {
@@ -587,13 +592,16 @@
       "amount": "Amount",
       "start": "First charge",
       "everyLabel": "How often",
-      "delete": "Delete fee"
-    }
+      "delete": "Delete fee",
+      "note": "Note",
+      "notePlaceholder": "Like: waived if I use the card every month"
+    },
+    "default": "Default"
   },
   "rates": {
     "title": "Exchange rate",
     "later": "Later",
-    "prompt": "To count this wallet in your net worth, Mirador needs the exchange rate. You can also add it later in Settings > Currency.",
+    "prompt": "To count this wallet in your net worth, Mirador needs the exchange rate. You can also add it later on the wallet's page or in Settings > Currency.",
     "intro": "The rate your bank or exchange office gives for {{currency}}. Each one is kept with its date.",
     "one": "1 {{currency}} =",
     "hint": "Totals use the newest rate up to today.",
@@ -608,6 +616,15 @@
     "section": "Exchange rates",
     "missing": "No rate yet, so it isn't in net worth",
     "change": "Change",
-    "add": "Add"
+    "add": "Add",
+    "worth": "About {{amount}}",
+    "missingWallet": "No exchange rate yet, so it isn't in your net worth.",
+    "addRate": "Add exchange rate"
+  },
+  "pickers": {
+    "choose": "Choose",
+    "day": "Day {{day}}",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month"
   }
 }

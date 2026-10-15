@@ -592,10 +592,40 @@ body {
     background: rgb(0 0 0 / 0%);
   }
 }
+/* From 768 px a sheet is a centered dialog: it fades and grows in, and closes quickly
+   with a short fade, so Cancel never seems to wait (DL-MOT-06). */
 @media (min-width: 768px) {
-  .sheet,
+  .sheet {
+    translate: 0 0;
+    opacity: 0;
+    scale: 0.96;
+    transition:
+      opacity 150ms ease-in,
+      scale 150ms ease-in,
+      overlay 150ms allow-discrete,
+      display 150ms allow-discrete;
+  }
   .sheet[open] {
     translate: 0 0;
+    opacity: 1;
+    scale: 1;
+    transition:
+      opacity 250ms ease-out,
+      scale 250ms cubic-bezier(0.32, 0.72, 0, 1),
+      overlay 250ms allow-discrete,
+      display 250ms allow-discrete;
+  }
+  @starting-style {
+    .sheet[open] {
+      opacity: 0;
+      scale: 0.96;
+    }
+  }
+  .sheet::backdrop {
+    transition:
+      background 150ms,
+      overlay 150ms allow-discrete,
+      display 150ms allow-discrete;
   }
 }
 @media (prefers-reduced-motion: reduce) {

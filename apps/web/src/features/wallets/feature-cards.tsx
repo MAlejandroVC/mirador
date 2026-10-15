@@ -395,6 +395,8 @@ export function FeesCard({ wallet, today, defaultCurrency, onEdit }: Omit<CardPr
           <span className="text-[0.8125rem] text-text-muted">
             {t('wallets.fees.dueOn', { date: formatDay(date, today, money.locale, words) })}
           </span>
+          {/* WAL-15: the person's reminder, right when they decide on the charge. */}
+          {fee.note && <span className="text-[0.8125rem] text-text">{fee.note}</span>}
           <div className="flex gap-2">
             <Button
               className="flex-1"
@@ -427,7 +429,7 @@ export function FeesCard({ wallet, today, defaultCurrency, onEdit }: Omit<CardPr
                 onClick={() => {
                   onEdit({ fee })
                 }}
-                className="flex min-h-[3.25rem] w-full items-center gap-3 border-separator px-4 text-left not-first:border-t focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
+                className="flex min-h-[3.25rem] w-full items-center gap-3 border-separator px-4 py-2 text-left not-first:border-t focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
               >
                 <span className="flex flex-1 flex-col">
                   <span className="text-[0.9375rem] text-text">{fee.name}</span>
@@ -437,6 +439,11 @@ export function FeesCard({ wallet, today, defaultCurrency, onEdit }: Omit<CardPr
                       date: formatDay(nextFeeDate(fee, today), today, money.locale, words),
                     })}
                   </span>
+                  {fee.note && (
+                    <span className="line-clamp-2 text-[0.8125rem] text-text-muted">
+                      {fee.note}
+                    </span>
+                  )}
                 </span>
                 <span className="text-[0.9375rem] text-text tabular-nums">{of(fee.amount)}</span>
               </button>

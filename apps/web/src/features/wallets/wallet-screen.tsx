@@ -1,7 +1,9 @@
 import {
+  convert,
   currencyName,
+  rateInUse,
   toCalendarDate,
-  type Transaction,
+  unitsPerOne,
   walletBalance,
   walletTransactions,
 } from '@repo/core'
@@ -13,19 +15,11 @@ import { Amount } from '../../components/ui/amount'
 import { Button } from '../../components/ui/button'
 import { EmptyState } from '../../components/ui/empty-state'
 import { IconTile } from '../../components/ui/icon-tile'
-import {
-  FlagBannerIcon,
-  type Icon,
-  PercentIcon,
-  ReceiptIcon,
-  ScalesIcon,
-  TrendUpIcon,
-  WalletIcon,
-} from '../../components/ui/icons'
-import { List, ListButtonRow } from '../../components/ui/list'
+import { FlagBannerIcon, WalletIcon } from '../../components/ui/icons'
 import { Page } from '../../components/ui/page'
 import { useUndo } from '../../components/ui/use-undo'
-import { formatDay, useMoney } from '../../lib/format'
+import { formatDay, formatRate, useMoney } from '../../lib/format'
+import { useMediaQuery } from '../../lib/use-media-query'
 import { BalanceSheet } from './balance-sheet'
 import {
   CreditLimitCard,
@@ -36,31 +30,24 @@ import {
   ValuationCard,
 } from './feature-cards'
 import { FeatureSheets } from './feature-sheets'
-import { TransactionSheet } from './transaction-sheet'
+import { RateSheet } from './rate-sheet'
+import { TransactionRows } from './transaction-list'
 import {
+  type LedgerWallet,
   type RecordChange,
   newId,
-  transactionBody,
   useLedger,
   useSaveRecords,
   walletBody,
 } from './use-ledger'
+import { useTransactionEditor } from './use-transaction-editor'
 import { walletIconComponents } from './wallet-look'
 import { WalletSheet } from './wallet-sheet'
 
-// The icon of each kind of transaction the wallets epic makes (DL-ICO-01).
-const kindIcons: Record<Transaction['kind'], Icon> = {
-  openingBalance: FlagBannerIcon,
-  adjustment: ScalesIcon,
-  interest: PercentIcon,
-  fee: ReceiptIcon,
-  valuation: TrendUpIcon,
-}
-
-// WAL-01: one wallet, pushed in from the list (DL-PAT-01): its balance (WAL-06), a card
-// for each feature switched on (WAL-13 to WAL-18), the transactions that make up the
-// balance (WAL-05), updating the balance (WAL-07), and Edit at the top right, which is
-// also where it is deleted (WAL-08).
+// WAL-01: one wallet, pushed in from the list (DL-PAT-01): its balance (WAL-06), the
+// latest transactions that make it up (WAL-05), a card for each feature switched on
+// (WAL-13 to WAL-18), updating the balance (WAL-07), and Edit at the top right, which
+// is also where it is deleted (WAL-08).
 export function WalletScreen({ walletId }: { walletId: string }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -70,10 +57,12 @@ export function WalletScreen({ walletId }: { walletId: string }) {
   const [editing, setEditing] = useState(false)
   const [updating, setUpdating] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
-  const [opened, setOpened] = useState<{ transaction: Transaction; isNew: boolean } | null>(null)
   const [feature, setFeature] = useState<FeatureSheet | null>(null)
+  const [changingRate, setChangingRate] = useState(false)
   const defaultCurrency = ledger?.defaultCurrency ?? 'USD'
   const money = useMoney(defaultCurrency)
+  // The latest few, so the list doesn't fill the screen: 5 on a phone, 10 from a tablet.
+  const wide = useMediaQuery('(min-width: 768px)')
   const back = {
     label: t('nav.wallets'),
     onClick: () => {
@@ -81,6 +70,7 @@ export function WalletScreen({ walletId }: { walletId: string }) {
     },
   }
   const wallet = ledger?.wallets.find((candidate) => candidate.id === walletId)
+  const editor = useTransactionEditor(wallet, defaultCurrency)
 
   if (!ledger) return null
   if (!wallet)
@@ -137,24 +127,10 @@ export function WalletScreen({ walletId }: { walletId: string }) {
     })
   }
 
-  function deleteTransaction(transaction: Transaction) {
-    const { id, ...record } = transaction
-    setOpened(null)
-    save.mutate([{ id, body: { deleted: true, type: 'transaction' } }], {
-      onSuccess: () => {
-        undo({
-          message: t('wallets.transactions.deleted'),
-          undo: () => {
-            save.mutate([{ id, body: transactionBody(record) }])
-          },
-        })
-      },
-    })
-  }
-
   const description = [
     t(`wallets.presets.${wallet.preset}`),
     currencyName(wallet.currency, money.locale),
+    ...(ledger.defaultWalletId === wallet.id && wallet.active ? [t('wallets.default')] : []),
     ...(wallet.active ? [] : [t('wallets.inactive')]),
   ].join(' · ')
 
@@ -197,7 +173,34 @@ export function WalletScreen({ walletId }: { walletId: string }) {
           {/* WAL-18: an investment's balance moves with the market, so it is its value. */}
           {on('valuations') ? t('wallets.valuation.update') : t('wallets.balance.update')}
         </Button>
+        {wallet.currency !== defaultCurrency && (
+          <RateLine
+            wallet={wallet}
+            balance={balance}
+            today={today}
+            onChange={() => {
+              setChangingRate(true)
+            }}
+          />
+        )}
       </section>
+
+      {transactions.length > 0 ? (
+        <TransactionRows
+          label={t('wallets.transactions.title')}
+          wallet={wallet}
+          transactions={transactions}
+          defaultCurrency={defaultCurrency}
+          limit={wide ? 10 : 5}
+          onOpen={(transaction) => {
+            editor.open(transaction)
+          }}
+        />
+      ) : (
+        <EmptyState icon={FlagBannerIcon} title={t('wallets.transactions.emptyTitle')}>
+          {t('wallets.transactions.emptyBody')}
+        </EmptyState>
+      )}
 
       {on('creditLimit') && <CreditLimitCard {...cardProps} />}
       {on('loanSchedule') && <LoanCard {...cardProps} />}
@@ -207,16 +210,10 @@ export function WalletScreen({ walletId }: { walletId: string }) {
           transactions={transactions}
           onRecord={(amount) => {
             // WAL-14: the estimate, to confirm or correct before it is saved.
-            setOpened({
-              transaction: {
-                id: newId(),
-                kind: 'interest',
-                walletId: wallet.id,
-                date: today,
-                amount,
-              },
-              isNew: true,
-            })
+            editor.open(
+              { id: newId(), kind: 'interest', walletId: wallet.id, date: today, amount },
+              true,
+            )
           }}
         />
       )}
@@ -228,40 +225,6 @@ export function WalletScreen({ walletId }: { walletId: string }) {
         />
       )}
       {on('fees') && <FeesCard {...cardProps} />}
-
-      {transactions.length > 0 ? (
-        <List label={t('wallets.transactions.title')}>
-          {transactions.map((transaction) => {
-            const value = { minor: transaction.amount, currency: wallet.currency }
-            const opening = transaction.kind === 'openingBalance'
-            const signs = opening ? 'negative' : 'always'
-            const KindIcon = kindIcons[transaction.kind]
-            return (
-              <ListButtonRow
-                key={transaction.id}
-                tone="text"
-                // System transactions (CAT-05) take Stone, the quietest category color.
-                leading={<IconTile icon={KindIcon} color="stone" />}
-                title={transaction.note ?? t(`wallets.transactions.${transaction.kind}`)}
-                subtitle={formatDay(transaction.date, today, money.locale, {
-                  today: t('dates.today'),
-                  yesterday: t('dates.yesterday'),
-                })}
-                trailing={
-                  <Amount parts={money.parts(value, signs)} label={money.text(value, signs)} />
-                }
-                onClick={() => {
-                  setOpened({ transaction, isNew: false })
-                }}
-              />
-            )
-          })}
-        </List>
-      ) : (
-        <EmptyState icon={FlagBannerIcon} title={t('wallets.transactions.emptyTitle')}>
-          {t('wallets.transactions.emptyBody')}
-        </EmptyState>
-      )}
 
       <WalletSheet
         open={editing}
@@ -319,16 +282,68 @@ export function WalletScreen({ walletId }: { walletId: string }) {
           setUpdating(false)
         }}
       />
-      <TransactionSheet
-        transaction={opened?.transaction ?? null}
-        isNew={opened?.isNew ?? false}
-        wallet={wallet}
+      {editor.sheet}
+      <RateSheet
+        open={changingRate}
+        currency={wallet.currency}
         defaultCurrency={defaultCurrency}
+        rates={ledger.rates}
         onClose={() => {
-          setOpened(null)
+          setChangingRate(false)
         }}
-        onDelete={deleteTransaction}
       />
     </Page>
+  )
+}
+
+/**
+ * SYS-04, SYS-05: in a wallet kept in another currency, what it is worth in the default
+ * one and the rate used, or a way to add the first rate. Tapping it adds or changes it.
+ */
+function RateLine({
+  wallet,
+  balance,
+  today,
+  onChange,
+}: {
+  wallet: LedgerWallet
+  balance: number
+  today: string
+  onChange: () => void
+}) {
+  const { t } = useTranslation()
+  const { data: ledger } = useLedger()
+  const defaultCurrency = ledger?.defaultCurrency ?? 'USD'
+  const money = useMoney(defaultCurrency)
+  const inUse = rateInUse(wallet.currency, defaultCurrency, ledger?.rates ?? [], today)
+  const worth = inUse && {
+    minor: convert(balance, wallet.currency, defaultCurrency, inUse),
+    currency: defaultCurrency,
+  }
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className="-mx-4 -mb-4 flex min-h-[3.25rem] items-center gap-3 border-t-[0.5px] border-separator px-4 py-2 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
+    >
+      <span className="flex flex-1 flex-col">
+        <span className="text-[0.9375rem] text-text">
+          {worth ? t('rates.worth', { amount: money.text(worth) }) : t('rates.missingWallet')}
+        </span>
+        {inUse && (
+          <span className="text-[0.8125rem] text-text-muted">
+            {`1 ${wallet.currency} = ${formatRate(unitsPerOne(inUse), money.locale)} ${defaultCurrency} · ${formatDay(
+              inUse.rate.date,
+              today,
+              money.locale,
+              { today: t('dates.today'), yesterday: t('dates.yesterday') },
+            )}`}
+          </span>
+        )}
+      </span>
+      <span className="text-[0.9375rem] text-brand">
+        {inUse ? t('rates.change') : t('rates.add')}
+      </span>
+    </button>
   )
 }

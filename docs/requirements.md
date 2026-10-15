@@ -163,6 +163,7 @@ Wallets are where money lives or is owed, and every transaction moves money in o
 | WAL-09 | The app shall let the user exclude a wallet from net worth and, separately, from the budget. | Should |
 | WAL-10 | The app shall let the user reorder wallets. | Could |
 | WAL-23 | The app shall let the user choose an icon and a color for each wallet, from the curated icon set and color palette. | Should |
+| WAL-24 | The app shall let the user make one active wallet the default, so new transactions start in it unless the user picks another. | Should |
 
 **Presets and optional features**
 
@@ -172,7 +173,7 @@ Wallets are where money lives or is owed, and every transaction moves money in o
 | WAL-12 | The app shall let the user switch any optional feature on or off on any wallet, whatever its preset. | Must |
 | WAL-13 | Where interest is on, the app shall store the rate, rate type (nominal or effective annual) and compounding (daily, monthly or yearly), and estimate the interest earned or charged this period. | Should |
 | WAL-14 | Where interest is on, the app shall offer to post the estimated interest as a transaction for the user to confirm. | Could |
-| WAL-15 | Where fees are on, the app shall store each fee's amount and frequency and generate expected fee transactions for the user to confirm. | Should |
+| WAL-15 | Where fees are on, the app shall store each fee's amount, frequency and an optional note, and generate expected fee transactions for the user to confirm. | Should |
 | WAL-16 | Where a credit limit is on, the app shall store the limit, statement closing day and payment due day, and show utilization and the next due date. | Should |
 | WAL-17 | Where a loan schedule is on, the app shall store principal, rate, term, payment amount and payment day, and project the payoff date and total interest. | Should |
 | WAL-18 | Where valuations are on, the app shall record market-value updates separately from contributions and show contributions versus gains. | Should |
@@ -596,7 +597,7 @@ Quick add lets the user log an expense in under 10 seconds from a button that is
 |---|---|---|
 | WID-01 | The app shall show a quick-add button on every screen that opens a quick-add form with three options: take a picture, choose an image from the device's photos, or enter manually. | Must |
 | WID-02 | When the user takes or chooses a picture of a purchase ticket or a bank notification, the app shall extract the transaction and show it pre-filled, so the user only confirms or fixes it. | Must |
-| WID-03 | When the user chooses manual entry, the app shall need only amount and category, defaulting the wallet to the last one used, the type to expense and the date to now, with optional tags, payee and note. | Must |
+| WID-03 | When the user chooses manual entry, the app shall need only amount and category, defaulting the wallet to the default wallet (WAL-24), or else the last one used, the type to expense and the date to now, with optional tags, payee and note. | Must |
 | WID-04 | The app shall use the device camera where the browser allows it, and a file picker otherwise. | Must |
 | WID-05 | The app shall show the user's most used categories first, and one-tap suggestions for frequent category, tag and amount combinations. | Should |
 | WID-06 | When an entry is saved, the app shall confirm it and show the period's amount left to spend. | Should |
