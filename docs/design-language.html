@@ -7,8 +7,8 @@
     --text: #1d211a;
     --muted: #656c5f;
     --faint: #a9aea3;
-    --pine: #3d6b45;
-    --onpine: #ffffff;
+    --brand: #3d6b45;
+    --onbrand: #ffffff;
     --sep: rgba(35, 40, 28, 0.12);
     --fill: rgba(35, 40, 28, 0.06);
     --page: #e9e8e4;
@@ -26,8 +26,8 @@
       --text: #eef1ea;
       --muted: #9ca595;
       --faint: #5d6657;
-      --pine: #4e9e5c;
-      --onpine: #06140a;
+      --brand: #4e9e5c;
+      --onbrand: #06140a;
       --sep: rgba(225, 235, 215, 0.13);
       --fill: rgba(225, 235, 215, 0.08);
       --page: #050505;
@@ -45,8 +45,8 @@
     --text: #eef1ea;
     --muted: #9ca595;
     --faint: #5d6657;
-    --pine: #4e9e5c;
-    --onpine: #06140a;
+    --brand: #4e9e5c;
+    --onbrand: #06140a;
     --sep: rgba(225, 235, 215, 0.13);
     --fill: rgba(225, 235, 215, 0.08);
     --page: #050505;
@@ -194,7 +194,7 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14);
   }
   button:focus-visible {
-    outline: 2px solid var(--pine);
+    outline: 2px solid var(--brand);
     outline-offset: 2px;
   }
   svg {
@@ -267,7 +267,7 @@
     min-height: 44px;
   }
   .navrow .plain {
-    color: var(--pine);
+    color: var(--brand);
     display: inline-flex;
     align-items: center;
     gap: 2px;
@@ -481,7 +481,7 @@
     gap: 1px;
   }
   .tabs span.on {
-    color: var(--pine);
+    color: var(--brand);
   }
   .tabs svg {
     width: 23px;
@@ -491,8 +491,8 @@
     width: 54px;
     height: 54px;
     border-radius: 50%;
-    background: var(--pine);
-    color: var(--onpine);
+    background: var(--brand);
+    color: var(--onbrand);
     display: grid;
     place-items: center;
     flex: none;
@@ -522,7 +522,7 @@
   .banner button {
     font: inherit;
     font-weight: 600;
-    color: var(--pine);
+    color: var(--brand);
     background: transparent;
     border: 0;
     min-height: 44px;
@@ -588,7 +588,7 @@
     min-height: 44px;
   }
   .sheethead span:first-child {
-    color: var(--pine);
+    color: var(--brand);
   }
   .sheethead b {
     font-weight: 600;
@@ -658,12 +658,12 @@
     font-size: 16px;
   }
   .btn.filled {
-    background: var(--pine);
-    color: var(--onpine);
+    background: var(--brand);
+    color: var(--onbrand);
   }
   .btn.tinted {
-    background: color-mix(in srgb, var(--pine) 14%, var(--surface));
-    color: var(--pine);
+    background: color-mix(in srgb, var(--brand) 14%, var(--surface));
+    color: var(--brand);
   }
   .btn.disabled {
     background: var(--fill);
@@ -704,7 +704,7 @@
     color: var(--danger);
   }
   .action .cancel {
-    color: var(--pine);
+    color: var(--brand);
     font-weight: 600;
   }
 
@@ -1184,8 +1184,8 @@
     ['text-faint', 'faint'],
     ['separator', 'sep'],
     ['fill', 'fill'],
-    ['pine', 'pine'],
-    ['on-pine', 'onpine'],
+    ['brand', 'brand'],
+    ['on-brand', 'onbrand'],
     ['hero', 'hero'],
     ['on-hero', 'onhero'],
     ['warning', 'warning'],
@@ -1438,7 +1438,7 @@
       'CMP-14, PAT-03',
       '<div class="screen"><div class="large-title">' +
         t('wallets') +
-        '</div><div class="empty"><span class="tile" style="--c:var(--pine)">' +
+        '</div><div class="empty"><span class="tile" style="--c:var(--brand)">' +
         I('binoculars', 'duotone') +
         '</span><h3>' +
         t('emptyT') +
