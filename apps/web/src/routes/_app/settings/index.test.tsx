@@ -142,4 +142,28 @@ describe('settings', () => {
     await user.click(back)
     expect(router.state.location.pathname).toBe('/settings')
   })
+
+  it('SYS-19: switches the language at once from Settings > Language and keeps it', async () => {
+    await i18n.changeLanguage('en')
+    const user = userEvent.setup()
+    const server: FakeServer = { signedIn: 'ana' }
+    stubServer(server)
+    renderApp('/settings', unlockedVault(server))
+
+    await user.click(await screen.findByRole('link', { name: /^Language/ }))
+    expect(await screen.findByRole('heading', { name: 'Language', level: 1 })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: /^Automatic/ })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
+
+    await user.click(screen.getByRole('radio', { name: /^Español/ }))
+
+    expect(await screen.findByRole('heading', { name: 'Idioma', level: 1 })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: /^Español/ })).toHaveAttribute('aria-checked', 'true')
+    expect(localStorage.getItem('mirador.language')).toBe('es')
+    expect(document.documentElement.lang).toBe('es')
+    localStorage.clear()
+    await i18n.changeLanguage('en')
+  })
 })
