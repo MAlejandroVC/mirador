@@ -6,7 +6,7 @@
   "nav": {
     "label": "Secciones",
     "home": "Inicio",
-    "activity": "Movimientos",
+    "transactions": "Movimientos",
     "budget": "Presupuesto",
     "wallets": "Carteras",
     "settings": "Configuración",
@@ -16,20 +16,12 @@
     "done": "Listo"
   },
   "quickAdd": {
-    "title": "Nuevo movimiento",
-    "placeholder": {
-      "title": "Ya casi",
-      "body": "Muy pronto podrás agregar un gasto aquí en unos cuantos toques, desde cualquier pantalla."
-    }
+    "title": "Nuevo movimiento"
   },
   "placeholder": {
     "home": {
       "title": "Tu dinero de un vistazo",
       "body": "Aquí verás cómo va tu periodo, tus metas y lo que necesite tu atención."
-    },
-    "activity": {
-      "title": "Aún no hay nada aquí",
-      "body": "Aquí aparecerán todos tus gastos, ingresos y transferencias, del más reciente al más antiguo."
     },
     "budget": {
       "title": "Tu presupuesto viene en camino",
@@ -623,6 +615,60 @@
       "notePlaceholder": "Como: no la cobran si uso la tarjeta cada mes"
     },
     "default": "Predeterminada"
+  },
+  "transactions": {
+    "types": {
+      "expense": "Gasto",
+      "income": "Ingreso",
+      "transfer": "Transferencia"
+    },
+    "newTitle": {
+      "expense": "Nuevo gasto",
+      "income": "Nuevo ingreso",
+      "transfer": "Nueva transferencia"
+    },
+    "editTitle": {
+      "expense": "Editar gasto",
+      "income": "Editar ingreso",
+      "transfer": "Editar transferencia"
+    },
+    "type": "Tipo",
+    "amount": "Monto",
+    "amountMissing": "Escribe un monto mayor a cero, como 45.50.",
+    "wallet": "Cartera",
+    "from": "De",
+    "to": "A",
+    "walletMissing": "Elige la cartera de donde salió.",
+    "toMissing": "Elige la cartera a donde va el dinero.",
+    "received": "Monto recibido",
+    "receivedMissing": "Escribe lo que llegó o el tipo de cambio.",
+    "rateHint": "Escribe lo que llegó o el tipo de cambio, y el otro se calcula solo.",
+    "date": "Fecha",
+    "note": "Nota",
+    "notePlaceholder": "Agrega una nota",
+    "excluded": "Dejar fuera del presupuesto",
+    "excludedHint": "Sigue contando en el saldo de la cartera.",
+    "notInBudget": "Fuera del presupuesto",
+    "save": "Guardar",
+    "saveAndNew": "Guardar y otro",
+    "delete": "Eliminar movimiento",
+    "deleteShort": "Eliminar",
+    "deleted": "Movimiento eliminado",
+    "discardNew": "Este movimiento no se guardará.",
+    "discardEdit": "Tus cambios a este movimiento no se guardarán.",
+    "toWallet": "A {{name}}",
+    "fromWallet": "De {{name}}",
+    "daySpent": "{{amount}} en gastos",
+    "showMore": "Ver más",
+    "empty": {
+      "title": "Una página en blanco, por ahora",
+      "body": "Aquí verás cada gasto, ingreso y transferencia, del más reciente al más antiguo. Empieza con lo último que pagaste.",
+      "action": "Agregar un movimiento"
+    },
+    "noWallets": {
+      "title": "Primero, una cartera",
+      "body": "Cada movimiento sale de una cartera o entra a una. Agrega la que más usas, como tu efectivo o tu tarjeta de débito."
+    }
   },
   "rates": {
     "title": "Tipo de cambio",

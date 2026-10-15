@@ -20,7 +20,7 @@ import { newRecordId } from '@repo/crypto'
 import { createApi, type Fetch } from '../lib/api'
 import { vaultErrorCode } from './errors'
 import { Vault } from './vault'
-import { openingBalance } from '@repo/core'
+import { entryFields, openingBalance } from '@repo/core'
 import { exchangeRateBody, transactionBody, walletBody } from '../features/wallets/use-ledger'
 import { newWalletRecord } from '../features/wallets/wallet-look'
 
@@ -330,6 +330,69 @@ describe('vault', () => {
     // Not even which kind of record each one is (SEC-04).
     expect(everything).not.toContain('wallet')
     expect(everything).not.toContain('transaction')
+  })
+
+  it('TXN-01, TXN-05: expenses, income and transfers reach the server only encrypted', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    await phone.signUp({ username: 'ana', password })
+    const [checking, dollars] = [newRecordId(), newRecordId()]
+    const now = '2026-10-15T12:00:00.000Z'
+
+    await phone.saveRecords([
+      {
+        id: newRecordId(),
+        body: transactionBody(
+          entryFields(
+            {
+              type: 'expense',
+              amount: 73_919,
+              walletId: checking,
+              date: '2026-10-15',
+              note: 'Tacos Orinoco',
+            },
+            'quickAdd',
+            now,
+          ),
+        ),
+      },
+      {
+        id: newRecordId(),
+        body: transactionBody(
+          entryFields(
+            {
+              type: 'transfer',
+              amount: 61_234,
+              walletId: checking,
+              toWalletId: dollars,
+              toAmount: 3_317,
+              rate: 54_168,
+              date: '2026-10-15',
+              excludeFromBudget: true,
+            },
+            'manual',
+            now,
+          ),
+        ),
+      },
+    ])
+
+    const everything = server.sent.join('\n')
+    for (const plaintext of [
+      'Tacos',
+      '73919',
+      '61234',
+      '3317',
+      '54168',
+      'expense',
+      'transfer',
+      'quickAdd',
+      'excludeFromBudget',
+      checking,
+      dollars,
+      '2026-10-15',
+    ])
+      expect(everything).not.toContain(plaintext)
   })
 
   it('SYS-04, WAL-13, WAL-15, WAL-16, WAL-17: rates, feature details and fee notes reach the server only encrypted', async () => {

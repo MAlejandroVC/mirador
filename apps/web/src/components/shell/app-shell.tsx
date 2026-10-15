@@ -8,8 +8,8 @@ import { TabBar } from './tab-bar'
 // tablets, the sidebar on computers (DL-LAY-06). A screen only renders its <Page>.
 export function AppShell() {
   return (
-    <QuickAddProvider>
-      <UndoProvider>
+    <UndoProvider>
+      <QuickAddProvider>
         <div className="min-h-dvh bg-background text-text lg:pl-64">
           <Sidebar />
           {/* Room for the floating tab bar, so the last row can scroll above it. */}
@@ -20,7 +20,7 @@ export function AppShell() {
           </main>
           <TabBar />
         </div>
-      </UndoProvider>
-    </QuickAddProvider>
+      </QuickAddProvider>
+    </UndoProvider>
   )
 }

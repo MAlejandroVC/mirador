@@ -13,6 +13,7 @@ export function SubmitButton({
   onClick,
   children,
   before,
+  secondary,
 }: {
   button: RefObject<HTMLButtonElement | null>
   done: boolean
@@ -21,28 +22,33 @@ export function SubmitButton({
   children: string
   /** Shown above the button, such as an error from saving. */
   before?: ReactNode
+  /** A tinted second action to its left, such as "Save & new" (DL-CMP-05). */
+  secondary?: ReactNode
 }) {
   return (
     <>
       {before}
       <SheetFooter>
-        <Button
-          ref={button}
-          className="relative w-full"
-          aria-disabled={pending || done || undefined}
-          onClick={() => {
-            if (!pending && !done) onClick()
-          }}
-        >
-          <span className={done ? 'invisible' : ''}>{children}</span>
-          {done && (
-            <CheckIcon
-              aria-hidden
-              weight="bold"
-              className="absolute size-6 animate-[check-in_260ms_cubic-bezier(0.32,0.72,0,1)]"
-            />
-          )}
-        </Button>
+        <div className="flex gap-2.5">
+          {secondary}
+          <Button
+            ref={button}
+            className="relative flex-1"
+            aria-disabled={pending || done || undefined}
+            onClick={() => {
+              if (!pending && !done) onClick()
+            }}
+          >
+            <span className={done ? 'invisible' : ''}>{children}</span>
+            {done && (
+              <CheckIcon
+                aria-hidden
+                weight="bold"
+                className="absolute size-6 animate-[check-in_260ms_cubic-bezier(0.32,0.72,0,1)]"
+              />
+            )}
+          </Button>
+        </div>
       </SheetFooter>
     </>
   )

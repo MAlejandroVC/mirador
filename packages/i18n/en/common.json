@@ -6,7 +6,7 @@
   "nav": {
     "label": "Places",
     "home": "Home",
-    "activity": "Activity",
+    "transactions": "Transactions",
     "budget": "Budget",
     "wallets": "Wallets",
     "settings": "Settings",
@@ -16,20 +16,12 @@
     "done": "Done"
   },
   "quickAdd": {
-    "title": "New transaction",
-    "placeholder": {
-      "title": "Almost here",
-      "body": "Soon you'll add an expense here in a few taps, from any screen."
-    }
+    "title": "New transaction"
   },
   "placeholder": {
     "home": {
       "title": "Your money at a glance",
       "body": "How this period is going, your goals and anything that needs a look will show up here."
-    },
-    "activity": {
-      "title": "Nothing here yet",
-      "body": "Every expense, income and transfer will be listed here, newest first."
     },
     "budget": {
       "title": "Your budget is on its way",
@@ -623,6 +615,60 @@
       "notePlaceholder": "Like: waived if I use the card every month"
     },
     "default": "Default"
+  },
+  "transactions": {
+    "types": {
+      "expense": "Expense",
+      "income": "Income",
+      "transfer": "Transfer"
+    },
+    "newTitle": {
+      "expense": "New expense",
+      "income": "New income",
+      "transfer": "New transfer"
+    },
+    "editTitle": {
+      "expense": "Edit expense",
+      "income": "Edit income",
+      "transfer": "Edit transfer"
+    },
+    "type": "Type",
+    "amount": "Amount",
+    "amountMissing": "Type an amount above zero, like 45.50.",
+    "wallet": "Wallet",
+    "from": "From",
+    "to": "To",
+    "walletMissing": "Pick the wallet it came from.",
+    "toMissing": "Pick the wallet the money goes to.",
+    "received": "Amount received",
+    "receivedMissing": "Type what arrived, or the exchange rate.",
+    "rateHint": "Type what arrived or the exchange rate, and the other is worked out.",
+    "date": "Date",
+    "note": "Note",
+    "notePlaceholder": "Add a note",
+    "excluded": "Leave out of the budget",
+    "excludedHint": "It still counts in the wallet's balance.",
+    "notInBudget": "Not in budget",
+    "save": "Save",
+    "saveAndNew": "Save & new",
+    "delete": "Delete transaction",
+    "deleteShort": "Delete",
+    "deleted": "Transaction deleted",
+    "discardNew": "This transaction won't be saved.",
+    "discardEdit": "Your changes to this transaction won't be saved.",
+    "toWallet": "To {{name}}",
+    "fromWallet": "From {{name}}",
+    "daySpent": "{{amount}} spent",
+    "showMore": "Show more",
+    "empty": {
+      "title": "A blank page, for now",
+      "body": "Every expense, income and transfer will show up here, newest first. Start with the last thing you paid for.",
+      "action": "Add a transaction"
+    },
+    "noWallets": {
+      "title": "First, a wallet",
+      "body": "Every transaction comes out of a wallet or goes into one. Add the one you use most, like your cash or your debit card."
+    }
   },
   "rates": {
     "title": "Exchange rate",

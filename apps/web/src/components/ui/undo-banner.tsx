@@ -4,8 +4,8 @@ import { ArrowCounterClockwiseIcon } from './icons'
 import { type Undoable, UndoContext } from './use-undo'
 
 // DL-CMP-13: one line and an Undo button on `surface`, just above the tab bar, for
-// 5 seconds, one at a time: a new one replaces the last. It rises into place and fades
-// away (DL-MOT-07).
+// 5 seconds (10 after deleting a transaction, TXN-13), one at a time: a new one
+// replaces the last. It rises into place and fades away (DL-MOT-07).
 export function UndoProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation()
   const [current, setCurrent] = useState<(Undoable & { key: number }) | null>(null)
@@ -15,7 +15,7 @@ export function UndoProvider({ children }: { children: ReactNode }) {
     setCurrent({ ...undoable, key: Date.now() })
   }, [])
 
-  // After 5 seconds it fades, then goes.
+  // After its time it fades, then goes.
   useEffect(() => {
     if (!current) return
     const timer = setTimeout(
@@ -23,7 +23,7 @@ export function UndoProvider({ children }: { children: ReactNode }) {
         if (leaving) setCurrent(null)
         else setLeaving(true)
       },
-      leaving ? 150 : 5000,
+      leaving ? 150 : (current.seconds ?? 5) * 1000,
     )
     return () => {
       clearTimeout(timer)

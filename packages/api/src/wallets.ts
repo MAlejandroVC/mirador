@@ -1,9 +1,8 @@
 import { z } from 'zod'
-import { recordId } from './records.ts'
 
-// Epic 1 (WAL): wallets and the transactions that make up their balances. Both live in
-// encrypted records (SEC-01), so the server never learns a wallet's name, type,
-// currency or balance.
+// Epic 1 (WAL): wallets. They live in encrypted records (SEC-01), so the server never
+// learns a wallet's name, type, currency or balance; their transactions are in
+// transactions.ts.
 
 /** WAL-11: a preset only decides which optional features start switched on. */
 export const walletPresets = [
@@ -138,32 +137,6 @@ export const walletRecord = z.object({
   loan: loanSettings.optional(),
 })
 export type WalletRecord = z.infer<typeof walletRecord>
-
-export const transactionRecordType = 'transaction'
-
-// The kinds of transaction the wallets epic makes: the opening balance (WAL-05),
-// adjustments (WAL-07), posted interest (WAL-14), confirmed fees (WAL-15) and
-// market-value updates (WAL-18). The transactions epic (TXN) adds expenses, income and
-// transfers, with categories and tags, in a later schema version.
-export const transactionKinds = [
-  'openingBalance',
-  'adjustment',
-  'interest',
-  'fee',
-  'valuation',
-] as const
-export type TransactionKind = (typeof transactionKinds)[number]
-
-export const transactionRecord = z.object({
-  kind: z.enum(transactionKinds),
-  walletId: recordId,
-  date: calendarDate,
-  // Integer minor units in the wallet's currency: positive adds to the balance,
-  // negative takes from it (WAL-06). Never a float; z.int() keeps it a safe integer.
-  amount: z.int(),
-  note: z.string().max(500).optional(),
-})
-export type TransactionRecord = z.infer<typeof transactionRecord>
 
 export const exchangeRateRecordType = 'exchangeRate'
 

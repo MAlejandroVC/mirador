@@ -1,5 +1,6 @@
 import { convert, type ExchangeRate, rateInUse, type RateInUse } from './exchange.ts'
 import { fractionDigits } from './money.ts'
+import { changeTo, type Transaction, type TransactionFields } from './transactions.ts'
 import type { CreditSettings, Fee, InterestSettings, LoanSettings } from './wallet-features.ts'
 
 // Epic 1: wallets, their balances, net worth and net debt. Pure functions over the
@@ -32,25 +33,6 @@ export interface WalletFields {
 }
 
 export interface Wallet extends WalletFields {
-  id: string
-}
-
-/**
- * The kinds the wallets epic makes: the opening balance (WAL-05), adjustments (WAL-07),
- * posted interest (WAL-14), confirmed fees (WAL-15) and market-value updates (WAL-18).
- */
-export type TransactionKind = 'openingBalance' | 'adjustment' | 'interest' | 'fee' | 'valuation'
-
-export interface TransactionFields {
-  kind: TransactionKind
-  walletId: string
-  date: string
-  /** Minor units in the wallet's currency; negative takes from the balance. */
-  amount: number
-  note?: string
-}
-
-export interface Transaction extends TransactionFields {
   id: string
 }
 
@@ -114,12 +96,13 @@ export function toggleFeature<W extends WalletFields>(wallet: W, feature: Wallet
   }
 }
 
-/** WAL-06: a wallet's balance is the sum of all its transactions, opening balance included. */
+/**
+ * WAL-06: a wallet's balance is the sum of all its transactions, opening balance
+ * included; a transfer counts in both of its wallets (TXN-03).
+ */
 export function walletBalance(walletId: string, transactions: readonly Transaction[]): number {
   let balance = 0
-  for (const transaction of transactions) {
-    if (transaction.walletId === walletId) balance += transaction.amount
-  }
+  for (const transaction of transactions) balance += changeTo(transaction, walletId)
   return balance
 }
 
@@ -129,21 +112,38 @@ export function walletBalances(
   transactions: readonly Transaction[],
 ): Map<string, number> {
   const balances = new Map(wallets.map((wallet) => [wallet.id, 0]))
+  const add = (walletId: string, amount: number) => {
+    const balance = balances.get(walletId)
+    if (balance !== undefined) balances.set(walletId, balance + amount)
+  }
   for (const transaction of transactions) {
-    const balance = balances.get(transaction.walletId)
-    if (balance !== undefined) balances.set(transaction.walletId, balance + transaction.amount)
+    add(transaction.walletId, transaction.amount)
+    // TXN-03, TXN-04: what a transfer took from one wallet arrives in the other, which
+    // pays down what is owed when that is a credit card or a loan.
+    if (transaction.toWalletId !== undefined && transaction.toAmount !== undefined)
+      add(transaction.toWalletId, transaction.toAmount)
   }
   return balances
 }
 
-/** A wallet's transactions, newest first; on the same date, the last one made first. */
-export function walletTransactions(
+/**
+ * A wallet's transactions, transfers into it included, newest first; on the same date,
+ * the last one made first.
+ */
+export function walletTransactions<T extends Transaction>(
   walletId: string,
-  transactions: readonly Transaction[],
-): Transaction[] {
-  return transactions
-    .filter((transaction) => transaction.walletId === walletId)
-    .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))
+  transactions: readonly T[],
+): T[] {
+  return newestFirst(
+    transactions.filter(
+      (transaction) => transaction.walletId === walletId || transaction.toWalletId === walletId,
+    ),
+  )
+}
+
+/** Transactions newest first; on the same date, the last one made first (UUIDv7 ids). */
+export function newestFirst<T extends Transaction>(transactions: readonly T[]): T[] {
+  return [...transactions].sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))
 }
 
 /** WAL-05: the opening balance, as an ordinary transaction dated `today`. */

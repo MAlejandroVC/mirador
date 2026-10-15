@@ -1,7 +1,7 @@
 import { CaretRightIcon } from './icons'
 import { Link, type LinkProps } from '@tanstack/react-router'
-import { type ReactNode, useState } from 'react'
-import { isNew } from '../../lib/motion'
+import type { ReactNode } from 'react'
+import { rowClass, useRowClass } from './row'
 
 // DL-LAY-05, DL-CMP-07: rows sit in an inset list, a `surface` card with 16 px corners,
 // introduced by an optional section label, with an optional value at its right, such
@@ -33,10 +33,7 @@ export function List({
   )
 }
 
-const rowClass =
-  'flex min-h-[3.25rem] w-full items-center gap-3 pl-4 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand'
-
-function RowBody({
+export function RowBody({
   leading,
   title,
   subtitle,
@@ -63,16 +60,7 @@ function RowBody({
   )
 }
 
-/**
- * DL-MOT-02: a row for something that was just saved opens into its list with a
- * highlight that fades. `id` is what the save marked (lib/motion markNew).
- */
-function useRowClass(id: string | undefined) {
-  const [fresh] = useState(() => id !== undefined && isNew(id))
-  return fresh ? 'group row-new' : 'group'
-}
-
-interface RowContent {
+export interface RowContent {
   leading?: ReactNode
   title: ReactNode
   subtitle?: ReactNode

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { Transaction } from './transactions.ts'
 import {
   applyPreset,
   balanceAdjustment,
@@ -12,7 +13,6 @@ import {
   presetDefaults,
   sortWallets,
   toggleFeature,
-  type Transaction,
   type Wallet,
   walletBalance,
   walletBalances,

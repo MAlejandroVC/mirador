@@ -31,6 +31,7 @@ import {
 } from './feature-cards'
 import { FeatureSheets } from './feature-sheets'
 import { RateSheet } from './rate-sheet'
+import { useTransactionEditor } from '../transactions/use-transaction-editor'
 import { TransactionRows } from './transaction-list'
 import {
   type LedgerWallet,
@@ -40,7 +41,6 @@ import {
   useSaveRecords,
   walletBody,
 } from './use-ledger'
-import { useTransactionEditor } from './use-transaction-editor'
 import { walletIconComponents } from './wallet-look'
 import { WalletSheet } from './wallet-sheet'
 
@@ -70,7 +70,7 @@ export function WalletScreen({ walletId }: { walletId: string }) {
     },
   }
   const wallet = ledger?.wallets.find((candidate) => candidate.id === walletId)
-  const editor = useTransactionEditor(wallet, defaultCurrency)
+  const editor = useTransactionEditor()
 
   if (!ledger) return null
   if (!wallet)
@@ -189,12 +189,14 @@ export function WalletScreen({ walletId }: { walletId: string }) {
         <TransactionRows
           label={t('wallets.transactions.title')}
           wallet={wallet}
+          wallets={ledger.wallets}
           transactions={transactions}
           defaultCurrency={defaultCurrency}
           limit={wide ? 10 : 5}
           onOpen={(transaction) => {
             editor.open(transaction)
           }}
+          onDelete={editor.remove}
         />
       ) : (
         <EmptyState icon={FlagBannerIcon} title={t('wallets.transactions.emptyTitle')}>

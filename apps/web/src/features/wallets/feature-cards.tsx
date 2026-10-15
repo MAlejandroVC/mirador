@@ -1,4 +1,5 @@
 import {
+  changeTo,
   creditSummary,
   dueFees,
   type Fee,
@@ -317,7 +318,10 @@ export function ValuationCard({
 }: Pick<CardProps, 'wallet' | 'defaultCurrency'> & { transactions: readonly Transaction[] }) {
   const { t } = useTranslation()
   const money = useMoney(defaultCurrency)
-  const summary = valuationSummary(transactions)
+  // A transfer in counts as money put in: what arrived in this wallet (TXN-03).
+  const summary = valuationSummary(
+    transactions.map((tx) => ({ kind: tx.kind, amount: changeTo(tx, wallet.id) })),
+  )
   const contributed = { minor: summary.contributed, currency: wallet.currency }
   const gain = { minor: summary.gain, currency: wallet.currency }
   return (

@@ -979,7 +979,7 @@
   var lang = 'en'
   var LOC = { en: 'en-US', es: 'es-MX' }
   var S = {
-    activity: ['Activity', 'Movimientos'],
+    activity: ['Transactions', 'Movimientos'],
     wallets: ['Wallets', 'Carteras'],
     home: ['Home', 'Inicio'],
     budget: ['Budget', 'Presupuesto'],
@@ -1041,7 +1041,7 @@
       'Agrega tu primera cartera y verás todo lo que tienes en un solo lugar.',
     ],
     addw: ['Add a wallet', 'Agregar cartera'],
-    h_act: ['Activity', 'Activity'],
+    h_act: ['Transactions', 'Transactions'],
     h_wal: ['Wallets, offline', 'Wallets, offline'],
     h_sheet: ['Quick-add with a field error', 'Quick-add with a field error'],
     h_del: ['Deleting a wallet', 'Deleting a wallet'],
@@ -1236,9 +1236,9 @@
   function render() {
     document.documentElement.lang = lang
     var g = ''
-    // 1. Activity
+    // 1. Transactions
     g += phone(
-      'Activity',
+      'Transactions',
       'NUM-03, NUM-06, NUM-08, CMP-13',
       '<div class="screen"><div class="large-title">' +
         t('activity') +
