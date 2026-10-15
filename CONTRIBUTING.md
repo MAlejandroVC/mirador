@@ -330,6 +330,7 @@ Using Claude Code, Copilot or similar tools is welcome; the author of the pull r
 - The repo's [CLAUDE.md](CLAUDE.md) (and [AGENTS.md](AGENTS.md) for other tools) gives assistants the layout, the code rules and the commands, so their output follows this guide.
 - Review and run what an assistant writes before you open the PR; say in the PR description if a large part was generated.
 - Never put an assistant's artifacts, or links to them, in code, docs, commits or pull requests. They live outside the repository and can change or disappear. Turn anything worth keeping into a file here (an HTML mockup becomes a page in `docs/`) and show that file in the screenshots.
+- Never link to an assistant's conversations, project threads or sessions in code, docs, commits or pull requests, including attribution lines and commit trailers (such as `Claude-Session:`). They are private to whoever started them and mean nothing to other contributors. The `Co-authored-by:` trailer and a sentence in the pull request are enough credit.
 - Never paste real financial data, statements or user files into an assistant. Use the fixtures.
 - The app itself never uses remote AI (NFR-05). An assistant helping write code is fine; code that calls an AI service is not.
 
