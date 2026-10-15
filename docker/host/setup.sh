@@ -18,10 +18,10 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 
-echo "Installing Docker, age and rclone"
+echo "Installing Docker, age, rclone and jq"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
-apt-get install -y -qq docker.io docker-compose-v2 age rclone curl unattended-upgrades >/dev/null
+apt-get install -y -qq docker.io docker-compose-v2 age rclone curl jq unattended-upgrades >/dev/null
 systemctl enable --now docker
 
 # Oracle's Ubuntu images reject every new connection except SSH in iptables, on top of the
@@ -39,13 +39,16 @@ if command -v netfilter-persistent >/dev/null; then
 fi
 
 echo "Installing the Mirador files in $dir"
-mkdir -p "$dir/backups"
+mkdir -p "$dir/backups" "$dir/previews"
 chmod 700 "$dir/backups"
-for file in compose.yml Caddyfile backup.sh; do
+# Caddy reads the preview sites from here; previews.sh rewrites it.
+[ -f "$dir/previews/sites.caddy" ] || echo '# Written by previews.sh.' >"$dir/previews/sites.caddy"
+for file in compose.yml Caddyfile backup.sh preview-pr.yml previews.sh; do
   curl -fsSL "$base/$file" -o "$dir/$file"
 done
-chmod 755 "$dir/backup.sh"
-for unit in mirador-update.service mirador-update.timer mirador-backup.service mirador-backup.timer; do
+chmod 755 "$dir/backup.sh" "$dir/previews.sh"
+for unit in mirador-update.service mirador-update.timer mirador-backup.service mirador-backup.timer \
+  mirador-previews.service mirador-previews.timer; do
   curl -fsSL "$base/$unit" -o "/etc/systemd/system/$unit"
 done
 
@@ -77,7 +80,7 @@ fi
 
 echo "Starting Mirador"
 systemctl daemon-reload
-systemctl enable --now mirador-update.timer mirador-backup.timer
+systemctl enable --now mirador-update.timer mirador-backup.timer mirador-previews.timer
 systemctl start mirador-update.service
 
 set -a
@@ -86,6 +89,7 @@ set -a
 set +a
 echo
 echo "Done. Mirador: https://$MIRADOR_DOMAIN  Preview: https://$PREVIEW_DOMAIN"
+echo "Pull request previews: https://pr-<number>.$PREVIEW_DOMAIN (needs a DNS record for *.$PREVIEW_DOMAIN)"
 echo "The first visit can take a minute while Caddy gets the certificates."
 if [ -z "${BACKUP_AGE_RECIPIENT:-}" ]; then
   echo "Backups are not encrypted yet: set BACKUP_AGE_RECIPIENT in $dir/.env."

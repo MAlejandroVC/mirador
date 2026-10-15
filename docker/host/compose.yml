@@ -30,8 +30,13 @@ services:
       ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Sites for the pull request previews, written by previews.sh.
+      - ./previews:/etc/caddy/previews:ro
       - caddy-data:/data
       - caddy-config:/config
+    networks:
+      - default
+      - previews
 
   # The real instance follows releases only (`latest` by default).
   app:
@@ -74,6 +79,12 @@ services:
       POSTGRES_PASSWORD: ${PREVIEW_POSTGRES_PASSWORD:?Set PREVIEW_POSTGRES_PASSWORD in .env}
     volumes:
       - preview-db-data:/var/lib/postgresql
+
+networks:
+  # Caddy and the pull request previews (preview-pr.yml) only, so a pull request's code
+  # can't reach the databases on the default network.
+  previews:
+    name: mirador_previews
 
 volumes:
   caddy-data:

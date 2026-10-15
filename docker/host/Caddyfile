@@ -1,4 +1,5 @@
-# HTTPS for both instances. Caddy gets and renews the certificates on its own.
+# HTTPS for both instances and the pull request previews. Caddy gets and renews the
+# certificates on its own.
 # The browser's encryption only works on HTTPS pages (NFR-09).
 {
 	email {$ACME_EMAIL}
@@ -20,8 +21,15 @@
 	reverse_proxy app:3000
 }
 
-{$PREVIEW_DOMAIN} {
+# The preview instance and each pull request's preview (see previews.sh).
+(preview) {
 	import common
 	header X-Robots-Tag "noindex, nofollow"
+}
+
+{$PREVIEW_DOMAIN} {
+	import preview
 	reverse_proxy preview-app:3000
 }
+
+import /etc/caddy/previews/*.caddy

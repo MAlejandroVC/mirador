@@ -4,6 +4,7 @@ This sets up Mirador on an Oracle Cloud "Always Free" ARM server, at no cost, wi
 
 - the **real instance** at your domain, updated when a release is published;
 - a **preview instance** on a second domain, updated with every merge to `main`, for throwaway data only;
+- a **preview of each open pull request** under that domain, to try a change on your phone before it is merged;
 - HTTPS from Let's Encrypt, renewed on its own;
 - a nightly **encrypted backup**, optionally copied to a second provider.
 
@@ -57,9 +58,9 @@ The setup script opens the same ports in the server's own firewall.
 
 ## 4. Point the domains at it
 
-At your DNS provider, add two `A` records to the public IP, for example `mirador.example.com` and `preview.example.com`.
+At your DNS provider, add three `A` records to the public IP, for example `mirador.example.com`, `preview.example.com` and `*.preview.example.com` (the pull request previews, such as `pr-293.preview.example.com`).
 
-If the domain is on Cloudflare, set both records to **DNS only** (grey cloud). Proxying through Cloudflare decrypts the traffic on Cloudflare's servers, where the web app could be changed on its way to you and receipts sent for reading could be seen.
+If the domain is on Cloudflare, set all three records to **DNS only** (grey cloud). Proxying through Cloudflare decrypts the traffic on Cloudflare's servers, where the web app could be changed on its way to you and receipts sent for reading could be seen.
 
 ## 5. Install Mirador
 
@@ -108,6 +109,24 @@ Every night at 03:30 (server time) the real instance's database is dumped to `/o
 
 4. Test it: `sudo systemctl start mirador-backup && journalctl -u mirador-backup -n 20`.
 
+## Previews of pull requests
+
+Every open pull request from a branch of the repository gets its own copy of Mirador at `pr-<number>.<preview domain>`, such as `https://pr-293.preview.example.com`, so you can use a change on your phone while it is being built:
+
+1. Each push to the pull request builds an image tagged `pr-<number>` (`.github/workflows/pr-preview.yml`, a few minutes).
+2. Every 2 minutes the server checks which pull requests are open (`previews.sh`, run by `mirador-previews.timer`). It starts a preview for a new one, updates it when its image changes, and deletes it, data included, when the pull request is merged or closed.
+3. A new preview starts with a copy of the preview instance's database, so the account you made on the preview signs in with the same username and password. Passkeys are tied to the address, so use the password there.
+
+Previews are like the preview instance: throwaway data only. Each has its own database, and only Caddy can reach it, never the real instance's database. Pull requests from forks, Dependabot and the release PR get none. At most 4 run at once, for the most recently updated pull requests; set `PREVIEW_MAX` in `/opt/mirador/.env` to change that (each uses about 300 MB of memory).
+
+To get the preview's link as a comment on each pull request, add a repository variable on GitHub (Settings → Secrets and variables → Actions → Variables) named `PREVIEW_DOMAIN`, with the preview domain, such as `preview.example.com`.
+
+If a preview starts empty (the preview instance had no data, or copying it failed), create its first account with the setup code from its log:
+
+```bash
+sudo docker logs mirador-pr-293-app-1 2>&1 | grep "setup code" | tail -1
+```
+
 ## Day to day
 
 | Task | Command (on the server) |
@@ -117,6 +136,8 @@ Every night at 03:30 (server time) the real instance's database is dumped to `/o
 | Invite someone | Sign in with the first account, then **Invite someone** on the home screen |
 | Update now instead of waiting up to 15 minutes | `sudo systemctl start mirador-update` |
 | When updates and backups run next | `systemctl list-timers 'mirador-*'` |
+| Pull request previews running | `sudo docker compose ls` (projects named `mirador-pr-<number>`) |
+| Check for previews now | `sudo systemctl start mirador-previews && journalctl -u mirador-previews -n 20` |
 | Update these server files | Run `setup.sh` again; it keeps `.env` and the data |
 
 Ubuntu installs its own security updates every night.
