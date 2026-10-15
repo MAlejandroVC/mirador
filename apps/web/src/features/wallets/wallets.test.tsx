@@ -249,6 +249,30 @@ describe('wallets', () => {
     })
   })
 
+  it('WAL-03, WAL-19, WAL-23: editing sets active, liquid, icon and color', async () => {
+    const user = userEvent.setup()
+    const cash = wallet('Cash')
+    const server: FakeServer = { signedIn: 'ana', records: [cash] }
+    stubServer(server)
+    renderApp(`/wallets/${cash.id}`, unlockedVault(server))
+
+    await user.click(await screen.findByRole('button', { name: 'Edit' }))
+    await user.click(screen.getByRole('radio', { name: 'Car' }))
+    await user.click(screen.getByRole('radio', { name: 'Berry' }))
+    await user.click(screen.getByRole('checkbox', { name: /Available now/ }))
+    await user.click(screen.getByRole('checkbox', { name: /Active/ }))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => {
+      expect(saved(server, 'wallet')[0]?.data).toMatchObject({
+        icon: 'car',
+        color: 'berry',
+        features: ['liquid'],
+        active: false,
+      })
+    })
+  })
+
   it('WAL-08: deleting a wallet with transactions offers inactive and names the cost', async () => {
     const user = userEvent.setup()
     const card = wallet('Nu', { preset: 'creditCard' })

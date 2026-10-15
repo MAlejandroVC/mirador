@@ -205,7 +205,7 @@ describe('wallets', () => {
     expect([worth.netWorth, worth.counted, worth.otherCurrency]).toEqual([100, 1, []])
   })
 
-  it('SYS-04: wallets in another currency are listed apart until rates exist', () => {
+  it('WAL-20: wallets in another currency are listed apart until exchange rates exist', () => {
     const dollars = wallet('b', 'savings', { currency: 'USD' })
     const worth = netWorth(
       [wallet('a', 'cash'), dollars],
