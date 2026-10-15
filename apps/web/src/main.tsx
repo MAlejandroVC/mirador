@@ -5,6 +5,8 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import { applyAppearance, readAppearance } from './lib/appearance'
 import './lib/i18n'
+// SYS-20: listens for the browser's install offer, which comes once and early.
+import './features/install/install'
 import { startVault } from './lib/vault'
 import { createAppRouter } from './router'
 

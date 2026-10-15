@@ -8,12 +8,16 @@ export function Sheet({
   open,
   title,
   cancelLabel,
+  doneLabel,
   onClose,
   children,
 }: {
   open: boolean
   title: string
-  cancelLabel: string
+  /** Cancel at the top left, for a sheet that creates or edits something. */
+  cancelLabel?: string
+  /** Done at the top right instead, for a settings-like or informational sheet. */
+  doneLabel?: string
   onClose: () => void
   children: ReactNode
 }) {
@@ -40,17 +44,32 @@ export function Sheet({
       <div className="flex flex-col pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <span aria-hidden className="mx-auto mt-1.5 h-[5px] w-9 rounded-full bg-fill md:hidden" />
         <header className="grid grid-cols-[1fr_auto_1fr] items-center px-2 pt-1">
-          <button
-            type="button"
-            onClick={onClose}
-            className="min-h-11 justify-self-start rounded-xl px-2 text-[1.0625rem] text-brand focus-visible:outline-2 focus-visible:outline-brand"
-          >
-            {cancelLabel}
-          </button>
-          <h2 id="sheet-title" className="text-[1.0625rem] font-semibold">
+          {cancelLabel ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="min-h-11 justify-self-start rounded-xl px-2 text-[1.0625rem] text-brand focus-visible:outline-2 focus-visible:outline-brand"
+            >
+              {cancelLabel}
+            </button>
+          ) : (
+            <span />
+          )}
+          <h2 id="sheet-title" className="text-center text-[1.0625rem] font-semibold">
             {title}
           </h2>
-          <span />
+          {doneLabel ? (
+            // DL-CMP-08: settings-like sheets put Done at the top right.
+            <button
+              type="button"
+              onClick={onClose}
+              className="min-h-11 justify-self-end rounded-xl px-2 text-[1.0625rem] font-semibold text-brand focus-visible:outline-2 focus-visible:outline-brand"
+            >
+              {doneLabel}
+            </button>
+          ) : (
+            <span />
+          )}
         </header>
         <div className="flex flex-col gap-3 px-4 pt-3">{children}</div>
       </div>
