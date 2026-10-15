@@ -62,6 +62,17 @@
       },
       "palette": "Paleta",
       "categoryNote": "Los colores de tus categorías son los mismos en todas las paletas."
+    },
+    "language": {
+      "title": "Idioma",
+      "description": "Elige el idioma de Mirador en este dispositivo.",
+      "automatic": "Automático",
+      "device": "Sigue a tu dispositivo: {{language}}",
+      "names": {
+        "es": "Español",
+        "en": "Inglés"
+      },
+      "deviceNote": "Este ajuste es solo para este dispositivo."
     }
   },
   "profile": {

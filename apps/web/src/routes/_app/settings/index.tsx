@@ -7,6 +7,7 @@ import {
   PaletteIcon,
   ShieldCheckIcon,
   SignOutIcon,
+  TranslateIcon,
   UserPlusIcon,
 } from '../../../components/ui/icons'
 import { List, ListButtonRow, ListLinkRow } from '../../../components/ui/list'
@@ -14,6 +15,7 @@ import { Page } from '../../../components/ui/page'
 import { ProfilePicture, useProfilePicture } from '../../../features/profile'
 import { sessionQuery, useVault } from '../../../features/security'
 import { api } from '../../../lib/api'
+import { nativeNames, readLanguageChoice } from '../../../lib/language'
 import { AppIcon } from '../../../components/ui/app-icon'
 
 export const Route = createFileRoute('/_app/settings/')({
@@ -21,7 +23,7 @@ export const Route = createFileRoute('/_app/settings/')({
 })
 
 // Epic 10: Settings opens with the account, then one row per area: Appearance
-// (SYS-16, SYS-17), Password and security (SEC) and, for the person who runs the
+// (SYS-16, SYS-17), Language (SYS-19), Password and security (SEC) and, for the person who runs the
 // server, Invites (SYS-13). Areas such as currencies, budget defaults, categories and
 // data join as they are built. Lock and Sign out close the list, as in iOS.
 function Settings() {
@@ -52,6 +54,7 @@ function Settings() {
       ? t('health.ok')
       : t('health.unreachable')
   const username = session?.user.username ?? ''
+  const language = readLanguageChoice()
 
   return (
     <Page
@@ -79,6 +82,16 @@ function Settings() {
           to="/settings/appearance"
           leading={<IconTile icon={PaletteIcon} />}
           title={t('settings.appearance.title')}
+        />
+        <ListLinkRow
+          to="/settings/language"
+          leading={<IconTile icon={TranslateIcon} />}
+          title={t('settings.language.title')}
+          trailing={
+            <span className="text-[0.9375rem] text-text-muted">
+              {language === 'automatic' ? t('settings.language.automatic') : nativeNames[language]}
+            </span>
+          }
         />
         <ListLinkRow
           to="/settings/security"
