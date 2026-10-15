@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { AppIcon } from '../../../components/ui/app-icon'
 
 // The frame of the sign-in, sign-up and unlock screens. Mirador introduces itself at the
 // top with its icon, name and slogan (DL-VOC-07); the form sits in a card (DL-LAY-05),
@@ -17,7 +18,7 @@ export function AuthLayout({
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-5 px-4 pt-[max(2.5rem,env(safe-area-inset-top))] pb-10 sm:py-16">
       <div className="flex items-center gap-3">
-        <img src="/favicon.svg" alt="" className="size-12 rounded-xl" />
+        <AppIcon className="size-12 rounded-xl" />
         <div className="flex flex-col">
           <p className="text-[1.0625rem] font-semibold text-text">{t('app.name')}</p>
           <p className="text-[0.8125rem] text-text-muted">{t('app.tagline')}</p>

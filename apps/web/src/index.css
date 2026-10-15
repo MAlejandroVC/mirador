@@ -610,3 +610,23 @@ body {
     }
   }
 }
+
+/* DL-ICO-05: the dark app icon in dark mode, whether it comes from the device or from
+   Settings > Appearance (SYS-16). */
+.app-icon-dark {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .app-icon-light {
+    display: none;
+  }
+  :root:not([data-theme='light']) .app-icon-dark {
+    display: block;
+  }
+}
+:root[data-theme='dark'] .app-icon-light {
+  display: none;
+}
+:root[data-theme='dark'] .app-icon-dark {
+  display: block;
+}

@@ -14,6 +14,7 @@ import { Page } from '../../../components/ui/page'
 import { ProfilePicture, useProfilePicture } from '../../../features/profile'
 import { sessionQuery, useVault } from '../../../features/security'
 import { api } from '../../../lib/api'
+import { AppIcon } from '../../../components/ui/app-icon'
 
 export const Route = createFileRoute('/_app/settings/')({
   component: Settings,
@@ -111,7 +112,7 @@ function Settings() {
       </List>
       {/* DL-VOC-07: where Mirador introduces itself, the slogan sits under its name. */}
       <footer className="flex flex-col items-center gap-1 px-4 pt-4 text-center">
-        <img src="/favicon.svg" alt="" className="mb-1 size-12 rounded-xl" />
+        <AppIcon className="mb-1 size-12 rounded-xl" />
         <p className="text-[0.9375rem] font-semibold text-text">{t('app.name')}</p>
         <p className="text-[0.8125rem] text-text-muted">{t('app.tagline')}</p>
         <p className="pt-2 text-[0.8125rem] text-text-muted">{t('settings.encrypted')}</p>

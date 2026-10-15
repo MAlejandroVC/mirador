@@ -3,6 +3,7 @@ import { Link, useMatchRoute } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { useQuickAdd } from '../../features/quick-add'
 import { places, scrollToTop } from './places'
+import { AppIcon } from '../ui/app-icon'
 
 // DL-LAY-06: from 1024 px a sidebar on the left replaces the tab bar, with the same
 // places in the same order and quick-add at its top as a filled New button.
@@ -15,7 +16,7 @@ export function Sidebar() {
   return (
     <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col gap-4 border-r-[0.5px] border-separator bg-surface px-3 pt-5 pb-4 lg:flex">
       <div className="flex items-center gap-2.5 px-2">
-        <img src="/favicon.svg" alt="" className="size-8 rounded-lg" />
+        <AppIcon className="size-8 rounded-lg" />
         <span className="text-[1.0625rem] font-semibold text-text">{t('app.name')}</span>
       </div>
       {/* DL-CMP-05: the screen's one filled button. */}

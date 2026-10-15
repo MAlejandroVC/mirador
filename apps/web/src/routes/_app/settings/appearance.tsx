@@ -101,7 +101,7 @@ function PaletteOption({
       role="radio"
       aria-checked={checked}
       onClick={onChoose}
-      className="flex flex-col items-center gap-1.5 rounded-[0.875rem] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-brand"
+      className="flex flex-col items-stretch gap-1.5 text-left rounded-[0.875rem] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-brand"
     >
       <span
         aria-hidden
@@ -143,7 +143,7 @@ function PaletteOption({
           className="absolute right-1.5 bottom-1.5 size-3.5 rounded-full"
         />
       </span>
-      <span className="flex items-center gap-1.5 text-[0.8125rem] font-medium text-text">
+      <span className="flex items-center gap-1.5 px-0.5 text-[0.8125rem] font-medium text-text">
         <span
           className={`grid size-[1.125rem] place-items-center rounded-full border-[1.5px] ${
             checked ? 'border-brand bg-brand text-on-brand' : 'border-text-faint'
