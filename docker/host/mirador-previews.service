@@ -1,0 +1,10 @@
+[Unit]
+Description=Start and remove Mirador's pull request previews
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/mirador
+ExecStart=/opt/mirador/previews.sh
