@@ -8,6 +8,7 @@ import { accountRoutes } from './routes/accounts.ts'
 import { credentialRoutes } from './routes/credentials.ts'
 import { inviteRoutes } from './routes/invites.ts'
 import { passkeyRoutes } from './routes/passkeys.ts'
+import { peopleRoutes } from './routes/people.ts'
 import { recordRoutes } from './routes/records.ts'
 import { recoveryRoutes } from './routes/recovery.ts'
 import { sessionRoutes } from './routes/session.ts'
@@ -63,6 +64,7 @@ export function createApp({
   api.route('/', recoveryRoutes({ db, sessions, limits }))
   api.route('/', credentialRoutes({ db, sessions, limits }))
   api.route('/', inviteRoutes({ db, sessions }))
+  api.route('/', peopleRoutes({ db, sessions }))
   api.route('/', passkeyRoutes({ db, sessions, limits }))
 
   const app = new Hono()

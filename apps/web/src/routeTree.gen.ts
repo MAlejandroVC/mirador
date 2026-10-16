@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as RecoverRouteImport } from './routes/recover'
+import { Route as RemovedRouteImport } from './routes/removed'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as UnlockRouteImport } from './routes/unlock'
@@ -21,8 +22,8 @@ import { Route as AppSettingsAccountRouteImport } from './routes/_app/settings/a
 import { Route as AppSettingsAppearanceRouteImport } from './routes/_app/settings/appearance'
 import { Route as AppSettingsCategoriesRouteImport } from './routes/_app/settings/categories'
 import { Route as AppSettingsCurrencyRouteImport } from './routes/_app/settings/currency'
-import { Route as AppSettingsInvitesRouteImport } from './routes/_app/settings/invites'
 import { Route as AppSettingsLanguageRouteImport } from './routes/_app/settings/language'
+import { Route as AppSettingsPeopleRouteImport } from './routes/_app/settings/people'
 import { Route as AppSettingsSecurityRouteImport } from './routes/_app/settings/security'
 import { Route as AppSettingsTagsRouteImport } from './routes/_app/settings/tags'
 import { Route as AppTransactionsIndexRouteImport } from './routes/_app/transactions/index'
@@ -38,6 +39,11 @@ const AppRoute = AppRouteImport.update({
 const RecoverRoute = RecoverRouteImport.update({
   id: '/recover',
   path: '/recover',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RemovedRoute = RemovedRouteImport.update({
+  id: '/removed',
+  path: '/removed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignInRoute = SignInRouteImport.update({
@@ -90,14 +96,14 @@ const AppSettingsCurrencyRoute = AppSettingsCurrencyRouteImport.update({
   path: '/settings/currency',
   getParentRoute: () => AppRoute,
 } as any)
-const AppSettingsInvitesRoute = AppSettingsInvitesRouteImport.update({
-  id: '/settings/invites',
-  path: '/settings/invites',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppSettingsLanguageRoute = AppSettingsLanguageRouteImport.update({
   id: '/settings/language',
   path: '/settings/language',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsPeopleRoute = AppSettingsPeopleRouteImport.update({
+  id: '/settings/people',
+  path: '/settings/people',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsSecurityRoute = AppSettingsSecurityRouteImport.update({
@@ -141,6 +147,7 @@ const AppWalletsWalletIdTransactionsRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/recover': typeof RecoverRoute
+  '/removed': typeof RemovedRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/unlock': typeof UnlockRoute
@@ -149,8 +156,8 @@ export interface FileRoutesByFullPath {
   '/settings/appearance': typeof AppSettingsAppearanceRoute
   '/settings/categories': typeof AppSettingsCategoriesRoute
   '/settings/currency': typeof AppSettingsCurrencyRoute
-  '/settings/invites': typeof AppSettingsInvitesRoute
   '/settings/language': typeof AppSettingsLanguageRoute
+  '/settings/people': typeof AppSettingsPeopleRoute
   '/settings/security': typeof AppSettingsSecurityRoute
   '/settings/tags': typeof AppSettingsTagsRoute
   '/transactions/recurring': typeof AppTransactionsRecurringRoute
@@ -162,6 +169,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/recover': typeof RecoverRoute
+  '/removed': typeof RemovedRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/unlock': typeof UnlockRoute
@@ -171,8 +179,8 @@ export interface FileRoutesByTo {
   '/settings/appearance': typeof AppSettingsAppearanceRoute
   '/settings/categories': typeof AppSettingsCategoriesRoute
   '/settings/currency': typeof AppSettingsCurrencyRoute
-  '/settings/invites': typeof AppSettingsInvitesRoute
   '/settings/language': typeof AppSettingsLanguageRoute
+  '/settings/people': typeof AppSettingsPeopleRoute
   '/settings/security': typeof AppSettingsSecurityRoute
   '/settings/tags': typeof AppSettingsTagsRoute
   '/transactions/recurring': typeof AppTransactionsRecurringRoute
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/recover': typeof RecoverRoute
+  '/removed': typeof RemovedRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/unlock': typeof UnlockRoute
@@ -195,8 +204,8 @@ export interface FileRoutesById {
   '/_app/settings/appearance': typeof AppSettingsAppearanceRoute
   '/_app/settings/categories': typeof AppSettingsCategoriesRoute
   '/_app/settings/currency': typeof AppSettingsCurrencyRoute
-  '/_app/settings/invites': typeof AppSettingsInvitesRoute
   '/_app/settings/language': typeof AppSettingsLanguageRoute
+  '/_app/settings/people': typeof AppSettingsPeopleRoute
   '/_app/settings/security': typeof AppSettingsSecurityRoute
   '/_app/settings/tags': typeof AppSettingsTagsRoute
   '/_app/transactions/recurring': typeof AppTransactionsRecurringRoute
@@ -211,6 +220,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/recover'
+    | '/removed'
     | '/sign-in'
     | '/sign-up'
     | '/unlock'
@@ -219,8 +229,8 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/categories'
     | '/settings/currency'
-    | '/settings/invites'
     | '/settings/language'
+    | '/settings/people'
     | '/settings/security'
     | '/settings/tags'
     | '/transactions/recurring'
@@ -232,6 +242,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/recover'
+    | '/removed'
     | '/sign-in'
     | '/sign-up'
     | '/unlock'
@@ -241,8 +252,8 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/categories'
     | '/settings/currency'
-    | '/settings/invites'
     | '/settings/language'
+    | '/settings/people'
     | '/settings/security'
     | '/settings/tags'
     | '/transactions/recurring'
@@ -255,6 +266,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/recover'
+    | '/removed'
     | '/sign-in'
     | '/sign-up'
     | '/unlock'
@@ -264,8 +276,8 @@ export interface FileRouteTypes {
     | '/_app/settings/appearance'
     | '/_app/settings/categories'
     | '/_app/settings/currency'
-    | '/_app/settings/invites'
     | '/_app/settings/language'
+    | '/_app/settings/people'
     | '/_app/settings/security'
     | '/_app/settings/tags'
     | '/_app/transactions/recurring'
@@ -279,6 +291,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   RecoverRoute: typeof RecoverRoute
+  RemovedRoute: typeof RemovedRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
   UnlockRoute: typeof UnlockRoute
@@ -298,6 +311,13 @@ declare module '@tanstack/react-router' {
       path: '/recover'
       fullPath: '/recover'
       preLoaderRoute: typeof RecoverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/removed': {
+      id: '/removed'
+      path: '/removed'
+      fullPath: '/removed'
+      preLoaderRoute: typeof RemovedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sign-in': {
@@ -370,18 +390,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsCurrencyRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/settings/invites': {
-      id: '/_app/settings/invites'
-      path: '/settings/invites'
-      fullPath: '/settings/invites'
-      preLoaderRoute: typeof AppSettingsInvitesRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/settings/language': {
       id: '/_app/settings/language'
       path: '/settings/language'
       fullPath: '/settings/language'
       preLoaderRoute: typeof AppSettingsLanguageRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings/people': {
+      id: '/_app/settings/people'
+      path: '/settings/people'
+      fullPath: '/settings/people'
+      preLoaderRoute: typeof AppSettingsPeopleRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings/security': {
@@ -443,8 +463,8 @@ interface AppRouteChildren {
   AppSettingsAppearanceRoute: typeof AppSettingsAppearanceRoute
   AppSettingsCategoriesRoute: typeof AppSettingsCategoriesRoute
   AppSettingsCurrencyRoute: typeof AppSettingsCurrencyRoute
-  AppSettingsInvitesRoute: typeof AppSettingsInvitesRoute
   AppSettingsLanguageRoute: typeof AppSettingsLanguageRoute
+  AppSettingsPeopleRoute: typeof AppSettingsPeopleRoute
   AppSettingsSecurityRoute: typeof AppSettingsSecurityRoute
   AppSettingsTagsRoute: typeof AppSettingsTagsRoute
   AppTransactionsRecurringRoute: typeof AppTransactionsRecurringRoute
@@ -462,8 +482,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsAppearanceRoute: AppSettingsAppearanceRoute,
   AppSettingsCategoriesRoute: AppSettingsCategoriesRoute,
   AppSettingsCurrencyRoute: AppSettingsCurrencyRoute,
-  AppSettingsInvitesRoute: AppSettingsInvitesRoute,
   AppSettingsLanguageRoute: AppSettingsLanguageRoute,
+  AppSettingsPeopleRoute: AppSettingsPeopleRoute,
   AppSettingsSecurityRoute: AppSettingsSecurityRoute,
   AppSettingsTagsRoute: AppSettingsTagsRoute,
   AppTransactionsRecurringRoute: AppTransactionsRecurringRoute,
@@ -479,6 +499,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   RecoverRoute: RecoverRoute,
+  RemovedRoute: RemovedRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
   UnlockRoute: UnlockRoute,

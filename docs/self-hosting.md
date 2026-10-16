@@ -48,7 +48,11 @@ That first account runs the server. On a server that already had accounts before
 
 ## Invite people
 
-After the first account, only invited people can sign up. Signed in with the first account, choose **Invite someone** on the home screen, then **Make an invite link**, and send the link to the person yourself (Mirador sends no email or messages). Each link works for one account, for 7 days. The app shows it only once, because the server keeps only a hash of it; if you lose it, withdraw the invite and make another. The same screen lists your invites and who used each one.
+After the first account, only invited people can sign up. Signed in with the first account, open **Settings > People** and choose **New invite link**. Pick the day it expires (a week by default, at most a year) and how many people can join with it (one by default, up to 100, or no limit), then send the link yourself (Mirador sends no email or messages). One link can go to a whole group. The app shows it only once, because the server keeps only a hash of it; if you lose it, end it and make another. Tap a link to see who joined with it or to end it early.
+
+## Remove someone
+
+In **Settings > People**, tap the person and choose **Remove**. They lose the app at once. For 30 days they can still sign in, but only to download their data (decrypted on their own device) and find out how to run their own Mirador; then the server deletes their account and all its data. Until then you can tap them again to restore their access. You can't remove yourself.
 
 To let anyone who can reach the app sign up instead, set `MIRADOR_OPEN_SIGNUP=true` in `.env` and run `docker compose up -d`.
 

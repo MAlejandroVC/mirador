@@ -1,4 +1,5 @@
-import { and, eq, gt, lt, ne } from 'drizzle-orm'
+import { removedAccessDays } from '@repo/api'
+import { and, eq, gt, isNull, lt, ne, or } from 'drizzle-orm'
 import type { Context } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import { createMiddleware } from 'hono/factory'
@@ -16,11 +17,16 @@ const refreshAfter = day
 // it. Browsers treat http://localhost as secure, so development still works.
 export const sessionCookie = '__Host-mirador_session'
 
+// SYS-23: how long a removed account can still sign in to download its data.
+export const removedAccess = removedAccessDays * day
+
 export interface SignedIn {
   userId: string
   username: string
   // SYS-13: runs this server and can invite people.
   operator: boolean
+  // SYS-22: when the operator removed this account, or null.
+  removedAt: Date | null
 }
 
 export type SessionVariables = SignedIn
@@ -67,11 +73,23 @@ export function sessionStore(db: Database, now: () => number = Date.now) {
           userId: schema.users.id,
           username: schema.users.username,
           operator: schema.users.operator,
+          removedAt: schema.users.removedAt,
           expiresAt: schema.sessions.expiresAt,
         })
         .from(schema.sessions)
         .innerJoin(schema.users, eq(schema.users.id, schema.sessions.userId))
-        .where(and(eq(schema.sessions.id, id), gt(schema.sessions.expiresAt, new Date(now()))))
+        .where(
+          and(
+            eq(schema.sessions.id, id),
+            gt(schema.sessions.expiresAt, new Date(now())),
+            // SYS-23: once a removed account's window ends it is as good as deleted,
+            // even before the hourly clean-up gets to it.
+            or(
+              isNull(schema.users.removedAt),
+              gt(schema.users.removedAt, new Date(now() - removedAccess)),
+            ),
+          ),
+        )
       if (!row) return null
       if (row.expiresAt.getTime() - now() < sessionLifetime - refreshAfter) {
         await db
@@ -80,7 +98,12 @@ export function sessionStore(db: Database, now: () => number = Date.now) {
           .where(eq(schema.sessions.id, id))
         writeCookie(c, token)
       }
-      return { userId: row.userId, username: row.username, operator: row.operator }
+      return {
+        userId: row.userId,
+        username: row.username,
+        operator: row.operator,
+        removedAt: row.removedAt,
+      }
     },
 
     // SEC-08: signs the user out everywhere but this device. Returns how many devices.
@@ -107,13 +130,17 @@ export type SessionStore = ReturnType<typeof sessionStore>
 
 // SEC-09: every route that touches a user's data runs behind this, and scopes its
 // queries to c.var.userId, never to an id from the request.
-export function requireUser(sessions: SessionStore) {
+// SYS-23: a removed account is refused everywhere unless a route says it may come in:
+// only what it needs to unlock and download its data, or to delete itself early.
+export function requireUser(sessions: SessionStore, { allowRemoved = false } = {}) {
   return createMiddleware<{ Variables: SessionVariables }>(async (c, next) => {
     const signedIn = await sessions.read(c)
     if (!signedIn) return c.json({ error: 'signed-out' }, 401)
+    if (signedIn.removedAt && !allowRemoved) return c.json({ error: 'removed' }, 403)
     c.set('userId', signedIn.userId)
     c.set('username', signedIn.username)
     c.set('operator', signedIn.operator)
+    c.set('removedAt', signedIn.removedAt)
     await next()
   })
 }

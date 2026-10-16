@@ -1,4 +1,5 @@
 import {
+  type AnyPgColumn,
   bigint,
   boolean,
   index,
@@ -28,6 +29,14 @@ export const users = pgTable('users', {
   recordRevision: bigint('record_revision', { mode: 'number' }).notNull().default(0),
   // SYS-13: whoever created the server's first account runs it and can invite people.
   operator: boolean('operator').notNull().default(false),
+  // SYS-22: the invite this account signed up with, so the operator sees who joined
+  // through each link.
+  inviteId: text('invite_id').references((): AnyPgColumn => invites.id, {
+    onDelete: 'set null',
+  }),
+  // SYS-22, SYS-23: when the operator removed this account. From then on it can only
+  // sign in to download its data, and it is deleted when the window ends.
+  removedAt: timestamp('removed_at', { withTimezone: true }),
   createdAt,
   updatedAt,
 })
@@ -66,8 +75,8 @@ export const keyMaterial = pgTable('key_material', {
   updatedAt,
 })
 
-// SYS-13: invites the operator made. The code is in the link the operator shares; the
-// table keeps only its hash, so a copy of it can't be used to sign up.
+// SYS-13, SYS-21: invite links the operator made. The code is in the link the operator
+// shares; the table keeps only its hash, so a copy of it can't be used to sign up.
 export const invites = pgTable(
   'invites',
   {
@@ -77,8 +86,11 @@ export const invites = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-    usedBy: text('used_by').references(() => users.id, { onDelete: 'set null' }),
-    usedAt: timestamp('used_at', { withTimezone: true }),
+    // How many people may sign up with it; null for no limit.
+    maxUses: integer('max_uses'),
+    useCount: integer('use_count').notNull().default(0),
+    // Set when the operator ends it before it expires.
+    endedAt: timestamp('ended_at', { withTimezone: true }),
     createdAt,
   },
   (table) => [index('invites_created_by_idx').on(table.createdBy)],

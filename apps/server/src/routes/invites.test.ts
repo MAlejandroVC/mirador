@@ -3,7 +3,6 @@ import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   createTestApp,
-  del,
   get,
   newAccount,
   post,
@@ -12,8 +11,20 @@ import {
   type TestServer,
 } from '../test-app.ts'
 
-async function invite(server: TestServer, cookie: string) {
-  const response = await post(server, '/api/invites', {}, { Cookie: cookie })
+const day = 24 * 60 * 60 * 1000
+const inDays = (days: number) => new Date(Date.now() + days * day).toISOString()
+
+async function invite(
+  server: TestServer,
+  cookie: string,
+  { days = 7, maxUses = 1 }: { days?: number; maxUses?: number | null } = {},
+) {
+  const response = await post(
+    server,
+    '/api/invites',
+    { expiresAt: inDays(days), maxUses },
+    { Cookie: cookie },
+  )
   expect(response.status).toBe(201)
   return newInviteResponse.parse(await response.json())
 }
@@ -24,6 +35,10 @@ async function listInvites(server: TestServer, cookie: string) {
 
 async function sessionOf(server: TestServer, cookie: string) {
   return sessionResponse.parse(await (await get(server, '/api/session', cookie)).json())
+}
+
+function end(server: TestServer, id: string, cookie: string) {
+  return post(server, `/api/invites/${id}/end`, {}, { Cookie: cookie })
 }
 
 describe('invites', () => {
@@ -41,10 +56,10 @@ describe('invites', () => {
 
     expect((await sessionOf(server, operator))?.user.operator).toBe(true)
     expect((await sessionOf(server, ben))?.user.operator).toBe(false)
-    expect(first.usedAt).toBeNull()
+    expect(first.useCount).toBe(0)
   })
 
-  it('SYS-13: an invite signs up one person, once, and is marked used', async () => {
+  it('SYS-13: a one-person invite signs up one person, once, and says who joined', async () => {
     const { invite: made, code } = await invite(server, operator)
 
     // Typed by hand: lower case, spaces for dashes.
@@ -54,17 +69,96 @@ describe('invites', () => {
     expect(again.status).toBe(403)
     expect(signUpError.parse(await again.json()).error).toBe('wrong-invite')
     const [listed] = await listInvites(server, operator)
-    expect(listed).toMatchObject({ id: made.id, usedBy: 'ben' })
-    expect(listed?.usedAt).not.toBeNull()
+    expect(listed).toMatchObject({ id: made.id, maxUses: 1, useCount: 1, joined: ['ben'] })
   })
 
-  it('SYS-13: a wrong, withdrawn or expired invite creates nothing', async () => {
-    const { invite: withdrawn, code: withdrawnCode } = await invite(server, operator)
+  it('SYS-21: one link signs up as many people as it allows, then stops', async () => {
+    const { invite: made, code } = await invite(server, operator, { maxUses: 3 })
+
+    for (const username of ['ben', 'cleo', 'dani']) {
+      await signUp(server, newAccount(username, { inviteCode: code }))
+    }
+    const fourth = await post(server, '/api/accounts', newAccount('eli', { inviteCode: code }))
+
+    expect(fourth.status).toBe(403)
+    const [listed] = await listInvites(server, operator)
+    expect(listed).toMatchObject({ id: made.id, useCount: 3, joined: ['ben', 'cleo', 'dani'] })
+  })
+
+  it('SYS-21: two people taking the last use at once get one account between them', async () => {
+    const { code } = await invite(server, operator, { maxUses: 1 })
+
+    const answers = await Promise.all(
+      ['ben', 'cleo'].map(
+        async (username) =>
+          await post(server, '/api/accounts', newAccount(username, { inviteCode: code })),
+      ),
+    )
+
+    expect(answers.map((answer) => answer.status).sort()).toEqual([201, 403])
+    const [listed] = await listInvites(server, operator)
+    expect(listed?.useCount).toBe(1)
+  })
+
+  it('SYS-21: a link with no limit works until it expires', async () => {
+    const { code } = await invite(server, operator, { maxUses: null })
+
+    for (const username of ['ben', 'cleo', 'dani', 'eli']) {
+      await signUp(server, newAccount(username, { inviteCode: code }))
+    }
+    await server.db.execute(sql`update invites set expires_at = now() - interval '1 minute'`)
+    const late = await post(server, '/api/accounts', newAccount('fer', { inviteCode: code }))
+
+    expect(late.status).toBe(403)
+    expect((await listInvites(server, operator))[0]).toMatchObject({ maxUses: null, useCount: 4 })
+  })
+
+  it('SYS-21: the operator chooses the expiry, within a year', async () => {
+    for (const expiresAt of [inDays(-1), inDays(366)]) {
+      const refused = await post(
+        server,
+        '/api/invites',
+        { expiresAt, maxUses: 5 },
+        { Cookie: operator },
+      )
+      expect(refused.status).toBe(400)
+    }
+    for (const maxUses of [0, 1001]) {
+      const refused = await post(
+        server,
+        '/api/invites',
+        { expiresAt: inDays(7), maxUses },
+        { Cookie: operator },
+      )
+      expect(refused.status).toBe(400)
+    }
+    const { invite: made } = await invite(server, operator, { days: 30, maxUses: 10 })
+    expect(Date.parse(made.expiresAt) - Date.now()).toBeGreaterThan(29 * day)
+  })
+
+  it('SYS-21: ending a link early stops it, and whoever joined keeps their account', async () => {
+    const { invite: made, code } = await invite(server, operator, { maxUses: 10 })
+    const ben = await signUp(server, newAccount('ben', { inviteCode: code }))
+
+    expect((await end(server, made.id, operator)).status).toBe(204)
+    const late = await post(server, '/api/accounts', newAccount('cleo', { inviteCode: code }))
+
+    expect(late.status).toBe(403)
+    expect((await sessionOf(server, ben))?.user.username).toBe('ben')
+    const [listed] = await listInvites(server, operator)
+    expect(listed?.endedAt).not.toBeNull()
+    expect(listed?.joined).toEqual(['ben'])
+    // Already ended.
+    expect((await end(server, made.id, operator)).status).toBe(404)
+  })
+
+  it('SYS-13: a wrong, ended or expired invite creates nothing', async () => {
+    const { invite: ended, code: endedCode } = await invite(server, operator)
     const { code: expiredCode } = await invite(server, operator)
-    expect((await del(server, `/api/invites/${withdrawn.id}`, operator)).status).toBe(204)
+    expect((await end(server, ended.id, operator)).status).toBe(204)
     await server.db.execute(sql`update invites set expires_at = now() - interval '1 minute'`)
 
-    for (const inviteCode of ['NOTA-REAL-INVI-TECO-DE00', withdrawnCode, expiredCode, undefined]) {
+    for (const inviteCode of ['NOTA-REAL-INVI-TECO-DE00', endedCode, expiredCode, undefined]) {
       const response = await post(
         server,
         '/api/accounts',
@@ -79,8 +173,8 @@ describe('invites', () => {
 
   it('SYS-06: on an invite-only server, only a waiting invite can check a username', async () => {
     const { code } = await invite(server, operator)
-    const { code: withdrawnCode, invite: withdrawn } = await invite(server, operator)
-    expect((await del(server, `/api/invites/${withdrawn.id}`, operator)).status).toBe(204)
+    const { code: endedCode, invite: ended } = await invite(server, operator)
+    expect((await end(server, ended.id, operator)).status).toBe(204)
     const check = (username: string, inviteCode?: string) =>
       post(server, '/api/accounts/username-check', {
         username,
@@ -88,7 +182,7 @@ describe('invites', () => {
       })
 
     // Otherwise anyone could find out who has an account here.
-    for (const inviteCode of [undefined, 'NOTA-REAL-INVI-TECO-DE00', withdrawnCode]) {
+    for (const inviteCode of [undefined, 'NOTA-REAL-INVI-TECO-DE00', endedCode]) {
       const refused = await check('ana', inviteCode)
       expect(refused.status).toBe(403)
       expect(await refused.json()).toEqual({ error: 'wrong-invite' })
@@ -109,17 +203,18 @@ describe('invites', () => {
     await signUp(server, newAccount('ben', { inviteCode: code }))
   })
 
-  it('SYS-13: only the operator makes, lists and withdraws invites', async () => {
+  it('SYS-13: only the operator makes, lists and ends invites', async () => {
     const { invite: made, code } = await invite(server, operator)
     const ben = await signUp(server, newAccount('ben', { inviteCode: code }))
     const { invite: open } = await invite(server, operator)
 
-    expect((await post(server, '/api/invites', {}, { Cookie: ben })).status).toBe(403)
+    expect(
+      (await post(server, '/api/invites', { expiresAt: inDays(7), maxUses: 1 }, { Cookie: ben }))
+        .status,
+    ).toBe(403)
     expect((await get(server, '/api/invites', ben)).status).toBe(403)
-    expect((await del(server, `/api/invites/${open.id}`, ben)).status).toBe(403)
+    expect((await end(server, open.id, ben)).status).toBe(403)
     expect((await get(server, '/api/invites')).status).toBe(401)
-    // A used invite stays as a record of who joined.
-    expect((await del(server, `/api/invites/${made.id}`, operator)).status).toBe(404)
     expect((await listInvites(server, operator)).map((listed) => listed.id)).toEqual([
       open.id,
       made.id,
@@ -127,7 +222,7 @@ describe('invites', () => {
   })
 
   it('SEC-04: the database never holds an invite code', async () => {
-    const { code } = await invite(server, operator)
+    const { code } = await invite(server, operator, { maxUses: null })
 
     const dump = JSON.stringify((await server.db.execute(sql`select * from invites`)).rows)
     expect(dump).not.toContain(code)

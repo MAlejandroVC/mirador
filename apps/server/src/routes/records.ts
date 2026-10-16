@@ -28,7 +28,10 @@ class Conflict extends Error {
 // and keeps each user to their own rows (SEC-09).
 export function recordRoutes({ db, sessions }: RecordRoutesOptions) {
   const routes = new Hono<{ Variables: SessionVariables }>()
-  routes.use('/records', requireUser(sessions))
+  // SYS-23: a removed account can still pull its records to download them, but can't
+  // change them.
+  routes.on('GET', '/records', requireUser(sessions, { allowRemoved: true }))
+  routes.on('POST', '/records', requireUser(sessions))
 
   routes.post('/records', jsonBody(pushRequest), async (c) => {
     const { changes } = c.req.valid('json')

@@ -14,6 +14,8 @@ import {
   healthResponse,
   invitesResponse,
   newInviteResponse,
+  type NewInviteRequest,
+  peopleResponse,
   keysResponse,
   passkey,
   type PasskeySignInRequest,
@@ -121,16 +123,25 @@ export function createApi(fetchFn: Fetch = (...args) => globalThis.fetch(...args
         await (await request('/api/session/others', { method: 'DELETE' })).json(),
       )
     },
-    // SYS-13: the operator's invites. The page calls these itself: nothing here is
-    // encrypted, so the worker isn't needed.
+    // SYS-13, SYS-21, SYS-22: the operator's invite links and the server's people. The
+    // page calls these itself: nothing here is encrypted, so the worker isn't needed.
     async invites() {
       return invitesResponse.parse(await (await request('/api/invites')).json()).invites
     },
-    async createInvite() {
-      return newInviteResponse.parse(await (await post('/api/invites', {})).json())
+    async createInvite(body: NewInviteRequest) {
+      return newInviteResponse.parse(await (await post('/api/invites', body)).json())
     },
-    async withdrawInvite(id: string) {
-      await request(`/api/invites/${encodeURIComponent(id)}`, { method: 'DELETE' })
+    async endInvite(id: string) {
+      await post(`/api/invites/${encodeURIComponent(id)}/end`, {})
+    },
+    async people() {
+      return peopleResponse.parse(await (await request('/api/people')).json()).people
+    },
+    async removePerson(id: string) {
+      await post(`/api/people/${encodeURIComponent(id)}/remove`, {})
+    },
+    async restorePerson(id: string) {
+      await post(`/api/people/${encodeURIComponent(id)}/restore`, {})
     },
     // SYS-06: passkeys. The PRF secret never goes in these; only the key it wrapped.
     async passkeyRegistration() {

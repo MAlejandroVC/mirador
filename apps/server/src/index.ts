@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
 import { createApp } from './app.ts'
+import { deleteRemovedAccounts } from './routes/people.ts'
 import { loadSecret, newCode } from './settings.ts'
 import { migrationsFolder, schema } from './store/db.ts'
 
@@ -32,6 +33,19 @@ const app = createApp({
   trustProxy: process.env.MIRADOR_TRUST_PROXY === 'true',
   ...(process.env.WEB_ROOT ? { webRoot: process.env.WEB_ROOT } : {}),
 })
+
+// SYS-23: removed accounts are deleted once their window ends: checked at start and
+// every hour after.
+async function cleanUp() {
+  try {
+    const { deleted, remaining } = await deleteRemovedAccounts(db)
+    if (deleted > 0 && remaining === 0) announceSetupCode()
+  } catch (error) {
+    console.error('Deleting removed accounts failed', error)
+  }
+}
+await cleanUp()
+setInterval(() => void cleanUp(), 60 * 60 * 1000).unref()
 
 const server = serve({ fetch: app.fetch, port }, (info) => {
   console.log(`Mirador server listening on http://localhost:${info.port}`)

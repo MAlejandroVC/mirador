@@ -1,6 +1,8 @@
 import {
   type CreationOptions,
   type Invite,
+  newInviteRequest,
+  type Person,
   type Passkey,
   type RecordBody,
   usernameCheckRequest,
@@ -117,9 +119,13 @@ export interface FakeServer {
   signedIn?: string | null
   signUpMode?: 'setup' | 'open' | 'invite'
   healthy?: boolean
-  // SYS-13: whether the signed-in user runs the server, and their invites.
+  // SYS-13: whether the signed-in user runs the server, their invite links and the
+  // people on the server (SYS-21, SYS-22).
   operator?: boolean
   invites?: Invite[]
+  people?: Person[]
+  // SYS-23: when the signed-in account is deleted, if the operator removed it.
+  removedUntil?: string
   // SYS-06: the signed-in user's passkeys, and usernames other people have.
   passkeys?: Passkey[]
   takenUsernames?: string[]
@@ -149,6 +155,7 @@ export function stubServer(server: FakeServer) {
                       id: '1',
                       username: server.signedIn,
                       operator: server.operator ?? false,
+                      removed: server.removedUntil ? { deletesAt: server.removedUntil } : null,
                     },
                   }
                 : null,
@@ -159,12 +166,15 @@ export function stubServer(server: FakeServer) {
         case '/api/invites': {
           server.invites ??= []
           if (init?.method === 'POST') {
+            const body = newInviteRequest.parse(JSON.parse(init.body as string))
             const invite: Invite = {
               id: `invite-${server.invites.length + 1}`,
               createdAt: '2026-10-13T12:00:00.000Z',
-              expiresAt: '2099-10-20T12:00:00.000Z',
-              usedAt: null,
-              usedBy: null,
+              expiresAt: body.expiresAt,
+              endedAt: null,
+              maxUses: body.maxUses,
+              useCount: 0,
+              joined: [],
             }
             server.invites.unshift(invite)
             return Promise.resolve(
@@ -173,6 +183,8 @@ export function stubServer(server: FakeServer) {
           }
           return Promise.resolve(Response.json({ invites: server.invites }))
         }
+        case '/api/people':
+          return Promise.resolve(Response.json({ people: server.people ?? [] }))
         case '/api/passkeys':
           return Promise.resolve(Response.json({ passkeys: server.passkeys ?? [] }))
         case '/api/accounts/username-check': {
@@ -187,9 +199,16 @@ export function stubServer(server: FakeServer) {
             server.passkeys = server.passkeys?.filter((passkey) => passkey.id !== removed) ?? []
             return Promise.resolve(new Response(null, { status: 204 }))
           }
-          const withdrawn = /^\/api\/invites\/(.+)$/.exec(path)?.[1]
-          if (withdrawn && init?.method === 'DELETE') {
-            server.invites = server.invites?.filter((invite) => invite.id !== withdrawn) ?? []
+          const ended = /^\/api\/invites\/(.+)\/end$/.exec(path)?.[1]
+          const invite = server.invites?.find((each) => each.id === ended)
+          if (invite && init?.method === 'POST') {
+            invite.endedAt = '2026-10-16T12:00:00.000Z'
+            return Promise.resolve(new Response(null, { status: 204 }))
+          }
+          const [, personId, change] = /^\/api\/people\/(.+)\/(remove|restore)$/.exec(path) ?? []
+          const person = server.people?.find((each) => each.id === personId)
+          if (person && init?.method === 'POST') {
+            person.deletesAt = change === 'remove' ? '2026-11-15T12:00:00.000Z' : null
             return Promise.resolve(new Response(null, { status: 204 }))
           }
           return Promise.resolve(new Response(null, { status: 404 }))
