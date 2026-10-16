@@ -276,7 +276,7 @@ A purchase paid in installments ("meses sin intereses" or "meses con intereses" 
 | TXN-21 | The app shall let the user sort the table by date, amount, category, category group and wallet. | Must |
 | TXN-22 | The app shall let the user filter by date range (this period, last period, last 3 and 12 months, year to date, custom), type, wallets, categories, category groups, tags, payee, amount range and note text. | Must |
 | TXN-23 | The app shall let the user filter by source and by the exclude-from-budget flag. | Should |
-| TXN-24 | While filters are applied, the app shall show the count, total income, total expenses and net for the filtered set. | Must |
+| TXN-24 | While filters are applied, the app shall show the count, total income, total expenses and net for the filtered set. Without filters, the totals shall also count what recurring transactions will add in the rest of the period. | Must |
 | TXN-25 | The app shall let the user save a combination of filters as a named view. | Should |
 | TXN-26 | The app shall let the user select several transactions and change their category, wallet or tags, exclude them from the budget, or delete them in one action. | Should |
 | TXN-27 | The app shall let the user edit category, tags, note and amount directly in the table. | Could |

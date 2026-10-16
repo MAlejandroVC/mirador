@@ -6,6 +6,7 @@ import {
   inPeriod,
   matchesFilter,
   newestFirst,
+  occurrenceFields,
   type PeriodScope,
   periodOf,
   shiftPeriod,
@@ -162,7 +163,6 @@ export function TransactionsScreen() {
           },
           walletName: (transaction) => wallets.get(transaction.walletId)?.name ?? '',
         })
-  const totals = flowTotals(inView, currencies, defaultCurrency, ledger.rates)
   // Days stay as long as the list runs by date; any other order is one flat list.
   const byDate = sort === 'newest' || sort === 'oldest'
   const shown = ordered.slice(0, limit)
@@ -175,6 +175,15 @@ export function TransactionsScreen() {
           (item) => (item.due && inPeriod(today, period)) || item.date >= period.start,
         )
       : []
+  // The totals are a forecast: what is coming this period counts too, as the
+  // transactions it will add.
+  const forecast = coming
+    .filter((item) => inPeriod(item.date, period))
+    .map((item) => ({
+      ...occurrenceFields(item.recurring, item.date, item.date),
+      id: `${item.recurring.id}@${item.date}`,
+    }))
+  const totals = flowTotals([...inView, ...forecast], currencies, defaultCurrency, ledger.rates)
 
   const row = (transaction: Transaction) => (
     <TransactionRow
@@ -256,7 +265,8 @@ export function TransactionsScreen() {
         </button>
       </div>
 
-      {/* TXN-24: what came in, what went out and what's left, for what is shown. */}
+      {/* TXN-24: what came in, what went out and what's left, for what is shown and
+          what is still to come in the period. */}
       <dl className="grid grid-cols-3 gap-2 rounded-2xl bg-surface px-4 py-3">
         <div className="flex flex-col gap-0.5">
           <dt className="text-xs text-text-muted">{t('transactions.totals.income')}</dt>

@@ -335,7 +335,7 @@ describe('recurring transactions and installments', () => {
     expect(screen.getByText('Expenses').nextElementSibling).toHaveTextContent('$1,500.00')
   })
 
-  it('TXN-22: months to come show their installments and what recurring transactions will add', async () => {
+  it('TXN-22, TXN-24: months to come show their installments and what recurring transactions will add', async () => {
     const user = userEvent.setup()
     const checking = wallet('Checking')
     const set = categories()
@@ -377,5 +377,7 @@ describe('recurring transactions and installments', () => {
     expect(screen.getByRole('button', { name: /TV/ })).toHaveTextContent('3 of 6')
     expect(screen.getByText('Upcoming')).toBeVisible()
     expect(screen.getByRole('button', { name: /Rent/ })).toHaveTextContent('May 1')
+    // TXN-24: the totals are a forecast, with what is coming.
+    expect(screen.getByText('Expenses').nextElementSibling).toHaveTextContent('$13,500.00')
   })
 })
