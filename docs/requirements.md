@@ -362,7 +362,7 @@ Every expense and income has exactly one category, each category belongs to exac
 | CAT-01 | The app shall let the user create, rename, reorder, archive and delete categories and category groups. | Must |
 | CAT-02 | The app shall store for each category: name, category group, kind (expense or income), icon, flexibility (Locked, Fixed or Flexible) and an optional description. A category shows in its category group's color (CAT-14). | Must |
 | CAT-03 | The app shall require category names to be unique within their category group, and category group names to be unique. | Must |
-| CAT-04 | The app shall offer an editable starter set during onboarding (for example Housing, Food & drinks, Transportation, Lifestyle, Health, Entertainment, Financial, Income) that the user can accept, edit or skip. | Must |
+| CAT-04 | The app shall start every account with an editable starter set (for example Housing, Food & drinks, Transportation, Lifestyle, Health, Entertainment, Financial, Income) that the user can change, add to or remove from. | Must |
 | CAT-05 | The app shall provide system categories (Uncategorized, Balance adjustment, Interest, Fees, Refunds) that can be renamed but not deleted. | Must |
 | CAT-06 | If the user deletes a category that has transactions, then the app shall require moving them to another category or archiving the category instead. | Must |
 | CAT-07 | While a category is archived, the app shall hide it from pickers and keep it in history and reports, and let the user restore it. | Must |

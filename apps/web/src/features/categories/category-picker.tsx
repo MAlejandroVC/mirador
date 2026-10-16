@@ -13,14 +13,12 @@ import { SearchField } from '../../components/ui/search-field'
 import { Sheet } from '../../components/ui/sheet'
 import type { Ledger } from '../wallets/use-ledger'
 import { CategoryTile } from './category-tile'
-import { StarterChoice } from './starter-choice'
 
 // How many of the most used categories lead the picker (CAT-12).
 const frequentCount = 6
 
 // CAT-02, CAT-12: picking an expense's or income's category: the most used first, then
-// every category under its category group, with a search box. Before there is any
-// category, it offers the starter set (CAT-04).
+// every category under its category group, with a search box.
 export function CategoryPicker({
   open,
   ledger,
@@ -62,7 +60,8 @@ function CategoryChoices({
 }) {
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
-  if (ledger.categories.length === 0) return <StarterChoice />
+  // CAT-04: the suggested set is being added (useSeedCategories); it takes a moment.
+  if (ledger.categories.length === 0) return null
 
   const groups = new Map(ledger.groups.map((group) => [group.id, group]))
   const pickable = pickableCategories(ledger.categories, ledger.groups, type, value)

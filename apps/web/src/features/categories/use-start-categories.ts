@@ -19,8 +19,7 @@ export function withoutId<T extends { id: string }>(item: T): Omit<T, 'id'> {
 
 /**
  * CAT-04, CAT-05: sets up categories the first time: the suggested set, in the
- * person's language, or only the system categories to build their own from scratch.
- * Everything is saved in one batch, encrypted (SEC-01).
+ * person's language. Everything is saved in one batch, encrypted (SEC-01).
  */
 export function useStartCategories() {
   const { t } = useTranslation()
@@ -28,7 +27,7 @@ export function useStartCategories() {
   return {
     pending: save.isPending,
     failed: save.isError,
-    start: (systemOnly: boolean, onDone?: () => void) => {
+    start: () => {
       const set = starterSet(
         {
           group: (key) => t(`starter.groups.${key}`),
@@ -36,7 +35,6 @@ export function useStartCategories() {
           tag: (key) => t(`starter.tags.${key}`),
         },
         newId,
-        { systemOnly },
       )
       const changes: RecordChange[] = [
         ...set.groups.map((group) => ({
@@ -52,7 +50,7 @@ export function useStartCategories() {
           body: recordBody(tagRecordType, tagRecord.parse(withoutId(tag))),
         })),
       ]
-      save.mutate(changes, { onSuccess: () => onDone?.() })
+      save.mutate(changes)
     },
   }
 }

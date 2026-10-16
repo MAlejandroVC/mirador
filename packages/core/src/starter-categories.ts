@@ -224,30 +224,13 @@ export interface CategorySet {
 }
 
 /**
- * CAT-04: the whole starter set as new records, named in the person's language. With
- * `systemOnly` it is the start-from-scratch choice: just the system categories, which
- * every set needs (CAT-05), in the Other group.
+ * CAT-04: the whole starter set as new records, named in the person's language. Every
+ * account starts with it; it includes the system categories every set needs (CAT-05).
  */
-export function starterSet(
-  names: StarterNames,
-  newId: () => string,
-  options: { systemOnly?: boolean } = {},
-): CategorySet {
+export function starterSet(names: StarterNames, newId: () => string): CategorySet {
   const groups: CategoryGroup[] = []
   const categories: Category[] = []
-  const chosen = options.systemOnly
-    ? [
-        {
-          key: 'other',
-          color: 'stone' as const,
-          kind: 'expense' as const,
-          categories: starterGroups.flatMap((group) =>
-            group.categories.filter((category) => category.systemKey !== undefined),
-          ),
-        },
-      ]
-    : starterGroups
-  for (const [groupOrder, group] of chosen.entries()) {
+  for (const [groupOrder, group] of starterGroups.entries()) {
     const groupId = newId()
     groups.push({
       id: groupId,
@@ -273,8 +256,10 @@ export function starterSet(
         ...(category.systemKey ? { systemKey: category.systemKey } : {}),
       })
   }
-  const tags = options.systemOnly
-    ? []
-    : starterTags.map((tag) => ({ id: newId(), name: names.tag(tag.key), color: tag.color }))
+  const tags = starterTags.map((tag) => ({
+    id: newId(),
+    name: names.tag(tag.key),
+    color: tag.color,
+  }))
   return { groups, categories, tags }
 }

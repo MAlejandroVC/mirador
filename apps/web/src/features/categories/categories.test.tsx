@@ -43,15 +43,12 @@ describe('categories', () => {
     vi.restoreAllMocks()
   })
 
-  it('CAT-04, CAT-05: with no categories, the suggested set is offered and saved whole', async () => {
-    const user = userEvent.setup()
+  it('CAT-04, CAT-05: a new account starts with the suggested set, saved whole', async () => {
     const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
     renderApp('/settings/categories', unlockedVault(server))
 
-    expect(await screen.findByRole('heading', { name: 'Start with categories' })).toBeVisible()
-    await user.click(screen.getByRole('button', { name: 'Use the suggested set' }))
-
+    // No question first: the set is simply there, ready to change (DL-PRI-04).
     expect(await screen.findByRole('button', { name: /Groceries/ })).toBeVisible()
     expect(screen.getByRole('button', { name: /Food & drinks/ })).toBeVisible()
     const categories = bodies(server, categoryRecordType) as CategoryRecord[]

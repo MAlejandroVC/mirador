@@ -184,17 +184,12 @@ describe('starter set', () => {
     }
   })
 
-  it('CAT-05: both choices include each system category exactly once', () => {
-    for (const systemOnly of [false, true]) {
-      const set = starterSet(names, newId, { systemOnly })
-      const keys = set.categories.flatMap((item) => item.systemKey ?? []).sort()
-      expect(keys).toEqual(['adjustment', 'fees', 'interest', 'refunds', 'uncategorized'])
-    }
-    const scratch = starterSet(names, newId, { systemOnly: true })
-    expect(scratch.groups).toHaveLength(1)
-    expect(scratch.tags).toEqual([])
+  it('CAT-05: the set includes each system category exactly once', () => {
+    const set = starterSet(names, newId)
+    const keys = set.categories.flatMap((item) => item.systemKey ?? []).sort()
+    expect(keys).toEqual(['adjustment', 'fees', 'interest', 'refunds', 'uncategorized'])
     // Refunds are money in; fees money out (CAT-02).
-    expect(scratch.categories.find((item) => item.systemKey === 'refunds')?.kind).toBe('income')
-    expect(scratch.categories.find((item) => item.systemKey === 'fees')?.kind).toBe('expense')
+    expect(set.categories.find((item) => item.systemKey === 'refunds')?.kind).toBe('income')
+    expect(set.categories.find((item) => item.systemKey === 'fees')?.kind).toBe('expense')
   })
 })

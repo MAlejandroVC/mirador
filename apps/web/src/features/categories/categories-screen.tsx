@@ -13,7 +13,6 @@ import { recordBody, useLedger, useSaveRecords } from '../wallets/use-ledger'
 import { CategorySheet, type CategorySheetMode } from './category-sheet'
 import { CategoryTile, TagDot } from './category-tile'
 import { GroupSheet, type GroupSheetMode } from './group-sheet'
-import { StarterChoice } from './starter-choice'
 
 // Settings > Categories (Epic 4): every category group with its categories, in the
 // person's order. Tapping a group or a category opens it; each group ends with a row
@@ -57,7 +56,8 @@ export function CategoriesScreen() {
   )
 
   if (!ledger) return page(null)
-  if (ledger.categories.length === 0) return page(<StarterChoice />)
+  // CAT-04: the suggested set is being added (useSeedCategories); it takes a moment.
+  if (ledger.categories.length === 0) return page(null)
 
   const activeGroups = ledger.groups.filter((item) => !item.archived)
   const archivedGroups = ledger.groups.filter((item) => item.archived)

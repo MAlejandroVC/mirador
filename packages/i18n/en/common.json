@@ -971,12 +971,6 @@
       "scales": "Scales",
       "questionMark": "Question mark"
     },
-    "starter": {
-      "title": "Start with categories",
-      "body": "Pick a ready-made set you can change any time, or start with only the few built-in ones and add your own.",
-      "suggested": "Use the suggested set",
-      "scratch": "Start from scratch"
-    },
     "form": {
       "newTitle": "New category",
       "editTitle": "Edit category",

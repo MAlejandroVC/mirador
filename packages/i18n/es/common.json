@@ -971,12 +971,6 @@
       "scales": "Balanza",
       "questionMark": "Signo de interrogación"
     },
-    "starter": {
-      "title": "Empieza con categorías",
-      "body": "Elige un conjunto listo que puedes cambiar cuando quieras, o empieza solo con las pocas incluidas y agrega las tuyas.",
-      "suggested": "Usar las sugeridas",
-      "scratch": "Empezar desde cero"
-    },
     "form": {
       "newTitle": "Nueva categoría",
       "editTitle": "Editar categoría",
