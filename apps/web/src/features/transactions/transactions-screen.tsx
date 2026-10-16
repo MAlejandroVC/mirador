@@ -58,6 +58,7 @@ const scopes: readonly PeriodScope[] = ['week', 'month', 'quarter', 'year']
 // it; swiping it left deletes it, with Undo (DL-CMP-07, TXN-13). A purchase in
 // installments counts one installment in each month (TXN-32). Above this period's
 // days, what recurring transactions have coming, and a way to all of them (TXN-09).
+// The arrows go on into months to come, to see what is scheduled there.
 export function TransactionsScreen() {
   const { t } = useTranslation()
   const { data: ledger } = useLedger()
@@ -166,10 +167,13 @@ export function TransactionsScreen() {
   const byDate = sort === 'newest' || sort === 'oldest'
   const shown = ordered.slice(0, limit)
   const words = { today: t('dates.today'), yesterday: t('dates.yesterday') }
-  // TXN-09, TXN-10: what is still to come this period, and what waits to be checked.
+  // TXN-09, TXN-10: what recurring transactions have still to come this period, and,
+  // in the current one, what waits to be checked. Past periods have nothing coming.
   const coming =
-    inPeriod(today, period) && byDate && filters === 0
-      ? upcoming(recurrings, today, period.end)
+    byDate && filters === 0 && period.end > today
+      ? upcoming(recurrings, today, period.end).filter(
+          (item) => (item.due && inPeriod(today, period)) || item.date >= period.start,
+        )
       : []
 
   const row = (transaction: Transaction) => (
@@ -231,18 +235,22 @@ export function TransactionsScreen() {
             <CaretDownIcon aria-hidden className="size-3.5 text-text-muted" />
           </span>
           <span className="text-[0.8125rem] text-text-muted">
-            {t('transactions.count', { count: inView.length })}
+            {coming.length > 0
+              ? t('transactions.countUpcoming', {
+                  count: inView.length,
+                  upcoming: coming.length,
+                })
+              : t('transactions.count', { count: inView.length })}
           </span>
         </button>
         <button
           type="button"
           aria-label={t('transactions.period.next')}
-          disabled={period.end >= today}
           onClick={() => {
             setAnchor(shiftPeriod(anchor, scope, 1).start)
             setLimit(page)
           }}
-          className="grid size-11 shrink-0 place-items-center rounded-xl text-brand focus-visible:outline-2 focus-visible:outline-brand disabled:text-text-faint"
+          className="grid size-11 shrink-0 place-items-center rounded-xl text-brand focus-visible:outline-2 focus-visible:outline-brand"
         >
           <CaretRightIcon aria-hidden className="size-5" />
         </button>
@@ -325,7 +333,7 @@ export function TransactionsScreen() {
         )
       )}
 
-      {ordered.length === 0 ? (
+      {ordered.length === 0 && coming.length > 0 ? null : ordered.length === 0 ? (
         <section className="flex flex-col items-center gap-3 rounded-2xl bg-surface px-6 py-8 text-center">
           <p className="text-[0.9375rem] text-text-muted">
             {filters > 0

@@ -247,7 +247,7 @@ A transaction records one money movement: an expense, an income or a transfer be
 | TXN-06 | The app shall let the user mark any transaction as excluded from the budget. | Must |
 | TXN-07 | The app shall let the user split one transaction across several categories, and block saving unless the parts add up to the total. | Should |
 | TXN-08 | When the user picks a payee, the app shall pre-fill the category, tags and wallet last used with that payee. | Should |
-| TXN-09 | The app shall let the user define recurring transactions (daily, weekly, every two weeks, monthly, yearly or custom) that generate scheduled entries. | Should |
+| TXN-09 | The app shall let the user define recurring transactions (daily, weekly, every two weeks, monthly, yearly or custom) that generate scheduled entries, shown ahead of time in the periods to come. | Should |
 | TXN-10 | When a scheduled entry comes due, the app shall, the next time the user unlocks it (the server cannot create encrypted entries), either post it automatically or wait for the user's confirmation, per the template's setting. | Should |
 | TXN-11 | The app shall record refunds as income transactions. | Must |
 | TXN-12 | The app shall let the user duplicate a transaction. | Could |

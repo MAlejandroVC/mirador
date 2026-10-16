@@ -683,6 +683,8 @@
     "between": "{{from}} → {{to}}",
     "count_one": "{{count}} transaction",
     "count_other": "{{count}} transactions",
+    "countUpcoming_one": "{{count}} transaction · {{upcoming}} upcoming",
+    "countUpcoming_other": "{{count}} transactions · {{upcoming}} upcoming",
     "noneInPeriod": "Nothing recorded in {{period}}.",
     "noneFiltered": "No transactions match these filters.",
     "period": {

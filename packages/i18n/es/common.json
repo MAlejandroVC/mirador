@@ -683,6 +683,8 @@
     "between": "{{from}} → {{to}}",
     "count_one": "{{count}} movimiento",
     "count_other": "{{count}} movimientos",
+    "countUpcoming_one": "{{count}} movimiento · {{upcoming}} por venir",
+    "countUpcoming_other": "{{count}} movimientos · {{upcoming}} por venir",
     "noneInPeriod": "No hay nada registrado en {{period}}.",
     "noneFiltered": "Ningún movimiento coincide con estos filtros.",
     "period": {

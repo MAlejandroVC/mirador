@@ -1,6 +1,7 @@
 import {
   categoryGroupRecordType,
   categoryRecordType,
+  recurringRecordType,
   type RecurringRecord,
   type TransactionRecord,
   type WalletRecord,
@@ -332,5 +333,49 @@ describe('recurring transactions and installments', () => {
     expect(row).toHaveTextContent('2 of 6')
     expect(row).toHaveTextContent('$1,500.00')
     expect(screen.getByText('Expenses').nextElementSibling).toHaveTextContent('$1,500.00')
+  })
+
+  it('TXN-22: months to come show their installments and what recurring transactions will add', async () => {
+    const user = userEvent.setup()
+    const checking = wallet('Checking')
+    const set = categories()
+    const tv = {
+      id: newRecordId(),
+      revision: 1,
+      body: transactionBody({
+        kind: 'expense',
+        walletId: checking.id,
+        date: '2026-03-10',
+        amount: -900_000,
+        note: 'TV',
+        categoryId: set.bills.id,
+        installments: { months: 6 },
+      }),
+    }
+    const rent = record(recurringRecordType, {
+      kind: 'expense',
+      walletId: checking.id,
+      amount: -1_200_000,
+      note: 'Rent',
+      categoryId: set.bills.id,
+      start: '2026-03-01',
+      every: { unit: 'month', count: 1 },
+      handled: '2026-03-01',
+    })
+    const server: FakeServer = {
+      signedIn: 'ana',
+      records: [checking, ...set.records, tv, rent],
+    }
+    stubServer(server)
+    renderApp('/transactions', unlockedVault(server))
+
+    await screen.findByRole('button', { name: /TV/ })
+    await user.click(screen.getByRole('button', { name: 'Next period' }))
+    await user.click(screen.getByRole('button', { name: 'Next period' }))
+    expect(await screen.findByText('May 2026')).toBeVisible()
+    expect(screen.getByText('1 transaction · 1 upcoming')).toBeVisible()
+    expect(screen.getByRole('button', { name: /TV/ })).toHaveTextContent('3 of 6')
+    expect(screen.getByText('Upcoming')).toBeVisible()
+    expect(screen.getByRole('button', { name: /Rent/ })).toHaveTextContent('May 1')
   })
 })
