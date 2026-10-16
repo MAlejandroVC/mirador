@@ -231,7 +231,7 @@ describe('recurring transactions and installments', () => {
     await user.click(within(sheet).getByRole('button', { name: 'With interest' }))
     await user.click(within(sheet).getByRole('button', { name: 'Save' }))
     expect(
-      await within(sheet).findByText('Type the monthly payment your bank quotes.'),
+      await within(sheet).findByText('Type the monthly payment you were quoted.'),
     ).toBeVisible()
     await user.type(within(sheet).getByRole('textbox', { name: 'Monthly payment' }), '1750')
     expect(within(sheet).getByText(/\$1,500\.00 of interest, \$10,500\.00 in all/)).toBeVisible()
@@ -246,6 +246,61 @@ describe('recurring transactions and installments', () => {
         }),
       ])
     })
+  })
+
+  it('TXN-30: any wallet can pay in installments, each part leaving it on its day', async () => {
+    const user = userEvent.setup()
+    const checking = wallet('Checking')
+    const set = categories()
+    const server: FakeServer = {
+      signedIn: 'ana',
+      records: [
+        checking,
+        ...set.records,
+        {
+          id: newRecordId(),
+          revision: 1,
+          body: transactionBody({
+            kind: 'openingBalance',
+            walletId: checking.id,
+            date: '2026-01-01',
+            amount: 2_000_000,
+          }),
+        },
+      ],
+    }
+    stubServer(server)
+    renderApp('/transactions', unlockedVault(server))
+
+    await user.click(
+      (await screen.findAllByRole('button', { name: /^(New|Add a transaction)$/ }))[0]!,
+    )
+    const sheet = await screen.findByRole('dialog', { name: 'New expense' })
+    await user.type(within(sheet).getByRole('textbox', { name: 'Amount' }), '9000')
+    await user.click(within(sheet).getByRole('button', { name: /^Category/ }))
+    await user.click(
+      within(await screen.findByRole('dialog', { name: 'Category' })).getByRole('radio', {
+        name: /Bills/,
+      }),
+    )
+    await user.click(within(sheet).getByRole('checkbox', { name: /Pay in installments/ }))
+    await user.click(within(sheet).getByRole('radio', { name: '3' }))
+    expect(
+      within(sheet).getByText(
+        '$3,000.00 a month for 3 months, from Mar 15. Each one leaves this wallet on its day.',
+      ),
+    ).toBeVisible()
+    await user.click(within(sheet).getByRole('button', { name: 'Save' }))
+    await waitFor(() => {
+      expect(bodies<TransactionRecord>(server, 'transaction')).toContainEqual(
+        expect.objectContaining({ amount: -900_000, installments: { months: 3 } }),
+      )
+    })
+
+    // Only the first part has left the wallet so far.
+    await user.click(screen.getAllByRole('link', { name: 'Wallets' })[0]!)
+    expect((await screen.findAllByText('$17,000.00'))[0]).toBeVisible()
+    expect(screen.queryByText('$11,000.00')).toBeNull()
   })
 
   it('TXN-32: Transactions counts a purchase in installments one installment a month', async () => {

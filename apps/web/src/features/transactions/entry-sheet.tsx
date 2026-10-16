@@ -67,6 +67,7 @@ import { type Ends, endsLabel, repeatLabel } from '../recurring/labels'
 import { RepeatSheet } from '../recurring/repeat-sheet'
 import { recurringChange } from '../recurring/use-post-recurring'
 import {
+  balanceEntries,
   type Ledger,
   newId,
   type RecordChange,
@@ -297,7 +298,7 @@ function EntryForm({
         : { kind: 'never' },
   )
   const [ask, setAsk] = useState(series?.ask ?? false)
-  // TXN-30: paying a credit card purchase in installments.
+  // TXN-30: paying a purchase in installments.
   const [plan, setPlan] = useState<InstallmentState>(() =>
     initialInstallments(
       initial.installments,
@@ -317,16 +318,12 @@ function EntryForm({
     mode.kind === 'edit' && mode.transaction.recurringId !== undefined
       ? ledger.recurring.find((item) => item.id === mode.transaction.recurringId)
       : undefined
-  // TXN-30: installments are for expenses on a wallet with a credit limit set up, and
-  // a purchase made once.
-  const credit =
-    type === 'expense' &&
-    !repeating &&
-    (mode.kind === 'new' || mode.kind === 'edit') &&
-    from?.features.includes('creditLimit')
-      ? from.credit
-      : undefined
-  const inInstallments = credit !== undefined && plan.on
+  // TXN-30: any expense made once can be paid in installments. On a credit card with
+  // its statement dates set up (WAL-16), they follow its statements.
+  const installable =
+    type === 'expense' && !repeating && (mode.kind === 'new' || mode.kind === 'edit')
+  const credit = installable && from?.features.includes('creditLimit') ? from.credit : undefined
+  const inInstallments = installable && from !== undefined && plan.on
   const allTags = [...ledger.tags, ...newTags]
   const allPayees = [...ledger.payees, ...newPayees]
   // A category of the other kind doesn't carry over when the type changes (CAT-02).
@@ -669,13 +666,17 @@ function EntryForm({
 
   // TXN-33: what is still to be billed on a saved plan, which can be paid off early.
   const plannedLeft =
-    mode.kind === 'edit' && mode.transaction.installments && credit
-      ? (activePlans(mode.transaction.walletId, [mode.transaction], credit.closingDay, today)[0]
-          ?.left ?? null)
+    mode.kind === 'edit' && mode.transaction.installments
+      ? (activePlans(
+          mode.transaction.walletId,
+          [mode.transaction],
+          credit?.closingDay ?? null,
+          today,
+        )[0]?.left ?? null)
       : null
 
   const parts = money.parts({ minor: 0, currency: from?.currency ?? ledger.defaultCurrency })
-  const balances = walletBalances(ledger.wallets, ledger.transactions)
+  const balances = walletBalances(ledger.wallets, balanceEntries(ledger, today))
   // WAL-04: inactive wallets are left out of the picker, unless this one is already in one.
   const choices = (current: string | null, other: string | null) =>
     ledger.wallets.filter(
@@ -845,15 +846,16 @@ function EntryForm({
           </div>
         </Fold>
 
-        {/* TXN-30: an expense on a credit card can be paid in installments. */}
-        <Fold open={credit !== undefined}>
-          {credit && from && (
+        {/* TXN-30: an expense made once can be paid in installments. */}
+        <Fold open={installable && from !== undefined}>
+          {installable && from && (
             <div className="pt-3">
               <InstallmentsFields
                 state={plan}
                 onChange={setPlan}
                 currency={from.currency}
-                closingDay={credit.closingDay}
+                onCard={from.features.includes('creditLimit')}
+                closingDay={credit?.closingDay ?? null}
                 date={date}
                 price={magnitude}
                 payment={payment}

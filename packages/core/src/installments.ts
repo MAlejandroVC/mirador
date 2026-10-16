@@ -2,10 +2,11 @@ import { addDays, addMonths, nextDayOfMonth, previousDayOfMonth } from './dates.
 import { changeTo, type Transaction, type TransactionFields } from './transactions.ts'
 import type { CreditSettings } from './wallet-features.ts'
 
-// TXN-30 to TXN-33, WAL-25: purchases a credit card bills in monthly installments
-// ("meses sin intereses" in Mexico). The whole amount comes off the balance and the
-// available credit on the purchase date, like any expense (TXN-32); the card bills it
-// one part per statement, and spending counts it one part per month.
+// TXN-30 to TXN-33, WAL-25: purchases paid in monthly installments ("meses sin
+// intereses" in Mexico). On a credit card the whole amount comes off the balance and
+// the available credit on the purchase date, like any expense (TXN-32), and the card
+// bills it one part per statement. On any other wallet each part leaves it on its day,
+// a month apart. Spending counts it one part per month either way.
 
 /**
  * TXN-30: each installment of `amount` (signed, like the purchase): equal parts in
@@ -85,11 +86,12 @@ export function spreadInstallments<T extends Transaction>(
 }
 
 /**
- * WAL-25: the day the card bills each installment: the statement that closes on or
- * after the purchase, then one a month (later when deferred). What was still to come
- * when the plan was paid off is billed that day (TXN-33).
+ * WAL-25: the day each installment is billed: on a card, the statement that closes on
+ * or after the purchase, then one a month (later when deferred); with no `closingDay`,
+ * the purchase date and then a month apart. What was still to come when the plan was
+ * paid off is billed that day (TXN-33).
  */
-export function billingDates(transaction: TransactionFields, closingDay: number): string[] {
+export function billingDates(transaction: TransactionFields, closingDay: number | null): string[] {
   const plan = transaction.installments
   if (!plan) return []
   const paidOff =
@@ -104,12 +106,30 @@ export function billingDates(transaction: TransactionFields, closingDay: number)
 }
 
 /** The statement days a plan was set up to be billed on, before any payoff. */
-function plannedDates(transaction: TransactionFields, closingDay: number): string[] {
+function plannedDates(transaction: TransactionFields, closingDay: number | null): string[] {
   const plan = transaction.installments
   if (!plan) return []
-  const first = nextDayOfMonth(transaction.date, closingDay)
+  const first =
+    closingDay === null ? transaction.date : nextDayOfMonth(transaction.date, closingDay)
   return Array.from({ length: plan.months }, (_, index) =>
-    addMonths(first, index + (plan.deferred ?? 0), closingDay),
+    addMonths(first, index + (plan.deferred ?? 0), closingDay ?? undefined),
+  )
+}
+
+/**
+ * TXN-30: the transactions as wallet balances count them up to `today`. A purchase in
+ * installments on a wallet without credit (not in `creditWalletIds`) takes only the
+ * parts that came due; on a credit card it is owed in full from the purchase date.
+ */
+export function balanceTransactions<T extends Transaction>(
+  transactions: readonly T[],
+  creditWalletIds: ReadonlySet<string>,
+  today: string,
+): T[] {
+  return transactions.flatMap((transaction) =>
+    transaction.installments && !creditWalletIds.has(transaction.walletId)
+      ? spreadInstallments([transaction]).filter((part) => part.date <= today)
+      : [transaction],
   )
 }
 
@@ -201,7 +221,7 @@ export interface PlanProgress<T extends Transaction = Transaction> {
 export function activePlans<T extends Transaction>(
   walletId: string,
   transactions: readonly T[],
-  closingDay: number,
+  closingDay: number | null,
   today: string,
 ): PlanProgress<T>[] {
   const plans: PlanProgress<T>[] = []

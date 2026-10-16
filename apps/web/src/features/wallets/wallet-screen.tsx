@@ -46,6 +46,7 @@ import {
   useLedger,
   useSaveRecords,
   walletBody,
+  balanceEntries,
 } from './use-ledger'
 import { walletIconComponents } from './wallet-look'
 import { WalletSheet } from './wallet-sheet'
@@ -95,8 +96,8 @@ export function WalletScreen({ walletId }: { walletId: string }) {
     )
 
   const transactions = walletTransactions(wallet.id, ledger.transactions)
-  const balance = walletBalance(wallet.id, ledger.transactions)
   const today = toCalendarDate(new Date())
+  const balance = walletBalance(wallet.id, balanceEntries(ledger, today))
   const shown = { minor: balance, currency: wallet.currency }
   const on = (name: (typeof wallet.features)[number]) => wallet.features.includes(name)
   const cardProps = {

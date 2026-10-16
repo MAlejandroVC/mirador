@@ -14,15 +14,17 @@ import { chosenMonths, type InstallmentState, usualMonths } from './installments
 const mostDeferred = 6
 
 /**
- * TXN-30, TXN-31: paying an expense on a credit card in monthly installments. Off, it
- * is one row with its hint (DL-PAT-07); on, the months, interest-free or with interest
- * (then the monthly payment the bank quotes), and when the first one is billed open in
- * place (DL-MOT-07), with one sentence saying what the card will do.
+ * TXN-30, TXN-31: paying an expense in monthly installments. Off, it is one row with its
+ * hint (DL-PAT-07); on, the months, interest-free or with interest (then the monthly
+ * payment quoted), and when the first one is due open in place (DL-MOT-07), with one
+ * sentence saying what will happen. On a card with statement dates, payments follow its
+ * statements; anywhere else, they are due on the purchase's day each month.
  */
 export function InstallmentsFields({
   state,
   onChange,
   currency,
+  onCard,
   closingDay,
   date,
   price,
@@ -33,7 +35,10 @@ export function InstallmentsFields({
   state: InstallmentState
   onChange: (state: InstallmentState) => void
   currency: string
-  closingDay: number
+  /** Whether the wallet is a credit card, whose available credit takes it all at once. */
+  onCard: boolean
+  /** The card's statement closing day (WAL-16), or null to go by the purchase date. */
+  closingDay: number | null
   date: string
   /** The amount typed, the price before any interest. */
   price: number | null
@@ -52,13 +57,19 @@ export function InstallmentsFields({
   const set = (patch: Partial<InstallmentState>) => {
     onChange({ ...state, ...patch })
   }
+  const statements = closingDay !== null
   const months = chosenMonths(state)
   const of = (minor: number) => money.text({ minor, currency })
   const today = toCalendarDate(new Date())
-  const firstLabel =
-    state.deferred === 0
-      ? t('installments.firstNext')
-      : t('installments.firstLater', { count: state.deferred })
+  const firstOption = (deferred: number) =>
+    statements
+      ? deferred === 0
+        ? t('installments.firstNext')
+        : t('installments.firstLater', { count: deferred })
+      : deferred === 0
+        ? t('installments.firstNow')
+        : t('installments.firstMonthsLater', { count: deferred })
+  const firstLabel = firstOption(state.deferred)
 
   let summary: string | null = null
   if (months !== null && price !== null && price > 0) {
@@ -79,11 +90,18 @@ export function InstallmentsFields({
       total: of(total),
       date: first ? formatShortDate(first, today, money.locale) : '',
     }
+    // The sentence names statements only on a card that has them, and the available
+    // credit only on a card.
+    const keys = statements
+      ? (['installments.summaryFree', 'installments.summaryInterest'] as const)
+      : onCard
+        ? (['installments.summaryFreeDateCard', 'installments.summaryInterestDateCard'] as const)
+        : (['installments.summaryFreeDate', 'installments.summaryInterestDate'] as const)
     summary = state.interest
       ? payment !== null && total >= price
-        ? t('installments.summaryInterest', { ...values, interest: of(total - price) })
+        ? t(keys[1], { ...values, interest: of(total - price) })
         : null
-      : t('installments.summaryFree', values)
+      : t(keys[0], values)
   }
   const error = errors.months ? t('installments.monthsMissing') : errors.payment
 
@@ -92,7 +110,7 @@ export function InstallmentsFields({
       <ul className="rounded-2xl bg-inset">
         <ChoiceRow
           title={t('installments.title')}
-          subtitle={t('installments.hint')}
+          subtitle={onCard ? t('installments.hintCard') : t('installments.hint')}
           checked={state.on}
           onToggle={() => {
             set({ on: !state.on })
@@ -242,11 +260,7 @@ export function InstallmentsFields({
             <ChoiceRow
               key={deferred}
               role="radio"
-              title={
-                deferred === 0
-                  ? t('installments.firstNext')
-                  : t('installments.firstLater', { count: deferred })
-              }
+              title={firstOption(deferred)}
               checked={state.deferred === deferred}
               onToggle={() => {
                 set({ deferred })
@@ -260,7 +274,9 @@ export function InstallmentsFields({
         <ActionSheet
           open={payingOff}
           title={t('installments.payOffTitle')}
-          message={t('installments.payOffBody', { amount: of(left) })}
+          message={t(onCard ? 'installments.payOffBodyCard' : 'installments.payOffBody', {
+            amount: of(left),
+          })}
           cancelLabel={t('nav.cancel')}
           actions={[
             {

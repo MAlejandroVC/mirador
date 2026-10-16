@@ -73,7 +73,7 @@ These terms have one meaning throughout the document, the code and the UI.
 | Opening balance | An ordinary transaction that sets a wallet's starting amount; its date and amount can be moved to load older history. |
 | Transaction | One money movement: an expense, an income or a transfer. |
 | Transfer | Money moved between two of the user's own wallets. Not income, not spending. Paying a credit card is a transfer. |
-| Installment plan | A credit card purchase the card bills in equal monthly parts (in Mexico, "meses sin intereses" or "con intereses"). It takes the whole amount off the available credit at once and counts in spending one installment per month. |
+| Installment plan | A purchase paid in equal monthly parts (in Mexico, "meses sin intereses" or "con intereses"). On a credit card it takes the whole amount off the available credit at once; on any other wallet each part leaves on its day. It counts in spending one installment per month. |
 | Statement balance | What a credit card statement billed, minus the payments since: paying it by the due date avoids interest. Installments not billed yet are not part of it. |
 | Recurring transaction | A template that adds the same transaction on a schedule, by itself or after the user confirms it. |
 | Split | One transaction divided across several categories. |
@@ -229,7 +229,7 @@ A transaction records one money movement: an expense, an income or a transfer be
 | Tags | No | Any number, including none |
 | Payee | No | Merchant or person; to revisit in a UX review of friction points |
 | Note | No | Short free text to identify the transaction |
-| Installments | No | Expenses on a wallet with a credit limit: the number of months, interest-free or with interest, and the first statement (TXN-30) |
+| Installments | No | Expenses made once: the number of months, interest-free or with interest, and when the first one is due (TXN-30) |
 | Repeats | No | Makes it a recurring transaction (TXN-09) |
 | Exclude from budget | No | Defaults off |
 | Source | System | Manual, quick add, import batch or recurring |
@@ -261,7 +261,7 @@ A purchase paid in installments ("meses sin intereses" or "meses con intereses" 
 
 | ID | Requirement | Priority |
 |---|---|---|
-| TXN-30 | Where the wallet of an expense has a credit limit (WAL-16), the app shall let the user pay it in a number of monthly installments, interest-free or with interest, and optionally start the first one some statements later. | Should |
+| TXN-30 | The app shall let the user pay any expense made once in a number of monthly installments, interest-free or with interest, and optionally start the first one some months later. On a wallet with a credit limit and statement dates (WAL-16), installments follow its statements and the whole amount is owed at once; on any other wallet, each installment leaves the wallet on the purchase's day of the month. | Should |
 | TXN-31 | Where an installment plan has interest, the app shall take the monthly payment the bank quotes and store the total charged; it shall never estimate an interest rate. | Should |
 | TXN-32 | The app shall take the whole amount of an installment purchase off the wallet's balance and available credit on the purchase date, and count it in spending, totals and the budget one installment per month. | Should |
 | TXN-33 | The app shall let the user pay off the rest of an installment plan early, which bills everything left on that date. | Could |

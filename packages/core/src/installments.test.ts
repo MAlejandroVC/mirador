@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   activePlans,
+  balanceTransactions,
   billingDates,
   cardStatement,
   installmentShares,
@@ -112,6 +113,29 @@ describe('installments', () => {
     expect(
       billingDates(expense('y', '2027-01-31', 200, { installments: { months: 2 } }), 31),
     ).toEqual(['2027-01-31', '2027-02-28'])
+  })
+
+  it('TXN-30: away from a card, a plan is due on the purchase date and then a month apart', () => {
+    const fridge = expense('fridge', '2026-01-31', 300_000, {
+      walletId: 'checking',
+      installments: { months: 3 },
+    })
+    expect(billingDates(fridge, null)).toEqual(['2026-01-31', '2026-02-28', '2026-03-31'])
+    expect(activePlans('checking', [fridge], null, '2026-02-28')[0]).toMatchObject({
+      billed: 2,
+      left: 100_000,
+    })
+  })
+
+  it('TXN-30: a wallet without credit pays a plan one part at a time; a card owes it all', () => {
+    const fridge = expense('fridge', '2026-09-20', 300_000, {
+      walletId: 'checking',
+      installments: { months: 3 },
+    })
+    const counted = balanceTransactions([fridge, tv], new Set(['card']), today)
+    // Only September's part was due by October 16.
+    expect(walletBalance('checking', counted)).toBe(-100_000)
+    expect(walletBalance('card', counted)).toBe(-900_000)
   })
 
   it('WAL-25: splits what the card owes into the statement, the charges since and what is to come', () => {

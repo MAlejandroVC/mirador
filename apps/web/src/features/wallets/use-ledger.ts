@@ -25,6 +25,7 @@ import {
   walletRecordType,
 } from '@repo/api'
 import {
+  balanceTransactions,
   type Category,
   type CategoryGroup,
   type ExchangeRate,
@@ -153,6 +154,17 @@ async function readLedger(vault: VaultClient): Promise<Ledger> {
     preferencesId: preferences?.id ?? null,
     preferences: preferences && preferencesRecord.parse(preferences),
   }
+}
+
+/**
+ * TXN-30: the transactions as wallet balances count them on `today`: a purchase in
+ * installments leaves a wallet without credit one part at a time.
+ */
+export function balanceEntries(ledger: Ledger, today: string) {
+  const credit = new Set(
+    ledger.wallets.filter((wallet) => wallet.features.includes('creditLimit')).map((w) => w.id),
+  )
+  return balanceTransactions(ledger.transactions, credit, today)
 }
 
 export function useLedger() {
