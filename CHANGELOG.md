@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0](https://github.com/MAlejandroVC/mirador/compare/v0.2.0...v0.3.0) (2026-10-16)
+
+
+### Features
+
+* **transactions:** add transactions, recurring, installments, categories, tags and payees ([#298](https://github.com/MAlejandroVC/mirador/issues/298)) ([8d2551b](https://github.com/MAlejandroVC/mirador/commit/8d2551b2a2f6e485bc8d193ae09465c0c968eed2))
+* **wallets:** add wallets, net worth and wallet features ([#293](https://github.com/MAlejandroVC/mirador/issues/293)) ([111d33b](https://github.com/MAlejandroVC/mirador/commit/111d33b82c3b2bfda61f4dd5ca8788540705726f))
+* **web:** add the Coin stacks app icon and the new slogan ([#290](https://github.com/MAlejandroVC/mirador/issues/290)) ([96b12e9](https://github.com/MAlejandroVC/mirador/commit/96b12e9821c4249ba5be882da6e8b2ec639be6f0))
+* **web:** add the eight curated palettes ([#288](https://github.com/MAlejandroVC/mirador/issues/288)) ([3593241](https://github.com/MAlejandroVC/mirador/commit/3593241a16e201840c03be304ee47d8460048be8))
+* **web:** app skeleton with tab bar, settings, profile pictures and appearance ([#291](https://github.com/MAlejandroVC/mirador/issues/291)) ([4c94d5c](https://github.com/MAlejandroVC/mirador/commit/4c94d5cec45ce0fea14474d55f0b93b0108ec675))
+* **web:** choose the app language in Settings ([#295](https://github.com/MAlejandroVC/mirador/issues/295)) ([a036360](https://github.com/MAlejandroVC/mirador/commit/a036360b7f5962a3f137baabe3d42568db4c5850))
+* **web:** offer Add to Home Screen in Settings ([#296](https://github.com/MAlejandroVC/mirador/issues/296)) ([957c1b0](https://github.com/MAlejandroVC/mirador/commit/957c1b0115bb759b665c4d75cd233d0c1e1af816))
+
 ## [0.2.0](https://github.com/MAlejandroVC/mirador/compare/v0.1.0...v0.2.0) (2026-10-13)
 
 
