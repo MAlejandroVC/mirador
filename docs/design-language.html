@@ -587,14 +587,26 @@
     align-items: center;
     min-height: 44px;
   }
-  .sheethead span:first-child {
-    color: var(--brand);
-  }
   .sheethead b {
     font-weight: 600;
   }
-  .sheethead span:last-child {
-    width: 50px;
+  /* DL-CMP-08: round X at the top left, the main action as a round check at the right */
+  .sheethead .rb {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--fill);
+    color: var(--text);
+  }
+  .sheethead .rb.go {
+    background: var(--brand);
+    color: var(--onbrand);
+  }
+  .sheethead .rb svg {
+    width: 16px;
+    height: 16px;
   }
   .segc {
     display: flex;
@@ -1301,11 +1313,13 @@
       'Quick-add with a field error',
       'CMP-05, CMP-08, CMP-09, CMP-11, PAT-05',
       '<div class="screen" style="opacity:.0"></div><div class="sheetwrap"><div class="sheet tall"><div class="grabber"></div>' +
-        '<div class="sheethead"><span>' +
+        '<div class="sheethead"><span class="rb" role="img" aria-label="' +
         t('cancel') +
-        '</span><b>' +
+        '"><svg viewBox="0 0 256 256" aria-hidden="true"><path d="M200 56 56 200M56 56l144 144" stroke="currentColor" stroke-width="24" stroke-linecap="round" fill="none"/></svg></span><b>' +
         t(['newexp', 'newinc', 'newtra'][ST.mode]) +
-        '</b><span></span></div>' +
+        '</b><span class="rb go" role="img" aria-label="' +
+        t('save') +
+        '"><svg viewBox="0 0 256 256" aria-hidden="true"><path d="m40 144 56 56L216 72" stroke="currentColor" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></span></div>' +
         '<div class="segc" role="group">' +
         ['expense', 'income', 'transferT']
           .map(function (k, i) {
@@ -1357,8 +1371,6 @@
         '</div>' +
         '<div class="btns"><span class="btn tinted">' +
         t('savenew') +
-        '</span><span class="btn disabled">' +
-        t('save') +
         '</span></div></div></div>',
     )
     // 4. Swipe

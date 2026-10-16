@@ -390,7 +390,7 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 
 **DL-MOT-01** Motion confirms what happened and shows where things went. It never decorates.
 
-**DL-MOT-02** Saving a transaction plays one short sequence: the Save button turns into a check, the sheet slides away, and the new row opens into its list with a highlight that fades. The whole sequence takes under one second.
+**DL-MOT-02** Saving a transaction plays one short sequence: the round Save check pops, the sheet slides away, and the new row opens into its list with a highlight that fades. The whole sequence takes under one second.
 
 **DL-MOT-03** No animation blocks input. The next action, such as opening quick-add again, works the moment it is tapped, even while the previous animation is finishing. *Why:* people log expenses in a hurry. Motion that makes them wait stops being a flourish and becomes an obstacle.
 
@@ -400,7 +400,7 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 
 | Step | Duration | Easing |
 |---|---|---|
-| Save turns into a check | 260 ms | `cubic-bezier(.32,.72,0,1)` |
+| The Save check pops | 260 ms | `cubic-bezier(.32,.72,0,1)` |
 | Sheet slides away | 420 ms | `cubic-bezier(.32,.72,0,1)` |
 | New row opens into the list | 360 ms | `cubic-bezier(.32,.72,0,1)` |
 | Row highlight fades | 1.4 s | ease-out, runs in the background |
@@ -517,7 +517,7 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 
 **DL-CMP-07** **List rows.** Rows sit in inset lists (a `surface` card with 16 px corners), at least 52 px tall: icon tile, title, an optional second line in `text-muted`, and a value or amount on the right. A chevron appears only when the row opens another screen. Tapping a row opens it, which is also where it is edited. A transaction row never says its type: its amount does (DL-NUM-03). Its title is the payee, else the note, else the category; the second line holds the category when the title is something else, then the wallet. Swiping a row to the left is only for deleting, as in iOS. A short swipe slides the row aside and leaves a small red Delete pill showing; tapping the pill deletes the row. A long swipe deletes it straight away. Tapping anywhere else closes the pill. Delete can also be reached from the row's own screen (DL-A11Y-07).
 
-**DL-CMP-08** **Sheets.** Creating or editing something opens a sheet that slides up, with a grabber, Cancel at the top left, the title in the middle, and the main action as a filled button at the bottom, within reach of the thumb. Settings-like sheets put Done at the top right instead. On a phone, the sheet follows the finger down and closes when let go far or fast enough. The pull starts from the grabber and title bar at any time, and from the content once it is scrolled to the top. A sheet with unsaved changes springs back instead and an action sheet asks "Discard changes?". Cancel stays too, as in iOS: not everyone knows the gesture, and it is the only way out on a computer.
+**DL-CMP-08** **Sheets.** Creating or editing something opens a sheet that slides up, with a grabber and a bar across the top, as in iOS: a round close button (an X on `fill`) at the top left, the title in the middle, and the main action as a round check on `brand` at the top right. The bar stays in view while the form scrolls and above the keyboard, so the check is always one tap away. Anything else goes at the end of the form: a second action such as "Save & new" as a tinted button, and Delete. Settings-like sheets that only close have the check alone. On a phone, the sheet follows the finger down and closes when let go far or fast enough. The pull starts from the grabber and bar at any time, and from the content once it is scrolled to the top. A sheet with unsaved changes springs back instead and an action sheet asks "Discard changes?". The X stays too, as in iOS: not everyone knows the gesture, and it is the only way out on a computer.
 
 **DL-CMP-09** **Fields.** Fields are rows in an inset list, as in iOS Settings: label on the left, value on the right, chevron when it opens a picker. Free text fields use the `inset` fill. The amount is entered as a big number with the decimal keypad. A field's error appears right under it in `warning` (DL-PAT-05), only after Save was tapped (DL-PAT-02). A field being typed in shows only its caret, in `brand`, never a box around it, as in iOS. What a field is for goes in a short hint right under it, never behind an (i) button. Rules a value must meet, such as a password's, appear as a checklist under the field once it is used, tick off as they are met and fold away only when all are met, never when the field loses focus, so nothing under them moves while the finger reaches for it.
 

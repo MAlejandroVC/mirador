@@ -610,7 +610,7 @@ body {
     translate: 0 0.75rem;
   }
 }
-/* DL-MOT-05: Save turns into a check. */
+/* DL-MOT-05: the Save check pops. */
 @keyframes check-in {
   from {
     opacity: 0;
