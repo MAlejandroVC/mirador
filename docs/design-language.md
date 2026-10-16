@@ -316,7 +316,7 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 
 ## Typography
 
-**DL-TYP-01** Mirador uses the device's system font: `font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`. No web fonts are downloaded. *Why:* the app should feel like it belongs on whatever device it runs on, with no loading flash, and no font service is contacted (NFR-05).
+**DL-TYP-01** Mirador uses the device's system font: `font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`. No web fonts are downloaded. *Why:* the app should feel like it belongs on whatever device it runs on, with no loading flash, and no font service is contacted (NFR-01).
 
 **DL-TYP-02** Every amount uses tabular numerals (`font-variant-numeric: tabular-nums`), so digits have equal widths and columns of amounts line up.
 
@@ -507,7 +507,7 @@ A day's or a period's net follows the same rule: money in shows its plus in Moss
 
 **DL-CMP-05** **Buttons.** Three styles, as in iOS:
 
-- **Filled** (`brand` with `on-brand` text): the one main action of a screen or sheet, such as Save. Never two on one screen.
+- **Filled** (`brand` with `on-brand` text): the one main action of a screen, such as "Add a wallet" in an empty state. Never two on one screen. A sheet's main action is the round check in its bar instead (DL-CMP-08).
 - **Tinted** (`brand` at 14% on the surface, `brand` text): a second action next to it, such as "Save & new".
 - **Plain** (`brand` text, no background): actions in the navigation bar and inside lists.
 
@@ -531,7 +531,7 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 
 **DL-CMP-12** **Action sheet.** Confirms a destructive or irreversible step. It slides up, states the consequence in one sentence, and offers the destructive action in `danger` with Cancel set apart below it.
 
-**DL-CMP-13** **Undo banner.** After a delete that can be undone: one line and an Undo button, on `surface`, just above the tab bar, for 5 seconds. Only one at a time.
+**DL-CMP-13** **Undo banner.** After a delete that can be undone: one line and an Undo button, on `surface`, just above the tab bar, for 5 seconds, or 10 after deleting a transaction (TXN-13). Only one at a time.
 
 **DL-CMP-14** **Empty state.** A large icon tile, a short title, one sentence on what will appear here, and the filled button that fills it ("Add a wallet"). This is a place for a touch of whimsy (DL-VOC-02).
 
@@ -539,9 +539,9 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 
 ## Patterns
 
-**DL-PAT-01** **Navigation.** The tabs are Home, Transactions, Budget and Wallets. Opening an item pushes a screen in from the right, and swiping from the left edge goes back. Creating or editing opens a sheet (DL-CMP-08). Tapping the current tab returns to its top. Settings is not a place, so it is not a tab: it opens from the profile picture beside each tab's title, or from the bottom of the sidebar (DL-LAY-06). It lists Account, then Appearance, Password and security, and Invites for the person who runs the server, then Lock and Sign out; more areas join as they are built.
+**DL-PAT-01** **Navigation.** The tabs are Home, Transactions, Budget and Wallets. Opening an item pushes a screen in from the right, and swiping from the left edge goes back. Creating or editing opens a sheet (DL-CMP-08). Tapping the current tab returns to its top. Settings is not a place, so it is not a tab: it opens from the profile picture beside each tab's title, or from the bottom of the sidebar (DL-LAY-06). It lists Account, then Appearance, Language, Currency, Categories, Tags, Password and security, and Invites for the person who runs the server, then Add to Home Screen until Mirador runs from there, then Lock and Sign out; more areas join as they are built.
 
-**DL-PAT-02** **Forms.** Fill in everything that can be guessed: today's date, the last wallet used, the suggested category. Show the required fields first. Check the fields only when the person taps the main button, never while they type or when they leave a field. The main button always looks ready. Tapped with a required field missing, it saves nothing: each missing field gives a quick small shake (DL-MOT-07), gets a `warning` outline and its error under it, and the caret goes to the first one. From then on each mark clears as soon as its field is filled. *Why:* a warning for a field the person hasn't reached yet feels like being scolded for something they were about to do.
+**DL-PAT-02** **Forms.** Fill in everything that can be guessed: today's date, the default wallet or else the last one used (WAL-24), the suggested category. Show the required fields first. Check the fields only when the person taps the main button, never while they type or when they leave a field. The main button always looks ready. Tapped with a required field missing, it saves nothing: each missing field gives a quick small shake (DL-MOT-07), gets a `warning` outline and its error under it, and the caret goes to the first one. From then on each mark clears as soon as its field is filled. *Why:* a warning for a field the person hasn't reached yet feels like being scolded for something they were about to do.
 
 **DL-PAT-03** **Empty states.** Every list and screen that can be empty has an empty state (DL-CMP-14). It is never a blank screen.
 
