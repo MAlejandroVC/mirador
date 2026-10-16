@@ -171,7 +171,8 @@ function ReorderForm({
               onPointerCancel={() => {
                 setDragging(null)
               }}
-              // The grip owns the gesture, so dragging it doesn't scroll the sheet.
+              // The grip owns the gesture, so dragging it neither scrolls nor closes the sheet.
+              data-drag
               className="flex min-h-11 min-w-11 cursor-grab touch-none items-center justify-center text-text-faint focus-visible:outline-2 focus-visible:outline-brand active:cursor-grabbing"
             >
               <DotsSixVerticalIcon aria-hidden className="size-[1.375rem]" />

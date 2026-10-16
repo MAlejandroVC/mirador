@@ -728,6 +728,40 @@ main {
   visibility: hidden;
 }
 
+/* DL-CMP-10: the iOS switch. Its track is `brand` when on and a soft tint of `text` when
+   off, so it shows on `surface` and on `inset` rows alike; the knob is white in every
+   mode and palette, as in iOS. The knob slides with the system curve (DL-MOT-07). */
+.switch {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  width: 3.1875rem;
+  height: 1.9375rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mirador-text) 16%, transparent);
+  transition: background-color 250ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 0.125rem;
+  left: 0.125rem;
+  width: 1.6875rem;
+  height: 1.6875rem;
+  border-radius: 999px;
+  background: white;
+  box-shadow:
+    0 3px 8px rgb(0 0 0 / 15%),
+    0 3px 1px rgb(0 0 0 / 6%);
+  transition: translate 250ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.switch[data-on] {
+  background: var(--mirador-brand);
+}
+.switch[data-on]::after {
+  translate: 1.25rem 0;
+}
+
 /* DL-MOT-04, DL-A11Y-08: with less motion, things fade or change at once. */
 @media (prefers-reduced-motion: reduce) {
   .sheet[open] {
@@ -746,6 +780,10 @@ main {
     animation: row-highlight 1.4s ease-out both;
   }
   .fold {
+    transition: none;
+  }
+  .switch,
+  .switch::after {
     transition: none;
   }
 }

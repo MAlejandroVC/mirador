@@ -5,7 +5,7 @@ import {
   BankIcon,
   BriefcaseIcon,
   CarIcon,
-  ChartLineUpIcon,
+  ChartBarIcon,
   CoinsIcon,
   CreditCardIcon,
   GiftIcon,
@@ -21,7 +21,8 @@ import {
 } from '../../components/ui/icons'
 
 // WAL-23, DL-ICO-03: the curated wallet icons, all drawn so their Duotone layer shades
-// part of the drawing itself.
+// part of the drawing itself, inside its outline. The keys are stored in records, so a
+// key keeps its name when its drawing is swapped for a better one.
 export const walletIconComponents: Record<WalletIcon, Icon> = {
   wallet: WalletGlyph,
   money: MoneyIcon,
@@ -31,7 +32,7 @@ export const walletIconComponents: Record<WalletIcon, Icon> = {
   vault: VaultIcon,
   creditCard: CreditCardIcon,
   handCoins: HandCoinsIcon,
-  chartLineUp: ChartLineUpIcon,
+  chartLineUp: ChartBarIcon,
   gift: GiftIcon,
   storefront: StorefrontIcon,
   briefcase: BriefcaseIcon,

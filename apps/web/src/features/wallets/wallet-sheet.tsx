@@ -362,6 +362,7 @@ function WalletForm({
 
       <List label={t('wallets.form.countIn')} inset>
         <ChoiceRow
+          role="switch"
           title={t('wallets.form.netWorth')}
           checked={draft.inNetWorth}
           onToggle={() => {
@@ -369,6 +370,7 @@ function WalletForm({
           }}
         />
         <ChoiceRow
+          role="switch"
           title={t('wallets.form.budget')}
           checked={draft.inBudget}
           onToggle={() => {
@@ -380,6 +382,7 @@ function WalletForm({
       {draft.active && (
         <List inset>
           <ChoiceRow
+            role="switch"
             title={t('wallets.form.default')}
             subtitle={t('wallets.form.defaultHint')}
             checked={isDefault}
@@ -394,6 +397,7 @@ function WalletForm({
         <>
           <List inset>
             <ChoiceRow
+              role="switch"
               title={t('wallets.form.active')}
               subtitle={t('wallets.form.activeHint')}
               checked={draft.active}
@@ -493,6 +497,7 @@ function FeatureList({
       <ul className="overflow-hidden rounded-2xl bg-inset">
         {walletFeatures.map((feature) => (
           <ChoiceRow
+            role="switch"
             key={feature}
             title={t(`wallets.features.${feature}.title`)}
             subtitle={t(`wallets.features.${feature}.body`)}

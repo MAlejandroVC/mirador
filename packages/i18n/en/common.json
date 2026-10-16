@@ -116,7 +116,6 @@
     "password": "Password",
     "show": "Show password",
     "hide": "Hide password",
-    "info": "About {{label}}",
     "checkMet": "done",
     "checkNotMet": "not yet"
   },
@@ -137,9 +136,8 @@
     "signUp": {
       "title": "Create your account",
       "intro": "Your password encrypts your data on this device. The server never sees it, so nobody can reset it for you.",
-      "usernameHint": "3 to 32 letters, numbers, dots, dashes or underscores. It doesn't need to be your real name.",
+      "usernameHint": "It doesn't need to be your real name.",
       "usernameAvailable": "{{username}} is available.",
-      "passwordHint": "At least {{count}} characters, with an uppercase letter, a lowercase letter, a number and a symbol.",
       "confirm": "Repeat password",
       "setupCode": "Setup code",
       "setupCodeHint": "This server has no accounts yet. The person who runs it finds the setup code in the server's log.",

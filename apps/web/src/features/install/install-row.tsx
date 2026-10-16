@@ -69,7 +69,8 @@ export function InstallRow() {
               >
                 {index + 1}
               </span>
-              <IconTile icon={icon} />
+              {/* The browser's own buttons, drawn as they look there (DL-ICO-03). */}
+              <IconTile icon={icon} weight="regular" />
               <span className="text-[0.9375rem] text-text">{text}</span>
             </li>
           ))}

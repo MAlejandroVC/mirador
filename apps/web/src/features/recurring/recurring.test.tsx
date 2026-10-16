@@ -221,7 +221,7 @@ describe('recurring transactions and installments', () => {
         name: /Bills/,
       }),
     )
-    await user.click(within(sheet).getByRole('checkbox', { name: /Pay in installments/ }))
+    await user.click(within(sheet).getByRole('switch', { name: /Pay in installments/ }))
     await user.click(within(sheet).getByRole('radio', { name: '6' }))
     expect(
       within(sheet).getByText(
@@ -284,7 +284,7 @@ describe('recurring transactions and installments', () => {
         name: /Bills/,
       }),
     )
-    await user.click(within(sheet).getByRole('checkbox', { name: /Pay in installments/ }))
+    await user.click(within(sheet).getByRole('switch', { name: /Pay in installments/ }))
     await user.click(within(sheet).getByRole('radio', { name: '3' }))
     expect(
       within(sheet).getByText(

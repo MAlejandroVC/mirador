@@ -1,9 +1,10 @@
 import { type ReactNode, useId } from 'react'
 import { useModal } from './use-modal'
+import { useSwipeDown } from './use-swipe-down'
 
 // DL-CMP-08: creating or editing opens a sheet that slides up (DL-MOT-06), with a
 // grabber, Cancel at the top left and the title in the middle; the main action goes at
-// the bottom, within reach of the thumb. From 768 px it is a centered dialog
+// the bottom, within reach of the thumb. On a phone, swiping it down closes it too. From 768 px it is a centered dialog
 // (DL-LAY-06). A native <dialog> keeps focus inside it and closes on Escape.
 export function Sheet(props: {
   open: boolean
@@ -19,6 +20,7 @@ export function Sheet(props: {
   const titleId = useId()
   // While it leaves, it keeps its title and content (DL-MOT-06).
   const [ref, shown, handleClose] = useModal(open, props)
+  useSwipeDown(ref, onClose)
 
   return (
     <dialog
@@ -42,7 +44,8 @@ export function Sheet(props: {
     >
       <div className="flex flex-col pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {/* The bar with Cancel and the title stays put while a long form scrolls. */}
-        <div className="sticky top-0 z-10 flex flex-col bg-surface">
+        {/* The bar is also where a swipe down starts, however far the form has scrolled. */}
+        <div data-sheet-bar className="sticky top-0 z-10 flex flex-col bg-surface">
           <span aria-hidden className="mx-auto mt-1.5 h-[5px] w-9 rounded-full bg-fill md:hidden" />
           <header className="grid grid-cols-[1fr_auto_1fr] items-center px-2 pt-1">
             {shown?.cancelLabel ? (

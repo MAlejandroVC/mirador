@@ -150,7 +150,7 @@ export function ChangeUsername({ username }: { username: string }) {
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
         <TextField
           label={t('security.settings.username.new')}
-          info={t('security.signUp.usernameHint')}
+          hint={t('security.signUp.usernameHint')}
           checks={usernameRules}
           autoComplete="off"
           autoCapitalize="none"
@@ -245,7 +245,6 @@ function ChangePassword({ username }: { username: string }) {
           label={t('security.settings.password.new')}
           type="password"
           autoComplete="new-password"
-          info={t('security.signUp.passwordHint', { count: minimumPasswordLength })}
           checks={passwordRules}
           error={problems.password}
           value={password}

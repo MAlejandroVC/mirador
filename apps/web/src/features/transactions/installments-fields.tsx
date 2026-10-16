@@ -109,6 +109,7 @@ export function InstallmentsFields({
     <div className="flex flex-col gap-1.5">
       <ul className="rounded-2xl bg-inset">
         <ChoiceRow
+          role="switch"
           title={t('installments.title')}
           subtitle={onCard ? t('installments.hintCard') : t('installments.hint')}
           checked={state.on}

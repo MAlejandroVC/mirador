@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../../components/ui/button'
 import { EmptyState } from '../../components/ui/empty-state'
-import { RepeatIcon } from '../../components/ui/icons'
+import { ArrowsClockwiseIcon } from '../../components/ui/icons'
 import { List } from '../../components/ui/list'
 import { Page } from '../../components/ui/page'
 import { formatShortDate, useMoney } from '../../lib/format'
@@ -63,7 +63,7 @@ export function RecurringScreen() {
     <Page title={t('recurring.title')} back={back}>
       {shown.length === 0 ? (
         <EmptyState
-          icon={RepeatIcon}
+          icon={ArrowsClockwiseIcon}
           title={t('recurring.empty.title')}
           action={
             <Button

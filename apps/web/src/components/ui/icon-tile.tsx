@@ -8,10 +8,13 @@ export function IconTile({
   icon: IconComponent,
   color,
   size = 'regular',
+  weight = 'duotone',
 }: {
   icon: Icon
   color?: TileColor
   size?: 'regular' | 'large'
+  /** Regular for a tile that pictures another app's button as it looks there (DL-ICO-03). */
+  weight?: 'duotone' | 'regular'
 }) {
   return (
     <span
@@ -21,7 +24,7 @@ export function IconTile({
         size === 'large' ? 'size-14 rounded-[0.875rem]' : 'size-[2.125rem] rounded-[0.625rem]'
       }`}
     >
-      <IconComponent weight="duotone" className={size === 'large' ? 'size-8' : 'size-5'} />
+      <IconComponent weight={weight} className={size === 'large' ? 'size-8' : 'size-5'} />
     </span>
   )
 }

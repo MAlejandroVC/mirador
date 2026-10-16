@@ -2,7 +2,7 @@ import type { Recurring } from '@repo/core'
 import { useTranslation } from 'react-i18next'
 import { Amount } from '../../components/ui/amount'
 import { IconTile } from '../../components/ui/icon-tile'
-import { ArrowsHorizontalIcon, RepeatIcon } from '../../components/ui/icons'
+import { ArrowCircleRightIcon, ArrowsClockwiseIcon } from '../../components/ui/icons'
 import { rowClass } from '../../components/ui/row'
 import { RowBody } from '../../components/ui/list'
 import { useMoney } from '../../lib/format'
@@ -55,7 +55,10 @@ export function RecurringRow({
             category ? (
               <CategoryTile category={category} group={taxonomy.groupOf(category)} />
             ) : (
-              <IconTile icon={transfer ? ArrowsHorizontalIcon : RepeatIcon} color="stone" />
+              <IconTile
+                icon={transfer ? ArrowCircleRightIcon : ArrowsClockwiseIcon}
+                color="stone"
+              />
             )
           }
           title={title}
