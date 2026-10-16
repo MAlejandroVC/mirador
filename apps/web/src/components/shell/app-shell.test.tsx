@@ -22,7 +22,7 @@ describe('app shell', () => {
       const links = within(nav).getAllByRole('link')
       expect(links.map((link) => link.textContent)).toEqual([
         'Home',
-        'Activity',
+        'Transactions',
         'Budget',
         'Wallets',
       ])
@@ -84,7 +84,7 @@ describe('app shell', () => {
     const server: FakeServer = { signedIn: null }
     stubServer(server)
 
-    renderApp('/activity', fakeVault(server))
+    renderApp('/transactions', fakeVault(server))
 
     expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
   })

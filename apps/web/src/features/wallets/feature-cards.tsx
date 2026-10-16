@@ -1,5 +1,6 @@
 import {
-  creditSummary,
+  cardStatement,
+  changeTo,
   dueFees,
   type Fee,
   handleFee,
@@ -15,7 +16,7 @@ import { useTranslation } from 'react-i18next'
 import { Amount } from '../../components/ui/amount'
 import { Button } from '../../components/ui/button'
 import { PlusIcon } from '../../components/ui/icons'
-import { formatDay, formatPercent, formatShare, useMoney } from '../../lib/format'
+import { formatDay, formatPercent, formatShare, formatShortDate, useMoney } from '../../lib/format'
 import { markNew } from '../../lib/motion'
 import {
   type LedgerWallet,
@@ -117,11 +118,23 @@ function useWords() {
   return { today: t('dates.today'), yesterday: t('dates.yesterday') }
 }
 
-/** WAL-16: how much of the limit is used, what is left, and when to pay. */
-export function CreditLimitCard({ wallet, balance, today, defaultCurrency, onEdit }: CardProps) {
+/**
+ * WAL-16, WAL-25: how much of the limit is used, split the way the statement splits
+ * it: what to pay by the due date to avoid interest, what was charged since, the
+ * installments still to come (TXN-30) and what is left to spend. One bar shows the
+ * parts in the wallet's color, from strongest to faintest (DL-VIZ-01), with a row for
+ * each under it, and Pay the card opens a transfer for the statement balance.
+ */
+export function CreditLimitCard({
+  wallet,
+  today,
+  defaultCurrency,
+  onEdit,
+  transactions,
+  onPay,
+}: CardProps & { transactions: readonly Transaction[]; onPay: (amount: number) => void }) {
   const { t } = useTranslation()
   const money = useMoney(defaultCurrency)
-  const words = useWords()
   const edit = () => {
     onEdit('credit')
   }
@@ -135,51 +148,158 @@ export function CreditLimitCard({ wallet, balance, today, defaultCurrency, onEdi
         />
       </FeatureCard>
     )
-  const summary = creditSummary(balance, wallet.credit, today)
+  const limit = wallet.credit.limit
+  const card = cardStatement(wallet.id, transactions, wallet.credit, today)
   const of = (minor: number) => money.text({ minor, currency: wallet.currency })
-  const over = summary.available < 0
+  const day = (date: string) => formatShortDate(date, today, money.locale)
+  const used = Math.max(0, card.owed)
+  const utilization = limit > 0 ? used / limit : 0
+  const over = card.available < 0
+  // The same color, fainter for what is further from being paid.
+  const shade = (strength: number) =>
+    `color-mix(in srgb, var(--mirador-${wallet.color}) calc(var(--mirador-bar-mix) * ${String(strength)}), var(--mirador-surface))`
+  const parts = [
+    {
+      key: 'statement',
+      amount: card.statement,
+      color: shade(1),
+      title: t('wallets.credit.statement'),
+      hint:
+        card.statement === 0
+          ? t('wallets.credit.statementPaid')
+          : card.due < today
+            ? t('wallets.credit.statementPast', { date: day(card.due) })
+            : t('wallets.credit.statementHint', { date: day(card.due) }),
+      always: true,
+    },
+    {
+      key: 'since',
+      amount: card.since,
+      color: shade(0.6),
+      title: t('wallets.credit.since'),
+      hint: t('wallets.credit.sinceHint', { date: day(card.nextClosing) }),
+      always: false,
+    },
+    {
+      key: 'unbilled',
+      amount: card.unbilled,
+      color: shade(0.3),
+      title: t('wallets.credit.unbilled'),
+      hint: t('wallets.credit.unbilledHint'),
+      always: false,
+    },
+  ]
+  // DL-NUM-02: amounts in rows have their cents small, like every list.
+  const amount = (minor: number) => {
+    const value = { minor, currency: wallet.currency }
+    return <Amount parts={money.parts(value)} label={money.text(value)} />
+  }
+  const toPay = card.statement > 0 ? card.statement : card.statement + card.since
   return (
     <FeatureCard title={t('wallets.credit.title')} editLabel={t('wallets.edit')} onEdit={edit}>
-      {/* DL-VIZ-01: a bar and one plain sentence; the bar in the wallet's color. */}
       <div
         role="meter"
         aria-label={t('wallets.credit.utilization')}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-valuenow={Math.round(Math.min(1, summary.utilization) * 100)}
-        className="h-2 overflow-hidden rounded-full bg-fill"
+        aria-valuenow={Math.round(Math.min(1, utilization) * 100)}
+        className="flex h-2 gap-0.5 overflow-hidden rounded-full bg-fill"
       >
-        <div
-          className="h-full rounded-full"
-          style={{
-            width: `${String(Math.min(100, summary.utilization * 100))}%`,
-            backgroundColor: `color-mix(in srgb, var(--mirador-${wallet.color}) var(--mirador-bar-mix), var(--mirador-surface))`,
-          }}
-        />
+        {parts.map(
+          (part) =>
+            part.amount > 0 && (
+              <div
+                key={part.key}
+                className="h-full"
+                style={{
+                  width: `${String((part.amount / Math.max(used, limit)) * 100)}%`,
+                  backgroundColor: part.color,
+                }}
+              />
+            ),
+        )}
       </div>
       <div className="flex items-baseline justify-between gap-3">
-        <Line strong>
-          {t('wallets.credit.used', { used: of(summary.used), limit: of(wallet.credit.limit) })}
-        </Line>
+        <Line strong>{t('wallets.credit.used', { used: of(used), limit: of(limit) })}</Line>
         <span className="text-[0.9375rem] text-text-muted tabular-nums">
-          {formatShare(summary.utilization, money.locale)}
+          {formatShare(utilization, money.locale)}
         </span>
       </div>
-      {/* DL-COL-05: over the limit changes only the words' color, never the bar's. */}
-      {over ? (
-        <Line warning>{t('wallets.credit.over', { amount: of(-summary.available) })}</Line>
-      ) : (
-        <Line>{t('wallets.credit.available', { amount: of(summary.available) })}</Line>
+      <ul className="flex flex-col">
+        {parts.map(
+          (part) =>
+            (part.always || part.amount > 0) && (
+              <CreditPart
+                key={part.key}
+                color={part.color}
+                title={part.title}
+                hint={part.hint}
+                amount={amount(part.amount)}
+              />
+            ),
+        )}
+        {/* DL-COL-05: over the limit changes only the words' color, never the bar's. */}
+        <CreditPart
+          title={over ? t('wallets.credit.overRow') : t('wallets.credit.availableRow')}
+          hint={over ? null : t('wallets.credit.availableHint')}
+          amount={
+            over ? (
+              <span className="text-[0.9375rem] text-warning tabular-nums">
+                {of(-card.available)}
+              </span>
+            ) : (
+              amount(card.available)
+            )
+          }
+          warning={over}
+        />
+      </ul>
+      {toPay > 0 && (
+        <Button
+          variant="secondary"
+          onClick={() => {
+            onPay(toPay)
+          }}
+        >
+          {t('wallets.credit.pay')}
+        </Button>
       )}
-      <div className="mt-1 flex flex-col gap-1.5 border-t border-separator pt-3">
-        <Fact label={t('wallets.credit.closes')}>
-          {formatDay(summary.nextClosing, today, money.locale, words)}
-        </Fact>
-        <Fact label={t('wallets.credit.payBy')}>
-          {formatDay(summary.nextDue, today, money.locale, words)}
-        </Fact>
-      </div>
     </FeatureCard>
+  )
+}
+
+/** WAL-25: one part of what the card owes: its dot, its name, what it means and how much. */
+function CreditPart({
+  color,
+  title,
+  hint,
+  amount,
+  warning,
+}: {
+  color?: string
+  title: string
+  hint: string | null
+  amount: ReactNode
+  warning?: boolean
+}) {
+  return (
+    <li className="flex items-center gap-3">
+      <span
+        aria-hidden
+        className={`size-2.5 shrink-0 rounded-full ${color ? '' : 'bg-fill'}`}
+        style={color ? { backgroundColor: color } : undefined}
+      />
+      {/* DL-SHP-04: the hairline starts where the text starts. */}
+      <span className="flex min-h-[3.25rem] min-w-0 flex-1 items-center gap-3 border-t-[0.5px] border-separator py-2">
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className={`text-[0.9375rem] ${warning ? 'text-warning' : 'text-text'}`}>
+            {title}
+          </span>
+          {hint && <span className="text-[0.8125rem] text-text-muted">{hint}</span>}
+        </span>
+        {amount}
+      </span>
+    </li>
   )
 }
 
@@ -317,7 +437,10 @@ export function ValuationCard({
 }: Pick<CardProps, 'wallet' | 'defaultCurrency'> & { transactions: readonly Transaction[] }) {
   const { t } = useTranslation()
   const money = useMoney(defaultCurrency)
-  const summary = valuationSummary(transactions)
+  // A transfer in counts as money put in: what arrived in this wallet (TXN-03).
+  const summary = valuationSummary(
+    transactions.map((tx) => ({ kind: tx.kind, amount: changeTo(tx, wallet.id) })),
+  )
   const contributed = { minor: summary.contributed, currency: wallet.currency }
   const gain = { minor: summary.gain, currency: wallet.currency }
   return (

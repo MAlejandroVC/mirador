@@ -430,11 +430,13 @@ The save sequence (DL-MOT-02) plays for every Save that adds or changes somethin
 | Where | Usual case | Unusual case |
 |---|---|---|
 | Transactions | Expense: no sign, text color ("$4.50") | Income or refund: plus sign in Moss ("+$1,200.00") |
-| Transfers between own wallets | No sign, text color | (none) |
+| Transfers between own wallets | No sign, `text-muted` ("$2,000.00"), with the row's second line reading "Checking → Credit card" | (none) |
 | Wallet balances and net worth | Positive: no sign | Negative (a credit card, a loan): minus sign, text color ("−$3,250.00") |
 | Budget | "$212 left" | "$18 over" in `warning` (DL-COL-05) |
 
-*Why:* the usual case needs no decoration; a sign or color only appears when it tells you something.
+A day's or a period's net follows the same rule: money in shows its plus in Moss, money out shows no sign.
+
+*Why:* the usual case needs no decoration; a sign or color only appears when it tells you something. A transfer is muted because it is neither spending nor income: money only moved between your own wallets.
 
 **DL-NUM-04** The minus sign is the true minus (−, U+2212), never a hyphen. *Why:* it is as wide as the plus and lines up in columns.
 
@@ -513,7 +515,7 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 
 **DL-CMP-06** **Navigation bar.** Each tab opens with a large title. The tab's actions share the title's row on the right, as in the App Store: on every tab that is the profile picture, 40 px, which opens Settings. No row is spent on buttons alone. Once the page scrolls, the title shrinks into the bar, centered. A screen reached from another, such as a Settings page, has a round back button at the top left: a 44 px `surface` circle with a chevron only, as in iOS Settings (its accessible name is the previous screen's title). Instead of the large title it opens with a header card: a `surface` card holding a 56 px icon tile (or, for Account, the profile picture), the screen's title in 24 px bold and one short line in `text-muted` on what you can do there. At most two plain actions sit at the top right.
 
-**DL-CMP-07** **List rows.** Rows sit in inset lists (a `surface` card with 16 px corners), at least 52 px tall: icon tile, title, an optional second line in `text-muted`, and a value or amount on the right. A chevron appears only when the row opens another screen. Tapping a row opens it, which is also where it is edited. Swiping a row to the left is only for deleting, as in iOS. A short swipe slides the row aside and leaves a small red Delete pill showing; tapping the pill deletes the row. A long swipe deletes it straight away. Tapping anywhere else closes the pill. Delete can also be reached from the row's own screen (DL-A11Y-07).
+**DL-CMP-07** **List rows.** Rows sit in inset lists (a `surface` card with 16 px corners), at least 52 px tall: icon tile, title, an optional second line in `text-muted`, and a value or amount on the right. A chevron appears only when the row opens another screen. Tapping a row opens it, which is also where it is edited. A transaction row never says its type: its amount does (DL-NUM-03). Its title is the payee, else the note, else the category; the second line holds the category when the title is something else, then the wallet. Swiping a row to the left is only for deleting, as in iOS. A short swipe slides the row aside and leaves a small red Delete pill showing; tapping the pill deletes the row. A long swipe deletes it straight away. Tapping anywhere else closes the pill. Delete can also be reached from the row's own screen (DL-A11Y-07).
 
 **DL-CMP-08** **Sheets.** Creating or editing something opens a sheet that slides up, with a grabber, Cancel at the top left, the title in the middle, and the main action as a filled button at the bottom, within reach of the thumb. Settings-like sheets put Done at the top right instead. Swiping a sheet down closes it, unless it holds unsaved changes; then an action sheet asks "Discard changes?".
 
@@ -537,7 +539,7 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 
 ## Patterns
 
-**DL-PAT-01** **Navigation.** The tabs are Home, Activity, Budget and Wallets. Opening an item pushes a screen in from the right, and swiping from the left edge goes back. Creating or editing opens a sheet (DL-CMP-08). Tapping the current tab returns to its top. Settings is not a place, so it is not a tab: it opens from the profile picture beside each tab's title, or from the bottom of the sidebar (DL-LAY-06). It lists Account, then Appearance, Password and security, and Invites for the person who runs the server, then Lock and Sign out; more areas join as they are built.
+**DL-PAT-01** **Navigation.** The tabs are Home, Transactions, Budget and Wallets. Opening an item pushes a screen in from the right, and swiping from the left edge goes back. Creating or editing opens a sheet (DL-CMP-08). Tapping the current tab returns to its top. Settings is not a place, so it is not a tab: it opens from the profile picture beside each tab's title, or from the bottom of the sidebar (DL-LAY-06). It lists Account, then Appearance, Password and security, and Invites for the person who runs the server, then Lock and Sign out; more areas join as they are built.
 
 **DL-PAT-02** **Forms.** Fill in everything that can be guessed: today's date, the last wallet used, the suggested category. Show the required fields first. Check the fields only when the person taps the main button, never while they type or when they leave a field. The main button always looks ready. Tapped with a required field missing, it saves nothing: each missing field gives a quick small shake (DL-MOT-07), gets a `warning` outline and its error under it, and the caret goes to the first one. From then on each mark clears as soon as its field is filled. *Why:* a warning for a field the person hasn't reached yet feels like being scolded for something they were about to do.
 

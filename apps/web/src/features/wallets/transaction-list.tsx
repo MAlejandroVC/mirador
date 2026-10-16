@@ -1,78 +1,54 @@
-import { toCalendarDate, type Transaction } from '@repo/core'
+import type { Transaction } from '@repo/core'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { Amount } from '../../components/ui/amount'
-import { IconTile } from '../../components/ui/icon-tile'
-import {
-  CaretRightIcon,
-  FlagBannerIcon,
-  type Icon,
-  PercentIcon,
-  ReceiptIcon,
-  ScalesIcon,
-  TrendUpIcon,
-} from '../../components/ui/icons'
-import { List, ListButtonRow } from '../../components/ui/list'
-import { formatDay, useMoney } from '../../lib/format'
-import type { LedgerWallet } from './use-ledger'
-
-// The icon of each kind of transaction the wallets epic makes (DL-ICO-01).
-const kindIcons: Record<Transaction['kind'], Icon> = {
-  openingBalance: FlagBannerIcon,
-  adjustment: ScalesIcon,
-  interest: PercentIcon,
-  fee: ReceiptIcon,
-  valuation: TrendUpIcon,
-}
+import { CaretRightIcon } from '../../components/ui/icons'
+import { List } from '../../components/ui/list'
+import { taxonomy } from '../categories/lookups'
+import { TransactionRow } from '../transactions/transaction-row'
+import { type LedgerWallet, useLedger } from './use-ledger'
 
 /**
- * A wallet's transactions, newest first. With `limit`, only that many, and a "See more"
- * row that opens the wallet's full list.
+ * A wallet's transactions, transfers into it included, newest first. With `limit`,
+ * only that many, and a "See more" row that opens the wallet's full list.
  */
 export function TransactionRows({
   wallet,
+  wallets,
   transactions,
   defaultCurrency,
   limit,
   label,
   onOpen,
+  onDelete,
 }: {
   wallet: LedgerWallet
+  wallets: readonly LedgerWallet[]
   transactions: readonly Transaction[]
   defaultCurrency: string
   limit?: number
   label?: string
   onOpen: (transaction: Transaction) => void
+  onDelete: (transaction: Transaction) => void
 }) {
   const { t } = useTranslation()
-  const money = useMoney(defaultCurrency)
-  const today = toCalendarDate(new Date())
+  const { data: ledger } = useLedger()
+  const byId = new Map(wallets.map((each) => [each.id, each]))
+  const lookups = taxonomy(ledger ?? { groups: [], categories: [], tags: [], payees: [] })
   const shown = limit === undefined ? transactions : transactions.slice(0, limit)
   return (
     <List {...(label ? { label } : {})}>
-      {shown.map((transaction) => {
-        const value = { minor: transaction.amount, currency: wallet.currency }
-        const signs = transaction.kind === 'openingBalance' ? 'negative' : 'always'
-        const KindIcon = kindIcons[transaction.kind]
-        return (
-          <ListButtonRow
-            key={transaction.id}
-            id={transaction.id}
-            tone="text"
-            // System transactions (CAT-05) take Stone, the quietest category color.
-            leading={<IconTile icon={KindIcon} color="stone" />}
-            title={transaction.note ?? t(`wallets.transactions.${transaction.kind}`)}
-            subtitle={formatDay(transaction.date, today, money.locale, {
-              today: t('dates.today'),
-              yesterday: t('dates.yesterday'),
-            })}
-            trailing={<Amount parts={money.parts(value, signs)} label={money.text(value, signs)} />}
-            onClick={() => {
-              onOpen(transaction)
-            }}
-          />
-        )
-      })}
+      {shown.map((transaction) => (
+        <TransactionRow
+          key={transaction.id}
+          transaction={transaction}
+          wallets={byId}
+          taxonomy={lookups}
+          walletId={wallet.id}
+          defaultCurrency={defaultCurrency}
+          onOpen={onOpen}
+          onDelete={onDelete}
+        />
+      ))}
       {shown.length < transactions.length && (
         <li className="group">
           {/* DL-CMP-07: it opens another screen, so it has a chevron. */}

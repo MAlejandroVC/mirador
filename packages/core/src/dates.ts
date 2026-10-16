@@ -100,3 +100,53 @@ export function calendarWeeks(date: string, firstDay = 0): (string | null)[][] {
   while (slots.length % 7 !== 0) slots.push(null)
   return Array.from({ length: slots.length / 7 }, (_, week) => slots.slice(week * 7, week * 7 + 7))
 }
+
+/** The date `days` later, or earlier when negative. */
+export function addDays(date: string, days: number): string {
+  const [year, month, day] = parts(date)
+  const moment = new Date(Date.UTC(year, month - 1, day + days))
+  return format(moment.getUTCFullYear(), moment.getUTCMonth() + 1, moment.getUTCDate())
+}
+
+/** How long a span of the transaction list is (TXN-22). */
+export type PeriodScope = 'week' | 'month' | 'quarter' | 'year'
+
+/**
+ * The week, month, quarter or year that holds `date`. A week starts on `firstDay`
+ * (0 is Sunday, SYS-03).
+ */
+export function periodOf(date: string, scope: PeriodScope, firstDay = 0): Period {
+  const [year, month] = parts(date)
+  switch (scope) {
+    case 'week': {
+      const start = addDays(date, -((weekday(date) - firstDay + 7) % 7))
+      return { start, end: addDays(start, 6) }
+    }
+    case 'month':
+      return monthOf(date)
+    case 'quarter': {
+      const first = month - ((month - 1) % 3)
+      return {
+        start: format(year, first, 1),
+        end: format(year, first + 2, daysInMonth(year, first + 2)),
+      }
+    }
+    case 'year':
+      return { start: format(year, 1, 1), end: format(year, 12, 31) }
+  }
+}
+
+/** The period `steps` before (negative) or after the one that holds `date`. */
+export function shiftPeriod(date: string, scope: PeriodScope, steps: number, firstDay = 0): Period {
+  const { start } = periodOf(date, scope, firstDay)
+  const moved =
+    scope === 'week'
+      ? addDays(start, steps * 7)
+      : addMonths(start, steps * (scope === 'month' ? 1 : scope === 'quarter' ? 3 : 12), 1)
+  return periodOf(moved, scope, firstDay)
+}
+
+/** Whether `date` falls in `period`, both ends included. */
+export function inPeriod(date: string, period: Period): boolean {
+  return date >= period.start && date <= period.end
+}

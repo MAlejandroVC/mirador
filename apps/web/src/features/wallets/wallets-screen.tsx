@@ -13,8 +13,8 @@ import { List, ListButtonRow, ListLinkRow, ListRow } from '../../components/ui/l
 import { Page } from '../../components/ui/page'
 import { SegmentedControl } from '../../components/ui/segmented-control'
 import { formatShare, useMoney } from '../../lib/format'
-import { ReorderSheet } from './reorder-sheet'
-import { type LedgerWallet, useLedger } from './use-ledger'
+import { WalletReorderSheet } from './reorder-sheet'
+import { balanceEntries, type LedgerWallet, useLedger } from './use-ledger'
 import { presetLooks, walletIconComponents } from './wallet-look'
 import { WalletSheet } from './wallet-sheet'
 
@@ -71,7 +71,7 @@ export function WalletsScreen() {
     )
 
   const today = toCalendarDate(new Date())
-  const balances = walletBalances(ledger.wallets, ledger.transactions)
+  const balances = walletBalances(ledger.wallets, balanceEntries(ledger, today))
   const worth = netWorth(ledger.wallets, balances, defaultCurrency, ledger.rates, today)
   const amount = (wallet: LedgerWallet) => balances.get(wallet.id) ?? 0
   const shares = new Map(
@@ -204,7 +204,7 @@ export function WalletsScreen() {
         )}
       </List>
       {sheet}
-      <ReorderSheet
+      <WalletReorderSheet
         open={reordering}
         wallets={ledger.wallets}
         onClose={() => {

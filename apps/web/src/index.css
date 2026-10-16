@@ -712,6 +712,8 @@ main {
    clips; hidden, it takes no room and nothing in it can be reached. */
 .fold {
   display: grid;
+  /* Never wider than its place, so a row's text can truncate (DL-CMP-07). */
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: 1fr;
   transition:
     grid-template-rows 300ms cubic-bezier(0.32, 0.72, 0, 1),

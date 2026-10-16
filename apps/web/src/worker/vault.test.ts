@@ -20,8 +20,13 @@ import { newRecordId } from '@repo/crypto'
 import { createApi, type Fetch } from '../lib/api'
 import { vaultErrorCode } from './errors'
 import { Vault } from './vault'
-import { openingBalance } from '@repo/core'
-import { exchangeRateBody, transactionBody, walletBody } from '../features/wallets/use-ledger'
+import { entryFields, openingBalance, recurringFields, starterSet } from '@repo/core'
+import {
+  exchangeRateBody,
+  recordBody,
+  transactionBody,
+  walletBody,
+} from '../features/wallets/use-ledger'
 import { newWalletRecord } from '../features/wallets/wallet-look'
 
 const password = 'a sunny day in Monterrey'
@@ -330,6 +335,194 @@ describe('vault', () => {
     // Not even which kind of record each one is (SEC-04).
     expect(everything).not.toContain('wallet')
     expect(everything).not.toContain('transaction')
+  })
+
+  it('TXN-01, TXN-05: expenses, income and transfers reach the server only encrypted', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    await phone.signUp({ username: 'ana', password })
+    const [checking, dollars] = [newRecordId(), newRecordId()]
+    const now = '2026-10-15T12:00:00.000Z'
+
+    await phone.saveRecords([
+      {
+        id: newRecordId(),
+        body: transactionBody(
+          entryFields(
+            {
+              type: 'expense',
+              amount: 73_919,
+              walletId: checking,
+              date: '2026-10-15',
+              note: 'Tacos Orinoco',
+            },
+            'quickAdd',
+            now,
+          ),
+        ),
+      },
+      {
+        id: newRecordId(),
+        body: transactionBody(
+          entryFields(
+            {
+              type: 'transfer',
+              amount: 61_234,
+              walletId: checking,
+              toWalletId: dollars,
+              toAmount: 3_317,
+              rate: 54_168,
+              date: '2026-10-15',
+              excludeFromBudget: true,
+            },
+            'manual',
+            now,
+          ),
+        ),
+      },
+    ])
+
+    const everything = server.sent.join('\n')
+    for (const plaintext of [
+      'Tacos',
+      '73919',
+      '61234',
+      '3317',
+      '54168',
+      'expense',
+      'transfer',
+      'quickAdd',
+      'excludeFromBudget',
+      checking,
+      dollars,
+      '2026-10-15',
+    ])
+      expect(everything).not.toContain(plaintext)
+  })
+
+  it('CAT-01, CAT-04, CAT-20, TXN-08: categories, tags, payees and their use reach the server only encrypted', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    await phone.signUp({ username: 'ana', password })
+    const set = starterSet(
+      { group: () => 'Antojitos', category: () => 'Elotes Doña Cuca', tag: () => 'Viaje Mazunte' },
+      newRecordId,
+    )
+    const [group] = set.groups
+    const [category] = set.categories
+    const [tag] = set.tags
+    if (!group || !category || !tag) throw new Error('The starter set is empty')
+    const { id: groupId, ...groupData } = group
+    const { id: categoryId, ...categoryData } = category
+    const { id: tagId, ...tagData } = tag
+    // Record ids are visible to the server; which category, tag and payee a
+    // transaction uses is not, so it links to ones saved in another batch.
+    const [linkedCategory, linkedTag, linkedPayee] = [newRecordId(), newRecordId(), newRecordId()]
+
+    await phone.saveRecords([
+      { id: groupId, body: recordBody('categoryGroup', groupData) },
+      { id: categoryId, body: recordBody('category', categoryData) },
+      { id: tagId, body: recordBody('tag', tagData) },
+      { id: newRecordId(), body: recordBody('payee', { name: 'Taquería Orinoco' }) },
+      {
+        id: newRecordId(),
+        body: transactionBody(
+          entryFields(
+            {
+              type: 'expense',
+              amount: 8_850,
+              walletId: newRecordId(),
+              date: '2026-10-16',
+              categoryId: linkedCategory,
+              tagIds: [linkedTag],
+              payeeId: linkedPayee,
+            },
+            'manual',
+            '2026-10-16T12:00:00.000Z',
+          ),
+        ),
+      },
+    ])
+
+    const everything = server.sent.join('\n')
+    for (const plaintext of [
+      'Antojitos',
+      'Elotes',
+      'Mazunte',
+      'Orinoco',
+      'categoryGroup',
+      'flexibility',
+      'systemKey',
+      'uncategorized',
+      'marigold',
+      linkedCategory,
+      linkedTag,
+      linkedPayee,
+      '8850',
+    ])
+      expect(everything).not.toContain(plaintext)
+  })
+
+  it('TXN-09, TXN-30: recurring transactions and installment plans reach the server only encrypted', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    await phone.signUp({ username: 'ana', password })
+    const now = '2026-10-16T12:00:00.000Z'
+    const walletId = newRecordId()
+
+    await phone.saveRecords([
+      {
+        id: newRecordId(),
+        body: recordBody(
+          'recurring',
+          recurringFields(
+            {
+              type: 'expense',
+              amount: 29_900,
+              walletId,
+              date: '2026-10-20',
+              note: 'Plan Estándar Netflix',
+            },
+            { every: { unit: 'month', count: 1 }, times: 24, ask: true },
+            now,
+          ),
+        ),
+      },
+      {
+        id: newRecordId(),
+        body: transactionBody(
+          entryFields(
+            {
+              type: 'expense',
+              amount: 1_050_000,
+              walletId,
+              date: '2026-10-14',
+              note: 'Pantalla Liverpool',
+              installments: { months: 6, price: 900_000, deferred: 2 },
+            },
+            'manual',
+            now,
+          ),
+        ),
+      },
+    ])
+
+    const everything = server.sent.join('\n')
+    for (const plaintext of [
+      'Netflix',
+      'Liverpool',
+      'recurring',
+      'installments',
+      'every',
+      'month',
+      'deferred',
+      '29900',
+      '1050000',
+      '900000',
+      '2026-10-20',
+      walletId,
+    ])
+      expect(everything).not.toContain(plaintext)
   })
 
   it('SYS-04, WAL-13, WAL-15, WAL-16, WAL-17: rates, feature details and fee notes reach the server only encrypted', async () => {

@@ -1,7 +1,7 @@
 import { CaretRightIcon } from './icons'
 import { Link, type LinkProps } from '@tanstack/react-router'
-import { type ReactNode, useState } from 'react'
-import { isNew } from '../../lib/motion'
+import type { ReactNode } from 'react'
+import { rowClass, useRowClass } from './row'
 
 // DL-LAY-05, DL-CMP-07: rows sit in an inset list, a `surface` card with 16 px corners,
 // introduced by an optional section label, with an optional value at its right, such
@@ -33,10 +33,7 @@ export function List({
   )
 }
 
-const rowClass =
-  'flex min-h-[3.25rem] w-full items-center gap-3 pl-4 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand'
-
-function RowBody({
+export function RowBody({
   leading,
   title,
   subtitle,
@@ -48,8 +45,8 @@ function RowBody({
     <>
       {leading}
       {/* DL-SHP-04: the hairline between rows starts where the text starts. */}
-      <span className="flex min-h-[3.25rem] flex-1 items-center gap-2 self-stretch border-t-[0.5px] border-separator py-2 pr-4 group-first:border-t-0">
-        <span className="flex flex-1 flex-col">
+      <span className="flex min-h-[3.25rem] min-w-0 flex-1 items-center gap-2 self-stretch border-t-[0.5px] border-separator py-2 pr-4 group-first:border-t-0">
+        <span className="flex min-w-0 flex-1 flex-col">
           <span className={`text-[0.9375rem] ${tone === 'brand' ? 'text-brand' : 'text-text'}`}>
             {title}
           </span>
@@ -63,16 +60,7 @@ function RowBody({
   )
 }
 
-/**
- * DL-MOT-02: a row for something that was just saved opens into its list with a
- * highlight that fades. `id` is what the save marked (lib/motion markNew).
- */
-function useRowClass(id: string | undefined) {
-  const [fresh] = useState(() => id !== undefined && isNew(id))
-  return fresh ? 'group row-new' : 'group'
-}
-
-interface RowContent {
+export interface RowContent {
   leading?: ReactNode
   title: ReactNode
   subtitle?: ReactNode

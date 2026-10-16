@@ -74,6 +74,20 @@ export function formatDay(
   }).replace('.', '')
 }
 
+/** DL-NUM-08: "Oct 20" ("20 oct"), with the year only when it isn't this one. */
+export function formatShortDate(date: string, today: string, locale: string): string {
+  const [year = 0, month = 1, dayOfMonth = 1] = date.split('-').map(Number)
+  const sameYear = today.startsWith(`${String(year)}-`)
+  return new Intl.DateTimeFormat(locale, {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  })
+    .format(new Date(Date.UTC(year, month - 1, dayOfMonth)))
+    .replace('.', '')
+}
+
 /** SYS-04: an exchange rate for reading, such as "18.45", with at least two decimals. */
 export function formatRate(rate: number, locale: string): string {
   return formatDecimal(rate, rateDecimals, locale, 2)
@@ -82,4 +96,42 @@ export function formatRate(rate: number, locale: string): string {
 /** WAL-13: an interest rate in hundredths of a percent, such as "10.5%". */
 export function formatPercent(basisPoints: number, locale: string): string {
   return `${formatDecimal(basisPoints, percentDecimals, locale)}%`
+}
+
+/**
+ * The name of a span of the transaction list (TXN-22): "October 2026", "Oct 12 – 18",
+ * "Q4 2026" or "2026". `quarter` words the quarter in the person's language.
+ */
+export function formatPeriod(
+  period: { start: string; end: string },
+  scope: 'week' | 'month' | 'quarter' | 'year',
+  locale: string,
+  quarter: (number: number, year: number) => string,
+): string {
+  const day = (value: string) => {
+    const [year = 0, month = 1, dayOfMonth = 1] = value.split('-').map(Number)
+    return new Date(Date.UTC(year, month - 1, dayOfMonth))
+  }
+  const start = day(period.start)
+  const year = start.getUTCFullYear()
+  switch (scope) {
+    case 'year':
+      return String(year)
+    case 'quarter':
+      return quarter(Math.floor(start.getUTCMonth() / 3) + 1, year)
+    case 'month': {
+      const text = new Intl.DateTimeFormat(locale, {
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+      }).format(start)
+      return text.charAt(0).toLocaleUpperCase(locale) + text.slice(1)
+    }
+    case 'week':
+      return new Intl.DateTimeFormat(locale, {
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC',
+      }).formatRange(start, day(period.end))
+  }
 }

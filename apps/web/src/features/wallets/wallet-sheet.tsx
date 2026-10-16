@@ -1,5 +1,4 @@
 import {
-  curatedColors,
   type WalletFeature,
   walletFeatures,
   walletIcons,
@@ -24,6 +23,7 @@ import { ActionSheet } from '../../components/ui/action-sheet'
 import { Button } from '../../components/ui/button'
 import { ChoiceRow } from '../../components/ui/choice-row'
 import { IconTile } from '../../components/ui/icon-tile'
+import { ColorChoices, IconChoices } from '../../components/ui/look-picker'
 import { CaretRightIcon } from '../../components/ui/icons'
 import { ShowMoreRow } from '../../components/ui/show-more-row'
 import { List } from '../../components/ui/list'
@@ -33,7 +33,6 @@ import { invalidRow } from '../../components/ui/field-row'
 import { Sheet } from '../../components/ui/sheet'
 import { SubmitButton } from '../../components/ui/submit-button'
 import { useSubmit } from '../../components/ui/use-submit'
-import { tileStyle } from '../../components/ui/tile-style'
 import { useLocale } from '../../lib/format'
 import { markNew } from '../../lib/motion'
 import { CurrencyList } from './currency-list'
@@ -330,56 +329,26 @@ function WalletForm({
           {t('wallets.form.look')}
         </h3>
         <div className="flex flex-col gap-2 rounded-2xl bg-inset p-2">
-          {/* WAL-23: the 12 curated colors, in the picker's order (DL-COL-11). */}
-          <div role="radiogroup" aria-label={t('wallets.form.color')} className="grid grid-cols-6">
-            {curatedColors.map((color) => (
-              <button
-                key={color}
-                type="button"
-                role="radio"
-                aria-checked={draft.color === color}
-                aria-label={t(`colors.${color}`)}
-                onClick={() => {
-                  setDraft({ ...draft, color })
-                }}
-                className="grid min-h-11 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-brand"
-              >
-                <span
-                  className={`size-8 rounded-full ${draft.color === color ? 'ring-2 ring-text ring-offset-2 ring-offset-inset' : ''}`}
-                  style={{ backgroundColor: `var(--mirador-${color})` }}
-                />
-              </button>
-            ))}
-          </div>
-          <div
-            role="radiogroup"
-            aria-label={t('wallets.form.icon')}
-            className="grid grid-cols-6 gap-y-1 border-t-[0.5px] border-separator pt-2"
-          >
-            {walletIcons.map((icon) => {
-              const Glyph = walletIconComponents[icon]
-              const checked = draft.icon === icon
-              return (
-                <button
-                  key={icon}
-                  type="button"
-                  role="radio"
-                  aria-checked={checked}
-                  aria-label={t(`wallets.icons.${icon}`)}
-                  onClick={() => {
-                    setDraft({ ...draft, icon })
-                  }}
-                  className="grid min-h-11 place-items-center rounded-xl focus-visible:outline-2 focus-visible:outline-brand"
-                >
-                  <span
-                    style={checked ? tileStyle(draft.color) : undefined}
-                    className={`grid size-10 place-items-center rounded-[0.625rem] ${checked ? '' : 'text-text-muted'}`}
-                  >
-                    <Glyph weight={checked ? 'duotone' : 'regular'} className="size-6" />
-                  </span>
-                </button>
-              )
-            })}
+          <ColorChoices
+            label={t('wallets.form.color')}
+            value={draft.color}
+            colorLabel={(color) => t(`colors.${color}`)}
+            onChange={(color) => {
+              setDraft({ ...draft, color })
+            }}
+          />
+          <div className="border-t-[0.5px] border-separator pt-2">
+            <IconChoices
+              label={t('wallets.form.icon')}
+              icons={walletIcons}
+              components={walletIconComponents}
+              value={draft.icon}
+              color={draft.color}
+              iconLabel={(icon) => t(`wallets.icons.${icon}`)}
+              onChange={(icon) => {
+                setDraft({ ...draft, icon })
+              }}
+            />
           </div>
         </div>
       </section>

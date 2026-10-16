@@ -79,13 +79,15 @@ describe('settings', () => {
     stubServer(server)
     const vault = unlockedVault(server)
     renderApp('/settings/account', vault)
+    // The suggested categories a new account starts with (CAT-04) are saved too.
+    const profiles = () => (server.records ?? []).filter((item) => item.body.type === 'profile')
 
     const initial = await screen.findByRole('radio', { name: 'Your initial' })
     expect(initial).toHaveAttribute('aria-checked', 'true')
     await user.click(screen.getByRole('radio', { name: 'Cat' }))
 
     await vi.waitFor(() => {
-      expect(server.records?.[0]?.body).toEqual({
+      expect(profiles()[0]?.body).toEqual({
         deleted: false,
         type: 'profile',
         schema: 1,
@@ -96,8 +98,8 @@ describe('settings', () => {
     // Picking again changes the same record rather than adding one.
     await user.click(screen.getByRole('radio', { name: 'Dog' }))
     await vi.waitFor(() => {
-      expect(server.records).toHaveLength(1)
-      expect(server.records?.[0]?.body).toMatchObject({ data: { picture: 'dog' } })
+      expect(profiles()).toHaveLength(1)
+      expect(profiles()[0]?.body).toMatchObject({ data: { picture: 'dog' } })
     })
     // The username and deleting the account live here too.
     expect(screen.getByRole('region', { name: 'Username' })).toBeInTheDocument()

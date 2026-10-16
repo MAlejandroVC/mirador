@@ -68,6 +68,9 @@ describe('wallets', () => {
       'interest',
       'fee',
       'valuation',
+      'expense',
+      'income',
+      'transfer',
     ])
   })
 

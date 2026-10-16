@@ -73,6 +73,9 @@ These terms have one meaning throughout the document, the code and the UI.
 | Opening balance | An ordinary transaction that sets a wallet's starting amount; its date and amount can be moved to load older history. |
 | Transaction | One money movement: an expense, an income or a transfer. |
 | Transfer | Money moved between two of the user's own wallets. Not income, not spending. Paying a credit card is a transfer. |
+| Installment plan | A purchase paid in equal monthly parts (in Mexico, "meses sin intereses" or "con intereses"). On a credit card it takes the whole amount off the available credit at once; on any other wallet each part leaves on its day. It counts in spending one installment per month. |
+| Statement balance | What a credit card statement billed, minus the payments since: paying it by the due date avoids interest. Installments not billed yet are not part of it. |
+| Recurring transaction | A template that adds the same transaction on a schedule, by itself or after the user confirms it. |
 | Split | One transaction divided across several categories. |
 | Category | A user-defined label for what money was spent on or earned from ("Lunch"). Every expense and income has exactly one. |
 | Category group | The super-category a category belongs to ("Food & drinks"). |
@@ -175,6 +178,7 @@ Wallets are where money lives or is owed, and every transaction moves money in o
 | WAL-14 | Where interest is on, the app shall offer to post the estimated interest as a transaction for the user to confirm. | Could |
 | WAL-15 | Where fees are on, the app shall store each fee's amount, frequency and an optional note, and generate expected fee transactions for the user to confirm. | Should |
 | WAL-16 | Where a credit limit is on, the app shall store the limit, statement closing day and payment due day, and show utilization and the next due date. | Should |
+| WAL-25 | Where a credit limit is on, the app shall split what the card owes into the statement balance to pay by the due date to avoid interest, the charges since that statement and the installments not billed yet, and show the available credit and every installment plan with how many installments are billed. | Should |
 | WAL-17 | Where a loan schedule is on, the app shall store principal, rate, term, payment amount and payment day, and project the payoff date and total interest. | Should |
 | WAL-18 | Where valuations are on, the app shall record market-value updates separately from contributions and show contributions versus gains. | Should |
 | WAL-19 | The app shall let the user mark a wallet as liquid (money available now). | Should |
@@ -225,6 +229,8 @@ A transaction records one money movement: an expense, an income or a transfer be
 | Tags | No | Any number, including none |
 | Payee | No | Merchant or person; to revisit in a UX review of friction points |
 | Note | No | Short free text to identify the transaction |
+| Installments | No | Expenses made once: the number of months, interest-free or with interest, and when the first one is due (TXN-30) |
+| Repeats | No | Makes it a recurring transaction (TXN-09) |
 | Exclude from budget | No | Defaults off |
 | Source | System | Manual, quick add, import batch or recurring |
 | Created and updated time | System | Audit trail |
@@ -241,13 +247,26 @@ A transaction records one money movement: an expense, an income or a transfer be
 | TXN-06 | The app shall let the user mark any transaction as excluded from the budget. | Must |
 | TXN-07 | The app shall let the user split one transaction across several categories, and block saving unless the parts add up to the total. | Should |
 | TXN-08 | When the user picks a payee, the app shall pre-fill the category, tags and wallet last used with that payee. | Should |
-| TXN-09 | The app shall let the user define recurring transactions (daily, weekly, every two weeks, monthly, yearly or custom) that generate scheduled entries. | Should |
+| TXN-09 | The app shall let the user define recurring transactions (daily, weekly, every two weeks, monthly, yearly or custom) that generate scheduled entries, shown ahead of time in the periods to come. | Should |
 | TXN-10 | When a scheduled entry comes due, the app shall, the next time the user unlocks it (the server cannot create encrypted entries), either post it automatically or wait for the user's confirmation, per the template's setting. | Should |
 | TXN-11 | The app shall record refunds as income transactions. | Must |
 | TXN-12 | The app shall let the user duplicate a transaction. | Could |
 | TXN-13 | When the user deletes a transaction, the app shall offer an undo for at least 10 seconds. | Should |
 | TXN-14 | The app shall let the user attach a receipt image to a transaction. | Could |
 | TXN-15 | The app shall let the user add any number of tags to a transaction, suggesting existing tags as they type. | Must |
+
+**Installments**
+
+A purchase paid in installments ("meses sin intereses" or "meses con intereses" in Mexico) is made today, but the card bills it a part at a time, one statement after another.
+
+| ID | Requirement | Priority |
+|---|---|---|
+| TXN-30 | The app shall let the user pay any expense made once in a number of monthly installments, interest-free or with interest, and optionally start the first one some months later. On a wallet with a credit limit and statement dates (WAL-16), installments follow its statements and the whole amount is owed at once; on any other wallet, each installment leaves the wallet on the purchase's day of the month. | Should |
+| TXN-31 | Where an installment plan has interest, the app shall take the monthly payment the bank quotes and store the total charged; it shall never estimate an interest rate. | Should |
+| TXN-32 | The app shall take the whole amount of an installment purchase off the wallet's balance and available credit on the purchase date, and count it in spending, totals and the budget one installment per month. | Should |
+| TXN-33 | The app shall let the user pay off the rest of an installment plan early, which bills everything left on that date. | Could |
+
+**Acceptance example (TXN-32)**: *Given* a credit card with a limit of 50,000 and no balance, *when* the user buys a 9,000 laptop in 6 interest-free installments on October 14, *then* the card's balance is −9,000 and its available credit 41,000 that day, and Transactions counts 1,500 in October and 1,500 in each of the next five months.
 
 **Table view**
 
@@ -257,7 +276,7 @@ A transaction records one money movement: an expense, an income or a transfer be
 | TXN-21 | The app shall let the user sort the table by date, amount, category, category group and wallet. | Must |
 | TXN-22 | The app shall let the user filter by date range (this period, last period, last 3 and 12 months, year to date, custom), type, wallets, categories, category groups, tags, payee, amount range and note text. | Must |
 | TXN-23 | The app shall let the user filter by source and by the exclude-from-budget flag. | Should |
-| TXN-24 | While filters are applied, the app shall show the count, total income, total expenses and net for the filtered set. | Must |
+| TXN-24 | While filters are applied, the app shall show the count, total income, total expenses and net for the filtered set. Without filters, the totals shall also count what recurring transactions will add in the rest of the period. | Must |
 | TXN-25 | The app shall let the user save a combination of filters as a named view. | Should |
 | TXN-26 | The app shall let the user select several transactions and change their category, wallet or tags, exclude them from the budget, or delete them in one action. | Should |
 | TXN-27 | The app shall let the user edit category, tags, note and amount directly in the table. | Could |
@@ -343,7 +362,7 @@ Every expense and income has exactly one category, each category belongs to exac
 | CAT-01 | The app shall let the user create, rename, reorder, archive and delete categories and category groups. | Must |
 | CAT-02 | The app shall store for each category: name, category group, kind (expense or income), icon, flexibility (Locked, Fixed or Flexible) and an optional description. A category shows in its category group's color (CAT-14). | Must |
 | CAT-03 | The app shall require category names to be unique within their category group, and category group names to be unique. | Must |
-| CAT-04 | The app shall offer an editable starter set during onboarding (for example Housing, Food & drinks, Transportation, Lifestyle, Health, Entertainment, Financial, Income) that the user can accept, edit or skip. | Must |
+| CAT-04 | The app shall start every account with an editable starter set (for example Housing, Food & drinks, Transportation, Lifestyle, Health, Entertainment, Financial, Income) that the user can change, add to or remove from. | Must |
 | CAT-05 | The app shall provide system categories (Uncategorized, Balance adjustment, Interest, Fees, Refunds) that can be renamed but not deleted. | Must |
 | CAT-06 | If the user deletes a category that has transactions, then the app shall require moving them to another category or archiving the category instead. | Must |
 | CAT-07 | While a category is archived, the app shall hide it from pickers and keep it in history and reports, and let the user restore it. | Must |

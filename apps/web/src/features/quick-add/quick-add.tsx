@@ -1,8 +1,11 @@
-import { ShoppingBagIcon } from '../../components/ui/icons'
 import { type ReactNode, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '../../components/ui/button'
 import { EmptyState } from '../../components/ui/empty-state'
-import { Sheet } from '../../components/ui/sheet'
+import { WalletIcon } from '../../components/ui/icons'
+import { EntrySheet } from '../transactions/entry-sheet'
+import { useLedger } from '../wallets/use-ledger'
+import { WalletSheet } from '../wallets/wallet-sheet'
 import { QuickAddContext } from './use-quick-add'
 
 export function QuickAddProvider({ children }: { children: ReactNode }) {
@@ -28,14 +31,50 @@ export function QuickAddProvider({ children }: { children: ReactNode }) {
   )
 }
 
-// The quick-add form replaces the placeholder inside this sheet.
+// WID-01, WID-03: manual entry, the amount first, everything else filled in. Taking or
+// choosing a picture (WID-02, WID-04) joins it with statement and image import (IMP).
 function QuickAddSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { t } = useTranslation()
   return (
-    <Sheet open={open} title={t('quickAdd.title')} cancelLabel={t('nav.cancel')} onClose={onClose}>
-      <EmptyState icon={ShoppingBagIcon} title={t('quickAdd.placeholder.title')}>
-        {t('quickAdd.placeholder.body')}
+    <EntrySheet
+      open={open}
+      mode={{ kind: 'new', source: 'quickAdd' }}
+      onClose={onClose}
+      empty={<NoWallets />}
+    />
+  )
+}
+
+/** A transaction needs a wallet to come from, so the first one is made right here. */
+function NoWallets() {
+  const { t } = useTranslation()
+  const { data: ledger } = useLedger()
+  const [adding, setAdding] = useState(false)
+  return (
+    <>
+      <EmptyState
+        icon={WalletIcon}
+        title={t('transactions.noWallets.title')}
+        action={
+          <Button
+            className="mt-1 px-6"
+            onClick={() => {
+              setAdding(true)
+            }}
+          >
+            {t('wallets.add')}
+          </Button>
+        }
+      >
+        {t('transactions.noWallets.body')}
       </EmptyState>
-    </Sheet>
+      <WalletSheet
+        open={adding}
+        mode={{ kind: 'new' }}
+        defaultCurrency={ledger?.defaultCurrency ?? 'USD'}
+        onClose={() => {
+          setAdding(false)
+        }}
+      />
+    </>
   )
 }

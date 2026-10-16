@@ -4,7 +4,7 @@ import { ChartPieSliceIcon, HouseIcon, type Icon, ListBulletsIcon, WalletIcon } 
 // (DL-LAY-06). Tabs are places, never actions (DL-LAY-01); quick-add sits beside them.
 export const places = [
   { to: '/', label: 'nav.home', icon: HouseIcon },
-  { to: '/activity', label: 'nav.activity', icon: ListBulletsIcon },
+  { to: '/transactions', label: 'nav.transactions', icon: ListBulletsIcon },
   { to: '/budget', label: 'nav.budget', icon: ChartPieSliceIcon },
   { to: '/wallets', label: 'nav.wallets', icon: WalletIcon },
 ] as const satisfies readonly { to: string; label: string; icon: Icon }[]

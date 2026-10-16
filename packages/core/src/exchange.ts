@@ -96,3 +96,30 @@ export function unitsPerOne(inUse: RateInUse): number {
   if (!inUse.inverse) return inUse.rate.rate
   return Number(divideRounded(rateScale * rateScale, BigInt(inUse.rate.rate)))
 }
+
+/**
+ * TXN-05: the rate between what left one wallet and what arrived in another, in
+ * millionths of a unit of `to` per unit of `from`, or null without both amounts.
+ */
+export function rateBetween(
+  fromMinor: number,
+  from: string,
+  toMinor: number,
+  to: string,
+): number | null {
+  if (fromMinor <= 0 || toMinor <= 0) return null
+  const fromScale = 10n ** BigInt(fractionDigits(from))
+  const toScale = 10n ** BigInt(fractionDigits(to))
+  const rate = Number(
+    divideRounded(BigInt(toMinor) * fromScale * rateScale, toScale * BigInt(fromMinor)),
+  )
+  return rate > 0 ? rate : null
+}
+
+/** TXN-05: minor units of `from` in minor units of `to` at a rate in millionths. */
+export function applyRate(minor: number, from: string, to: string, rate: number): number {
+  return convert(minor, from, to, {
+    rate: { id: '', from, to, rate, date: '' },
+    inverse: false,
+  })
+}
