@@ -15,11 +15,13 @@ import {
 } from '../../components/ui/icons'
 import { SwipeRow } from '../../components/ui/swipe-row'
 import { formatDay, useMoney } from '../../lib/format'
+import { CategoryTile } from '../categories/category-tile'
+import type { Taxonomy } from '../categories/lookups'
 import type { LedgerWallet } from '../wallets/use-ledger'
 
-// The icon of each kind (DL-ICO-01). Expenses and income show their category's icon
-// once categories arrive (CAT-02); until then, which way the money went. Transfers use
-// arrows-horizontal, whose drawing has no box behind it (DL-ICO-03).
+// The icon of each kind with no category to show (DL-ICO-01): what a wallet makes for
+// itself, and transfers, which use arrows-horizontal, whose drawing has no box behind
+// it (DL-ICO-03).
 const kindIcons: Record<Transaction['kind'], Icon> = {
   openingBalance: FlagBannerIcon,
   adjustment: ScalesIcon,
@@ -32,23 +34,31 @@ const kindIcons: Record<Transaction['kind'], Icon> = {
 }
 
 /**
- * One transaction as a list row (TXN-20): what it was, where, and its amount, signed
- * only when unusual (DL-NUM-03). In a wallet's own list (`walletId`), the second line is
- * its date and a transfer reads as money to or from the other wallet; in the
- * Transactions list, days are the section labels and the second line is the wallet.
+ * One transaction as a list row (TXN-20). The amount says what kind it is (DL-NUM-03):
+ * income has a plus in Moss, an expense has no sign, and a transfer is muted, since
+ * the money only moved between the person's own wallets. So the row shows no type:
+ * its title is the payee, the note or the category, and the line under it the
+ * category and the wallet, or "Checking → Credit card" for a transfer. In a wallet's
+ * own list (`walletId`), the date takes the wallet's place and a transfer reads as
+ * money to or from the other wallet.
  */
 export function TransactionRow({
   transaction,
   wallets,
+  taxonomy,
   defaultCurrency,
   walletId,
+  showDate,
   onOpen,
   onDelete,
 }: {
   transaction: Transaction
   wallets: ReadonlyMap<string, LedgerWallet>
+  taxonomy: Taxonomy
   defaultCurrency: string
   walletId?: string
+  /** In a list not grouped by day, the date joins the second line. */
+  showDate?: boolean
   onOpen: (transaction: Transaction) => void
   onDelete: (transaction: Transaction) => void
 }) {
@@ -60,43 +70,63 @@ export function TransactionRow({
   if (!source) return null
   const incoming = walletId !== undefined && walletId === transaction.toWalletId
   const shownWallet = (incoming ? destination : source) ?? source
-
-  let title: string
-  if (transaction.kind === 'transfer')
-    title = incoming
-      ? t('transactions.fromWallet', { name: source.name })
-      : t('transactions.toWallet', { name: destination?.name ?? '' })
-  else if (transaction.kind === 'expense' || transaction.kind === 'income')
-    title = t(`transactions.types.${transaction.kind}`)
-  else title = t(`wallets.transactions.${transaction.kind}`)
-  // A note says best what it was; the kind or the other wallet goes under it.
+  const transfer = transaction.kind === 'transfer'
+  const category = taxonomy.categoryOf(transaction)
+  const group = category ? taxonomy.groupOf(category) : undefined
+  const payee =
+    transaction.payeeId === undefined ? undefined : taxonomy.payees.get(transaction.payeeId)
   const trimmed = transaction.note?.trim()
   const note = trimmed === '' ? undefined : trimmed
 
+  // What it is, in the fewest words: who it was with, else the note, else the category.
+  let kindTitle: string
+  if (transfer)
+    kindTitle =
+      walletId === undefined
+        ? t('transactions.types.transfer')
+        : incoming
+          ? t('transactions.fromWallet', { name: source.name })
+          : t('transactions.toWallet', { name: destination?.name ?? '' })
+  else if (transaction.kind === 'expense' || transaction.kind === 'income')
+    kindTitle = category?.name ?? t(`transactions.types.${transaction.kind}`)
+  else kindTitle = t(`wallets.transactions.${transaction.kind}`)
+  const title = payee?.name ?? note ?? kindTitle
+
   const details: string[] = []
-  if (note) details.push(title)
-  if (walletId === undefined) details.push(source.name)
-  else
+  if (title !== kindTitle && !(transfer && walletId === undefined)) details.push(kindTitle)
+  const day = formatDay(transaction.date, toCalendarDate(new Date()), money.locale, {
+    today: t('dates.today'),
+    yesterday: t('dates.yesterday'),
+  })
+  if (walletId === undefined)
     details.push(
-      formatDay(transaction.date, toCalendarDate(new Date()), money.locale, {
-        today: t('dates.today'),
-        yesterday: t('dates.yesterday'),
-      }),
+      transfer
+        ? t('transactions.between', { from: source.name, to: destination?.name ?? '' })
+        : source.name,
     )
+  if (walletId !== undefined || showDate) details.push(day)
+  for (const tagId of transaction.tagIds ?? []) {
+    const tag = taxonomy.tags.get(tagId)
+    if (tag) details.push(tag.name)
+  }
   if (transaction.excludeFromBudget) details.push(t('transactions.notInBudget'))
 
-  // DL-NUM-03: an expense or a transfer has no sign; income has a plus, in Moss
-  // (DL-COL-07). What a wallet makes for itself shows which way it moved the balance.
+  // DL-NUM-03: an expense has no sign; income has a plus, in Moss (DL-COL-07); a
+  // transfer has no sign and is muted. What a wallet makes for itself shows which way
+  // it moved the balance.
   let value: Money
   let signs: 'negative' | 'always' = 'negative'
-  let tone: 'text' | 'moss' = 'text'
+  let tone: 'text' | 'moss' | 'muted' = 'text'
   switch (transaction.kind) {
     case 'expense':
+      value = { minor: -transaction.amount, currency: source.currency }
+      break
     case 'transfer':
       value = {
         minor: Math.abs(changeTo(transaction, shownWallet.id)),
         currency: shownWallet.currency,
       }
+      tone = 'muted'
       break
     case 'income':
       value = { minor: transaction.amount, currency: source.currency }
@@ -111,10 +141,19 @@ export function TransactionRow({
   return (
     <SwipeRow
       id={transaction.id}
-      // System transactions take Stone, the quietest category color (CAT-05).
-      leading={<IconTile icon={kindIcons[transaction.kind]} color="stone" />}
-      title={note ?? title}
-      subtitle={details.join(' · ')}
+      leading={
+        category && !transfer ? (
+          <CategoryTile category={category} group={group} />
+        ) : (
+          // Without a category, Stone, the quietest color (CAT-05).
+          <IconTile icon={kindIcons[transaction.kind]} color="stone" />
+        )
+      }
+      title={title}
+      // DL-CMP-07: one line, like iOS; the full detail is a tap away.
+      {...(details.length > 0
+        ? { subtitle: <span className="block truncate">{details.join(' · ')}</span> }
+        : {})}
       trailing={
         <Amount parts={money.parts(value, signs)} label={money.text(value, signs)} tone={tone} />
       }

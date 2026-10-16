@@ -1,4 +1,11 @@
-import { type RecordBody, type TransactionRecord, type WalletRecord } from '@repo/api'
+import {
+  type CategoryRecord,
+  categoryGroupRecordType,
+  categoryRecordType,
+  type RecordBody,
+  type TransactionRecord,
+  type WalletRecord,
+} from '@repo/api'
 import { openingBalance } from '@repo/core'
 import { newRecordId } from '@repo/crypto'
 import type { SyncedRecord } from '@repo/sync'
@@ -7,7 +14,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../lib/i18n'
 import { type FakeServer, renderApp, stubServer, unlockedVault } from '../../test-utils'
-import { exchangeRateBody, transactionBody, walletBody } from '../wallets/use-ledger'
+import { exchangeRateBody, recordBody, transactionBody, walletBody } from '../wallets/use-ledger'
 import { newWalletRecord } from '../wallets/wallet-look'
 
 function wallet(name: string, extra: Partial<WalletRecord> = {}): SyncedRecord {
@@ -24,6 +31,36 @@ function transaction(data: TransactionRecord): SyncedRecord {
 
 function opening(walletId: string, amount: number, date = '2026-10-01'): SyncedRecord {
   return transaction(openingBalance(walletId, amount, date))
+}
+
+// A small set of categories: one category group with an expense and an income category,
+// and the system category for transactions without one (CAT-05).
+function categories() {
+  const group: SyncedRecord = {
+    id: newRecordId(),
+    revision: 1,
+    body: recordBody(categoryGroupRecordType, { name: 'Everyday', color: 'lake' }),
+  }
+  const category = (data: Omit<CategoryRecord, 'groupId'>): SyncedRecord => ({
+    id: newRecordId(),
+    revision: 1,
+    body: recordBody(categoryRecordType, { groupId: group.id, ...data }),
+  })
+  const groceries = category({
+    name: 'Groceries',
+    kind: 'expense',
+    icon: 'basket',
+    flexibility: 'fixed',
+  })
+  const salary = category({ name: 'Salary', kind: 'income', icon: 'money', flexibility: 'fixed' })
+  const uncategorized = category({
+    name: 'Uncategorized',
+    kind: 'any',
+    icon: 'questionMark',
+    flexibility: 'flexible',
+    systemKey: 'uncategorized',
+  })
+  return { records: [group, groceries, salary, uncategorized], groceries, salary }
 }
 
 function preferences(defaultWalletId: string): SyncedRecord {
@@ -59,9 +96,12 @@ describe('transactions', () => {
   beforeEach(async () => {
     await i18n.changeLanguage('en')
     vi.spyOn(globalThis.navigator, 'language', 'get').mockReturnValue('es-MX')
+    // TXN-22: the list shows the current month, so "today" is fixed in March 2026.
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 2, 15, 12) })
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })
@@ -78,13 +118,21 @@ describe('transactions', () => {
     expect(await screen.findByRole('heading', { name: 'New expense' })).toBeVisible()
   })
 
-  it('TXN-20, TXN-28, DL-NUM-03: grouped by day with what was spent; income has a plus', async () => {
+  it("TXN-20, TXN-24, TXN-28, DL-NUM-03: grouped by day with each day's net; income has a plus", async () => {
     const cash = wallet('Cash')
+    const set = categories()
     const server: FakeServer = {
       signedIn: 'ana',
       records: [
         cash,
-        transaction({ kind: 'expense', walletId: cash.id, date: '2026-03-02', amount: -4550 }),
+        ...set.records,
+        transaction({
+          kind: 'expense',
+          walletId: cash.id,
+          date: '2026-03-02',
+          amount: -4550,
+          categoryId: set.groceries.id,
+        }),
         transaction({
           kind: 'expense',
           walletId: cash.id,
@@ -97,7 +145,15 @@ describe('transactions', () => {
           walletId: cash.id,
           date: '2026-03-01',
           amount: 120_000,
-          note: 'Salary',
+          categoryId: set.salary.id,
+        }),
+        // TXN-22: February is outside the month shown.
+        transaction({
+          kind: 'expense',
+          walletId: cash.id,
+          date: '2026-02-27',
+          amount: -9900,
+          note: 'Last month',
         }),
       ],
     }
@@ -105,22 +161,33 @@ describe('transactions', () => {
     renderApp('/transactions', unlockedVault(server))
 
     expect(await screen.findByRole('heading', { name: 'Mar 2' })).toBeVisible()
-    expect(screen.getByText('$55.50 spent')).toBeVisible()
     expect(screen.getByRole('heading', { name: 'Mar 1' })).toBeVisible()
-    // A note names the row; what it was moves to the second line.
+    expect(screen.getByText('3 transactions')).toBeVisible()
+    expect(screen.queryByText('Last month')).toBeNull()
+    // A note names the row; its category moves to the second line. No type label.
     expect(screen.getByText('Coffee')).toBeVisible()
-    expect(screen.getByText('Expense · Cash')).toBeVisible()
-    expect(screen.getByText('+$1,200.00')).toBeInTheDocument()
+    expect(screen.getByText('Uncategorized · Cash')).toBeVisible()
+    expect(screen.getByText('Groceries')).toBeVisible()
+    expect(screen.queryByText(/^Expense( ·|$)/)).toBeNull()
+    expect(screen.getAllByText('+$1,200.00').length).toBeGreaterThan(0)
     expect(screen.getByText('$45.50')).toBeInTheDocument()
+    // The day's net reads like an expense; the month's totals add everything up.
+    expect(screen.getAllByText('$55.50')).toHaveLength(2)
+    expect(screen.getByText('+$1,144.50')).toBeInTheDocument()
+
+    // The previous month brings February in.
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Previous period' }))
+    expect(await screen.findByText('Last month')).toBeVisible()
   })
 
   it('WID-03, TXN-01: quick-add needs only the amount; it starts in the default wallet', async () => {
     const user = userEvent.setup()
     const cash = wallet('Cash')
     const debit = wallet('Debit')
+    const set = categories()
     const server: FakeServer = {
       signedIn: 'ana',
-      records: [cash, debit, preferences(debit.id), opening(debit.id, 100_000)],
+      records: [cash, debit, preferences(debit.id), opening(debit.id, 100_000), ...set.records],
     }
     stubServer(server)
     renderApp('/wallets', unlockedVault(server))
@@ -129,7 +196,16 @@ describe('transactions', () => {
     const sheet = await screen.findByRole('dialog', { name: 'New expense' })
     expect(within(sheet).getByRole('button', { name: /Wallet.*Debit/ })).toBeVisible()
     await user.type(within(sheet).getByRole('textbox', { name: 'Amount' }), '250')
-    await user.type(within(sheet).getByRole('textbox', { name: 'Note' }), 'Groceries')
+    await user.type(within(sheet).getByRole('textbox', { name: 'Note' }), 'Weekly shop')
+    // WID-03: the category is the one other thing it asks for.
+    await user.click(within(sheet).getByRole('button', { name: 'Save' }))
+    expect(await within(sheet).findByText('Pick a category.')).toBeVisible()
+    await user.click(within(sheet).getByRole('button', { name: /^Category/ }))
+    await user.click(
+      within(await screen.findByRole('dialog', { name: 'Category' })).getByRole('radio', {
+        name: /Groceries/,
+      }),
+    )
     await user.click(within(sheet).getByRole('button', { name: 'Save' }))
 
     await waitFor(() => {
@@ -138,7 +214,8 @@ describe('transactions', () => {
           walletId: debit.id,
           amount: -25_000,
           date: today(),
-          note: 'Groceries',
+          note: 'Weekly shop',
+          categoryId: set.groceries.id,
           source: 'quickAdd',
         }),
       ])
@@ -208,9 +285,8 @@ describe('transactions', () => {
         }),
       ])
     })
-    // A transfer is not spending, so the day shows no total; the row says where it went.
-    expect(await screen.findByText('To Card')).toBeVisible()
-    expect(screen.queryByText(/spent$/)).toBeNull()
+    // A transfer is not spending: it reads "from → to", its amount muted.
+    expect(await screen.findByText('Debit → Card')).toBeVisible()
   })
 
   it('TXN-05: between currencies, the rate in use fills in what arrives', async () => {

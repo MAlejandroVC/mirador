@@ -83,3 +83,41 @@ export function formatRate(rate: number, locale: string): string {
 export function formatPercent(basisPoints: number, locale: string): string {
   return `${formatDecimal(basisPoints, percentDecimals, locale)}%`
 }
+
+/**
+ * The name of a span of the transaction list (TXN-22): "October 2026", "Oct 12 – 18",
+ * "Q4 2026" or "2026". `quarter` words the quarter in the person's language.
+ */
+export function formatPeriod(
+  period: { start: string; end: string },
+  scope: 'week' | 'month' | 'quarter' | 'year',
+  locale: string,
+  quarter: (number: number, year: number) => string,
+): string {
+  const day = (value: string) => {
+    const [year = 0, month = 1, dayOfMonth = 1] = value.split('-').map(Number)
+    return new Date(Date.UTC(year, month - 1, dayOfMonth))
+  }
+  const start = day(period.start)
+  const year = start.getUTCFullYear()
+  switch (scope) {
+    case 'year':
+      return String(year)
+    case 'quarter':
+      return quarter(Math.floor(start.getUTCMonth() / 3) + 1, year)
+    case 'month': {
+      const text = new Intl.DateTimeFormat(locale, {
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+      }).format(start)
+      return text.charAt(0).toLocaleUpperCase(locale) + text.slice(1)
+    }
+    case 'week':
+      return new Intl.DateTimeFormat(locale, {
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC',
+      }).formatRange(start, day(period.end))
+  }
+}

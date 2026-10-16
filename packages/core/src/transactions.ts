@@ -36,6 +36,10 @@ export interface TransactionFields {
   toAmount?: number
   /** TXN-05: between currencies, millionths of the destination's unit per source unit. */
   rate?: number
+  /** CAT-20, TXN-15: expenses and income only. */
+  categoryId?: string
+  tagIds?: string[]
+  payeeId?: string
   /** TXN-06 */
   excludeFromBudget?: boolean
   source?: TransactionSource
@@ -94,6 +98,10 @@ export interface EntryDraft {
   toAmount?: number
   rate?: number
   note?: string
+  /** Expenses and income only (CAT-20, TXN-15). */
+  categoryId?: string
+  tagIds?: string[]
+  payeeId?: string
   excludeFromBudget?: boolean
 }
 
@@ -119,6 +127,13 @@ export function entryFields(
           ...(draft.rate !== undefined ? { rate: draft.rate } : {}),
         }
       : {}),
+    ...(draft.type !== 'transfer' && draft.categoryId !== undefined
+      ? { categoryId: draft.categoryId }
+      : {}),
+    ...(draft.type !== 'transfer' && draft.tagIds && draft.tagIds.length > 0
+      ? { tagIds: [...new Set(draft.tagIds)] }
+      : {}),
+    ...(draft.payeeId !== undefined ? { payeeId: draft.payeeId } : {}),
     ...(draft.excludeFromBudget ? { excludeFromBudget: true } : {}),
     source,
     createdAt,
@@ -137,6 +152,9 @@ export function entryDraft(transaction: TransactionFields & { kind: EntryType })
     ...(transaction.toAmount !== undefined ? { toAmount: transaction.toAmount } : {}),
     ...(transaction.rate !== undefined ? { rate: transaction.rate } : {}),
     ...(transaction.note !== undefined ? { note: transaction.note } : {}),
+    ...(transaction.categoryId !== undefined ? { categoryId: transaction.categoryId } : {}),
+    ...(transaction.tagIds !== undefined ? { tagIds: transaction.tagIds } : {}),
+    ...(transaction.payeeId !== undefined ? { payeeId: transaction.payeeId } : {}),
     ...(transaction.excludeFromBudget ? { excludeFromBudget: true } : {}),
   }
 }
@@ -172,27 +190,60 @@ export function byDay<T extends Transaction>(transactions: readonly T[]): Day<T>
 }
 
 /**
- * TXN-28: what was spent across `transactions`, as a positive amount in `currency`.
- * Expenses in another currency count at the rate in use on their date (SYS-05); those
- * without a rate yet are left out.
+ * A transaction's amount in `currency`, at the rate in use on its date (SYS-05), or
+ * null when its wallet uses another currency with no rate entered yet.
  */
+export function amountIn(
+  transaction: TransactionFields,
+  walletCurrency: ReadonlyMap<string, string>,
+  currency: string,
+  rates: readonly ExchangeRate[],
+): number | null {
+  const from = walletCurrency.get(transaction.walletId)
+  if (from === undefined) return null
+  if (from === currency) return transaction.amount
+  const inUse = rateInUse(from, currency, rates, transaction.date)
+  return inUse ? convert(transaction.amount, from, currency, inUse) : null
+}
+
+/** Money in, money out and what is left, as positive amounts except `net`. */
+export interface FlowTotals {
+  income: number
+  expenses: number
+  /** Income minus expenses. */
+  net: number
+}
+
+/**
+ * TXN-24, TXN-28: the income, expenses and net of `transactions` in `currency`.
+ * Transfers and balance changes count as neither (TXN-03); amounts in another currency
+ * count at the rate in use on their date, and those without a rate are left out.
+ */
+export function flowTotals(
+  transactions: readonly TransactionFields[],
+  walletCurrency: ReadonlyMap<string, string>,
+  currency: string,
+  rates: readonly ExchangeRate[],
+): FlowTotals {
+  let income = 0
+  let expenses = 0
+  for (const transaction of transactions) {
+    const direction = flow(transaction)
+    if (direction === null) continue
+    const amount = amountIn(transaction, walletCurrency, currency, rates)
+    if (amount === null) continue
+    if (direction === 'income') income += amount
+    else expenses -= amount
+  }
+  return { income, expenses, net: income - expenses }
+}
+
+/** TXN-28: what was spent across `transactions`, as a positive amount in `currency`. */
 export function spent(
   transactions: readonly TransactionFields[],
   walletCurrency: ReadonlyMap<string, string>,
   currency: string,
   rates: readonly ExchangeRate[],
 ): number {
-  let total = 0
-  for (const transaction of transactions) {
-    if (flow(transaction) !== 'expense') continue
-    const from = walletCurrency.get(transaction.walletId)
-    if (from === undefined) continue
-    if (from === currency) {
-      total -= transaction.amount
-      continue
-    }
-    const inUse = rateInUse(from, currency, rates, transaction.date)
-    if (inUse) total -= convert(transaction.amount, from, currency, inUse)
-  }
-  return total
+  return flowTotals(transactions, walletCurrency, currency, rates).expenses
 }

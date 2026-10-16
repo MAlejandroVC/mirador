@@ -13,7 +13,7 @@ import { List, ListButtonRow, ListLinkRow, ListRow } from '../../components/ui/l
 import { Page } from '../../components/ui/page'
 import { SegmentedControl } from '../../components/ui/segmented-control'
 import { formatShare, useMoney } from '../../lib/format'
-import { ReorderSheet } from './reorder-sheet'
+import { WalletReorderSheet } from './reorder-sheet'
 import { type LedgerWallet, useLedger } from './use-ledger'
 import { presetLooks, walletIconComponents } from './wallet-look'
 import { WalletSheet } from './wallet-sheet'
@@ -204,7 +204,7 @@ export function WalletsScreen() {
         )}
       </List>
       {sheet}
-      <ReorderSheet
+      <WalletReorderSheet
         open={reordering}
         wallets={ledger.wallets}
         onClose={() => {

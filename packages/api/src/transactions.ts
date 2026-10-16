@@ -43,6 +43,12 @@ export const transactionRecord = z
     toWalletId: recordId.optional(),
     toAmount: z.int().positive().optional(),
     rate: z.int().positive().optional(),
+    // CAT-20, TXN-15: an expense or income has one category and any number of tags;
+    // a transfer has neither (TXN fields). Old records without a category show as
+    // Uncategorized (CAT-05).
+    categoryId: recordId.optional(),
+    tagIds: z.array(recordId).max(50).optional(),
+    payeeId: recordId.optional(),
     // TXN-06: left out of the budget; still in the wallet's balance.
     excludeFromBudget: z.boolean().optional(),
     source: z.enum(transactionSources).optional(),
@@ -62,6 +68,7 @@ export const transactionRecord = z
       if (record.toWalletId === undefined || record.toAmount === undefined)
         issue('A transfer needs where it went and what arrived')
       if (record.toWalletId === record.walletId) issue('A transfer goes to another wallet')
+      if (record.categoryId !== undefined) issue('A transfer has no category')
     } else if (
       record.toWalletId !== undefined ||
       record.toAmount !== undefined ||

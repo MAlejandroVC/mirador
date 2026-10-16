@@ -1,4 +1,10 @@
-import { transactionRecord } from '@repo/api'
+import {
+  payeeRecord,
+  payeeRecordType,
+  tagRecord,
+  tagRecordType,
+  transactionRecord,
+} from '@repo/api'
 import {
   amountText,
   applyRate,
@@ -9,13 +15,17 @@ import {
   type EntryType,
   fractionDigits,
   lastUsedWallet,
+  nextTagColor,
   parseAmount,
+  type Payee,
+  payeeMemory,
   parseDecimal,
   pickableWallets,
   rateBetween,
   rateDecimals,
   rateInUse,
   startingWallet,
+  type Tag,
   toCalendarDate,
   type Transaction,
   type TransactionSource,
@@ -28,9 +38,10 @@ import { AmountField } from '../../components/ui/amount-field'
 import { Button } from '../../components/ui/button'
 import { ChoiceRow } from '../../components/ui/choice-row'
 import { DateRow } from '../../components/ui/date-field'
-import { FieldNote, FieldRow, FieldRows, invalidRow, MoneyRow } from '../../components/ui/field-row'
+import { FieldNote, FieldRow, FieldRows, MoneyRow } from '../../components/ui/field-row'
 import { Fold } from '../../components/ui/fold'
-import { CaretRightIcon, CheckIcon } from '../../components/ui/icons'
+import { CheckIcon } from '../../components/ui/icons'
+import { PickerRow } from '../../components/ui/picker-row'
 import { List } from '../../components/ui/list'
 import { SegmentedControl } from '../../components/ui/segmented-control'
 import { Sheet } from '../../components/ui/sheet'
@@ -38,9 +49,15 @@ import { SubmitButton } from '../../components/ui/submit-button'
 import { useSubmit } from '../../components/ui/use-submit'
 import { useMoney } from '../../lib/format'
 import { markNew } from '../../lib/motion'
+import { CategoryPicker } from '../categories/category-picker'
+import { CategoryTile } from '../categories/category-tile'
+import { PayeePicker } from '../categories/payee-picker'
+import { TagPicker } from '../categories/tag-picker'
 import {
   type Ledger,
   newId,
+  type RecordChange,
+  recordBody,
   transactionBody,
   useLedger,
   useSaveRecords,
@@ -193,11 +210,38 @@ function EntryForm({
   const [rateText, setRateText] = useState(
     initial.rate === undefined ? '' : decimalInput(initial.rate, rateDecimals, locale),
   )
-  const [choosing, setChoosing] = useState<'from' | 'to' | null>(null)
+  // CAT-20, TXN-15, TXN fields: the category, tags and payee. Tags and payees made here
+  // are saved with the transaction, so cancelling leaves nothing behind (CAT-21).
+  // CAT-05: one saved before categories existed opens as Uncategorized.
+  const [categoryId, setCategoryId] = useState<string | null>(
+    initial.categoryId ??
+      (mode.kind === 'edit'
+        ? (ledger.categories.find((item) => item.systemKey === 'uncategorized')?.id ?? null)
+        : null),
+  )
+  const [tagIds, setTagIds] = useState<string[]>(initial.tagIds ?? [])
+  const [payeeId, setPayeeId] = useState<string | null>(initial.payeeId ?? null)
+  const [newTags, setNewTags] = useState<Tag[]>([])
+  const [newPayees, setNewPayees] = useState<Payee[]>([])
+  const [walletTouched, setWalletTouched] = useState(mode.kind === 'edit')
+  const [choosing, setChoosing] = useState<'from' | 'to' | 'category' | 'tags' | 'payee' | null>(
+    null,
+  )
   const [discarding, setDiscarding] = useState(false)
   const [savedOne, setSavedOne] = useState(false)
 
   const transfer = type === 'transfer'
+  const allTags = [...ledger.tags, ...newTags]
+  const allPayees = [...ledger.payees, ...newPayees]
+  // A category of the other kind doesn't carry over when the type changes (CAT-02).
+  const chosenCategory =
+    categoryId === null ? undefined : ledger.categories.find((item) => item.id === categoryId)
+  const category =
+    !transfer && chosenCategory && (chosenCategory.kind === type || chosenCategory.kind === 'any')
+      ? chosenCategory
+      : undefined
+  const payee = payeeId === null ? undefined : allPayees.find((item) => item.id === payeeId)
+  const chosenTags = tagIds.flatMap((id) => allTags.find((tag) => tag.id === id) ?? [])
   const exchange = transfer && from && to && from.currency !== to.currency ? { from, to } : null
   const crossCurrency = exchange !== null
   const magnitude = from ? parseAmount(text, from.currency, locale) : null
@@ -240,6 +284,13 @@ function EntryForm({
 
   // TXN-02, DL-PAT-05: what is missing, said where it is, only after Save is tapped.
   const amountError = magnitude === null || magnitude === 0 ? t('transactions.amountMissing') : null
+  // WID-03: an expense or income needs its category.
+  // WID-03: expenses and income need a category; one edited from before categories
+  // existed may keep having none.
+  const categoryError =
+    transfer || category || (mode.kind === 'edit' && initial.categoryId === undefined)
+      ? null
+      : t('transactions.categoryMissing')
   const walletError = from ? null : t('transactions.walletMissing')
   const toError = transfer && !to ? t('transactions.toMissing') : null
   const receivedError =
@@ -251,9 +302,14 @@ function EntryForm({
     : date > today
       ? t('wallets.transactions.dateFuture')
       : null
-  const complete = [amountError, walletError, toError, receivedError, dateError].every(
-    (error) => error === null,
-  )
+  const complete = [
+    amountError,
+    categoryError,
+    walletError,
+    toError,
+    receivedError,
+    dateError,
+  ].every((error) => error === null)
 
   const draft = (): EntryDraft | null => {
     if (!from || magnitude === null) return null
@@ -270,6 +326,9 @@ function EntryForm({
             ...(crossCurrency && rate !== null && rate > 0 ? { rate } : {}),
           }
         : {}),
+      ...(!transfer && category ? { categoryId: category.id } : {}),
+      ...(!transfer && chosenTags.length > 0 ? { tagIds: chosenTags.map((tag) => tag.id) } : {}),
+      ...(!transfer && payee ? { payeeId: payee.id } : {}),
       ...(!transfer && excluded ? { excludeFromBudget: true } : {}),
     }
   }
@@ -287,8 +346,23 @@ function EntryForm({
       initial.note ?? '',
       initial.excludeFromBudget ?? false,
       initialReceived,
+      initial.categoryId ?? null,
+      initial.tagIds ?? [],
+      initial.payeeId ?? null,
     ]) !==
-    snapshot([type, magnitude ?? 0, walletId, toWalletId, date, note, excluded, receivedText])
+    snapshot([
+      type,
+      magnitude ?? 0,
+      walletId,
+      toWalletId,
+      date,
+      note,
+      excluded,
+      receivedText,
+      categoryId,
+      tagIds,
+      payeeId,
+    ])
 
   // DL-CMP-08: closing with unsaved changes asks first.
   useEffect(() => {
@@ -316,7 +390,23 @@ function EntryForm({
               mode.transaction.createdAt ?? now,
             )
           : entryFields(entry, mode.source, now)
-      save.mutate([{ id, body: transactionBody(transactionRecord.parse(fields)) }], {
+      // New tags and payees still in use go in the same batch (NFR-08).
+      const changes: RecordChange[] = [
+        ...newTags
+          .filter((tag) => fields.tagIds?.includes(tag.id))
+          .map(({ id: tagId, ...tag }) => ({
+            id: tagId,
+            body: recordBody(tagRecordType, tagRecord.parse(tag)),
+          })),
+        ...newPayees
+          .filter((item) => item.id === fields.payeeId)
+          .map(({ id: itemId, ...item }) => ({
+            id: itemId,
+            body: recordBody(payeeRecordType, payeeRecord.parse(item)),
+          })),
+        { id, body: transactionBody(transactionRecord.parse(fields)) },
+      ]
+      save.mutate(changes, {
         onSuccess: () => {
           markNew(id)
           if (!andNew) {
@@ -380,12 +470,39 @@ function EntryForm({
       <div className="flex flex-col">
         <FieldRows
           note={
-            form.tried && (walletError ?? toError ?? dateError) ? (
-              <FieldNote error>{walletError ?? toError ?? dateError}</FieldNote>
+            form.tried && (categoryError ?? walletError ?? toError ?? dateError) ? (
+              <FieldNote error>{categoryError ?? walletError ?? toError ?? dateError}</FieldNote>
             ) : null
           }
         >
+          {/* DL-MOT-07: a transfer has no category, so the row folds away (CAT-20). */}
+          <li
+            className="fold"
+            data-closed={transfer ? '' : undefined}
+            aria-hidden={transfer || undefined}
+            inert={transfer}
+          >
+            <ul>
+              <PickerRow
+                label={t('transactions.category')}
+                value={category?.name ?? t('pickers.choose')}
+                valueLeading={
+                  category && (
+                    <CategoryTile
+                      category={category}
+                      group={ledger.groups.find((group) => group.id === category.groupId)}
+                    />
+                  )
+                }
+                error={form.tried && categoryError !== null}
+                onClick={() => {
+                  setChoosing('category')
+                }}
+              />
+            </ul>
+          </li>
           <PickerRow
+            separator={!transfer}
             label={transfer ? t('transactions.from') : t('transactions.wallet')}
             value={from?.name ?? t('pickers.choose')}
             error={form.tried && walletError !== null}
@@ -460,6 +577,33 @@ function EntryForm({
               </FieldRows>
             </div>
           )}
+        </Fold>
+        {/* TXN fields: the payee and tags, optional, for expenses and income. */}
+        <Fold open={!transfer}>
+          <div className="pt-3">
+            <FieldRows>
+              <PickerRow
+                label={t('transactions.payee')}
+                value={payee?.name ?? t('pickers.none')}
+                error={false}
+                onClick={() => {
+                  setChoosing('payee')
+                }}
+              />
+              <PickerRow
+                label={t('transactions.tags')}
+                value={
+                  chosenTags.length > 0
+                    ? chosenTags.map((tag) => tag.name).join(', ')
+                    : t('pickers.none')
+                }
+                error={false}
+                onClick={() => {
+                  setChoosing('tags')
+                }}
+              />
+            </FieldRows>
+          </div>
         </Fold>
       </div>
 
@@ -545,7 +689,7 @@ function EntryForm({
       </SubmitButton>
 
       <WalletPicker
-        open={choosing !== null}
+        open={choosing === 'from' || choosing === 'to'}
         title={
           choosing === 'to'
             ? t('transactions.to')
@@ -563,8 +707,69 @@ function EntryForm({
         defaultCurrency={ledger.defaultCurrency}
         onChoose={(id) => {
           if (choosing === 'to') chooseTo(id)
-          else setWalletId(id)
+          else {
+            setWalletId(id)
+            setWalletTouched(true)
+          }
           setChoosing(null)
+        }}
+        onClose={() => {
+          setChoosing(null)
+        }}
+      />
+
+      <CategoryPicker
+        open={choosing === 'category'}
+        ledger={ledger}
+        type={type === 'income' ? 'income' : 'expense'}
+        value={category?.id ?? null}
+        onChoose={(chosen) => {
+          setCategoryId(chosen.id)
+          setChoosing(null)
+        }}
+        onClose={() => {
+          setChoosing(null)
+        }}
+      />
+
+      <PayeePicker
+        open={choosing === 'payee'}
+        payees={allPayees}
+        value={payeeId}
+        onChoose={(chosen) => {
+          setPayeeId(chosen?.id ?? null)
+          setChoosing(null)
+          // TXN-08: a payee used before fills in what went with it last time, without
+          // undoing anything the person already chose.
+          const memory =
+            chosen && mode.kind === 'new' ? payeeMemory(ledger.transactions, chosen.id) : null
+          if (!memory) return
+          if (categoryId === null && memory.categoryId !== undefined && memory.type === type)
+            setCategoryId(memory.categoryId)
+          if (tagIds.length === 0 && memory.tagIds.length > 0) setTagIds(memory.tagIds)
+          if (!walletTouched && byId.get(memory.walletId)?.active) setWalletId(memory.walletId)
+        }}
+        onCreate={(name) => {
+          const created = { id: newId(), name }
+          setNewPayees([...newPayees, created])
+          return created
+        }}
+        onClose={() => {
+          setChoosing(null)
+        }}
+      />
+
+      <TagPicker
+        open={choosing === 'tags'}
+        tags={allTags}
+        transactions={ledger.transactions}
+        categoryId={category?.id ?? null}
+        value={tagIds}
+        onChange={setTagIds}
+        onCreate={(name) => {
+          const created: Tag = { id: newId(), name, color: nextTagColor(allTags) }
+          setNewTags([...newTags, created])
+          return created
         }}
         onClose={() => {
           setChoosing(null)
@@ -584,37 +789,5 @@ function EntryForm({
         }}
       />
     </>
-  )
-}
-
-/** DL-CMP-09: a field that opens a picker: its label, the value and a chevron. */
-function PickerRow({
-  label,
-  value,
-  error,
-  separator,
-  onClick,
-}: {
-  label: string
-  value: string
-  error: boolean
-  separator?: boolean
-  onClick: () => void
-}) {
-  return (
-    <li
-      className={`border-separator ${separator ? 'border-t' : 'not-first:border-t'} ${invalidRow}`}
-    >
-      <button
-        type="button"
-        onClick={onClick}
-        aria-invalid={error || undefined}
-        className="flex min-h-[3.25rem] w-full items-center gap-2 px-4 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
-      >
-        <span className="flex-1 text-[0.9375rem] text-text">{label}</span>
-        <span className="truncate text-[0.9375rem] text-text-muted">{value}</span>
-        <CaretRightIcon aria-hidden className="size-4 shrink-0 text-text-faint" />
-      </button>
-    </li>
   )
 }

@@ -1,12 +1,20 @@
 import {
+  categoryGroupRecord,
+  categoryGroupRecordType,
+  categoryRecord,
+  categoryRecordType,
   type ExchangeRateRecord,
   exchangeRateRecord,
   exchangeRateRecordType,
   maxPushChanges,
+  payeeRecord,
+  payeeRecordType,
   type PreferencesRecord,
   preferencesRecord,
   preferencesRecordType,
   type RecordBody,
+  tagRecord,
+  tagRecordType,
   type TransactionRecord,
   transactionRecord,
   transactionRecordType,
@@ -14,7 +22,18 @@ import {
   walletRecord,
   walletRecordType,
 } from '@repo/api'
-import { type ExchangeRate, guessCurrency, sortWallets, type Transaction } from '@repo/core'
+import {
+  type Category,
+  type CategoryGroup,
+  type ExchangeRate,
+  guessCurrency,
+  inOrder,
+  type Payee,
+  sortWallets,
+  type Tag,
+  type Transaction,
+  withoutDuplicateSystem,
+} from '@repo/core'
 import { newRecordId } from '@repo/crypto'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { VaultClient } from '../../lib/vault'
@@ -36,6 +55,11 @@ export interface Ledger {
   transactions: Transaction[]
   /** SYS-04, SYS-05: every exchange rate entered, with its date. */
   rates: ExchangeRate[]
+  /** Epic 4: the person's category groups and categories, in their order, and tags. */
+  groups: CategoryGroup[]
+  categories: Category[]
+  tags: Tag[]
+  payees: Payee[]
   /** SYS-01: the person's choice, or a guess from the device language until they make one. */
   defaultCurrency: string
   /** WAL-24: the wallet new transactions start in, if the person chose one. */
@@ -48,6 +72,10 @@ async function readLedger(vault: VaultClient): Promise<Ledger> {
   const wallets: LedgerWallet[] = []
   const transactions: Transaction[] = []
   const rates: ExchangeRate[] = []
+  const groups: CategoryGroup[] = []
+  const categories: Category[] = []
+  const tags: Tag[] = []
+  const payees: Payee[] = []
   let preferences: (PreferencesRecord & { id: string }) | null = null
   for (const { id, body } of await vault.listRecords()) {
     if (body.deleted) continue
@@ -67,6 +95,26 @@ async function readLedger(vault: VaultClient): Promise<Ledger> {
         if (parsed.success) rates.push({ id, ...parsed.data })
         break
       }
+      case categoryGroupRecordType: {
+        const parsed = categoryGroupRecord.safeParse(body.data)
+        if (parsed.success) groups.push({ id, ...parsed.data })
+        break
+      }
+      case categoryRecordType: {
+        const parsed = categoryRecord.safeParse(body.data)
+        if (parsed.success) categories.push({ id, ...parsed.data })
+        break
+      }
+      case tagRecordType: {
+        const parsed = tagRecord.safeParse(body.data)
+        if (parsed.success) tags.push({ id, ...parsed.data })
+        break
+      }
+      case payeeRecordType: {
+        const parsed = payeeRecord.safeParse(body.data)
+        if (parsed.success) payees.push({ id, ...parsed.data })
+        break
+      }
       case preferencesRecordType: {
         const parsed = preferencesRecord.safeParse(body.data)
         if (parsed.success) preferences = { id, ...parsed.data }
@@ -82,6 +130,10 @@ async function readLedger(vault: VaultClient): Promise<Ledger> {
     wallets: sortWallets(wallets),
     transactions,
     rates,
+    groups: inOrder(groups),
+    categories: inOrder(withoutDuplicateSystem(categories)),
+    tags: [...tags].sort((a, b) => a.name.localeCompare(b.name)),
+    payees,
     defaultCurrency: preferences?.defaultCurrency ?? guessCurrency(globalThis.navigator.language),
     defaultWalletId: preferences?.defaultWalletId ?? null,
     preferencesId: preferences?.id ?? null,
@@ -111,6 +163,14 @@ export const transactionBody = (data: TransactionRecord): RecordBody => ({
 export const exchangeRateBody = (data: ExchangeRateRecord): RecordBody => ({
   deleted: false,
   type: exchangeRateRecordType,
+  schema: 1,
+  data,
+})
+
+/** Any record, ready to save (SEC-01: it is encrypted in the worker before it leaves). */
+export const recordBody = (type: string, data: unknown): RecordBody => ({
+  deleted: false,
+  type,
   schema: 1,
   data,
 })

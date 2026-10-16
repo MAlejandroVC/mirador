@@ -13,13 +13,23 @@ export function Amount({
   parts: MoneyParts
   label: string
   size?: 'body' | 'hero'
-  /** `hero` for an amount on the hero card, which takes `on-hero` (DL-CMP-01). */
-  tone?: 'text' | 'hero' | 'moss'
+  /**
+   * `hero` for an amount on the hero card, which takes `on-hero` (DL-CMP-01); `muted`
+   * for money that only moved between the person's own wallets (DL-NUM-03).
+   */
+  tone?: 'text' | 'hero' | 'moss' | 'muted'
 }) {
   const small = size === 'hero' ? 'text-[1.4375rem] font-medium' : 'text-[0.8125rem]'
   const muted =
     tone === 'hero' ? 'text-on-hero/75' : tone === 'moss' ? 'text-moss' : 'text-text-muted'
-  const main = tone === 'hero' ? 'text-on-hero' : tone === 'moss' ? 'text-moss' : 'text-text'
+  const main =
+    tone === 'hero'
+      ? 'text-on-hero'
+      : tone === 'moss'
+        ? 'text-moss'
+        : tone === 'muted'
+          ? 'text-text-muted'
+          : 'text-text'
   return (
     <span
       className={`whitespace-nowrap tabular-nums ${

@@ -1,42 +1,102 @@
-import { byDay, newestFirst, spent, toCalendarDate } from '@repo/core'
+import {
+  activeFilters,
+  amountIn,
+  byDay,
+  flowTotals,
+  inPeriod,
+  matchesFilter,
+  newestFirst,
+  type PeriodScope,
+  periodOf,
+  shiftPeriod,
+  sortTransactions,
+  toCalendarDate,
+  type Transaction,
+  type TransactionFilter,
+  type TransactionSort,
+} from '@repo/core'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AccountButton } from '../../components/shell'
+import { Amount } from '../../components/ui/amount'
 import { Button } from '../../components/ui/button'
+import { ChoiceRow } from '../../components/ui/choice-row'
 import { EmptyState } from '../../components/ui/empty-state'
-import { ReceiptIcon } from '../../components/ui/icons'
+import {
+  ArrowsDownUpIcon,
+  CaretDownIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+  FunnelIcon,
+  type Icon,
+  ReceiptIcon,
+} from '../../components/ui/icons'
 import { List } from '../../components/ui/list'
 import { Page } from '../../components/ui/page'
-import { formatDay, useMoney } from '../../lib/format'
+import { Sheet } from '../../components/ui/sheet'
+import { formatDay, formatPeriod, useMoney } from '../../lib/format'
+import { taxonomy } from '../categories/lookups'
 import { useQuickAdd } from '../quick-add'
 import { useLedger } from '../wallets/use-ledger'
+import { FilterSheet } from './filter-sheet'
+import { SortSheet } from './sort-sheet'
 import { TransactionRow } from './transaction-row'
 import { useTransactionEditor } from './use-transaction-editor'
 
 // How many rows show at first, and how many more each "Show more" adds.
 const page = 100
+const scopes: readonly PeriodScope[] = ['week', 'month', 'quarter', 'year']
 
-// Epic 2: every transaction in one list, newest first, grouped by day with what was
-// spent that day (TXN-20, TXN-28). Tapping one opens it to change or delete it;
-// swiping it left deletes it, with Undo (DL-CMP-07, TXN-13). Sorting, filters and
-// totals for a filtered set join this screen next (TXN-21 to TXN-26).
+// Epic 2: the transactions of one period, a month unless the person picks a week, a
+// quarter or a year, with arrows to the ones before and after (TXN-22). Above the
+// list, the period's income, spending and net (TXN-24); each day shows its own net
+// (TXN-28). Sort and Filter sit beside the title (TXN-21, TXN-22). Tapping a row opens
+// it; swiping it left deletes it, with Undo (DL-CMP-07, TXN-13).
 export function TransactionsScreen() {
   const { t } = useTranslation()
   const { data: ledger } = useLedger()
   const quickAdd = useQuickAdd()
   const editor = useTransactionEditor()
+  const today = toCalendarDate(new Date())
+  const [scope, setScope] = useState<PeriodScope>('month')
+  const [anchor, setAnchor] = useState(today)
+  const [sort, setSort] = useState<TransactionSort>('newest')
+  const [filter, setFilter] = useState<TransactionFilter>({})
+  const [sheet, setSheet] = useState<'scope' | 'sort' | 'filter' | null>(null)
   const [limit, setLimit] = useState(page)
   const defaultCurrency = ledger?.defaultCurrency ?? 'USD'
   const money = useMoney(defaultCurrency)
+  const filters = activeFilters(filter)
+
+  const actions = (
+    <>
+      <ToolbarButton
+        icon={ArrowsDownUpIcon}
+        label={t('sort.title')}
+        active={sort !== 'newest'}
+        onClick={() => {
+          setSheet('sort')
+        }}
+      />
+      <ToolbarButton
+        icon={FunnelIcon}
+        label={filters > 0 ? t('filters.titleCount', { count: filters }) : t('filters.title')}
+        active={filters > 0}
+        onClick={() => {
+          setSheet('filter')
+        }}
+      />
+      <AccountButton />
+    </>
+  )
 
   if (!ledger) return <Page title={t('nav.transactions')} actions={<AccountButton />} />
 
   const wallets = new Map(ledger.wallets.map((wallet) => [wallet.id, wallet]))
   const currencies = new Map(ledger.wallets.map((wallet) => [wallet.id, wallet.currency]))
+  const lookups = taxonomy(ledger)
   // A transaction whose wallet is gone has nowhere to show (WAL-08 deletes them too).
-  const all = newestFirst(
-    ledger.transactions.filter((transaction) => wallets.has(transaction.walletId)),
-  )
+  const all = ledger.transactions.filter((transaction) => wallets.has(transaction.walletId))
 
   if (all.length === 0)
     return (
@@ -57,42 +117,184 @@ export function TransactionsScreen() {
       </Page>
     )
 
-  const today = toCalendarDate(new Date())
+  const period = periodOf(anchor, scope)
+  const periodName = formatPeriod(period, scope, money.locale, (number, year) =>
+    t('transactions.period.quarter', { number, year }),
+  )
+  const filterLookups = {
+    categoryId: (transaction: Transaction) => lookups.categoryOf(transaction)?.id ?? null,
+    groupId: (transaction: Transaction) => lookups.categoryOf(transaction)?.groupId ?? null,
+    payeeName: (transaction: Transaction) =>
+      transaction.payeeId === undefined
+        ? null
+        : (lookups.payees.get(transaction.payeeId)?.name ?? null),
+  }
+  const inView = all.filter(
+    (transaction) =>
+      inPeriod(transaction.date, period) && matchesFilter(transaction, filter, filterLookups),
+  )
+  const ordered =
+    sort === 'newest'
+      ? newestFirst(inView)
+      : sortTransactions(inView, sort, {
+          size: (transaction) =>
+            Math.abs(
+              amountIn(transaction, currencies, defaultCurrency, ledger.rates) ??
+                transaction.amount,
+            ),
+          categoryName: (transaction) => lookups.categoryOf(transaction)?.name ?? '',
+          groupName: (transaction) => {
+            const category = lookups.categoryOf(transaction)
+            return (category && lookups.groupOf(category)?.name) ?? ''
+          },
+          walletName: (transaction) => wallets.get(transaction.walletId)?.name ?? '',
+        })
+  const totals = flowTotals(inView, currencies, defaultCurrency, ledger.rates)
+  // Days stay as long as the list runs by date; any other order is one flat list.
+  const byDate = sort === 'newest' || sort === 'oldest'
+  const shown = ordered.slice(0, limit)
   const words = { today: t('dates.today'), yesterday: t('dates.yesterday') }
-  const days = byDay(all.slice(0, limit))
+
+  const row = (transaction: Transaction) => (
+    <TransactionRow
+      key={transaction.id}
+      transaction={transaction}
+      wallets={wallets}
+      taxonomy={lookups}
+      defaultCurrency={defaultCurrency}
+      showDate={!byDate}
+      onOpen={(opened) => {
+        editor.open(opened)
+      }}
+      onDelete={editor.remove}
+    />
+  )
+
+  // DL-NUM-03: a net that is money in shows its plus in Moss; one that is money out
+  // reads like an expense, with no sign.
+  const net = (minor: number) => {
+    const value = { minor: Math.abs(minor), currency: defaultCurrency }
+    return minor > 0 ? (
+      <Amount
+        parts={money.parts(value, 'always')}
+        label={money.text(value, 'always')}
+        tone="moss"
+      />
+    ) : (
+      <Amount parts={money.parts(value)} label={money.text(value)} />
+    )
+  }
 
   return (
-    <Page title={t('nav.transactions')} actions={<AccountButton />}>
-      {days.map((day) => {
-        const total = spent(day.transactions, currencies, defaultCurrency, ledger.rates)
-        return (
-          <List
-            key={day.date}
-            label={formatDay(day.date, today, money.locale, words)}
-            {...(total > 0
-              ? {
-                  detail: t('transactions.daySpent', {
-                    amount: money.text({ minor: total, currency: defaultCurrency }),
-                  }),
-                }
-              : {})}
-          >
-            {day.transactions.map((transaction) => (
-              <TransactionRow
-                key={transaction.id}
-                transaction={transaction}
-                wallets={wallets}
-                defaultCurrency={defaultCurrency}
-                onOpen={(opened) => {
-                  editor.open(opened)
-                }}
-                onDelete={editor.remove}
+    <Page title={t('nav.transactions')} actions={actions}>
+      {/* TXN-22: the period, with the ones before and after. */}
+      <div className="flex items-center gap-1 rounded-2xl bg-surface p-1">
+        <button
+          type="button"
+          aria-label={t('transactions.period.previous')}
+          onClick={() => {
+            setAnchor(shiftPeriod(anchor, scope, -1).start)
+            setLimit(page)
+          }}
+          className="grid size-11 shrink-0 place-items-center rounded-xl text-brand focus-visible:outline-2 focus-visible:outline-brand"
+        >
+          <CaretLeftIcon aria-hidden className="size-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setSheet('scope')
+          }}
+          className="flex min-h-11 flex-1 flex-col items-center justify-center rounded-xl py-1 focus-visible:outline-2 focus-visible:outline-brand"
+        >
+          <span className="flex items-center gap-1 text-[1.0625rem] font-semibold text-text">
+            {periodName}
+            <CaretDownIcon aria-hidden className="size-3.5 text-text-muted" />
+          </span>
+          <span className="text-[0.8125rem] text-text-muted">
+            {t('transactions.count', { count: inView.length })}
+          </span>
+        </button>
+        <button
+          type="button"
+          aria-label={t('transactions.period.next')}
+          disabled={period.end >= today}
+          onClick={() => {
+            setAnchor(shiftPeriod(anchor, scope, 1).start)
+            setLimit(page)
+          }}
+          className="grid size-11 shrink-0 place-items-center rounded-xl text-brand focus-visible:outline-2 focus-visible:outline-brand disabled:text-text-faint"
+        >
+          <CaretRightIcon aria-hidden className="size-5" />
+        </button>
+      </div>
+
+      {/* TXN-24: what came in, what went out and what's left, for what is shown. */}
+      <dl className="grid grid-cols-3 gap-2 rounded-2xl bg-surface px-4 py-3">
+        <div className="flex flex-col gap-0.5">
+          <dt className="text-xs text-text-muted">{t('transactions.totals.income')}</dt>
+          <dd>
+            {totals.income > 0 ? (
+              net(totals.income)
+            ) : (
+              <Amount
+                parts={money.parts({ minor: 0, currency: defaultCurrency })}
+                label={money.text({ minor: 0, currency: defaultCurrency })}
               />
-            ))}
-          </List>
-        )
-      })}
-      {all.length > limit && (
+            )}
+          </dd>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <dt className="text-xs text-text-muted">{t('transactions.totals.expenses')}</dt>
+          <dd>
+            <Amount
+              parts={money.parts({ minor: totals.expenses, currency: defaultCurrency })}
+              label={money.text({ minor: totals.expenses, currency: defaultCurrency })}
+            />
+          </dd>
+        </div>
+        <div className="flex flex-col items-end gap-0.5">
+          <dt className="text-xs text-text-muted">{t('transactions.totals.net')}</dt>
+          <dd>{net(totals.net)}</dd>
+        </div>
+      </dl>
+
+      {ordered.length === 0 ? (
+        <section className="flex flex-col items-center gap-3 rounded-2xl bg-surface px-6 py-8 text-center">
+          <p className="text-[0.9375rem] text-text-muted">
+            {filters > 0
+              ? t('transactions.noneFiltered')
+              : t('transactions.noneInPeriod', { period: periodName })}
+          </p>
+          {filters > 0 && (
+            <Button
+              variant="secondary"
+              className="px-6"
+              onClick={() => {
+                setFilter({})
+              }}
+            >
+              {t('filters.clear')}
+            </Button>
+          )}
+        </section>
+      ) : byDate ? (
+        byDay(shown).map((day) => {
+          const dayNet = flowTotals(day.transactions, currencies, defaultCurrency, ledger.rates).net
+          return (
+            <List
+              key={day.date}
+              label={formatDay(day.date, today, money.locale, words)}
+              {...(dayNet !== 0 ? { detail: net(dayNet) } : {})}
+            >
+              {day.transactions.map(row)}
+            </List>
+          )
+        })
+      ) : (
+        <List>{shown.map(row)}</List>
+      )}
+      {ordered.length > limit && (
         <Button
           variant="ghost"
           onClick={() => {
@@ -102,7 +304,91 @@ export function TransactionsScreen() {
           {t('transactions.showMore')}
         </Button>
       )}
+
+      <Sheet
+        open={sheet === 'scope'}
+        title={t('transactions.period.title')}
+        doneLabel={t('nav.done')}
+        onClose={() => {
+          setSheet(null)
+        }}
+      >
+        <List inset>
+          {scopes.map((option) => (
+            <ChoiceRow
+              key={option}
+              role="radio"
+              title={t(`transactions.period.scopes.${option}`)}
+              checked={scope === option}
+              onToggle={() => {
+                setScope(option)
+                setSheet(null)
+                setLimit(page)
+              }}
+            />
+          ))}
+        </List>
+        {!inPeriod(today, period) && (
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setAnchor(today)
+              setSheet(null)
+              setLimit(page)
+            }}
+          >
+            {t('transactions.period.current')}
+          </Button>
+        )}
+      </Sheet>
+      <SortSheet
+        open={sheet === 'sort'}
+        value={sort}
+        onChange={setSort}
+        onClose={() => {
+          setSheet(null)
+        }}
+      />
+      <FilterSheet
+        open={sheet === 'filter'}
+        ledger={ledger}
+        value={filter}
+        onChange={(next) => {
+          setFilter(next)
+          setLimit(page)
+        }}
+        onClose={() => {
+          setSheet(null)
+        }}
+      />
       {editor.sheet}
     </Page>
+  )
+}
+
+/** A round toolbar button beside the large title; filled in `brand` while it is on. */
+function ToolbarButton({
+  icon: IconComponent,
+  label,
+  active,
+  onClick,
+}: {
+  icon: Icon
+  label: string
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={active}
+      onClick={onClick}
+      className={`grid size-11 shrink-0 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-brand ${
+        active ? 'bg-brand text-on-brand' : 'bg-surface text-brand'
+      }`}
+    >
+      <IconComponent aria-hidden weight={active ? 'fill' : 'regular'} className="size-[1.25rem]" />
+    </button>
   )
 }

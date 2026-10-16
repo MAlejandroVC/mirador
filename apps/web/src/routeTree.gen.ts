@@ -20,10 +20,12 @@ import { Route as AppTransactionsRouteImport } from './routes/_app/transactions'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
 import { Route as AppSettingsAccountRouteImport } from './routes/_app/settings/account'
 import { Route as AppSettingsAppearanceRouteImport } from './routes/_app/settings/appearance'
+import { Route as AppSettingsCategoriesRouteImport } from './routes/_app/settings/categories'
 import { Route as AppSettingsCurrencyRouteImport } from './routes/_app/settings/currency'
 import { Route as AppSettingsInvitesRouteImport } from './routes/_app/settings/invites'
 import { Route as AppSettingsLanguageRouteImport } from './routes/_app/settings/language'
 import { Route as AppSettingsSecurityRouteImport } from './routes/_app/settings/security'
+import { Route as AppSettingsTagsRouteImport } from './routes/_app/settings/tags'
 import { Route as AppWalletsIndexRouteImport } from './routes/_app/wallets/index'
 import { Route as AppWalletsWalletIdIndexRouteImport } from './routes/_app/wallets/$walletId/index'
 import { Route as AppWalletsWalletIdTransactionsRouteImport } from './routes/_app/wallets/$walletId/transactions'
@@ -82,6 +84,11 @@ const AppSettingsAppearanceRoute = AppSettingsAppearanceRouteImport.update({
   path: '/settings/appearance',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsCategoriesRoute = AppSettingsCategoriesRouteImport.update({
+  id: '/settings/categories',
+  path: '/settings/categories',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsCurrencyRoute = AppSettingsCurrencyRouteImport.update({
   id: '/settings/currency',
   path: '/settings/currency',
@@ -100,6 +107,11 @@ const AppSettingsLanguageRoute = AppSettingsLanguageRouteImport.update({
 const AppSettingsSecurityRoute = AppSettingsSecurityRouteImport.update({
   id: '/settings/security',
   path: '/settings/security',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsTagsRoute = AppSettingsTagsRouteImport.update({
+  id: '/settings/tags',
+  path: '/settings/tags',
   getParentRoute: () => AppRoute,
 } as any)
 const AppWalletsIndexRoute = AppWalletsIndexRouteImport.update({
@@ -129,10 +141,12 @@ export interface FileRoutesByFullPath {
   '/transactions': typeof AppTransactionsRoute
   '/settings/account': typeof AppSettingsAccountRoute
   '/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/settings/categories': typeof AppSettingsCategoriesRoute
   '/settings/currency': typeof AppSettingsCurrencyRoute
   '/settings/invites': typeof AppSettingsInvitesRoute
   '/settings/language': typeof AppSettingsLanguageRoute
   '/settings/security': typeof AppSettingsSecurityRoute
+  '/settings/tags': typeof AppSettingsTagsRoute
   '/settings/': typeof AppSettingsIndexRoute
   '/wallets/': typeof AppWalletsIndexRoute
   '/wallets/$walletId/transactions': typeof AppWalletsWalletIdTransactionsRoute
@@ -148,10 +162,12 @@ export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/settings/account': typeof AppSettingsAccountRoute
   '/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/settings/categories': typeof AppSettingsCategoriesRoute
   '/settings/currency': typeof AppSettingsCurrencyRoute
   '/settings/invites': typeof AppSettingsInvitesRoute
   '/settings/language': typeof AppSettingsLanguageRoute
   '/settings/security': typeof AppSettingsSecurityRoute
+  '/settings/tags': typeof AppSettingsTagsRoute
   '/settings': typeof AppSettingsIndexRoute
   '/wallets': typeof AppWalletsIndexRoute
   '/wallets/$walletId/transactions': typeof AppWalletsWalletIdTransactionsRoute
@@ -169,10 +185,12 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/_app/settings/account': typeof AppSettingsAccountRoute
   '/_app/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/_app/settings/categories': typeof AppSettingsCategoriesRoute
   '/_app/settings/currency': typeof AppSettingsCurrencyRoute
   '/_app/settings/invites': typeof AppSettingsInvitesRoute
   '/_app/settings/language': typeof AppSettingsLanguageRoute
   '/_app/settings/security': typeof AppSettingsSecurityRoute
+  '/_app/settings/tags': typeof AppSettingsTagsRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
   '/_app/wallets/': typeof AppWalletsIndexRoute
   '/_app/wallets/$walletId/transactions': typeof AppWalletsWalletIdTransactionsRoute
@@ -190,10 +208,12 @@ export interface FileRouteTypes {
     | '/transactions'
     | '/settings/account'
     | '/settings/appearance'
+    | '/settings/categories'
     | '/settings/currency'
     | '/settings/invites'
     | '/settings/language'
     | '/settings/security'
+    | '/settings/tags'
     | '/settings/'
     | '/wallets/'
     | '/wallets/$walletId/transactions'
@@ -209,10 +229,12 @@ export interface FileRouteTypes {
     | '/'
     | '/settings/account'
     | '/settings/appearance'
+    | '/settings/categories'
     | '/settings/currency'
     | '/settings/invites'
     | '/settings/language'
     | '/settings/security'
+    | '/settings/tags'
     | '/settings'
     | '/wallets'
     | '/wallets/$walletId/transactions'
@@ -229,10 +251,12 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/_app/settings/account'
     | '/_app/settings/appearance'
+    | '/_app/settings/categories'
     | '/_app/settings/currency'
     | '/_app/settings/invites'
     | '/_app/settings/language'
     | '/_app/settings/security'
+    | '/_app/settings/tags'
     | '/_app/settings/'
     | '/_app/wallets/'
     | '/_app/wallets/$walletId/transactions'
@@ -326,6 +350,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsAppearanceRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings/categories': {
+      id: '/_app/settings/categories'
+      path: '/settings/categories'
+      fullPath: '/settings/categories'
+      preLoaderRoute: typeof AppSettingsCategoriesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings/currency': {
       id: '/_app/settings/currency'
       path: '/settings/currency'
@@ -352,6 +383,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/security'
       fullPath: '/settings/security'
       preLoaderRoute: typeof AppSettingsSecurityRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings/tags': {
+      id: '/_app/settings/tags'
+      path: '/settings/tags'
+      fullPath: '/settings/tags'
+      preLoaderRoute: typeof AppSettingsTagsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/wallets/': {
@@ -384,10 +422,12 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppSettingsAccountRoute: typeof AppSettingsAccountRoute
   AppSettingsAppearanceRoute: typeof AppSettingsAppearanceRoute
+  AppSettingsCategoriesRoute: typeof AppSettingsCategoriesRoute
   AppSettingsCurrencyRoute: typeof AppSettingsCurrencyRoute
   AppSettingsInvitesRoute: typeof AppSettingsInvitesRoute
   AppSettingsLanguageRoute: typeof AppSettingsLanguageRoute
   AppSettingsSecurityRoute: typeof AppSettingsSecurityRoute
+  AppSettingsTagsRoute: typeof AppSettingsTagsRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
   AppWalletsIndexRoute: typeof AppWalletsIndexRoute
   AppWalletsWalletIdTransactionsRoute: typeof AppWalletsWalletIdTransactionsRoute
@@ -400,10 +440,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppSettingsAccountRoute: AppSettingsAccountRoute,
   AppSettingsAppearanceRoute: AppSettingsAppearanceRoute,
+  AppSettingsCategoriesRoute: AppSettingsCategoriesRoute,
   AppSettingsCurrencyRoute: AppSettingsCurrencyRoute,
   AppSettingsInvitesRoute: AppSettingsInvitesRoute,
   AppSettingsLanguageRoute: AppSettingsLanguageRoute,
   AppSettingsSecurityRoute: AppSettingsSecurityRoute,
+  AppSettingsTagsRoute: AppSettingsTagsRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
   AppWalletsIndexRoute: AppWalletsIndexRoute,
   AppWalletsWalletIdTransactionsRoute: AppWalletsWalletIdTransactionsRoute,

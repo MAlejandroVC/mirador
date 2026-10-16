@@ -20,8 +20,13 @@ import { newRecordId } from '@repo/crypto'
 import { createApi, type Fetch } from '../lib/api'
 import { vaultErrorCode } from './errors'
 import { Vault } from './vault'
-import { entryFields, openingBalance } from '@repo/core'
-import { exchangeRateBody, transactionBody, walletBody } from '../features/wallets/use-ledger'
+import { entryFields, openingBalance, starterSet } from '@repo/core'
+import {
+  exchangeRateBody,
+  recordBody,
+  transactionBody,
+  walletBody,
+} from '../features/wallets/use-ledger'
 import { newWalletRecord } from '../features/wallets/wallet-look'
 
 const password = 'a sunny day in Monterrey'
@@ -391,6 +396,69 @@ describe('vault', () => {
       checking,
       dollars,
       '2026-10-15',
+    ])
+      expect(everything).not.toContain(plaintext)
+  })
+
+  it('CAT-01, CAT-04, CAT-20, TXN-08: categories, tags, payees and their use reach the server only encrypted', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    await phone.signUp({ username: 'ana', password })
+    const set = starterSet(
+      { group: () => 'Antojitos', category: () => 'Elotes Doña Cuca', tag: () => 'Viaje Mazunte' },
+      newRecordId,
+    )
+    const [group] = set.groups
+    const [category] = set.categories
+    const [tag] = set.tags
+    if (!group || !category || !tag) throw new Error('The starter set is empty')
+    const { id: groupId, ...groupData } = group
+    const { id: categoryId, ...categoryData } = category
+    const { id: tagId, ...tagData } = tag
+    // Record ids are visible to the server; which category, tag and payee a
+    // transaction uses is not, so it links to ones saved in another batch.
+    const [linkedCategory, linkedTag, linkedPayee] = [newRecordId(), newRecordId(), newRecordId()]
+
+    await phone.saveRecords([
+      { id: groupId, body: recordBody('categoryGroup', groupData) },
+      { id: categoryId, body: recordBody('category', categoryData) },
+      { id: tagId, body: recordBody('tag', tagData) },
+      { id: newRecordId(), body: recordBody('payee', { name: 'Taquería Orinoco' }) },
+      {
+        id: newRecordId(),
+        body: transactionBody(
+          entryFields(
+            {
+              type: 'expense',
+              amount: 8_850,
+              walletId: newRecordId(),
+              date: '2026-10-16',
+              categoryId: linkedCategory,
+              tagIds: [linkedTag],
+              payeeId: linkedPayee,
+            },
+            'manual',
+            '2026-10-16T12:00:00.000Z',
+          ),
+        ),
+      },
+    ])
+
+    const everything = server.sent.join('\n')
+    for (const plaintext of [
+      'Antojitos',
+      'Elotes',
+      'Mazunte',
+      'Orinoco',
+      'categoryGroup',
+      'flexibility',
+      'systemKey',
+      'uncategorized',
+      'marigold',
+      linkedCategory,
+      linkedTag,
+      linkedPayee,
+      '8850',
     ])
       expect(everything).not.toContain(plaintext)
   })

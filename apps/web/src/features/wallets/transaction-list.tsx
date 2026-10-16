@@ -3,8 +3,9 @@ import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { CaretRightIcon } from '../../components/ui/icons'
 import { List } from '../../components/ui/list'
+import { taxonomy } from '../categories/lookups'
 import { TransactionRow } from '../transactions/transaction-row'
-import type { LedgerWallet } from './use-ledger'
+import { type LedgerWallet, useLedger } from './use-ledger'
 
 /**
  * A wallet's transactions, transfers into it included, newest first. With `limit`,
@@ -30,7 +31,9 @@ export function TransactionRows({
   onDelete: (transaction: Transaction) => void
 }) {
   const { t } = useTranslation()
+  const { data: ledger } = useLedger()
   const byId = new Map(wallets.map((each) => [each.id, each]))
+  const lookups = taxonomy(ledger ?? { groups: [], categories: [], tags: [], payees: [] })
   const shown = limit === undefined ? transactions : transactions.slice(0, limit)
   return (
     <List {...(label ? { label } : {})}>
@@ -39,6 +42,7 @@ export function TransactionRows({
           key={transaction.id}
           transaction={transaction}
           wallets={byId}
+          taxonomy={lookups}
           walletId={wallet.id}
           defaultCurrency={defaultCurrency}
           onOpen={onOpen}
