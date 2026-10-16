@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { createRouter, type RouterHistory } from '@tanstack/react-router'
+import { trackHistory } from './components/shell/back'
 import { navDirection } from './lib/navigation'
 import type { VaultClient } from './lib/vault'
 import { routeTree } from './routeTree.gen'
@@ -27,6 +28,7 @@ export function createAppRouter(
   router.subscribe('onBeforeNavigate', ({ fromLocation, toLocation }) => {
     document.documentElement.dataset.nav = navDirection(fromLocation?.pathname, toLocation.pathname)
   })
+  trackHistory(router)
   return router
 }
 

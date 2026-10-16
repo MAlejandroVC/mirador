@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react'
 import { CheckIcon } from './icons'
 
-// A row that is on or off inside a form that needs Save, so a check rather than a
-// switch (DL-CMP-10), as iOS does in its own pickers. `radio` when only one can be on.
+// A row that is on or off (DL-CMP-10). `switch` for a single option that is on or off,
+// such as "Leave out of the budget", even in a form that needs Save, as in iOS's own
+// New Event sheet. A check for picking from a list: `radio` when only one can be
+// chosen, `checkbox` when several can.
 // In a list that folds (DL-CMP-15), `folded` hides the row in place, shrinking it away
 // (DL-MOT-07), and `separator` says whether the hairline above it shows, since the first
 // row in view isn't always the first in the list.
@@ -20,7 +22,7 @@ export function ChoiceRow({
   subtitle?: string
   leading?: ReactNode
   checked: boolean
-  role?: 'checkbox' | 'radio'
+  role?: 'checkbox' | 'radio' | 'switch'
   folded?: boolean
   separator?: boolean
   onToggle: () => void
@@ -48,11 +50,15 @@ export function ChoiceRow({
           <span className="text-[0.9375rem] text-text">{title}</span>
           {subtitle && <span className="text-[0.8125rem] text-text-muted">{subtitle}</span>}
         </span>
-        <CheckIcon
-          aria-hidden
-          weight="bold"
-          className={`size-5 shrink-0 text-brand ${checked ? '' : 'invisible'}`}
-        />
+        {role === 'switch' ? (
+          <span aria-hidden className="switch" data-on={checked ? '' : undefined} />
+        ) : (
+          <CheckIcon
+            aria-hidden
+            weight="bold"
+            className={`size-5 shrink-0 text-brand ${checked ? '' : 'invisible'}`}
+          />
+        )}
       </span>
     </button>
   )

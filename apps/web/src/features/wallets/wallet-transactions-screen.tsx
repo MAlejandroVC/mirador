@@ -1,6 +1,6 @@
 import { walletTransactions } from '@repo/core'
-import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import { useBack } from '../../components/shell/back'
 import { IconTile } from '../../components/ui/icon-tile'
 import { WalletIcon } from '../../components/ui/icons'
 import { Page } from '../../components/ui/page'
@@ -13,23 +13,21 @@ import { walletIconComponents } from './wallet-look'
 // newest first; each opens to be changed or deleted.
 export function WalletTransactionsScreen({ walletId }: { walletId: string }) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const { data: ledger } = useLedger()
   const defaultCurrency = ledger?.defaultCurrency ?? 'USD'
   const wallet = ledger?.wallets.find((candidate) => candidate.id === walletId)
   const editor = useTransactionEditor()
+  const back = useBack(
+    wallet?.name ?? t('nav.wallets'),
+    wallet ? { to: '/wallets/$walletId', params: { walletId: wallet.id } } : { to: '/wallets' },
+  )
 
   if (!ledger) return null
   if (!wallet)
     return (
       <Page
         title={t('wallets.missing.title')}
-        back={{
-          label: t('nav.wallets'),
-          onClick: () => {
-            void navigate({ to: '/wallets' })
-          },
-        }}
+        back={back}
         card={{
           icon: <IconTile icon={WalletIcon} size="large" />,
           description: t('wallets.missing.body'),
@@ -40,12 +38,7 @@ export function WalletTransactionsScreen({ walletId }: { walletId: string }) {
   return (
     <Page
       title={t('wallets.transactions.title')}
-      back={{
-        label: wallet.name,
-        onClick: () => {
-          void navigate({ to: '/wallets/$walletId', params: { walletId: wallet.id } })
-        },
-      }}
+      back={back}
       card={{
         icon: (
           <IconTile icon={walletIconComponents[wallet.icon]} color={wallet.color} size="large" />

@@ -79,6 +79,40 @@ describe('app shell', () => {
     expect(await screen.findByRole('heading', { name: 'Budget', level: 1 })).toBeInTheDocument()
   })
 
+  it('DL-CMP-06: back returns to the page it came from, never to the page just left', async () => {
+    await i18n.changeLanguage('en')
+    const user = userEvent.setup()
+    const server: FakeServer = { signedIn: 'ana' }
+    stubServer(server)
+    const { router } = renderApp('/budget', unlockedVault(server))
+
+    const [button] = await screen.findAllByRole('link', { name: 'Settings' })
+    if (!button) throw new Error('No settings button')
+    await user.click(button)
+    await user.click(await screen.findByRole('link', { name: /Appearance/ }))
+    expect(await screen.findByRole('heading', { name: 'Appearance' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    expect(await screen.findByRole('heading', { name: 'Settings', level: 1 })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(await screen.findByRole('heading', { name: 'Budget', level: 1 })).toBeInTheDocument()
+    expect(router.history.location.pathname).toBe('/budget')
+  })
+
+  it('DL-CMP-06: opened directly, back goes to the page above, in its place', async () => {
+    await i18n.changeLanguage('en')
+    const user = userEvent.setup()
+    const server: FakeServer = { signedIn: 'ana' }
+    stubServer(server)
+    const { router } = renderApp('/settings/appearance', unlockedVault(server))
+
+    await user.click(await screen.findByRole('button', { name: 'Settings' }))
+    expect(await screen.findByRole('heading', { name: 'Settings', level: 1 })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(await screen.findByRole('heading', { name: 'Home', level: 1 })).toBeInTheDocument()
+    expect(router.history.canGoBack()).toBe(false)
+  })
+
   it('SYS-06: sends someone who is signed out to sign in', async () => {
     await i18n.changeLanguage('en')
     const server: FakeServer = { signedIn: null }

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import { useBack } from '../../../components/shell/back'
 import { IconTile } from '../../../components/ui/icon-tile'
 import {
   CurrencyCircleDollarIcon,
@@ -35,8 +36,8 @@ export const Route = createFileRoute('/_app/settings/')({
 function Settings() {
   const { t } = useTranslation()
   const vault = useVault()
-  const router = useRouter()
   const navigate = useNavigate()
+  const back = useBack(t('nav.back'), { to: '/' })
   const queryClient = useQueryClient()
   const { data: session } = useSuspenseQuery(sessionQuery)
   const picture = useProfilePicture()
@@ -65,15 +66,8 @@ function Settings() {
   return (
     <Page
       title={t('nav.settings')}
-      back={{
-        label: t('nav.back'),
-        // DL-CMP-06: back to wherever Settings was opened from, or Home after a reload.
-        onClick: () => {
-          if (router.history.canGoBack()) router.history.back()
-          else void navigate({ to: '/' })
-        },
-        hideWithSidebar: true,
-      }}
+      // DL-CMP-06: back to wherever Settings was opened from, or Home after a reload.
+      back={{ ...back, hideWithSidebar: true }}
     >
       <List>
         <ListLinkRow

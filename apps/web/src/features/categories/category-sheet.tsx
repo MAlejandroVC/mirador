@@ -296,6 +296,7 @@ function CategoryForm({
       {mode.kind === 'edit' && !system && (
         <List inset>
           <ChoiceRow
+            role="switch"
             title={t('categories.form.archived')}
             subtitle={t('categories.form.archivedHint')}
             checked={draft.archived ?? false}

@@ -190,6 +190,7 @@ function GroupForm({
       {mode.kind === 'edit' && !hasSystem && (
         <List inset>
           <ChoiceRow
+            role="switch"
             title={t('categories.group.archived')}
             subtitle={t('categories.group.archivedHint')}
             checked={draft.archived ?? false}

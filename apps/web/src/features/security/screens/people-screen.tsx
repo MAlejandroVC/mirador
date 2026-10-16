@@ -21,7 +21,9 @@ import { LinkSimpleIcon, PlusIcon, UsersThreeIcon } from '../../../components/ui
 import { List, ListButtonRow, ListRow } from '../../../components/ui/list'
 import { Page } from '../../../components/ui/page'
 import { PickerRow } from '../../../components/ui/picker-row'
-import { Sheet, SheetFooter } from '../../../components/ui/sheet'
+import { Sheet } from '../../../components/ui/sheet'
+import { SubmitButton } from '../../../components/ui/submit-button'
+import { useSubmit } from '../../../components/ui/use-submit'
 import { useSettingsBack } from '../../../components/shell/settings-back'
 import { api } from '../../../lib/api'
 import { ProfilePicture } from '../../profile'
@@ -215,17 +217,16 @@ function InviteSheet({
           </List>
           {end.isError && <Alert>{t('security.errors.unknown')}</Alert>}
           {open && (
-            <SheetFooter>
-              <Button
-                variant="secondary"
-                disabled={end.isPending}
-                onClick={() => {
-                  setConfirming(true)
-                }}
-              >
-                {t('people.links.end')}
-              </Button>
-            </SheetFooter>
+            <Button
+              variant="secondary"
+              className="mt-2"
+              disabled={end.isPending}
+              onClick={() => {
+                setConfirming(true)
+              }}
+            >
+              {t('people.links.end')}
+            </Button>
           )}
           <ActionSheet
             open={confirming}
@@ -265,6 +266,7 @@ function NewInviteSheet({ open, onClose }: { open: boolean; onClose: () => void 
   const [expires, setExpires] = useState(() => addDays(today, inviteDefaultDays))
   const [uses, setUses] = useState<Uses>(inviteDefaultUses)
   const [choosingUses, setChoosingUses] = useState(false)
+  const submit = useSubmit()
   const create = useMutation({
     mutationFn: () => api.createInvite({ expiresAt: endOfDay(expires), maxUses: uses }),
     onSuccess: () => queryClient.invalidateQueries(invitesQuery),
@@ -323,17 +325,18 @@ function NewInviteSheet({ open, onClose }: { open: boolean; onClose: () => void 
               }}
             />
           </FieldRows>
-          {create.isError && <Alert>{t('security.errors.unknown')}</Alert>}
-          <SheetFooter>
-            <Button
-              disabled={create.isPending}
-              onClick={() => {
-                create.mutate()
-              }}
-            >
-              {create.isPending ? t('people.links.working') : t('people.links.make')}
-            </Button>
-          </SheetFooter>
+          {/* DL-CMP-08: making the link is the sheet's main action, the check at the top. */}
+          <SubmitButton
+            button={submit.button}
+            done={false}
+            pending={create.isPending}
+            before={create.isError && <Alert>{t('security.errors.unknown')}</Alert>}
+            onClick={() => {
+              create.mutate()
+            }}
+          >
+            {t('people.links.make')}
+          </SubmitButton>
         </>
       )}
       <Sheet

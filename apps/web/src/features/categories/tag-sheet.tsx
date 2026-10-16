@@ -165,6 +165,7 @@ function TagForm({
       {mode.kind === 'edit' && (
         <List inset>
           <ChoiceRow
+            role="switch"
             title={t('tags.form.archived')}
             subtitle={t('tags.form.archivedHint')}
             checked={draft.archived ?? false}
