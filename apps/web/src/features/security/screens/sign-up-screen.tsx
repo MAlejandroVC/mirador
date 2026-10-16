@@ -167,7 +167,7 @@ export function SignUpScreen() {
         )}
         <TextField
           label={t('form.username')}
-          info={t('security.signUp.usernameHint')}
+          hint={t('security.signUp.usernameHint')}
           checks={usernameRules}
           autoComplete="username"
           autoCapitalize="none"
@@ -193,7 +193,6 @@ export function SignUpScreen() {
           label={t('form.password')}
           type="password"
           autoComplete="new-password"
-          info={t('security.signUp.passwordHint', { count: minimumPasswordLength })}
           checks={passwordRules}
           error={problems.password}
           value={password}

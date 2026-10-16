@@ -16,7 +16,7 @@ function Password() {
       <TextField
         label="Password"
         type="password"
-        info="Pick something you will remember."
+        hint="Pick something you will remember."
         checks={[
           { label: 'At least 3 characters', met: value.length >= 3 },
           { label: 'A number', met: /\d/.test(value) },
@@ -32,22 +32,16 @@ function Password() {
 }
 
 describe('text field', () => {
-  it('NFR-07: keeps more about a field behind an (i) button that opens and closes it', async () => {
-    const user = userEvent.setup()
+  it('NFR-07: says more about a field in a hint under it, not behind an (i) button', () => {
     render(<Password />)
-
-    const info = screen.getByRole('button', { name: 'About Password' })
-    expect(info).toHaveAttribute('aria-expanded', 'false')
-    expect(screen.queryByText('Pick something you will remember.')).not.toBeVisible()
-
-    await user.click(info)
-    expect(info).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByText('Pick something you will remember.')).toBeVisible()
-    await user.click(info)
-    expect(screen.queryByText('Pick something you will remember.')).not.toBeVisible()
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(
+      'Pick something you will remember.',
+    )
+    expect(screen.queryByRole('button', { name: /About/ })).not.toBeInTheDocument()
   })
 
-  it('SYS-06: shows the checks only while the field has focus, and ticks them off as they are met', async () => {
+  it('SYS-06: shows the checks once the field is used, ticks them off, and keeps them in place until all are met', async () => {
     const user = userEvent.setup()
     render(<Password />)
     const field = screen.getByLabelText('Password')
@@ -58,14 +52,17 @@ describe('text field', () => {
     // Screen readers read the checks with the field.
     expect(field.getAttribute('aria-describedby')).toContain(screen.getByRole('list').id)
 
-    await user.type(field, 'ab1')
-    expect(screen.getByText('At least 3 characters')).toHaveTextContent('(done)')
-    expect(screen.getByText('A number')).toHaveTextContent('(done)')
+    await user.type(field, 'ab')
+    expect(screen.getByText('At least 3 characters')).toHaveTextContent('(not yet)')
+    expect(screen.getByText('A number')).toHaveTextContent('(not yet)')
 
-    // Showing the password keeps them open; leaving the field hides them.
-    await user.click(screen.getByRole('button', { name: 'Show password' }))
-    expect(screen.getByText('A number')).toBeInTheDocument()
+    // Leaving the field keeps them where they are, so nothing under them moves while
+    // the finger reaches for it.
     await user.click(screen.getByLabelText('Elsewhere'))
+    expect(screen.getByText('A number')).toBeInTheDocument()
+
+    // Once every rule is met, they fold away.
+    await user.type(field, '1')
     expect(screen.queryByText('A number')).not.toBeInTheDocument()
   })
 })

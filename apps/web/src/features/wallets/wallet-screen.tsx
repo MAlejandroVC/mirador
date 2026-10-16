@@ -10,9 +10,9 @@ import {
   walletBalance,
   walletTransactions,
 } from '@repo/core'
-import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useBack } from '../../components/shell/back'
 import { ActionSheet } from '../../components/ui/action-sheet'
 import { Amount } from '../../components/ui/amount'
 import { Button } from '../../components/ui/button'
@@ -57,7 +57,6 @@ import { WalletSheet } from './wallet-sheet'
 // is also where it is deleted (WAL-08).
 export function WalletScreen({ walletId }: { walletId: string }) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const { data: ledger } = useLedger()
   const save = useSaveRecords()
   const undo = useUndo()
@@ -73,12 +72,7 @@ export function WalletScreen({ walletId }: { walletId: string }) {
   const money = useMoney(defaultCurrency)
   // The latest few, so the list doesn't fill the screen: 5 on a phone, 10 from a tablet.
   const wide = useMediaQuery('(min-width: 768px)')
-  const back = {
-    label: t('nav.wallets'),
-    onClick: () => {
-      void navigate({ to: '/wallets' })
-    },
-  }
+  const back = useBack(t('nav.wallets'), { to: '/wallets' })
   const wallet = ledger?.wallets.find((candidate) => candidate.id === walletId)
   const editor = useTransactionEditor()
 
@@ -130,7 +124,7 @@ export function WalletScreen({ walletId }: { walletId: string }) {
     setConfirmingDelete(false)
     save.mutate(deleteChanges(), {
       onSuccess: () => {
-        void navigate({ to: '/wallets' })
+        back.onClick()
         // DL-PAT-06: a wallet with nothing in it goes at once, with Undo; one with
         // transactions was confirmed first, since that can't be undone.
         if (transactions.length === 0)

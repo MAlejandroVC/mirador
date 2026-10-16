@@ -24,7 +24,10 @@ import {
   CarIcon,
   CarrotIcon,
   CatIcon,
-  ChartLineUpIcon,
+  ChartBarIcon,
+  ArrowsClockwiseIcon,
+  QuestionIcon,
+  TrafficSignIcon,
   CoffeeIcon,
   CoinsIcon,
   ConfettiIcon,
@@ -79,10 +82,7 @@ import {
   PizzaIcon,
   PlantIcon,
   PopcornIcon,
-  QuestionMarkIcon,
   ReceiptIcon,
-  RepeatIcon,
-  RoadHorizonIcon,
   ScalesIcon,
   ScissorsIcon,
   ScrollIcon,
@@ -114,7 +114,8 @@ import {
 } from '../../components/ui/icons'
 
 // CAT-14, DL-ICO-03: the curated category icons, all drawn so their Duotone layer
-// shades part of the drawing itself.
+// shades part of the drawing itself, inside its outline. The keys are stored in
+// records, so a key keeps its name when its drawing is swapped for a better one.
 export const categoryIconComponents: Record<CategoryIcon, Icon> = {
   house: HouseIcon,
   buildings: BuildingsIcon,
@@ -154,7 +155,7 @@ export const categoryIconComponents: Record<CategoryIcon, Icon> = {
   car: CarIcon,
   motorcycle: MotorcycleIcon,
   bicycle: BicycleIcon,
-  roadHorizon: RoadHorizonIcon,
+  roadHorizon: TrafficSignIcon,
   wrench: WrenchIcon,
   shieldCheck: ShieldCheckIcon,
   identificationCard: IdentificationCardIcon,
@@ -186,7 +187,7 @@ export const categoryIconComponents: Record<CategoryIcon, Icon> = {
   pawPrint: PawPrintIcon,
   dog: DogIcon,
   cat: CatIcon,
-  repeat: RepeatIcon,
+  repeat: ArrowsClockwiseIcon,
   television: TelevisionIcon,
   filmSlate: FilmSlateIcon,
   popcorn: PopcornIcon,
@@ -219,11 +220,11 @@ export const categoryIconComponents: Record<CategoryIcon, Icon> = {
   money: MoneyIcon,
   coins: CoinsIcon,
   handCoins: HandCoinsIcon,
-  chartLineUp: ChartLineUpIcon,
+  chartLineUp: ChartBarIcon,
   key: KeyIcon,
   storefront: StorefrontIcon,
   package: PackageIcon,
   arrowUUpLeft: ArrowUUpLeftIcon,
   scales: ScalesIcon,
-  questionMark: QuestionMarkIcon,
+  questionMark: QuestionIcon,
 }

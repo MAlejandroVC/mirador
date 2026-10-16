@@ -316,7 +316,7 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 
 ## Typography
 
-**DL-TYP-01** Mirador uses the device's system font: `font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`. No web fonts are downloaded. *Why:* the app should feel like it belongs on whatever device it runs on, with no loading flash, and no font service is contacted (NFR-05).
+**DL-TYP-01** Mirador uses the device's system font: `font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`. No web fonts are downloaded. *Why:* the app should feel like it belongs on whatever device it runs on, with no loading flash, and no font service is contacted (NFR-01).
 
 **DL-TYP-02** Every amount uses tabular numerals (`font-variant-numeric: tabular-nums`), so digits have equal widths and columns of amounts line up.
 
@@ -380,7 +380,7 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 
 **DL-ICO-02** A category or wallet is shown as an icon tile: its icon in its color, on a rounded square tinted with that same color.
 
-**DL-ICO-03** The icon set is [Phosphor](https://phosphoricons.com) (MIT license). Duotone appears only inside tiles: category and wallet tiles in their color, and the app's own tiles and profile picture in `brand` (DL-COL-13). Everything else uses the Regular (line) style: buttons, the quick-add plus, chevrons, swipe actions and banners. The selected tab uses Fill, as iOS does. Inside a tile, use only icons whose second tone shades part of the drawing itself. If an icon's second tone is just a box or circle behind the drawing, pick another icon. *Why:* a background box reads as a rendering glitch, not as shading.
+**DL-ICO-03** The icon set is [Phosphor](https://phosphoricons.com) (MIT license). Duotone appears only inside tiles: category and wallet tiles in their color, and the app's own tiles and profile picture in `brand` (DL-COL-13). Everything else uses the Regular (line) style: buttons, the quick-add plus, chevrons, swipe actions and banners. The selected tab uses Fill, as iOS does. Inside a tile, use only icons whose second tone shades a part of the drawing that the drawing's own outline closes in, such as the inside of a card, a cup or a circle. If the second tone is a box or circle behind the drawing, or spills past the lines, as between the two arrows of Repeat, pick another icon: an arrow in a circle for transfers, arrows around a circle for recurring, bars for investments. A tile that pictures another app's button, such as the browser's Share button in the install steps, draws it in Regular, as it looks there. *Why:* shading that nothing encloses reads as a rendering glitch, not as shading.
 
 **DL-ICO-04** Icon tiles are 34 px with a 20 px icon. Tab bar icons are 23 px.
 
@@ -390,7 +390,7 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 
 **DL-MOT-01** Motion confirms what happened and shows where things went. It never decorates.
 
-**DL-MOT-02** Saving a transaction plays one short sequence: the Save button turns into a check, the sheet slides away, and the new row opens into its list with a highlight that fades. The whole sequence takes under one second.
+**DL-MOT-02** Saving a transaction plays one short sequence: the round Save check pops, the sheet slides away, and the new row opens into its list with a highlight that fades. The whole sequence takes under one second.
 
 **DL-MOT-03** No animation blocks input. The next action, such as opening quick-add again, works the moment it is tapped, even while the previous animation is finishing. *Why:* people log expenses in a hurry. Motion that makes them wait stops being a flourish and becomes an obstacle.
 
@@ -400,7 +400,7 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 
 | Step | Duration | Easing |
 |---|---|---|
-| Save turns into a check | 260 ms | `cubic-bezier(.32,.72,0,1)` |
+| The Save check pops | 260 ms | `cubic-bezier(.32,.72,0,1)` |
 | Sheet slides away | 420 ms | `cubic-bezier(.32,.72,0,1)` |
 | New row opens into the list | 360 ms | `cubic-bezier(.32,.72,0,1)` |
 | Row highlight fades | 1.4 s | ease-out, runs in the background |
@@ -507,31 +507,31 @@ A day's or a period's net follows the same rule: money in shows its plus in Moss
 
 **DL-CMP-05** **Buttons.** Three styles, as in iOS:
 
-- **Filled** (`brand` with `on-brand` text): the one main action of a screen or sheet, such as Save. Never two on one screen.
+- **Filled** (`brand` with `on-brand` text): the one main action of a screen, such as "Add a wallet" in an empty state. Never two on one screen. A sheet's main action is the round check in its bar instead (DL-CMP-08).
 - **Tinted** (`brand` at 14% on the surface, `brand` text): a second action next to it, such as "Save & new".
 - **Plain** (`brand` text, no background): actions in the navigation bar and inside lists.
 
 Full-width buttons are 50 px tall; any button is at least 44 px. A destructive button uses `danger` text, plain or tinted, never filled. The label is a verb (DL-VOC-05).
 
-**DL-CMP-06** **Navigation bar.** Each tab opens with a large title. The tab's actions share the title's row on the right, as in the App Store: on every tab that is the profile picture, 40 px, which opens Settings. No row is spent on buttons alone. Once the page scrolls, the title shrinks into the bar, centered. A screen reached from another, such as a Settings page, has a round back button at the top left: a 44 px `surface` circle with a chevron only, as in iOS Settings (its accessible name is the previous screen's title). Instead of the large title it opens with a header card: a `surface` card holding a 56 px icon tile (or, for Account, the profile picture), the screen's title in 24 px bold and one short line in `text-muted` on what you can do there. At most two plain actions sit at the top right.
+**DL-CMP-06** **Navigation bar.** Each tab opens with a large title. The tab's actions share the title's row on the right, as in the App Store: on every tab that is the profile picture, 40 px, which opens Settings. No row is spent on buttons alone. Once the page scrolls, the title shrinks into the bar, centered. A screen reached from another, such as a Settings page, has a round back button at the top left: a 44 px `surface` circle with a chevron only, as in iOS Settings (its accessible name is the previous screen's title). It returns to the screen it came from, as iOS's navigation stack does, so going back again never lands on the screen just left; opened from a link or after a reload, it goes to the screen above. Instead of the large title it opens with a header card: a `surface` card holding a 56 px icon tile (or, for Account, the profile picture), the screen's title in 24 px bold and one short line in `text-muted` on what you can do there. At most two plain actions sit at the top right.
 
 **DL-CMP-07** **List rows.** Rows sit in inset lists (a `surface` card with 16 px corners), at least 52 px tall: icon tile, title, an optional second line in `text-muted`, and a value or amount on the right. A chevron appears only when the row opens another screen. Tapping a row opens it, which is also where it is edited. A transaction row never says its type: its amount does (DL-NUM-03). Its title is the payee, else the note, else the category; the second line holds the category when the title is something else, then the wallet. Swiping a row to the left is only for deleting, as in iOS. A short swipe slides the row aside and leaves a small red Delete pill showing; tapping the pill deletes the row. A long swipe deletes it straight away. Tapping anywhere else closes the pill. Delete can also be reached from the row's own screen (DL-A11Y-07).
 
-**DL-CMP-08** **Sheets.** Creating or editing something opens a sheet that slides up, with a grabber, Cancel at the top left, the title in the middle, and the main action as a filled button at the bottom, within reach of the thumb. Settings-like sheets put Done at the top right instead. Swiping a sheet down closes it, unless it holds unsaved changes; then an action sheet asks "Discard changes?".
+**DL-CMP-08** **Sheets.** Creating or editing something opens a sheet that slides up, with a grabber and a bar across the top, as in iOS: a round close button (an X on `fill`) at the top left, the title in the middle, and the main action as a round check on `brand` at the top right. The bar stays in view while the form scrolls and above the keyboard, so the check is always one tap away. Anything else goes at the end of the form: a second action such as "Save & new" as a tinted button, and Delete. Settings-like sheets that only close have the check alone. On a phone, the sheet follows the finger down and closes when let go far or fast enough. The pull starts from the grabber and bar at any time, and from the content once it is scrolled to the top. A sheet with unsaved changes springs back instead and an action sheet asks "Discard changes?". The X stays too, as in iOS: not everyone knows the gesture, and it is the only way out on a computer.
 
-**DL-CMP-09** **Fields.** Fields are rows in an inset list, as in iOS Settings: label on the left, value on the right, chevron when it opens a picker. Free text fields use the `inset` fill. The amount is entered as a big number with the decimal keypad. A field's error appears right under it in `warning` (DL-PAT-05), only after Save was tapped (DL-PAT-02). A field being typed in shows only its caret, in `brand`, never a box around it, as in iOS.
+**DL-CMP-09** **Fields.** Fields are rows in an inset list, as in iOS Settings: label on the left, value on the right, chevron when it opens a picker. Free text fields use the `inset` fill. The amount is entered as a big number with the decimal keypad. A field's error appears right under it in `warning` (DL-PAT-05), only after Save was tapped (DL-PAT-02). A field being typed in shows only its caret, in `brand`, never a box around it, as in iOS. What a field is for goes in a short hint right under it, never behind an (i) button. Rules a value must meet, such as a password's, appear as a checklist under the field once it is used, tick off as they are met and fold away only when all are met, never when the field loses focus, so nothing under them moves while the finger reaches for it.
 
 - **Money.** Every field that holds an amount groups the digits as they are typed, the way the language writes them ("25,000"), and shows the cents still to come in `text-faint` (".00"). Typed cents take the normal text color. The field is as wide as its text, so the faint cents sit right beside it.
 - **Other numbers.** A rate, a percent, an exchange rate or a count of months is a plain number: no faint decimals, which belong to money only. Its placeholder is a faint "0".
 - **Dates and days.** A date, month, year, day of the week or day of the month is picked, never typed. The row shows the value in a small `fill` pill; tapping it opens the picker right under the row, as iOS forms do: a calendar a month at a time (the chosen day a filled `brand` circle, today in `brand`), or the days 1 to 31 in a grid. Picking closes it.
 
-**DL-CMP-10** **Switches.** The iOS switch, `brand` when on. Only for settings that take effect immediately; anything that needs Save is not a switch.
+**DL-CMP-10** **Switches and checks.** A single option that is on or off, such as "Leave out of the budget" or a wallet's features, is the iOS switch: a `brand` track when on, a soft gray one when off, and a white knob that slides across. It is a switch whether it takes effect at once or with the form's Save, as in iOS's own New Event sheet. A check mark in `brand` is only for picking from a list: one item (the sort order, a category) or several (the tags on a transaction, the types in a filter).
 
 **DL-CMP-11** **Segmented control.** Two to five equal options that switch a mode or a view, such as Expense, Income and Transfer. More than five becomes a list. The selected option sits on `thumb`: `surface` in light mode, and in dark mode `surface` mixed with 24% `text`, so it stands out from the track as in iOS.
 
 **DL-CMP-12** **Action sheet.** Confirms a destructive or irreversible step. It slides up, states the consequence in one sentence, and offers the destructive action in `danger` with Cancel set apart below it.
 
-**DL-CMP-13** **Undo banner.** After a delete that can be undone: one line and an Undo button, on `surface`, just above the tab bar, for 5 seconds. Only one at a time.
+**DL-CMP-13** **Undo banner.** After a delete that can be undone: one line and an Undo button, on `surface`, just above the tab bar, for 5 seconds, or 10 after deleting a transaction (TXN-13). Only one at a time.
 
 **DL-CMP-14** **Empty state.** A large icon tile, a short title, one sentence on what will appear here, and the filled button that fills it ("Add a wallet"). This is a place for a touch of whimsy (DL-VOC-02).
 
@@ -539,9 +539,9 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 
 ## Patterns
 
-**DL-PAT-01** **Navigation.** The tabs are Home, Transactions, Budget and Wallets. Opening an item pushes a screen in from the right, and swiping from the left edge goes back. Creating or editing opens a sheet (DL-CMP-08). Tapping the current tab returns to its top. Settings is not a place, so it is not a tab: it opens from the profile picture beside each tab's title, or from the bottom of the sidebar (DL-LAY-06). It lists Account, then Appearance, Password and security, and Invites for the person who runs the server, then Lock and Sign out; more areas join as they are built.
+**DL-PAT-01** **Navigation.** The tabs are Home, Transactions, Budget and Wallets. Opening an item pushes a screen in from the right, and swiping from the left edge goes back. Creating or editing opens a sheet (DL-CMP-08). Tapping the current tab returns to its top. Settings is not a place, so it is not a tab: it opens from the profile picture beside each tab's title, or from the bottom of the sidebar (DL-LAY-06). It lists Account, then Appearance, Language, Currency, Categories, Tags, Password and security, and Invites for the person who runs the server, then Add to Home Screen until Mirador runs from there, then Lock and Sign out; more areas join as they are built.
 
-**DL-PAT-02** **Forms.** Fill in everything that can be guessed: today's date, the last wallet used, the suggested category. Show the required fields first. Check the fields only when the person taps the main button, never while they type or when they leave a field. The main button always looks ready. Tapped with a required field missing, it saves nothing: each missing field gives a quick small shake (DL-MOT-07), gets a `warning` outline and its error under it, and the caret goes to the first one. From then on each mark clears as soon as its field is filled. *Why:* a warning for a field the person hasn't reached yet feels like being scolded for something they were about to do.
+**DL-PAT-02** **Forms.** Fill in everything that can be guessed: today's date, the default wallet or else the last one used (WAL-24), the suggested category. Show the required fields first. Check the fields only when the person taps the main button, never while they type or when they leave a field. The main button always looks ready. Tapped with a required field missing, it saves nothing: each missing field gives a quick small shake (DL-MOT-07), gets a `warning` outline and its error under it, and the caret goes to the first one. From then on each mark clears as soon as its field is filled. *Why:* a warning for a field the person hasn't reached yet feels like being scolded for something they were about to do.
 
 **DL-PAT-03** **Empty states.** Every list and screen that can be empty has an empty state (DL-CMP-14). It is never a blank screen.
 

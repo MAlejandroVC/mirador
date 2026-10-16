@@ -835,6 +835,7 @@ function EntryForm({
           <div className="pt-3">
             <List inset>
               <ChoiceRow
+                role="switch"
                 title={t('recurring.ask')}
                 subtitle={t('recurring.askHint')}
                 checked={ask}
@@ -958,6 +959,7 @@ function EntryForm({
           <div className="pt-3">
             <List inset>
               <ChoiceRow
+                role="switch"
                 title={t('transactions.excluded')}
                 subtitle={t('transactions.excludedHint')}
                 checked={excluded}

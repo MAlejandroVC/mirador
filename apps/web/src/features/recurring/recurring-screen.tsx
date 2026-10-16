@@ -1,10 +1,10 @@
 import { hasEnded, nextOccurrence, type Recurring, toCalendarDate } from '@repo/core'
-import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useBack } from '../../components/shell/back'
 import { Button } from '../../components/ui/button'
 import { EmptyState } from '../../components/ui/empty-state'
-import { RepeatIcon } from '../../components/ui/icons'
+import { ArrowsClockwiseIcon } from '../../components/ui/icons'
 import { List } from '../../components/ui/list'
 import { Page } from '../../components/ui/page'
 import { formatShortDate, useMoney } from '../../lib/format'
@@ -20,18 +20,12 @@ import { RecurringRow } from './upcoming-row'
 // Each opens to be changed or stopped.
 export function RecurringScreen() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const { data: ledger } = useLedger()
   const editor = useTransactionEditor()
   const [adding, setAdding] = useState(false)
   const money = useMoney(ledger?.defaultCurrency ?? 'USD')
   const today = toCalendarDate(new Date())
-  const back = {
-    label: t('nav.transactions'),
-    onClick: () => {
-      void navigate({ to: '/transactions' })
-    },
-  }
+  const back = useBack(t('nav.transactions'), { to: '/transactions' })
   if (!ledger) return <Page title={t('recurring.title')} back={back} />
 
   const wallets = new Map(ledger.wallets.map((wallet) => [wallet.id, wallet]))
@@ -63,7 +57,7 @@ export function RecurringScreen() {
     <Page title={t('recurring.title')} back={back}>
       {shown.length === 0 ? (
         <EmptyState
-          icon={RepeatIcon}
+          icon={ArrowsClockwiseIcon}
           title={t('recurring.empty.title')}
           action={
             <Button

@@ -281,10 +281,10 @@ describe('wallets', () => {
     await user.click(screen.getByRole('radio', { name: 'Car' }))
     await user.click(screen.getByRole('radio', { name: 'Berry' }))
     // Features show only the ones on, until "Show all features" (DL-CMP-15).
-    expect(screen.queryByRole('checkbox', { name: /Available now/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('switch', { name: /Available now/ })).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Show all features' }))
-    await user.click(screen.getByRole('checkbox', { name: /Available now/ }))
-    await user.click(screen.getByRole('checkbox', { name: /Active/ }))
+    await user.click(screen.getByRole('switch', { name: /Available now/ }))
+    await user.click(screen.getByRole('switch', { name: /Active/ }))
     await user.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => {

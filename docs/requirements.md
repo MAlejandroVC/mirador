@@ -38,7 +38,7 @@ Mirador is a free, self-hosted, open source personal finance tool that shows peo
 
 **Guiding principles** (used to settle disputes between requirements)
 
-1. **P****rivate by default.** Data is encrypted on the user's device before it reaches the server, and the server cannot read it. The app never asks for bank credentials.
+1. **Private by default.** Data is encrypted on the user's device before it reaches the server, and the server cannot read it. The app never asks for bank credentials.
 1. **Habits before targets.** Every budget number starts from observed behaviour and moves in steps the user has shown they can take.
 1. **Capture must be near-free.** Import does the bulk; manual entry covers the gaps in seconds. Every extra field or confirmation has to earn its place.
 1. **The user owns the taxonomy.** No category or tag is hard-coded; every screen adapts to the user's categories and tags.
@@ -73,18 +73,17 @@ These terms have one meaning throughout the document, the code and the UI.
 | Opening balance | An ordinary transaction that sets a wallet's starting amount; its date and amount can be moved to load older history. |
 | Transaction | One money movement: an expense, an income or a transfer. |
 | Transfer | Money moved between two of the user's own wallets. Not income, not spending. Paying a credit card is a transfer. |
-| Installment plan | A purchase paid in equal monthly parts (in Mexico, "meses sin intereses" or "con intereses"). On a credit card it takes the whole amount off the available credit at once; on any other wallet each part leaves on its day. It counts in spending one installment per month. |
+| Installment plan | A purchase paid in equal monthly parts (in Mexico, "meses sin intereses" or "con intereses"). On a credit card with statement dates it takes the whole amount off the available credit at once; on any other wallet each part leaves on its day. It counts in spending one installment per month. |
 | Statement balance | What a credit card statement billed, minus the payments since: paying it by the due date avoids interest. Installments not billed yet are not part of it. |
-| Recurring transaction | A template that adds the same transaction on a schedule, by itself or after the user confirms it. |
+| Recurring transaction | A template that adds the same transaction on a schedule (rent, subscriptions, fees), by itself or after the user confirms it. |
 | Split | One transaction divided across several categories. |
 | Category | A user-defined label for what money was spent on or earned from ("Lunch"). Every expense and income has exactly one. |
-| Category group | The super-category a category belongs to ("Food & drinks"). |
+| Category group | The group a category belongs to ("Food & drinks"); its color is its categories' color. |
 | Tag | A free label adding context a category can't ("work", "family", "partner", "trip-cancun"). A transaction can have any number of tags, including none. |
 | Payee | The optional merchant or person on the other side of a transaction. Kept for now, to revisit in a UX review of friction points. |
 | Import batch | All transactions created from one upload, kept together so they can be undone as a unit. |
 | Flagged row | An imported row the app is unsure about (low confidence, probable duplicate, possible transfer, no category). Only flagged rows need the user's attention. |
 | Rule | A user-defined "if the description matches X, then set category Y and tags Z" instruction applied on import. |
-| Recurring transaction | A template that generates expected transactions on a schedule (rent, subscriptions, fees). |
 | Budget period | The span a budget covers: one month long, starting on a day the user chooses (for example payday). |
 | Baseline | The user's typical period per category (optionally per category and tag), computed from history. The starting point of every budget. |
 | Proven level | A category's lowest period in the lookback: spending the user has already shown they can live with. |
@@ -263,10 +262,10 @@ A purchase paid in installments ("meses sin intereses" or "meses con intereses" 
 |---|---|---|
 | TXN-30 | The app shall let the user pay any expense made once in a number of monthly installments, interest-free or with interest, and optionally start the first one some months later. On a wallet with a credit limit and statement dates (WAL-16), installments follow its statements and the whole amount is owed at once; on any other wallet, each installment leaves the wallet on the purchase's day of the month. | Should |
 | TXN-31 | Where an installment plan has interest, the app shall take the monthly payment the bank quotes and store the total charged; it shall never estimate an interest rate. | Should |
-| TXN-32 | The app shall take the whole amount of an installment purchase off the wallet's balance and available credit on the purchase date, and count it in spending, totals and the budget one installment per month. | Should |
+| TXN-32 | The app shall count an installment purchase in spending, totals and the budget one installment per month. On a wallet with statement dates it shall take the whole amount off the wallet's balance and available credit on the purchase date; on any other wallet each installment leaves the wallet on its day (TXN-30). | Should |
 | TXN-33 | The app shall let the user pay off the rest of an installment plan early, which bills everything left on that date. | Could |
 
-**Acceptance example (TXN-32)**: *Given* a credit card with a limit of 50,000 and no balance, *when* the user buys a 9,000 laptop in 6 interest-free installments on October 14, *then* the card's balance is −9,000 and its available credit 41,000 that day, and Transactions counts 1,500 in October and 1,500 in each of the next five months.
+**Acceptance example (TXN-32)**: *Given* a credit card with a limit of 50,000, statement dates set and no balance, *when* the user buys a 9,000 laptop in 6 interest-free installments on October 14, *then* the card's balance is −9,000 and its available credit 41,000 that day, and Transactions counts 1,500 in October and 1,500 in each of the next five months.
 
 **Table view**
 
@@ -362,7 +361,7 @@ Every expense and income has exactly one category, each category belongs to exac
 | CAT-01 | The app shall let the user create, rename, reorder, archive and delete categories and category groups. | Must |
 | CAT-02 | The app shall store for each category: name, category group, kind (expense or income), icon, flexibility (Locked, Fixed or Flexible) and an optional description. A category shows in its category group's color (CAT-14). | Must |
 | CAT-03 | The app shall require category names to be unique within their category group, and category group names to be unique. | Must |
-| CAT-04 | The app shall start every account with an editable starter set (for example Housing, Food & drinks, Transportation, Lifestyle, Health, Entertainment, Financial, Income) that the user can change, add to or remove from. | Must |
+| CAT-04 | The app shall start every account with an editable starter set (for example Housing, Food & drinks, Transportation, Health, Shopping and personal, Entertainment, Financial, Income) that the user can change, add to or remove from. | Must |
 | CAT-05 | The app shall provide system categories (Uncategorized, Balance adjustment, Interest, Fees, Refunds) that can be renamed but not deleted. | Must |
 | CAT-06 | If the user deletes a category that has transactions, then the app shall require moving them to another category or archiving the category instead. | Must |
 | CAT-07 | While a category is archived, the app shall hide it from pickers and keep it in history and reports, and let the user restore it. | Must |
@@ -689,7 +688,7 @@ Every user's financial data is end-to-end encrypted. The client encrypts it befo
 | SEC-07 | When an account is created, the app shall generate a recovery key on the client, show it once and ask the user to save it. If the user forgets their password, the app shall let them regain access with that recovery key and set a new password, without the server ever being able to decrypt their data. If the user loses both the password and the recovery key, the data cannot be recovered by anyone, and the app shall say so when the key is shown. | Must |
 | SEC-08 | The app shall let the user change their password, replace their recovery key and sign out other devices without losing data. | Must |
 | SEC-09 | Each user's data shall be encrypted with that user's own key, and the server shall refuse any request for another user's records. | Must |
-| SEC-10 | The project shall document exactly what the server can see: account name or email, sign-in times, the number, size and sync times of encrypted records, and notification send times. | Must |
+| SEC-10 | The project shall document exactly what the server can see: username, sign-in times, the number, size and sync times of encrypted records, and notification send times. | Must |
 | SEC-11 | The app shall keep queued offline entries (WID-09) encrypted on the device. | Must |
 | SEC-12 | The app shall lock after a period of inactivity the user sets, removing the key from memory, and unlock with the password or a passkey. | Must |
 | SEC-13 | The app shall use standard, well-reviewed algorithms and open source cryptography libraries, never custom cryptography. | Must |
@@ -701,7 +700,7 @@ These constrain how the features above are built without choosing a technology s
 
 | ID | Requirement | Priority |
 |---|---|---|
-| NFR-01 | The app shall keep all user data on the user's own server; the client shall talk only to that server, the server shall make no outbound connections, and neither shall send telemetry of any kind in V1. | Must |
+| NFR-01 | The app shall keep all user data on the user's own server; the client shall talk only to that server, the server's only outbound connections shall be push deliveries to the browser's push service (SYS-12, SEC-14), and neither shall send telemetry of any kind in V1. | Must |
 | NFR-02 | The app shall never ask for, store or use bank login credentials, and shall not depend on bank or aggregator APIs. | Must |
 | NFR-03 | The app shall store money as exact decimal or integer minor units, never as floating point. | Must |
 | NFR-04 | The app shall be a responsive web app that works fully in phone and desktop browsers, designed first for heavy use on a phone. Native iOS and Android apps may follow later if there is interest. | Must |
@@ -768,8 +767,8 @@ These are deliberately excluded from V1 so the core loop ships first; some may r
 | Connecting to banks through APIs or aggregators | Won't, by principle |
 | Remote AI services for imports | Won't |
 | Telemetry or analytics | Won't in V1 |
-| Visual design, brand and identity | Separate design document |
-| Choosing the technology stack | Separate architecture plan |
+| Visual design, brand and identity | [Design language](design-language.md) |
+| Choosing the technology stack | [Technology stack](technology-stack.md) |
 | Native apps (iOS, Android, desktop) | Not in V1; may come later if there is interest (the web app covers every device) |
 | Home-screen widget | Not in V1, because it needs native apps; quick add is a button inside the app |
 | Shared households (shared wallets, hidden transactions, levels of transparency) | After V1; V1 has separate accounts with no sharing or communication between users (Q24) |

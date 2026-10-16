@@ -10,7 +10,7 @@ import { Amount } from '../../components/ui/amount'
 import { IconTile } from '../../components/ui/icon-tile'
 import {
   ArrowDownLeftIcon,
-  ArrowsHorizontalIcon,
+  ArrowCircleRightIcon,
   ArrowUpRightIcon,
   FlagBannerIcon,
   type Icon,
@@ -26,8 +26,8 @@ import type { Taxonomy } from '../categories/lookups'
 import type { LedgerWallet } from '../wallets/use-ledger'
 
 // The icon of each kind with no category to show (DL-ICO-01): what a wallet makes for
-// itself, and transfers, which use arrows-horizontal, whose drawing has no box behind
-// it (DL-ICO-03).
+// itself, and transfers, an arrow in a circle whose outline holds its shading
+// (DL-ICO-03).
 const kindIcons: Record<Transaction['kind'], Icon> = {
   openingBalance: FlagBannerIcon,
   adjustment: ScalesIcon,
@@ -36,7 +36,7 @@ const kindIcons: Record<Transaction['kind'], Icon> = {
   valuation: TrendUpIcon,
   expense: ArrowUpRightIcon,
   income: ArrowDownLeftIcon,
-  transfer: ArrowsHorizontalIcon,
+  transfer: ArrowCircleRightIcon,
 }
 
 /**

@@ -85,7 +85,6 @@ export function RecoverScreen() {
           label={t('security.recover.newPassword')}
           type="password"
           autoComplete="new-password"
-          info={t('security.signUp.passwordHint', { count: minimumPasswordLength })}
           checks={passwordRules}
           error={problems.password}
           value={password}

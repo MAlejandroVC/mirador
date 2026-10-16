@@ -116,7 +116,6 @@
     "password": "Contraseña",
     "show": "Mostrar contraseña",
     "hide": "Ocultar contraseña",
-    "info": "Información sobre {{label}}",
     "checkMet": "cumplido",
     "checkNotMet": "pendiente"
   },
@@ -137,9 +136,8 @@
     "signUp": {
       "title": "Crea tu cuenta",
       "intro": "Tu contraseña cifra tus datos en este dispositivo. El servidor nunca la ve, así que nadie puede restablecerla por ti.",
-      "usernameHint": "De 3 a 32 letras, números, puntos, guiones o guiones bajos. No tiene que ser tu nombre real.",
+      "usernameHint": "No tiene que ser tu nombre real.",
       "usernameAvailable": "{{username}} está disponible.",
-      "passwordHint": "Al menos {{count}} caracteres, con una mayúscula, una minúscula, un número y un símbolo.",
       "confirm": "Repite la contraseña",
       "setupCode": "Código de configuración",
       "setupCodeHint": "Este servidor aún no tiene cuentas. Quien lo administra encuentra el código de configuración en el registro del servidor.",
