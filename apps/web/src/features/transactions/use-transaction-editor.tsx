@@ -1,16 +1,18 @@
-import { type EntryType, isEntry, type Transaction } from '@repo/core'
+import { type EntryType, isEntry, type Recurring, type Transaction } from '@repo/core'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUndo } from '../../components/ui/use-undo'
 import { TransactionSheet } from '../wallets/transaction-sheet'
 import { transactionBody, useLedger, useSaveRecords } from '../wallets/use-ledger'
-import { EntrySheet } from './entry-sheet'
+import { type EntryMode, EntrySheet } from './entry-sheet'
 
 /**
  * Opening a transaction to change or delete it (TXN-01), wherever it is listed: an
  * expense, income or transfer opens its form; what a wallet made for itself, such as
  * an opening balance (WAL-05), opens the wallet's own sheet, which can also confirm a
- * new one, such as estimated interest (WAL-14). Deleting shows Undo (TXN-13).
+ * new one, such as estimated interest (WAL-14). Deleting shows Undo (TXN-13). A
+ * recurring transaction opens to be changed, and one date of one that asks first
+ * opens to be checked (TXN-09, TXN-10).
  */
 export function useTransactionEditor() {
   const { t } = useTranslation()
@@ -21,6 +23,8 @@ export function useTransactionEditor() {
   // Kept while a sheet slides away, so it leaves showing what it showed.
   const [entry, setEntry] = useState<(Transaction & { kind: EntryType }) | null>(null)
   const [system, setSystem] = useState<Transaction | null>(null)
+  const [schedule, setSchedule] = useState<EntryMode | null>(null)
+  const [scheduleOpen, setScheduleOpen] = useState(false)
 
   function remove(transaction: Transaction) {
     const { id, ...record } = transaction
@@ -44,11 +48,24 @@ export function useTransactionEditor() {
     else setSystem(transaction)
   }
 
+  function openSeries(recurring: Recurring) {
+    setOpened(null)
+    setSchedule({ kind: 'series', recurring })
+    setScheduleOpen(true)
+  }
+
+  function openDue(recurring: Recurring, date: string) {
+    setSchedule({ kind: 'due', recurring, date })
+    setScheduleOpen(true)
+  }
+
   const systemWallet = system && ledger?.wallets.find((wallet) => wallet.id === system.walletId)
   const opensEntry = opened !== null && isEntry(opened.transaction.kind)
 
   return {
     open,
+    openSeries,
+    openDue,
     remove,
     sheet: (
       <>
@@ -60,6 +77,16 @@ export function useTransactionEditor() {
               setOpened(null)
             }}
             onDelete={remove}
+            onOpenSeries={openSeries}
+          />
+        )}
+        {schedule && (
+          <EntrySheet
+            open={scheduleOpen}
+            mode={schedule}
+            onClose={() => {
+              setScheduleOpen(false)
+            }}
           />
         )}
         {systemWallet && (

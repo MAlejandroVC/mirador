@@ -1,5 +1,6 @@
 import { Outlet } from '@tanstack/react-router'
 import { QuickAddProvider } from '../../features/quick-add'
+import { usePostRecurring } from '../../features/recurring/use-post-recurring'
 import { UndoProvider } from '../ui/undo-banner'
 import { Sidebar } from './sidebar'
 import { TabBar } from './tab-bar'
@@ -10,6 +11,7 @@ export function AppShell() {
   return (
     <UndoProvider>
       <QuickAddProvider>
+        <PostRecurring />
         <div className="min-h-dvh bg-background text-text lg:pl-64">
           <Sidebar />
           {/* Room for the floating tab bar, so the last row can scroll above it. */}
@@ -23,4 +25,10 @@ export function AppShell() {
       </QuickAddProvider>
     </UndoProvider>
   )
+}
+
+/** TXN-10: adds what recurring transactions have due, whichever screen opens first. */
+function PostRecurring() {
+  usePostRecurring()
+  return null
 }

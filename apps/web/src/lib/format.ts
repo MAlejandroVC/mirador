@@ -74,6 +74,20 @@ export function formatDay(
   }).replace('.', '')
 }
 
+/** DL-NUM-08: "Oct 20" ("20 oct"), with the year only when it isn't this one. */
+export function formatShortDate(date: string, today: string, locale: string): string {
+  const [year = 0, month = 1, dayOfMonth = 1] = date.split('-').map(Number)
+  const sameYear = today.startsWith(`${String(year)}-`)
+  return new Intl.DateTimeFormat(locale, {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  })
+    .format(new Date(Date.UTC(year, month - 1, dayOfMonth)))
+    .replace('.', '')
+}
+
 /** SYS-04: an exchange rate for reading, such as "18.45", with at least two decimals. */
 export function formatRate(rate: number, locale: string): string {
   return formatDecimal(rate, rateDecimals, locale, 2)

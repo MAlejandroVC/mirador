@@ -13,6 +13,8 @@ import {
   preferencesRecord,
   preferencesRecordType,
   type RecordBody,
+  recurringRecord,
+  recurringRecordType,
   tagRecord,
   tagRecordType,
   type TransactionRecord,
@@ -29,10 +31,12 @@ import {
   guessCurrency,
   inOrder,
   type Payee,
+  type Recurring,
   sortWallets,
   type Tag,
   type Transaction,
   withoutDuplicateSystem,
+  withoutRepeatedOccurrences,
 } from '@repo/core'
 import { newRecordId } from '@repo/crypto'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -60,6 +64,8 @@ export interface Ledger {
   categories: Category[]
   tags: Tag[]
   payees: Payee[]
+  /** TXN-09: the recurring transactions, ended ones included. */
+  recurring: Recurring[]
   /** SYS-01: the person's choice, or a guess from the device language until they make one. */
   defaultCurrency: string
   /** WAL-24: the wallet new transactions start in, if the person chose one. */
@@ -76,6 +82,7 @@ async function readLedger(vault: VaultClient): Promise<Ledger> {
   const categories: Category[] = []
   const tags: Tag[] = []
   const payees: Payee[] = []
+  const recurring: Recurring[] = []
   let preferences: (PreferencesRecord & { id: string }) | null = null
   for (const { id, body } of await vault.listRecords()) {
     if (body.deleted) continue
@@ -115,6 +122,11 @@ async function readLedger(vault: VaultClient): Promise<Ledger> {
         if (parsed.success) payees.push({ id, ...parsed.data })
         break
       }
+      case recurringRecordType: {
+        const parsed = recurringRecord.safeParse(body.data)
+        if (parsed.success) recurring.push({ id, ...parsed.data })
+        break
+      }
       case preferencesRecordType: {
         const parsed = preferencesRecord.safeParse(body.data)
         if (parsed.success) preferences = { id, ...parsed.data }
@@ -128,12 +140,14 @@ async function readLedger(vault: VaultClient): Promise<Ledger> {
     // WAL-10: the person's order; the rest in the order they were added (UUIDv7 ids
     // start with their creation time).
     wallets: sortWallets(wallets),
-    transactions,
+    // TXN-10: a date two devices both added counts once.
+    transactions: withoutRepeatedOccurrences(transactions),
     rates,
     groups: inOrder(groups),
     categories: inOrder(withoutDuplicateSystem(categories)),
     tags: [...tags].sort((a, b) => a.name.localeCompare(b.name)),
     payees,
+    recurring,
     defaultCurrency: preferences?.defaultCurrency ?? guessCurrency(globalThis.navigator.language),
     defaultWalletId: preferences?.defaultWalletId ?? null,
     preferencesId: preferences?.id ?? null,

@@ -43,8 +43,27 @@ export interface TransactionFields {
   /** TXN-06 */
   excludeFromBudget?: boolean
   source?: TransactionSource
+  /** TXN-30: an expense the card bills in monthly installments. */
+  installments?: InstallmentPlan
+  /** TXN-10: the recurring transaction that added it, and for which date. */
+  recurringId?: string
+  occurrence?: string
   createdAt?: string
   updatedAt?: string
+}
+
+/**
+ * TXN-30 to TXN-33: how a card bills a purchase. The transaction's amount is all the
+ * card charges, interest included (TXN-31).
+ */
+export interface InstallmentPlan {
+  months: number
+  /** TXN-31: with interest, the price before it. */
+  price?: number
+  /** The first installment comes this many statements later. */
+  deferred?: number
+  /** TXN-33: paid off early on this date. */
+  paidOff?: string
 }
 
 export interface Transaction extends TransactionFields {
@@ -103,6 +122,8 @@ export interface EntryDraft {
   tagIds?: string[]
   payeeId?: string
   excludeFromBudget?: boolean
+  /** Expenses only (TXN-30); `amount` is then all the card charges. */
+  installments?: InstallmentPlan
 }
 
 /** The record for a draft: an expense or transfer takes from its wallet, income adds. */
@@ -135,6 +156,7 @@ export function entryFields(
       : {}),
     ...(draft.payeeId !== undefined ? { payeeId: draft.payeeId } : {}),
     ...(draft.excludeFromBudget ? { excludeFromBudget: true } : {}),
+    ...(draft.type === 'expense' && draft.installments ? { installments: draft.installments } : {}),
     source,
     createdAt,
     updatedAt: now,
@@ -156,6 +178,7 @@ export function entryDraft(transaction: TransactionFields & { kind: EntryType })
     ...(transaction.tagIds !== undefined ? { tagIds: transaction.tagIds } : {}),
     ...(transaction.payeeId !== undefined ? { payeeId: transaction.payeeId } : {}),
     ...(transaction.excludeFromBudget ? { excludeFromBudget: true } : {}),
+    ...(transaction.installments ? { installments: transaction.installments } : {}),
   }
 }
 

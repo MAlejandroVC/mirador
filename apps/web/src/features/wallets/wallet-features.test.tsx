@@ -274,13 +274,64 @@ describe('wallet features, exchange rates and order', () => {
     })
 
     expect(await screen.findByText('$4,385.10 of $30,000.00')).toBeVisible()
-    expect(screen.getByText('$25,614.90 left to spend')).toBeVisible()
     expect(screen.getByRole('meter', { name: 'Credit used' })).toHaveAttribute(
       'aria-valuenow',
       '15',
     )
-    expect(screen.getByText('Oct 20')).toBeVisible()
-    expect(screen.getByText('Nov 10')).toBeVisible()
+    // WAL-25: charged since the September 20 statement, so nothing is due yet.
+    expect(screen.getByText('Nothing to pay')).toBeVisible()
+    expect(screen.getByText('Goes on the Oct 20 statement')).toBeVisible()
+    expect(screen.getByText('$25,614.90')).toBeVisible()
+  })
+
+  it('WAL-25: a card splits what it owes into the statement, what came since and installments to come', async () => {
+    const user = userEvent.setup()
+    const card = wallet('Nu', {
+      preset: 'creditCard',
+      features: ['creditLimit'],
+      credit: { limit: 5_000_000, closingDay: 5, dueDay: 25 },
+    })
+    const purchase = (amount: number, date: string, note: string, months?: number) => ({
+      id: newRecordId(),
+      revision: 1,
+      body: transactionBody({
+        kind: 'expense',
+        walletId: card.id,
+        date,
+        amount: -amount,
+        note,
+        ...(months ? { installments: { months } } : {}),
+      }),
+    })
+    const checking = wallet('Checking', { preset: 'checking' })
+    start(
+      [
+        card,
+        checking,
+        purchase(300_000, '2026-09-20', 'Groceries'),
+        purchase(128_000, '2026-10-10', 'Coffee'),
+        purchase(900_000, '2026-10-12', 'TV', 6),
+      ],
+      `/wallets/${card.id}`,
+    )
+
+    expect(await screen.findByText('$13,280.00 of $50,000.00')).toBeVisible()
+    const part = (name: string) => screen.getByText(name).closest('li')
+    expect(part('Statement balance')).toHaveTextContent('Pay by Oct 25 to avoid interest$3,000.00')
+    expect(part('Since the statement')).toHaveTextContent('Goes on the Nov 5 statement$1,280.00')
+    expect(part('Installments to come')).toHaveTextContent('$9,000.00')
+    expect(part('Available credit')).toHaveTextContent('$36,720.00')
+    // Each plan, how far along it is and what it bills each month.
+    expect(screen.getByText('0 of 6 · $9,000.00 left').closest('li')).toHaveTextContent(
+      '$1,500.00a month',
+    )
+
+    // Paying the card opens a transfer to it for the statement balance.
+    await user.click(screen.getByRole('button', { name: 'Pay the card' }))
+    const sheet = await screen.findByRole('dialog', { name: 'New transfer' })
+    expect(within(sheet).getByRole('textbox', { name: 'Amount' })).toHaveValue('3,000.00')
+    expect(within(sheet).getByRole('button', { name: /From/ })).toHaveTextContent('Checking')
+    expect(within(sheet).getByRole('button', { name: /^To/ })).toHaveTextContent('Nu')
   })
 
   it('WAL-17: a loan projects its payoff date and the interest still to pay', async () => {

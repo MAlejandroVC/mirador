@@ -1,6 +1,8 @@
 import {
   payeeRecord,
   payeeRecordType,
+  recurringRecord,
+  recurringRecordType,
   tagRecord,
   tagRecordType,
   transactionRecord,
@@ -24,12 +26,18 @@ import {
   rateBetween,
   rateDecimals,
   rateInUse,
+  type Recurring,
+  recurringDraft,
+  recurringFields,
+  type Repeat,
+  type Schedule,
   startingWallet,
   type Tag,
   toCalendarDate,
   type Transaction,
   type TransactionSource,
   walletBalances,
+  activePlans,
 } from '@repo/core'
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -47,12 +55,17 @@ import { SegmentedControl } from '../../components/ui/segmented-control'
 import { Sheet } from '../../components/ui/sheet'
 import { SubmitButton } from '../../components/ui/submit-button'
 import { useSubmit } from '../../components/ui/use-submit'
+import { useUndo } from '../../components/ui/use-undo'
 import { useMoney } from '../../lib/format'
 import { markNew } from '../../lib/motion'
 import { CategoryPicker } from '../categories/category-picker'
 import { CategoryTile } from '../categories/category-tile'
 import { PayeePicker } from '../categories/payee-picker'
 import { TagPicker } from '../categories/tag-picker'
+import { EndsSheet } from '../recurring/ends-sheet'
+import { type Ends, endsLabel, repeatLabel } from '../recurring/labels'
+import { RepeatSheet } from '../recurring/repeat-sheet'
+import { recurringChange } from '../recurring/use-post-recurring'
 import {
   type Ledger,
   newId,
@@ -62,12 +75,36 @@ import {
   useLedger,
   useSaveRecords,
 } from '../wallets/use-ledger'
+import { InstallmentsFields } from './installments-fields'
+import { chosenMonths, initialInstallments, type InstallmentState } from './installments-state'
 import { WalletPicker } from './wallet-picker'
 
-/** What the sheet is for: a new transaction, or changing one that was saved. */
+/**
+ * What the sheet is for: a new transaction, which may start filled in or repeating;
+ * changing one that was saved; changing a recurring transaction (TXN-09); or checking
+ * one date of a recurring transaction that asks first (TXN-10).
+ */
 export type EntryMode =
-  | { kind: 'new'; source: TransactionSource }
+  | {
+      kind: 'new'
+      source: TransactionSource
+      seed?: Partial<EntryDraft>
+      repeat?: Repeat
+    }
   | { kind: 'edit'; transaction: Transaction & { kind: EntryType } }
+  | { kind: 'series'; recurring: Recurring }
+  | { kind: 'due'; recurring: Recurring; date: string }
+
+function modeType(mode: EntryMode): EntryType {
+  switch (mode.kind) {
+    case 'new':
+      return mode.seed?.type ?? 'expense'
+    case 'edit':
+      return mode.transaction.kind
+    default:
+      return mode.recurring.kind
+  }
+}
 
 // TXN-01: adding or changing an expense, an income or a transfer in a sheet
 // (DL-CMP-08). The same sheet is quick-add's manual entry (WID-03, WID-07): only the
@@ -77,18 +114,21 @@ export function EntrySheet({
   mode,
   onClose,
   onDelete,
+  onOpenSeries,
   empty,
 }: {
   open: boolean
   mode: EntryMode
   onClose: () => void
   onDelete?: (transaction: Transaction) => void
+  /** Opens the recurring transaction a saved one came from (TXN-09). */
+  onOpenSeries?: (recurring: Recurring) => void
   /** Shown instead of the form while there is no wallet to put a transaction in. */
   empty?: ReactNode
 }) {
   const { t } = useTranslation()
   const { data: ledger } = useLedger()
-  const initialType = mode.kind === 'edit' ? mode.transaction.kind : 'expense'
+  const initialType = modeType(mode)
   const [type, setType] = useState<EntryType>(initialType)
   // A fresh form each time it opens, and after "Save & new".
   const [round, setRound] = useState(0)
@@ -106,7 +146,11 @@ export function EntrySheet({
   const requestCloseRef = useRef<(() => void) | null>(null)
   const noWallets = ledger !== undefined && pickableWallets(ledger.wallets).length === 0
   const title =
-    mode.kind === 'edit' ? t(`transactions.editTitle.${type}`) : t(`transactions.newTitle.${type}`)
+    mode.kind === 'edit'
+      ? t(`transactions.editTitle.${type}`)
+      : mode.kind === 'series'
+        ? t(`recurring.editTitle.${type}`)
+        : t(`transactions.newTitle.${type}`)
 
   return (
     <Sheet
@@ -136,6 +180,7 @@ export function EntrySheet({
               setRound(round + 1)
             }}
             {...(onDelete ? { onDelete } : {})}
+            {...(onOpenSeries ? { onOpenSeries } : {})}
           />
         ))}
     </Sheet>
@@ -152,6 +197,7 @@ function EntryForm({
   onClose,
   onSavedAndNew,
   onDelete,
+  onOpenSeries,
 }: {
   ledger: Ledger
   mode: EntryMode
@@ -162,8 +208,10 @@ function EntryForm({
   onClose: () => void
   onSavedAndNew: (seed: Partial<EntryDraft>) => void
   onDelete?: (transaction: Transaction) => void
+  onOpenSeries?: (recurring: Recurring) => void
 }) {
   const { t } = useTranslation()
+  const undo = useUndo()
   const money = useMoney(ledger.defaultCurrency)
   const locale = money.locale
   const save = useSaveRecords()
@@ -177,26 +225,35 @@ function EntryForm({
   const initial: EntryDraft =
     mode.kind === 'edit'
       ? entryDraft(mode.transaction)
-      : {
-          type: 'expense',
-          amount: 0,
-          walletId:
-            (
-              startingWallet(
-                ledger.wallets,
-                ledger.defaultWalletId,
-                lastUsedWallet(ledger.transactions),
-              ) ?? pickable[0]
-            )?.id ?? '',
-          date: today,
-          ...seed,
-        }
+      : mode.kind === 'series'
+        ? recurringDraft(mode.recurring)
+        : mode.kind === 'due'
+          ? { ...recurringDraft(mode.recurring), date: mode.date }
+          : {
+              type: 'expense',
+              amount: 0,
+              walletId:
+                (
+                  startingWallet(
+                    ledger.wallets,
+                    ledger.defaultWalletId,
+                    lastUsedWallet(ledger.transactions),
+                  ) ?? pickable[0]
+                )?.id ?? '',
+              date: today,
+              ...mode.seed,
+              ...seed,
+            }
   const [walletId, setWalletId] = useState<string | null>(initial.walletId || null)
   const [toWalletId, setToWalletId] = useState<string | null>(initial.toWalletId ?? null)
   const from = walletId === null ? undefined : byId.get(walletId)
   const to = toWalletId === null ? undefined : byId.get(toWalletId)
+  // TXN-31: with interest, the amount typed is the price; the card charges more.
+  const typedAmount = initial.installments?.price ?? initial.amount
   const [text, setText] = useState(
-    initial.amount > 0 && from ? amountText(initial.amount, from.currency, locale) : '',
+    typedAmount > 0 && (from ?? to)
+      ? amountText(typedAmount, (from ?? to)?.currency ?? ledger.defaultCurrency, locale)
+      : '',
   )
   const [date, setDate] = useState(initial.date)
   const [note, setNote] = useState(initial.note ?? '')
@@ -224,13 +281,52 @@ function EntryForm({
   const [newTags, setNewTags] = useState<Tag[]>([])
   const [newPayees, setNewPayees] = useState<Payee[]>([])
   const [walletTouched, setWalletTouched] = useState(mode.kind === 'edit')
-  const [choosing, setChoosing] = useState<'from' | 'to' | 'category' | 'tags' | 'payee' | null>(
-    null,
+  const [choosing, setChoosing] = useState<
+    'from' | 'to' | 'category' | 'tags' | 'payee' | 'repeat' | 'ends' | null
+  >(null)
+  // TXN-09: a new transaction can repeat; a recurring one being changed always does.
+  const series = mode.kind === 'series' ? mode.recurring : null
+  const [repeat, setRepeat] = useState<Repeat | null>(
+    series?.every ?? (mode.kind === 'new' ? (mode.repeat ?? null) : null),
+  )
+  const [ends, setEnds] = useState<Ends>(
+    series?.until !== undefined
+      ? { kind: 'on', date: series.until }
+      : series?.times !== undefined
+        ? { kind: 'after', times: series.times }
+        : { kind: 'never' },
+  )
+  const [ask, setAsk] = useState(series?.ask ?? false)
+  // TXN-30: paying a credit card purchase in installments.
+  const [plan, setPlan] = useState<InstallmentState>(() =>
+    initialInstallments(
+      initial.installments,
+      initial.amount,
+      from?.currency ?? ledger.defaultCurrency,
+      locale,
+    ),
   )
   const [discarding, setDiscarding] = useState(false)
   const [savedOne, setSavedOne] = useState(false)
 
   const transfer = type === 'transfer'
+  const canRepeat = mode.kind === 'new' || mode.kind === 'series'
+  const repeating = canRepeat && repeat !== null
+  // The recurring transaction a saved one came from, which opens from its Repeat row.
+  const origin =
+    mode.kind === 'edit' && mode.transaction.recurringId !== undefined
+      ? ledger.recurring.find((item) => item.id === mode.transaction.recurringId)
+      : undefined
+  // TXN-30: installments are for expenses on a wallet with a credit limit set up, and
+  // a purchase made once.
+  const credit =
+    type === 'expense' &&
+    !repeating &&
+    (mode.kind === 'new' || mode.kind === 'edit') &&
+    from?.features.includes('creditLimit')
+      ? from.credit
+      : undefined
+  const inInstallments = credit !== undefined && plan.on
   const allTags = [...ledger.tags, ...newTags]
   const allPayees = [...ledger.payees, ...newPayees]
   // A category of the other kind doesn't carry over when the type changes (CAT-02).
@@ -247,6 +343,14 @@ function EntryForm({
   const magnitude = from ? parseAmount(text, from.currency, locale) : null
   const received = to ? parseAmount(receivedText, to.currency, locale) : null
   const rate = parseDecimal(rateText, locale, rateDecimals)
+  const months = chosenMonths(plan)
+  const payment = from ? parseAmount(plan.paymentText, from.currency, locale) : null
+  // TXN-31: with interest, the card charges the monthly payment the bank quotes, times
+  // the months; interest-free, the price.
+  const charged =
+    inInstallments && plan.interest && payment !== null && months !== null
+      ? payment * months
+      : magnitude
 
   // Keeps what arrived and the rate in step: change one, the other follows.
   function fromRate(nextRate: number | null, amount = magnitude) {
@@ -297,25 +401,40 @@ function EntryForm({
     crossCurrency && (received === null || received === 0)
       ? t('transactions.receivedMissing')
       : null
+  // A repeating one may start later; one made once has happened by now.
   const dateError = !date
     ? t('wallets.transactions.dateMissing')
-    : date > today
+    : date > today && !repeating
       ? t('wallets.transactions.dateFuture')
       : null
-  const complete = [
-    amountError,
-    categoryError,
-    walletError,
-    toError,
-    receivedError,
-    dateError,
-  ].every((error) => error === null)
+  const endsError =
+    repeating && ends.kind === 'on' && ends.date < date ? t('recurring.endsBeforeStart') : null
+  const monthsError = inInstallments && months === null
+  const paymentError =
+    inInstallments && plan.interest
+      ? payment === null || payment === 0
+        ? t('installments.paymentMissing')
+        : months !== null && magnitude !== null && payment * months < magnitude
+          ? t('installments.paymentLow')
+          : null
+      : null
+  const complete =
+    [
+      amountError,
+      categoryError,
+      walletError,
+      toError,
+      receivedError,
+      dateError,
+      endsError,
+      paymentError,
+    ].every((error) => error === null) && !monthsError
 
   const draft = (): EntryDraft | null => {
-    if (!from || magnitude === null) return null
+    if (!from || magnitude === null || charged === null) return null
     return {
       type,
-      amount: magnitude,
+      amount: charged,
       walletId: from.id,
       date,
       note,
@@ -330,16 +449,36 @@ function EntryForm({
       ...(!transfer && chosenTags.length > 0 ? { tagIds: chosenTags.map((tag) => tag.id) } : {}),
       ...(!transfer && payee ? { payeeId: payee.id } : {}),
       ...(!transfer && excluded ? { excludeFromBudget: true } : {}),
+      ...(inInstallments && months !== null
+        ? {
+            installments: {
+              months,
+              ...(plan.interest ? { price: magnitude } : {}),
+              ...(plan.deferred > 0 ? { deferred: plan.deferred } : {}),
+              ...(plan.paidOff !== undefined ? { paidOff: plan.paidOff } : {}),
+            },
+          }
+        : {}),
     }
   }
+  const schedule = (): Schedule | null =>
+    repeat === null
+      ? null
+      : {
+          every: repeat,
+          ...(ends.kind === 'on' ? { until: ends.date } : {}),
+          ...(ends.kind === 'after' ? { times: ends.times } : {}),
+          ...(ask ? { ask: true } : {}),
+        }
 
   // DL-CMP-08: anything changed since the sheet opened asks before it is thrown away.
   const [initialReceived] = useState(receivedText)
+  const [initialRepeat] = useState(() => JSON.stringify([repeat, ends, ask, plan]))
   const snapshot = (values: unknown[]) => JSON.stringify(values)
   const dirty =
     snapshot([
       initial.type,
-      initial.amount,
+      typedAmount,
       initial.walletId || null,
       initial.toWalletId ?? null,
       initial.date,
@@ -350,19 +489,19 @@ function EntryForm({
       initial.tagIds ?? [],
       initial.payeeId ?? null,
     ]) !==
-    snapshot([
-      type,
-      magnitude ?? 0,
-      walletId,
-      toWalletId,
-      date,
-      note,
-      excluded,
-      receivedText,
-      categoryId,
-      tagIds,
-      payeeId,
-    ])
+      snapshot([
+        type,
+        magnitude ?? 0,
+        walletId,
+        toWalletId,
+        date,
+        note,
+        excluded,
+        receivedText,
+        categoryId,
+        tagIds,
+        payeeId,
+      ]) || initialRepeat !== JSON.stringify([repeat, ends, ask, plan])
 
   // DL-CMP-08: closing with unsaved changes asks first.
   useEffect(() => {
@@ -380,18 +519,8 @@ function EntryForm({
       const entry = draft()
       if (!entry) return
       const now = new Date().toISOString()
-      const id = mode.kind === 'edit' ? mode.transaction.id : newId()
-      const fields =
-        mode.kind === 'edit'
-          ? entryFields(
-              entry,
-              mode.transaction.source ?? 'manual',
-              now,
-              mode.transaction.createdAt ?? now,
-            )
-          : entryFields(entry, mode.source, now)
       // New tags and payees still in use go in the same batch (NFR-08).
-      const changes: RecordChange[] = [
+      const extras = (fields: { tagIds?: string[]; payeeId?: string }): RecordChange[] => [
         ...newTags
           .filter((tag) => fields.tagIds?.includes(tag.id))
           .map(({ id: tagId, ...tag }) => ({
@@ -404,8 +533,85 @@ function EntryForm({
             id: itemId,
             body: recordBody(payeeRecordType, payeeRecord.parse(item)),
           })),
-        { id, body: transactionBody(transactionRecord.parse(fields)) },
       ]
+      const repeats = schedule()
+      let id: string
+      let changes: RecordChange[]
+      if (mode.kind === 'series' && repeats) {
+        // TXN-09: from now on; what was added or skipped stays as it is.
+        id = mode.recurring.id
+        const fields = recurringFields(entry, repeats, now, mode.recurring)
+        changes = [
+          ...extras(fields),
+          { id, body: recordBody(recurringRecordType, recurringRecord.parse(fields)) },
+        ]
+      } else if (mode.kind === 'new' && repeats) {
+        // TXN-09: the recurring transaction, and the first one when it starts today or
+        // before: it was just entered, so it counts as checked. Later dates come by
+        // themselves, or ask first (TXN-10).
+        const recurringId = newId()
+        const started = entry.date <= today
+        const fields = recurringFields(entry, repeats, now, started ? { handled: entry.date } : {})
+        id = started ? newId() : recurringId
+        changes = [
+          ...extras(fields),
+          {
+            id: recurringId,
+            body: recordBody(recurringRecordType, recurringRecord.parse(fields)),
+          },
+          ...(started
+            ? [
+                {
+                  id,
+                  body: transactionBody(
+                    transactionRecord.parse({
+                      ...entryFields(entry, mode.source, now),
+                      recurringId,
+                      occurrence: entry.date,
+                    }),
+                  ),
+                },
+              ]
+            : []),
+        ]
+      } else if (mode.kind === 'due') {
+        // TXN-10: one date of a recurring transaction, checked and added; the dates
+        // before it that still waited are skipped with it.
+        id = newId()
+        const fields = {
+          ...entryFields(entry, 'recurring', now),
+          recurringId: mode.recurring.id,
+          occurrence: mode.date,
+        }
+        changes = [
+          ...extras(fields),
+          { id, body: transactionBody(transactionRecord.parse(fields)) },
+          recurringChange(mode.recurring, { handled: mode.date }),
+        ]
+      } else {
+        id = mode.kind === 'edit' ? mode.transaction.id : newId()
+        const fields =
+          mode.kind === 'edit'
+            ? {
+                ...entryFields(
+                  entry,
+                  mode.transaction.source ?? 'manual',
+                  now,
+                  mode.transaction.createdAt ?? now,
+                ),
+                ...(mode.transaction.recurringId !== undefined
+                  ? {
+                      recurringId: mode.transaction.recurringId,
+                      occurrence: mode.transaction.occurrence,
+                    }
+                  : {}),
+              }
+            : entryFields(entry, mode.kind === 'new' ? mode.source : 'manual', now)
+        changes = [
+          ...extras(fields),
+          { id, body: transactionBody(transactionRecord.parse(fields)) },
+        ]
+      }
       save.mutate(changes, {
         onSuccess: () => {
           markNew(id)
@@ -428,6 +634,45 @@ function EntryForm({
       })
     })
   }
+
+  // TXN-10: skipping one date of a recurring transaction that asks first.
+  function skip(recurring: Recurring, occurrence: string) {
+    save.mutate([recurringChange(recurring, { handled: occurrence })], {
+      onSuccess: () => {
+        onClose()
+        undo({
+          message: t('recurring.skipped'),
+          undo: () => {
+            save.mutate([recurringChange(recurring)])
+          },
+        })
+      },
+    })
+  }
+
+  // TXN-09: stopping a recurring transaction; what it already added stays.
+  function stop(recurring: Recurring) {
+    const { id, ...record } = recurring
+    save.mutate([{ id, body: { deleted: true, type: recurringRecordType } }], {
+      onSuccess: () => {
+        onClose()
+        undo({
+          message: t('recurring.stopped'),
+          seconds: 10,
+          undo: () => {
+            save.mutate([{ id, body: recordBody(recurringRecordType, record) }])
+          },
+        })
+      },
+    })
+  }
+
+  // TXN-33: what is still to be billed on a saved plan, which can be paid off early.
+  const plannedLeft =
+    mode.kind === 'edit' && mode.transaction.installments && credit
+      ? (activePlans(mode.transaction.walletId, [mode.transaction], credit.closingDay, today)[0]
+          ?.left ?? null)
+      : null
 
   const parts = money.parts({ minor: 0, currency: from?.currency ?? ledger.defaultCurrency })
   const balances = walletBalances(ledger.wallets, ledger.transactions)
@@ -470,8 +715,12 @@ function EntryForm({
       <div className="flex flex-col">
         <FieldRows
           note={
-            form.tried && (categoryError ?? walletError ?? toError ?? dateError) ? (
-              <FieldNote error>{categoryError ?? walletError ?? toError ?? dateError}</FieldNote>
+            form.tried && (categoryError ?? walletError ?? toError ?? dateError ?? endsError) ? (
+              <FieldNote error>
+                {categoryError ?? walletError ?? toError ?? dateError ?? endsError}
+              </FieldNote>
+            ) : series ? (
+              <FieldNote>{t('recurring.editHint')}</FieldNote>
             ) : null
           }
         >
@@ -530,13 +779,93 @@ function EntryForm({
             </ul>
           </li>
           <DateRow
-            label={t('transactions.date')}
+            label={repeating ? t('recurring.starts') : t('transactions.date')}
             value={date}
-            max={today}
+            {...(repeating ? {} : { max: today })}
             onChange={setDate}
             error={form.tried && dateError !== null}
           />
+          {/* TXN-09: Repeat sits under the date, as in iOS Calendar; Ends opens once it
+              repeats (DL-MOT-07). A saved one opens the recurring transaction it came from. */}
+          {canRepeat && (
+            <PickerRow
+              label={t('recurring.repeat')}
+              value={repeatLabel(t, repeat)}
+              error={false}
+              onClick={() => {
+                setChoosing('repeat')
+              }}
+            />
+          )}
+          {canRepeat && (
+            <li
+              className="fold"
+              data-closed={repeating ? undefined : ''}
+              aria-hidden={!repeating || undefined}
+              inert={!repeating}
+            >
+              <ul>
+                <PickerRow
+                  label={t('recurring.ends')}
+                  value={endsLabel(t, ends, locale)}
+                  error={form.tried && endsError !== null}
+                  separator
+                  onClick={() => {
+                    setChoosing('ends')
+                  }}
+                />
+              </ul>
+            </li>
+          )}
+          {origin && onOpenSeries && (
+            <PickerRow
+              label={t('recurring.repeat')}
+              value={repeatLabel(t, origin.every)}
+              error={false}
+              onClick={() => {
+                onOpenSeries(origin)
+              }}
+            />
+          )}
         </FieldRows>
+
+        {/* TXN-10: whether it waits to be checked, with what that means in the row. */}
+        <Fold open={repeating}>
+          <div className="pt-3">
+            <List inset>
+              <ChoiceRow
+                title={t('recurring.ask')}
+                subtitle={t('recurring.askHint')}
+                checked={ask}
+                onToggle={() => {
+                  setAsk(!ask)
+                }}
+              />
+            </List>
+          </div>
+        </Fold>
+
+        {/* TXN-30: an expense on a credit card can be paid in installments. */}
+        <Fold open={credit !== undefined}>
+          {credit && from && (
+            <div className="pt-3">
+              <InstallmentsFields
+                state={plan}
+                onChange={setPlan}
+                currency={from.currency}
+                closingDay={credit.closingDay}
+                date={date}
+                price={magnitude}
+                payment={payment}
+                errors={{
+                  months: form.tried && monthsError,
+                  payment: form.tried ? paymentError : null,
+                }}
+                left={plannedLeft}
+              />
+            </div>
+          )}
+        </Fold>
 
         {/* TXN-05: between currencies, what arrived or the rate; the other is worked out. */}
         <Fold open={crossCurrency}>
@@ -649,6 +978,16 @@ function EntryForm({
           {t('transactions.delete')}
         </Button>
       )}
+      {series && (
+        <Button
+          variant="danger"
+          onClick={() => {
+            stop(series)
+          }}
+        >
+          {t('recurring.stop')}
+        </Button>
+      )}
 
       <SubmitButton
         button={form.button}
@@ -660,7 +999,17 @@ function EntryForm({
           )
         }
         secondary={
-          mode.kind === 'new' ? (
+          mode.kind === 'due' ? (
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onClick={() => {
+                skip(mode.recurring, mode.date)
+              }}
+            >
+              {t('recurring.skip')}
+            </Button>
+          ) : mode.kind === 'new' && !repeating ? (
             // DL-CMP-05: a tinted second action beside the main one.
             <Button
               variant="secondary"
@@ -771,6 +1120,25 @@ function EntryForm({
           setNewTags([...newTags, created])
           return created
         }}
+        onClose={() => {
+          setChoosing(null)
+        }}
+      />
+
+      <RepeatSheet
+        open={choosing === 'repeat'}
+        value={repeat}
+        allowNever={mode.kind === 'new'}
+        onChange={setRepeat}
+        onClose={() => {
+          setChoosing(null)
+        }}
+      />
+      <EndsSheet
+        open={choosing === 'ends'}
+        value={ends}
+        start={date}
+        onChange={setEnds}
         onClose={() => {
           setChoosing(null)
         }}

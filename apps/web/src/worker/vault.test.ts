@@ -20,7 +20,7 @@ import { newRecordId } from '@repo/crypto'
 import { createApi, type Fetch } from '../lib/api'
 import { vaultErrorCode } from './errors'
 import { Vault } from './vault'
-import { entryFields, openingBalance, starterSet } from '@repo/core'
+import { entryFields, openingBalance, recurringFields, starterSet } from '@repo/core'
 import {
   exchangeRateBody,
   recordBody,
@@ -459,6 +459,68 @@ describe('vault', () => {
       linkedTag,
       linkedPayee,
       '8850',
+    ])
+      expect(everything).not.toContain(plaintext)
+  })
+
+  it('TXN-09, TXN-30: recurring transactions and installment plans reach the server only encrypted', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    await phone.signUp({ username: 'ana', password })
+    const now = '2026-10-16T12:00:00.000Z'
+    const walletId = newRecordId()
+
+    await phone.saveRecords([
+      {
+        id: newRecordId(),
+        body: recordBody(
+          'recurring',
+          recurringFields(
+            {
+              type: 'expense',
+              amount: 29_900,
+              walletId,
+              date: '2026-10-20',
+              note: 'Plan Estándar Netflix',
+            },
+            { every: { unit: 'month', count: 1 }, times: 24, ask: true },
+            now,
+          ),
+        ),
+      },
+      {
+        id: newRecordId(),
+        body: transactionBody(
+          entryFields(
+            {
+              type: 'expense',
+              amount: 1_050_000,
+              walletId,
+              date: '2026-10-14',
+              note: 'Pantalla Liverpool',
+              installments: { months: 6, price: 900_000, deferred: 2 },
+            },
+            'manual',
+            now,
+          ),
+        ),
+      },
+    ])
+
+    const everything = server.sent.join('\n')
+    for (const plaintext of [
+      'Netflix',
+      'Liverpool',
+      'recurring',
+      'installments',
+      'every',
+      'month',
+      'deferred',
+      '29900',
+      '1050000',
+      '900000',
+      '2026-10-20',
+      walletId,
     ])
       expect(everything).not.toContain(plaintext)
   })

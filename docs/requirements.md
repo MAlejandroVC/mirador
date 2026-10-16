@@ -73,6 +73,9 @@ These terms have one meaning throughout the document, the code and the UI.
 | Opening balance | An ordinary transaction that sets a wallet's starting amount; its date and amount can be moved to load older history. |
 | Transaction | One money movement: an expense, an income or a transfer. |
 | Transfer | Money moved between two of the user's own wallets. Not income, not spending. Paying a credit card is a transfer. |
+| Installment plan | A credit card purchase the card bills in equal monthly parts (in Mexico, "meses sin intereses" or "con intereses"). It takes the whole amount off the available credit at once and counts in spending one installment per month. |
+| Statement balance | What a credit card statement billed, minus the payments since: paying it by the due date avoids interest. Installments not billed yet are not part of it. |
+| Recurring transaction | A template that adds the same transaction on a schedule, by itself or after the user confirms it. |
 | Split | One transaction divided across several categories. |
 | Category | A user-defined label for what money was spent on or earned from ("Lunch"). Every expense and income has exactly one. |
 | Category group | The super-category a category belongs to ("Food & drinks"). |
@@ -175,6 +178,7 @@ Wallets are where money lives or is owed, and every transaction moves money in o
 | WAL-14 | Where interest is on, the app shall offer to post the estimated interest as a transaction for the user to confirm. | Could |
 | WAL-15 | Where fees are on, the app shall store each fee's amount, frequency and an optional note, and generate expected fee transactions for the user to confirm. | Should |
 | WAL-16 | Where a credit limit is on, the app shall store the limit, statement closing day and payment due day, and show utilization and the next due date. | Should |
+| WAL-25 | Where a credit limit is on, the app shall split what the card owes into the statement balance to pay by the due date to avoid interest, the charges since that statement and the installments not billed yet, and show the available credit and every installment plan with how many installments are billed. | Should |
 | WAL-17 | Where a loan schedule is on, the app shall store principal, rate, term, payment amount and payment day, and project the payoff date and total interest. | Should |
 | WAL-18 | Where valuations are on, the app shall record market-value updates separately from contributions and show contributions versus gains. | Should |
 | WAL-19 | The app shall let the user mark a wallet as liquid (money available now). | Should |
@@ -225,6 +229,8 @@ A transaction records one money movement: an expense, an income or a transfer be
 | Tags | No | Any number, including none |
 | Payee | No | Merchant or person; to revisit in a UX review of friction points |
 | Note | No | Short free text to identify the transaction |
+| Installments | No | Expenses on a wallet with a credit limit: the number of months, interest-free or with interest, and the first statement (TXN-30) |
+| Repeats | No | Makes it a recurring transaction (TXN-09) |
 | Exclude from budget | No | Defaults off |
 | Source | System | Manual, quick add, import batch or recurring |
 | Created and updated time | System | Audit trail |
@@ -248,6 +254,19 @@ A transaction records one money movement: an expense, an income or a transfer be
 | TXN-13 | When the user deletes a transaction, the app shall offer an undo for at least 10 seconds. | Should |
 | TXN-14 | The app shall let the user attach a receipt image to a transaction. | Could |
 | TXN-15 | The app shall let the user add any number of tags to a transaction, suggesting existing tags as they type. | Must |
+
+**Installments**
+
+A purchase paid in installments ("meses sin intereses" or "meses con intereses" in Mexico) is made today, but the card bills it a part at a time, one statement after another.
+
+| ID | Requirement | Priority |
+|---|---|---|
+| TXN-30 | Where the wallet of an expense has a credit limit (WAL-16), the app shall let the user pay it in a number of monthly installments, interest-free or with interest, and optionally start the first one some statements later. | Should |
+| TXN-31 | Where an installment plan has interest, the app shall take the monthly payment the bank quotes and store the total charged; it shall never estimate an interest rate. | Should |
+| TXN-32 | The app shall take the whole amount of an installment purchase off the wallet's balance and available credit on the purchase date, and count it in spending, totals and the budget one installment per month. | Should |
+| TXN-33 | The app shall let the user pay off the rest of an installment plan early, which bills everything left on that date. | Could |
+
+**Acceptance example (TXN-32)**: *Given* a credit card with a limit of 50,000 and no balance, *when* the user buys a 9,000 laptop in 6 interest-free installments on October 14, *then* the card's balance is −9,000 and its available credit 41,000 that day, and Transactions counts 1,500 in October and 1,500 in each of the next five months.
 
 **Table view**
 

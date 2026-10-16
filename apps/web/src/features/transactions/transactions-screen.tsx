@@ -10,7 +10,9 @@ import {
   periodOf,
   shiftPeriod,
   sortTransactions,
+  spreadInstallments,
   toCalendarDate,
+  upcoming,
   type Transaction,
   type TransactionFilter,
   type TransactionSort,
@@ -31,12 +33,14 @@ import {
   type Icon,
   ReceiptIcon,
 } from '../../components/ui/icons'
-import { List } from '../../components/ui/list'
+import { List, ListLinkRow } from '../../components/ui/list'
 import { Page } from '../../components/ui/page'
 import { Sheet } from '../../components/ui/sheet'
-import { formatDay, formatPeriod, useMoney } from '../../lib/format'
+import { formatDay, formatPeriod, formatShortDate, useMoney } from '../../lib/format'
 import { taxonomy } from '../categories/lookups'
 import { useQuickAdd } from '../quick-add'
+import { repeatLabel } from '../recurring/labels'
+import { RecurringRow } from '../recurring/upcoming-row'
 import { useLedger } from '../wallets/use-ledger'
 import { FilterSheet } from './filter-sheet'
 import { SortSheet } from './sort-sheet'
@@ -51,7 +55,9 @@ const scopes: readonly PeriodScope[] = ['week', 'month', 'quarter', 'year']
 // quarter or a year, with arrows to the ones before and after (TXN-22). Above the
 // list, the period's income, spending and net (TXN-24); each day shows its own net
 // (TXN-28). Sort and Filter sit beside the title (TXN-21, TXN-22). Tapping a row opens
-// it; swiping it left deletes it, with Undo (DL-CMP-07, TXN-13).
+// it; swiping it left deletes it, with Undo (DL-CMP-07, TXN-13). A purchase in
+// installments counts one installment in each month (TXN-32). Above this period's
+// days, what recurring transactions have coming, and a way to all of them (TXN-09).
 export function TransactionsScreen() {
   const { t } = useTranslation()
   const { data: ledger } = useLedger()
@@ -96,9 +102,15 @@ export function TransactionsScreen() {
   const currencies = new Map(ledger.wallets.map((wallet) => [wallet.id, wallet.currency]))
   const lookups = taxonomy(ledger)
   // A transaction whose wallet is gone has nowhere to show (WAL-08 deletes them too).
-  const all = ledger.transactions.filter((transaction) => wallets.has(transaction.walletId))
+  const kept = ledger.transactions.filter((transaction) => wallets.has(transaction.walletId))
+  const purchases = new Map(kept.map((transaction) => [transaction.id, transaction]))
+  // TXN-32: spending counts a purchase in installments one installment a month.
+  const all = spreadInstallments(kept)
+  const recurrings = ledger.recurring.filter((recurring) => wallets.has(recurring.walletId))
+  const opened = (transaction: Transaction & { part?: { purchaseId: string } }) =>
+    (transaction.part && purchases.get(transaction.part.purchaseId)) ?? transaction
 
-  if (all.length === 0)
+  if (all.length === 0 && recurrings.length === 0)
     return (
       <Page title={t('nav.transactions')} actions={<AccountButton />}>
         {/* DL-CMP-14, DL-VOC-02: a touch of whimsy where nothing is there yet. */}
@@ -154,6 +166,11 @@ export function TransactionsScreen() {
   const byDate = sort === 'newest' || sort === 'oldest'
   const shown = ordered.slice(0, limit)
   const words = { today: t('dates.today'), yesterday: t('dates.yesterday') }
+  // TXN-09, TXN-10: what is still to come this period, and what waits to be checked.
+  const coming =
+    inPeriod(today, period) && byDate && filters === 0
+      ? upcoming(recurrings, today, period.end)
+      : []
 
   const row = (transaction: Transaction) => (
     <TransactionRow
@@ -163,10 +180,12 @@ export function TransactionsScreen() {
       taxonomy={lookups}
       defaultCurrency={defaultCurrency}
       showDate={!byDate}
-      onOpen={(opened) => {
-        editor.open(opened)
+      onOpen={(tapped) => {
+        editor.open(opened(tapped))
       }}
-      onDelete={editor.remove}
+      onDelete={(swiped) => {
+        editor.remove(opened(swiped))
+      }}
     />
   )
 
@@ -258,6 +277,53 @@ export function TransactionsScreen() {
           <dd>{net(totals.net)}</dd>
         </div>
       </dl>
+
+      {coming.length > 0 ? (
+        <List label={t('recurring.upcoming')}>
+          {coming.map((item) => (
+            <RecurringRow
+              key={`${item.recurring.id} ${item.date}`}
+              recurring={item.recurring}
+              detail={
+                item.due
+                  ? t('recurring.due', { date: formatShortDate(item.date, today, money.locale) })
+                  : `${formatDay(item.date, today, money.locale, words)} · ${repeatLabel(t, item.recurring.every)}`
+              }
+              wallets={wallets}
+              taxonomy={lookups}
+              defaultCurrency={defaultCurrency}
+              onOpen={() => {
+                if (item.due) editor.openDue(item.recurring, item.date)
+                else editor.openSeries(item.recurring)
+              }}
+            />
+          ))}
+          <ListLinkRow
+            to="/transactions/recurring"
+            title={t('recurring.title')}
+            trailing={
+              <span className="text-[0.9375rem] text-text-muted tabular-nums">
+                {recurrings.length}
+              </span>
+            }
+          />
+        </List>
+      ) : (
+        recurrings.length > 0 &&
+        inPeriod(today, period) && (
+          <List>
+            <ListLinkRow
+              to="/transactions/recurring"
+              title={t('recurring.title')}
+              trailing={
+                <span className="text-[0.9375rem] text-text-muted tabular-nums">
+                  {recurrings.length}
+                </span>
+              }
+            />
+          </List>
+        )
+      )}
 
       {ordered.length === 0 ? (
         <section className="flex flex-col items-center gap-3 rounded-2xl bg-surface px-6 py-8 text-center">

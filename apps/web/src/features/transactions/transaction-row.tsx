@@ -1,4 +1,10 @@
-import { changeTo, type Money, toCalendarDate, type Transaction } from '@repo/core'
+import {
+  changeTo,
+  type Money,
+  type SpendingEntry,
+  toCalendarDate,
+  type Transaction,
+} from '@repo/core'
 import { useTranslation } from 'react-i18next'
 import { Amount } from '../../components/ui/amount'
 import { IconTile } from '../../components/ui/icon-tile'
@@ -40,7 +46,8 @@ const kindIcons: Record<Transaction['kind'], Icon> = {
  * its title is the payee, the note or the category, and the line under it the
  * category and the wallet, or "Checking → Credit card" for a transfer. In a wallet's
  * own list (`walletId`), the date takes the wallet's place and a transfer reads as
- * money to or from the other wallet.
+ * money to or from the other wallet. One installment of a purchase (TXN-32) says which
+ * one it is, "2 of 6", and the purchase in a wallet's list says over how many months.
  */
 export function TransactionRow({
   transaction,
@@ -52,7 +59,7 @@ export function TransactionRow({
   onOpen,
   onDelete,
 }: {
-  transaction: Transaction
+  transaction: SpendingEntry<Transaction>
   wallets: ReadonlyMap<string, LedgerWallet>
   taxonomy: Taxonomy
   defaultCurrency: string
@@ -93,6 +100,15 @@ export function TransactionRow({
   const title = payee?.name ?? note ?? kindTitle
 
   const details: string[] = []
+  const part = transaction.part
+  if (part)
+    details.push(
+      part.last > part.number
+        ? t('installments.parts', { number: part.number, last: part.last, of: part.of })
+        : t('installments.part', { number: part.number, of: part.of }),
+    )
+  else if (transaction.installments)
+    details.push(t('installments.inMonths', { count: transaction.installments.months }))
   if (title !== kindTitle && !(transfer && walletId === undefined)) details.push(kindTitle)
   const day = formatDay(transaction.date, toCalendarDate(new Date()), money.locale, {
     today: t('dates.today'),

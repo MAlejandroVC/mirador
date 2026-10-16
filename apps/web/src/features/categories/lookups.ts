@@ -16,7 +16,7 @@ export interface Taxonomy {
   tags: ReadonlyMap<string, Tag>
   payees: ReadonlyMap<string, Payee>
   /** The category it shows under (CAT-05: Uncategorized, Fees, Interest), or null. */
-  categoryOf: (transaction: Transaction) => Category | null
+  categoryOf: (transaction: Pick<Transaction, 'kind' | 'categoryId'>) => Category | null
   groupOf: (category: Category) => CategoryGroup | undefined
 }
 

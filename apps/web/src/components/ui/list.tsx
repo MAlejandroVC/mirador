@@ -45,7 +45,7 @@ export function RowBody({
     <>
       {leading}
       {/* DL-SHP-04: the hairline between rows starts where the text starts. */}
-      <span className="flex min-h-[3.25rem] flex-1 items-center gap-2 self-stretch border-t-[0.5px] border-separator py-2 pr-4 group-first:border-t-0">
+      <span className="flex min-h-[3.25rem] min-w-0 flex-1 items-center gap-2 self-stretch border-t-[0.5px] border-separator py-2 pr-4 group-first:border-t-0">
         <span className="flex min-w-0 flex-1 flex-col">
           <span className={`text-[0.9375rem] ${tone === 'brand' ? 'text-brand' : 'text-text'}`}>
             {title}

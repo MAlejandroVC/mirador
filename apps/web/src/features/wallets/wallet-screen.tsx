@@ -1,7 +1,10 @@
 import {
   convert,
   currencyName,
+  lastUsedWallet,
+  pickableWallets,
   rateInUse,
+  startingWallet,
   toCalendarDate,
   unitsPerOne,
   walletBalance,
@@ -30,6 +33,9 @@ import {
   ValuationCard,
 } from './feature-cards'
 import { FeatureSheets } from './feature-sheets'
+import { InstallmentPlans } from './installment-plans'
+import { taxonomy } from '../categories/lookups'
+import { EntrySheet } from '../transactions/entry-sheet'
 import { RateSheet } from './rate-sheet'
 import { useTransactionEditor } from '../transactions/use-transaction-editor'
 import { TransactionRows } from './transaction-list'
@@ -59,6 +65,9 @@ export function WalletScreen({ walletId }: { walletId: string }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [feature, setFeature] = useState<FeatureSheet | null>(null)
   const [changingRate, setChangingRate] = useState(false)
+  // WAL-25: paying the card opens a transfer to it, for the amount to pay.
+  const [paying, setPaying] = useState<number | null>(null)
+  const [payOpen, setPayOpen] = useState(false)
   const defaultCurrency = ledger?.defaultCurrency ?? 'USD'
   const money = useMoney(defaultCurrency)
   // The latest few, so the list doesn't fill the screen: 5 on a phone, 10 from a tablet.
@@ -98,11 +107,18 @@ export function WalletScreen({ walletId }: { walletId: string }) {
     onEdit: setFeature,
   }
 
+  // WAL-08: its transactions go with it, and the recurring transactions that use it.
   const deleteChanges = (): RecordChange[] => [
     ...transactions.map((transaction) => ({
       id: transaction.id,
       body: { deleted: true as const, type: 'transaction' },
     })),
+    ...ledger.recurring
+      .filter((recurring) => recurring.walletId === wallet.id || recurring.toWalletId === wallet.id)
+      .map((recurring) => ({
+        id: recurring.id,
+        body: { deleted: true as const, type: 'recurring' },
+      })),
     { id: wallet.id, body: { deleted: true, type: 'wallet' } },
   ]
 
@@ -126,6 +142,14 @@ export function WalletScreen({ walletId }: { walletId: string }) {
       },
     })
   }
+
+  // The wallet a card is paid from: the default one, else the last one used, else the
+  // first one; never a credit card (WAL-24).
+  const others = pickableWallets(ledger.wallets).filter(
+    (candidate) => !candidate.features.includes('creditLimit'),
+  )
+  const payer =
+    startingWallet(others, ledger.defaultWalletId, lastUsedWallet(ledger.transactions)) ?? others[0]
 
   const description = [
     t(`wallets.presets.${wallet.preset}`),
@@ -204,7 +228,28 @@ export function WalletScreen({ walletId }: { walletId: string }) {
         </EmptyState>
       )}
 
-      {on('creditLimit') && <CreditLimitCard {...cardProps} />}
+      {on('creditLimit') && (
+        <CreditLimitCard
+          {...cardProps}
+          transactions={transactions}
+          onPay={(amount) => {
+            setPaying(amount)
+            setPayOpen(true)
+          }}
+        />
+      )}
+      {on('creditLimit') && (
+        <InstallmentPlans
+          wallet={wallet}
+          transactions={transactions}
+          taxonomy={taxonomy(ledger)}
+          today={today}
+          defaultCurrency={defaultCurrency}
+          onOpen={(purchase) => {
+            editor.open(purchase)
+          }}
+        />
+      )}
       {on('loanSchedule') && <LoanCard {...cardProps} />}
       {on('interest') && (
         <InterestCard
@@ -285,6 +330,24 @@ export function WalletScreen({ walletId }: { walletId: string }) {
         }}
       />
       {editor.sheet}
+      {paying !== null && (
+        <EntrySheet
+          open={payOpen}
+          mode={{
+            kind: 'new',
+            source: 'manual',
+            seed: {
+              type: 'transfer',
+              amount: paying,
+              toWalletId: wallet.id,
+              walletId: payer?.id ?? '',
+            },
+          }}
+          onClose={() => {
+            setPayOpen(false)
+          }}
+        />
+      )}
       <RateSheet
         open={changingRate}
         currency={wallet.currency}

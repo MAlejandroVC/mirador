@@ -27,6 +27,21 @@ export type TransactionKind = (typeof transactionKinds)[number]
 export const transactionSources = ['manual', 'quickAdd', 'import', 'recurring'] as const
 export type TransactionSource = (typeof transactionSources)[number]
 
+/**
+ * TXN-30 to TXN-33: a purchase the card bills in monthly installments. The transaction's
+ * amount is everything the card charges, interest included (TXN-31).
+ */
+export const installmentPlan = z.object({
+  months: z.int().min(2).max(60),
+  // TXN-31: with interest, the price before it; the interest is the amount minus this.
+  price: z.int().positive().optional(),
+  // TXN-30: the first installment is billed this many statements later.
+  deferred: z.int().min(1).max(12).optional(),
+  // TXN-33: paid off early on this date, which bills everything left then.
+  paidOff: calendarDate.optional(),
+})
+export type InstallmentPlan = z.infer<typeof installmentPlan>
+
 export const transactionRecord = z
   .object({
     kind: z.enum(transactionKinds),
@@ -52,6 +67,11 @@ export const transactionRecord = z
     // TXN-06: left out of the budget; still in the wallet's balance.
     excludeFromBudget: z.boolean().optional(),
     source: z.enum(transactionSources).optional(),
+    installments: installmentPlan.optional(),
+    // TXN-09, TXN-10: the recurring transaction that added it, and for which date, so
+    // two devices adding the same one count it once.
+    recurringId: recordId.optional(),
+    occurrence: calendarDate.optional(),
     // The audit trail (TXN fields: Created and updated time), from the device's clock.
     createdAt: z.iso.datetime().optional(),
     updatedAt: z.iso.datetime().optional(),
@@ -75,5 +95,11 @@ export const transactionRecord = z
       record.rate !== undefined
     )
       issue('Only a transfer goes to another wallet')
+    if (record.installments) {
+      if (record.kind !== 'expense') issue('Only an expense is paid in installments')
+      const { price } = record.installments
+      if (price !== undefined && price > -record.amount)
+        issue('With interest, the card charges more than the price')
+    }
   })
 export type TransactionRecord = z.infer<typeof transactionRecord>
