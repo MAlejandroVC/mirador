@@ -75,6 +75,7 @@ function fakeServer() {
                     id: ids.get(signedIn) ?? `id-${signedIn}`,
                     username: signedIn,
                     operator: false,
+                    removed: null,
                   },
                 }
               : null,

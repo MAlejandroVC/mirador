@@ -10,7 +10,7 @@ import {
   usernameCheckRequest,
   type UsernameCheckResponse,
 } from '@repo/api'
-import { and, asc, count, eq, gt, isNull, TransactionRollbackError } from 'drizzle-orm'
+import { and, asc, count, eq, gt, isNull, lt, or, sql, TransactionRollbackError } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { type AttemptLimits, limitAddress } from '../auth/guard.ts'
 import { hashSecret, hashToken, randomToken, sameText, steadyBytes } from '../auth/secrets.ts'
@@ -95,20 +95,18 @@ export function accountRoutes({
           .returning({ id: schema.users.id })
         if (inserted.length === 0) return 'username-taken' as const
         if (mode === 'invite') {
-          // Claimed in one statement, so two sign-ups can't both use the same invite.
-          const claimed = await tx
+          // Counted in one statement, so two sign-ups can't both take a link's last use.
+          const [claimed] = await tx
             .update(schema.invites)
-            .set({ usedBy: userId, usedAt: new Date() })
-            .where(
-              and(
-                eq(schema.invites.codeHash, hashToken(normalizeCode(body.inviteCode ?? ''))),
-                isNull(schema.invites.usedAt),
-                gt(schema.invites.expiresAt, new Date()),
-              ),
-            )
+            .set({ useCount: sql`${schema.invites.useCount} + 1` })
+            .where(openInvite(body.inviteCode))
             .returning({ id: schema.invites.id })
-          if (claimed.length === 0) {
-            tx.rollback()
+          if (!claimed) tx.rollback()
+          else {
+            await tx
+              .update(schema.users)
+              .set({ inviteId: claimed.id })
+              .where(eq(schema.users.id, userId))
           }
         }
         await tx.insert(schema.keyMaterial).values({
@@ -149,13 +147,7 @@ export function accountRoutes({
         const [invite] = await db
           .select({ id: schema.invites.id })
           .from(schema.invites)
-          .where(
-            and(
-              eq(schema.invites.codeHash, hashToken(normalizeCode(body.inviteCode ?? ''))),
-              isNull(schema.invites.usedAt),
-              gt(schema.invites.expiresAt, new Date()),
-            ),
-          )
+          .where(openInvite(body.inviteCode))
         if (!invite) return c.json({ error: 'wrong-invite' } satisfies SignUpError, 403)
       }
       const [taken] = await db
@@ -192,9 +184,10 @@ export function accountRoutes({
   // backups made before. Needs the current password, so a device left signed in isn't
   // enough.
   const checkPassword = passwordCheck({ db, limits })
+  // SYS-23: a removed account may delete itself before its window ends.
   routes.post(
     '/accounts/delete',
-    requireUser(sessions),
+    requireUser(sessions, { allowRemoved: true }),
     limitAddress(limits),
     jsonBody(deleteAccountRequest),
     async (c) => {
@@ -205,11 +198,13 @@ export function accountRoutes({
           .delete(schema.users)
           .where(eq(schema.users.id, c.var.userId))
           .returning({ operator: schema.users.operator })
-        // SYS-13: someone has to run the server: the oldest account left takes over.
+        // SYS-13: someone has to run the server: the oldest account left takes over,
+        // never one that was removed (SYS-22).
         if (deleted?.operator) {
           const [oldest] = await tx
             .select({ id: schema.users.id })
             .from(schema.users)
+            .where(isNull(schema.users.removedAt))
             .orderBy(asc(schema.users.createdAt), asc(schema.users.id))
             .limit(1)
           if (oldest) {
@@ -230,7 +225,8 @@ export function accountRoutes({
   )
 
   // SEC-09: only ever the signed-in user's own key material.
-  routes.get('/keys', requireUser(sessions), async (c) => {
+  // SYS-23: a removed account still unlocks, to download its data.
+  routes.get('/keys', requireUser(sessions, { allowRemoved: true }), async (c) => {
     const [material] = await db
       .select()
       .from(schema.keyMaterial)
@@ -243,6 +239,17 @@ export function accountRoutes({
   })
 
   return routes
+}
+
+// SYS-21: an invite link still signs people up until it expires, is used up or is
+// ended early.
+function openInvite(code: string | undefined) {
+  return and(
+    eq(schema.invites.codeHash, hashToken(normalizeCode(code ?? ''))),
+    isNull(schema.invites.endedAt),
+    gt(schema.invites.expiresAt, new Date()),
+    or(isNull(schema.invites.maxUses), lt(schema.invites.useCount, schema.invites.maxUses)),
+  )
 }
 
 function kdfOf(material: typeof schema.keyMaterial.$inferSelect): KdfParamsBody {

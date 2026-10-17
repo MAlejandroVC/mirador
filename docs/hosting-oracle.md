@@ -133,7 +133,7 @@ sudo docker logs mirador-pr-293-app-1 2>&1 | grep "setup code" | tail -1
 | --- | --- |
 | See what's running | `cd /opt/mirador && sudo docker compose ps` |
 | Logs | `sudo docker compose logs --tail 100 app` (or `preview-app`, `caddy`) |
-| Invite someone | Sign in with the first account, then **Invite someone** on the home screen |
+| Invite someone | Sign in with the first account, then **Settings > People > New invite link** |
 | Update now instead of waiting up to 15 minutes | `sudo systemctl start mirador-update` |
 | When updates and backups run next | `systemctl list-timers 'mirador-*'` |
 | Pull request previews running | `sudo docker compose ls` (projects named `mirador-pr-<number>`) |

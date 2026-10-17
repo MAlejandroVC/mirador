@@ -146,10 +146,17 @@ export const signInRequest = z.object({ username, loginSecret: secret })
 export type SignInRequest = z.infer<typeof signInRequest>
 
 // GET /api/session. The signed-in user, or null. `operator` marks whoever created the
-// server's first account, who can invite people (SYS-13).
+// server's first account, who can invite people (SYS-13). `removed` is set once the
+// operator removed the account: until `deletesAt` it can only download its data
+// (SYS-23).
 export const sessionResponse = z
   .object({
-    user: z.object({ id: z.string(), username: z.string(), operator: z.boolean() }),
+    user: z.object({
+      id: z.string(),
+      username: z.string(),
+      operator: z.boolean(),
+      removed: z.object({ deletesAt: z.iso.datetime() }).nullable(),
+    }),
   })
   .nullable()
 export type SessionResponse = z.infer<typeof sessionResponse>
@@ -164,6 +171,8 @@ export const sessionError = z.object({
     'wrong-passkey',
     'too-many-attempts',
     'signed-out',
+    // SYS-23: a removed account may only read its own data, to download it.
+    'removed',
   ]),
 })
 export type SessionError = z.infer<typeof sessionError>

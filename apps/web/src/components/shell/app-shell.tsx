@@ -2,6 +2,7 @@ import { Outlet } from '@tanstack/react-router'
 import { useSeedCategories } from '../../features/categories/use-seed-categories'
 import { QuickAddProvider } from '../../features/quick-add'
 import { usePostRecurring } from '../../features/recurring/use-post-recurring'
+import { RemovedWatch } from '../../features/security'
 import { UndoProvider } from '../ui/undo-banner'
 import { Sidebar } from './sidebar'
 import { TabBar } from './tab-bar'
@@ -12,6 +13,7 @@ export function AppShell() {
   return (
     <UndoProvider>
       <QuickAddProvider>
+        <RemovedWatch />
         <PostRecurring />
         <SeedCategories />
         <div className="min-h-dvh bg-background text-text lg:pl-64">

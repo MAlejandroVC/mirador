@@ -29,6 +29,13 @@
       "when": 1791907389139,
       "tag": "0003_passkeys",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792191306796,
+      "tag": "0004_invite_links_and_removal",
+      "breakpoints": true
     }
   ]
 }

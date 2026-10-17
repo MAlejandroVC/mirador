@@ -2,6 +2,7 @@
 export * from './health.ts'
 export * from './accounts.ts'
 export * from './invites.ts'
+export * from './people.ts'
 export * from './passkeys.ts'
 export * from './records.ts'
 export * from './profile.ts'

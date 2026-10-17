@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { type AttemptLimits, limitAddress, tooManyAttempts, usernameKey } from '../auth/guard.ts'
 import { verifyAgainstDecoy, verifySecret } from '../auth/secrets.ts'
-import type { SessionStore } from '../auth/sessions.ts'
+import { removedAccess, type SessionStore } from '../auth/sessions.ts'
 import { type Database, schema } from '../store/db.ts'
 import { jsonBody } from './json-body.ts'
 
@@ -26,6 +26,11 @@ export function sessionRoutes({ db, sessions, limits }: SessionRoutesOptions) {
               id: signedIn.userId,
               username: signedIn.username,
               operator: signedIn.operator,
+              removed: signedIn.removedAt
+                ? {
+                    deletesAt: new Date(signedIn.removedAt.getTime() + removedAccess).toISOString(),
+                  }
+                : null,
             },
           }
         : null) satisfies SessionResponse,

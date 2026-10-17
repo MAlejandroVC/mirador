@@ -35,7 +35,7 @@ describe('settings', () => {
     expect(await screen.findByText('No se puede conectar con el servidor')).toBeInTheDocument()
   })
 
-  it('SYS-13: offers invites only to the person who runs the server', async () => {
+  it('SYS-22: offers People only to the person who runs the server', async () => {
     await i18n.changeLanguage('en')
     const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
@@ -43,16 +43,16 @@ describe('settings', () => {
 
     expect(await screen.findByRole('link', { name: 'Password and security' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Appearance' })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'Invite someone' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'People' })).not.toBeInTheDocument()
   })
 
-  it('SYS-13: the operator finds invites here', async () => {
+  it('SYS-22: the operator finds People here', async () => {
     await i18n.changeLanguage('en')
     const server: FakeServer = { signedIn: 'ana', operator: true }
     stubServer(server)
     renderApp('/settings', unlockedVault(server))
 
-    expect(await screen.findByRole('link', { name: 'Invite someone' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'People' })).toBeInTheDocument()
   })
 
   it('SEC-12: locking drops to the unlock screen; signing out to sign in', async () => {

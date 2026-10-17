@@ -12,7 +12,7 @@ import {
   SignOutIcon,
   TagIcon,
   TranslateIcon,
-  UserPlusIcon,
+  UsersThreeIcon,
 } from '../../../components/ui/icons'
 import { List, ListButtonRow, ListLinkRow } from '../../../components/ui/list'
 import { Page } from '../../../components/ui/page'
@@ -29,7 +29,8 @@ export const Route = createFileRoute('/_app/settings/')({
 
 // Epic 10: Settings opens with the account, then one row per area: Appearance
 // (SYS-16, SYS-17), Language (SYS-19), Currency (SYS-01), Categories and Tags (Epic 4),
-// Password and security (SEC) and, for the person who runs the server, Invites (SYS-13).
+// Password and security (SEC) and, for the person who runs the server, People (SYS-13,
+// SYS-21, SYS-22).
 // Areas such as budget defaults and data join as they are built. Add to Home Screen follows until Mirador runs from there
 // (SYS-20). Lock and Sign out close the list, as in iOS.
 function Settings() {
@@ -114,9 +115,9 @@ function Settings() {
         />
         {session?.user.operator && (
           <ListLinkRow
-            to="/settings/invites"
-            leading={<IconTile icon={UserPlusIcon} />}
-            title={t('settings.invites')}
+            to="/settings/people"
+            leading={<IconTile icon={UsersThreeIcon} />}
+            title={t('people.title')}
           />
         )}
       </List>
