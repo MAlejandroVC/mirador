@@ -10,7 +10,7 @@ import {
   usernameCheckRequest,
   type UsernameCheckResponse,
 } from '@repo/api'
-import { and, asc, count, eq, gt, isNull, lt, or, sql, TransactionRollbackError } from 'drizzle-orm'
+import { and, asc, count, eq, gt, isNull, lt, or, sql } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { type AttemptLimits, limitAddress } from '../auth/guard.ts'
 import { hashSecret, hashToken, randomToken, sameText, steadyBytes } from '../auth/secrets.ts'
@@ -25,11 +25,12 @@ export interface AccountRoutesOptions {
   sessions: SessionStore
   limits: AttemptLimits
   secret: string
-  // Shown in the server's log at start while there are no accounts (SYS-13).
-  setupCode: string
+  // Shown in the server's log while nobody runs the server (SYS-13).
+  setupCode: () => string
   openSignUp: boolean
-  // Called when the last account is deleted, so the setup code can be shown again.
-  onNoAccounts?: () => void
+  // Called when the account that ran the server is deleted and nobody can take over,
+  // so a new setup code is shown.
+  onNoOperator?: () => void
 }
 
 // Matches defaultKdfCost in @repo/crypto, so made-up settings for unknown usernames
@@ -43,13 +44,14 @@ export function accountRoutes({
   secret,
   setupCode,
   openSignUp,
-  onNoAccounts = () => undefined,
+  onNoOperator = () => undefined,
 }: AccountRoutesOptions) {
   const routes = new Hono<{ Variables: SessionVariables }>()
 
+  // SYS-13: while nobody runs the server (a new server, or one whose operator left with
+  // only removed accounts behind), the next account needs the setup code and runs it.
   async function signUpMode(): Promise<SignUpStatus['mode']> {
-    const [row] = await db.select({ users: count() }).from(schema.users)
-    if (!row?.users) return 'setup'
+    if (!(await hasOperator(db))) return 'setup'
     return openSignUp ? 'open' : 'invite'
   }
 
@@ -68,7 +70,7 @@ export function accountRoutes({
     if (mode === 'invite' && !body.inviteCode) return refuse('wrong-invite', 403)
     if (
       mode === 'setup' &&
-      !sameText(normalizeCode(body.setupCode ?? ''), normalizeCode(setupCode))
+      !sameText(normalizeCode(body.setupCode ?? ''), normalizeCode(setupCode()))
     ) {
       return refuse('wrong-setup-code', 403)
     }
@@ -82,6 +84,19 @@ export function accountRoutes({
     // an invite is used up only by an account that was created.
     const created = await db
       .transaction(async (tx) => {
+        let inviteId: string | null = null
+        if (mode === 'invite') {
+          // The invite first, so a made-up code never tells whether a username is
+          // taken. Counted in one statement, so two sign-ups can't both take a link's
+          // last use.
+          const [claimed] = await tx
+            .update(schema.invites)
+            .set({ useCount: sql`${schema.invites.useCount} + 1` })
+            .where(openInvite(body.inviteCode))
+            .returning({ id: schema.invites.id })
+          if (!claimed) throw new SignUpRefused('wrong-invite')
+          inviteId = claimed.id
+        }
         const inserted = await tx
           .insert(schema.users)
           // SYS-13: whoever creates the first account runs the server.
@@ -90,25 +105,12 @@ export function accountRoutes({
             username: body.username,
             loginSecretHash,
             operator: mode === 'setup',
+            inviteId,
           })
           .onConflictDoNothing({ target: schema.users.username })
           .returning({ id: schema.users.id })
-        if (inserted.length === 0) return 'username-taken' as const
-        if (mode === 'invite') {
-          // Counted in one statement, so two sign-ups can't both take a link's last use.
-          const [claimed] = await tx
-            .update(schema.invites)
-            .set({ useCount: sql`${schema.invites.useCount} + 1` })
-            .where(openInvite(body.inviteCode))
-            .returning({ id: schema.invites.id })
-          if (!claimed) tx.rollback()
-          else {
-            await tx
-              .update(schema.users)
-              .set({ inviteId: claimed.id })
-              .where(eq(schema.users.id, userId))
-          }
-        }
+        // Thrown, so the invite's use is given back.
+        if (inserted.length === 0) throw new SignUpRefused('username-taken')
         await tx.insert(schema.keyMaterial).values({
           userId,
           kdfAlgorithm: body.kdf.algorithm,
@@ -123,7 +125,7 @@ export function accountRoutes({
         return 'created' as const
       })
       .catch((error: unknown) => {
-        if (error instanceof TransactionRollbackError) return 'wrong-invite' as const
+        if (error instanceof SignUpRefused) return error.reason
         throw error
       })
     if (created === 'username-taken') return refuse('username-taken', 409)
@@ -193,7 +195,7 @@ export function accountRoutes({
     async (c) => {
       const refused = await checkPassword(c, c.req.valid('json').loginSecret)
       if (refused) return refused
-      const remaining = await db.transaction(async (tx) => {
+      const operatorLeft = await db.transaction(async (tx) => {
         const [deleted] = await tx
           .delete(schema.users)
           .where(eq(schema.users.id, c.var.userId))
@@ -214,12 +216,11 @@ export function accountRoutes({
               .where(eq(schema.users.id, oldest.id))
           }
         }
-        const [row] = await tx.select({ users: count() }).from(schema.users)
-        return row?.users ?? 0
+        return hasOperator(tx)
       })
       await sessions.end(c)
-      // The server is new again: the next account needs the setup code (SYS-13).
-      if (remaining === 0) onNoAccounts()
+      // Nobody runs the server now: the next account needs a setup code (SYS-13).
+      if (!operatorLeft) onNoOperator()
       return c.body(null, 204)
     },
   )
@@ -239,6 +240,20 @@ export function accountRoutes({
   })
 
   return routes
+}
+
+class SignUpRefused extends Error {
+  constructor(readonly reason: 'wrong-invite' | 'username-taken') {
+    super(reason)
+  }
+}
+
+async function hasOperator(db: Pick<Database, 'select'>) {
+  const [row] = await db
+    .select({ operators: count() })
+    .from(schema.users)
+    .where(eq(schema.users.operator, true))
+  return (row?.operators ?? 0) > 0
 }
 
 // SYS-21: an invite link still signs people up until it expires, is used up or is

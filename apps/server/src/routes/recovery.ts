@@ -70,8 +70,9 @@ export function recoveryRoutes({ db, sessions, limits }: RecoveryRoutesOptions) 
     const material = await check(c, body.username, body.recoverySecret)
     if (typeof material === 'string') return refuse(c, material)
 
-    // Whoever had the old password, on any device, is signed out.
-    await setPassword(db, material.userId, body)
+    // Whoever had the old password, on any device, is signed out, and any passkey they
+    // added with it stops working (see recoverRequest).
+    await setPassword(db, material.userId, body, { removePasskeys: true })
     await sessions.start(c, material.userId)
     return c.body(null, 204)
   })

@@ -20,7 +20,7 @@ People sign in with a password, and passkeys are an option (SYS-06). The data is
 ## Consequences
 
 - With a passkey, the data is as safe as the device's lock and the passkey provider's account (an Apple or Google account for synced passkeys). That is the person's choice, and the password and recovery key keep working.
-- **Changing the password, or recovering with the recovery key, keeps passkeys.** They wrap the same account key, so they still open it. Whoever knew the old password could have added one, so the security screen lists every passkey with when it was added and last used, and any can be removed.
+- **Changing the password keeps passkeys; recovering with the recovery key removes them all.** Passkeys wrap the same account key, so they still open it after a password change, and the security screen lists every passkey with when it was added and last used, so any can be removed. Recovery often means someone else had the password, and a passkey they added with it would still let them in, so recovery removes every passkey and the person adds Face ID again.
 - Browsers without PRF (Firefox on some systems, older iOS) can't add passkeys; the security screen says so and the password works as before.
 - The server can see how many passkeys a user has and when each was used.
 - SEC-12 says the password unlocks again; a passkey now can too. The spec should say so.

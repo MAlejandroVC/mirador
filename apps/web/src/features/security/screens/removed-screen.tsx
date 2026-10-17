@@ -6,7 +6,7 @@ import { Alert } from '../../../components/ui/alert'
 import { Button } from '../../../components/ui/button'
 import { ArrowSquareOutIcon, DownloadSimpleIcon } from '../../../components/ui/icons'
 import { AuthLayout } from '../components/auth-layout'
-import { sessionQuery } from '../hooks/session'
+import { forgetAll, sessionQuery } from '../hooks/session'
 import { useVault } from '../hooks/vault'
 import { exportFile, exportFileName, saveFile } from '../lib/export'
 
@@ -41,7 +41,7 @@ export function RemovedScreen() {
   const signOut = useMutation({
     mutationFn: () => vault.signOut(),
     onSettled: async () => {
-      queryClient.removeQueries(sessionQuery)
+      forgetAll(queryClient)
       await navigate({ to: '/sign-in' })
     },
   })

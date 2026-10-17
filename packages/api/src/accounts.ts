@@ -93,6 +93,8 @@ export type RecoveryKeyResponse = z.infer<typeof recoveryKeyResponse>
 
 // POST /api/accounts/recovery. Sets the new password's login secret, salt and wrapped
 // key, signs every device out and signs this one in. The recovery key keeps working.
+// SEC-07: every passkey is removed too. Recovery often means someone else had the
+// password, and a passkey they added with it would still let them in.
 export const recoverRequest = z.object({
   username,
   recoverySecret: secret,

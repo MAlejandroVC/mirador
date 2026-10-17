@@ -36,13 +36,13 @@ async function dump(server: TestServer) {
 
 describe('deleting an account', () => {
   let server: TestServer
-  let onNoAccounts: Mock<() => void>
+  let onNoOperator: Mock<() => void>
   let anasPhone: string
   let bensPhone: string
 
   beforeEach(async () => {
-    onNoAccounts = vi.fn<() => void>()
-    server = await createTestApp({ openSignUp: true, onNoAccounts })
+    onNoOperator = vi.fn<() => void>()
+    server = await createTestApp({ openSignUp: true, onNoOperator })
     anasPhone = await signUp(server, ana)
     bensPhone = await signUp(server, ben)
     const pushed = await post(
@@ -98,7 +98,7 @@ describe('deleting an account', () => {
     expect(left).toContain(ana.wrappedAccountKey.password)
     // The name is free again.
     await signUp(server, newAccount('ben'))
-    expect(onNoAccounts).not.toHaveBeenCalled()
+    expect(onNoOperator).not.toHaveBeenCalled()
   })
 
   it('SYS-13: the oldest account left runs the server, and after the last one the setup code is needed again', async () => {
@@ -110,13 +110,35 @@ describe('deleting an account', () => {
 
     await deleteAccount(server, bensPhone, ben.loginSecret)
     expect((await sessionOf(server, cleo))?.user.operator).toBe(true)
-    expect(onNoAccounts).not.toHaveBeenCalled()
+    expect(onNoOperator).not.toHaveBeenCalled()
 
     await deleteAccount(server, cleo, newAccount('cleo').loginSecret)
-    expect(onNoAccounts).toHaveBeenCalledOnce()
+    expect(onNoOperator).toHaveBeenCalledOnce()
     const status = signUpStatus.parse(await (await get(server, '/api/accounts/sign-up')).json())
     expect(status.mode).toBe('setup')
     expect((await post(server, '/api/accounts', newAccount('dan'))).status).toBe(403)
     await signUp(server, newAccount('dan', { setupCode: testSetupCode }))
+  })
+
+  it('SYS-13: when the operator leaves and only removed accounts are left, a new setup code is needed', async () => {
+    const benId = (await sessionOf(server, bensPhone))?.user.id ?? ''
+    expect(
+      (await post(server, `/api/people/${benId}/remove`, {}, { Cookie: anasPhone })).status,
+    ).toBe(204)
+
+    expect((await deleteAccount(server, anasPhone, ana.loginSecret)).status).toBe(204)
+
+    expect(onNoOperator).toHaveBeenCalledOnce()
+    const status = signUpStatus.parse(await (await get(server, '/api/accounts/sign-up')).json())
+    expect(status.mode).toBe('setup')
+    const dan = await signUp(server, newAccount('dan', { setupCode: testSetupCode }))
+    expect((await sessionOf(server, dan))?.user.operator).toBe(true)
+    expect((await sessionOf(server, bensPhone))?.user.operator).toBe(false)
+  })
+
+  it('SEC-09: a person id that could never exist is not found, not an error', async () => {
+    const response = await post(server, '/api/people/bad%00id/remove', {}, { Cookie: anasPhone })
+
+    expect(response.status).toBe(404)
   })
 })
