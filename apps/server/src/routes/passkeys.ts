@@ -24,7 +24,7 @@ import {
 } from '../auth/webauthn.ts'
 import { type Database, schema } from '../store/db.ts'
 import { passwordCheck } from './credentials.ts'
-import { jsonBody } from './json-body.ts'
+import { idParam, jsonBody } from './json-body.ts'
 
 export interface PasskeyRoutesOptions {
   db: Database
@@ -118,7 +118,7 @@ export function passkeyRoutes({
     return c.json(toPasskey(added), 201)
   })
 
-  routes.delete('/passkeys/:id', async (c) => {
+  routes.delete('/passkeys/:id', idParam, async (c) => {
     const removed = await db
       .delete(schema.passkeys)
       .where(

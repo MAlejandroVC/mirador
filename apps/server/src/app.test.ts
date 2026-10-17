@@ -76,4 +76,26 @@ describe('serving the built web app', () => {
 
     expect(await response.json()).toEqual({ status: 'ok' })
   })
+
+  it("NFR-01: every response says only the app's own files may run, and no site may frame it", async () => {
+    for (const path of [
+      '/',
+      '/assets/main-abc123.js',
+      '/wallets/123',
+      '/api/health',
+      '/api/nope',
+    ]) {
+      const headers = (await app.request(path)).headers
+      const policy = headers.get('content-security-policy') ?? ''
+      expect(policy).toContain("default-src 'none'")
+      expect(policy).toContain("script-src 'self' 'wasm-unsafe-eval'")
+      expect(policy).toContain("frame-ancestors 'none'")
+      expect(policy).not.toContain('unsafe-inline')
+      expect(policy).not.toMatch(/'unsafe-eval'/)
+      expect(headers.get('x-frame-options')).toBe('DENY')
+      expect(headers.get('x-content-type-options')).toBe('nosniff')
+      expect(headers.get('referrer-policy')).toBe('no-referrer')
+      expect(headers.get('strict-transport-security')).toBe('max-age=31536000')
+    }
+  })
 })

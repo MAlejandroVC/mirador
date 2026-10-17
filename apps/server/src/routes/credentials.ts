@@ -31,7 +31,12 @@ export interface NewPassword {
 // SEC-07, SEC-08: a new password replaces the old one's login secret, salt and wrapped
 // key together, and every session ends: whoever knew the old password, on any device,
 // is signed out. The caller starts a new session for the device that asked.
-export async function setPassword(db: Database, userId: string, password: NewPassword) {
+export async function setPassword(
+  db: Database,
+  userId: string,
+  password: NewPassword,
+  { removePasskeys = false } = {},
+) {
   const loginSecretHash = await hashSecret(password.loginSecret)
   await db.transaction(async (tx) => {
     await tx
@@ -51,6 +56,7 @@ export async function setPassword(db: Database, userId: string, password: NewPas
       })
       .where(eq(schema.keyMaterial.userId, userId))
     await tx.delete(schema.sessions).where(eq(schema.sessions.userId, userId))
+    if (removePasskeys) await tx.delete(schema.passkeys).where(eq(schema.passkeys.userId, userId))
   })
 }
 

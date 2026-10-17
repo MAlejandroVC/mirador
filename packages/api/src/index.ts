@@ -1,4 +1,5 @@
 // Zod schemas for every request, response and record. API changes start here.
+import './no-eval.ts'
 export * from './health.ts'
 export * from './accounts.ts'
 export * from './invites.ts'

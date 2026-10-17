@@ -18,7 +18,7 @@ import { List, ListButtonRow, ListLinkRow } from '../../../components/ui/list'
 import { Page } from '../../../components/ui/page'
 import { InstallRow } from '../../../features/install'
 import { ProfilePicture, useProfilePicture } from '../../../features/profile'
-import { sessionQuery, useVault } from '../../../features/security'
+import { forgetAll, forgetUnlocked, sessionQuery, useVault } from '../../../features/security'
 import { api } from '../../../lib/api'
 import { nativeNames, readLanguageChoice } from '../../../lib/language'
 import { AppIcon } from '../../../components/ui/app-icon'
@@ -45,12 +45,15 @@ function Settings() {
 
   const lock = useMutation({
     mutationFn: () => vault.lock(),
-    onSuccess: () => navigate({ to: '/unlock' }),
+    onSuccess: async () => {
+      forgetUnlocked(queryClient)
+      await navigate({ to: '/unlock' })
+    },
   })
   const signOut = useMutation({
     mutationFn: () => vault.signOut(),
     onSettled: async () => {
-      queryClient.removeQueries(sessionQuery)
+      forgetAll(queryClient)
       await navigate({ to: '/sign-in' })
     },
   })

@@ -30,7 +30,7 @@ export async function createTestApp(options: Partial<AppOptions> = {}) {
   const app = createApp({
     db,
     secret: 'a-test-secret',
-    setupCode: testSetupCode,
+    setupCode: () => testSetupCode,
     ...options,
   })
   return { app, db }

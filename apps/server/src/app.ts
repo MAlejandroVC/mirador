@@ -1,7 +1,10 @@
 import { type HealthResponse } from '@repo/api'
 import { serveStatic } from '@hono/node-server/serve-static'
-import { Hono } from 'hono'
+import { type ErrorHandler, Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
+import { HTTPException } from 'hono/http-exception'
+import { routePath } from 'hono/route'
+import { secureHeaders } from 'hono/secure-headers'
 import { attemptLimits, sameOrigin } from './auth/guard.ts'
 import { sessionStore } from './auth/sessions.ts'
 import { accountRoutes } from './routes/accounts.ts'
@@ -18,10 +21,10 @@ export interface AppOptions {
   db: Database
   // Known only to this server (see loadSecret).
   secret: string
-  // Needed to create the first account (SYS-13); see index.ts.
-  setupCode: string
-  // Shows the setup code again when the last account is deleted; see index.ts.
-  onNoAccounts?: () => void
+  // The code that creates the account running the server (SYS-13); see index.ts.
+  setupCode: () => string
+  // Shows a new setup code when nobody runs the server any more; see index.ts.
+  onNoOperator?: () => void
   // SYS-13: open sign-up stays off unless the operator turns it on.
   openSignUp?: boolean
   // An HTTPS proxy in front sets X-Forwarded-For (see auth/guard.ts).
@@ -37,27 +40,28 @@ export function createApp({
   db,
   secret,
   setupCode,
-  onNoAccounts,
+  onNoOperator,
   openSignUp = false,
   trustProxy = false,
   webRoot,
 }: AppOptions) {
-  const sessions = sessionStore(db)
+  const sessions = sessionStore(db, secret)
   const limits = attemptLimits(trustProxy)
   const api = new Hono()
+  api.onError(failed)
 
   // Refuse bodies far bigger than any real one before reading them: a batch of
   // records can be a few MiB (at most 500 records), everything else a few hundred bytes.
   const smallBodies = bodyLimit({ maxSize: 64 * 1024 })
   const recordBatches = bodyLimit({ maxSize: 16 * 1024 * 1024 })
   api.use((c, next) => (c.req.path === '/api/records' ? recordBatches : smallBodies)(c, next))
-  api.use(sameOrigin)
+  api.use(sameOrigin(trustProxy))
 
   api.get('/health', (c) => c.json({ status: 'ok' } satisfies HealthResponse))
 
   api.route(
     '/',
-    accountRoutes({ db, sessions, limits, secret, setupCode, openSignUp, onNoAccounts }),
+    accountRoutes({ db, sessions, limits, secret, setupCode, openSignUp, onNoOperator }),
   )
   api.route('/', sessionRoutes({ db, sessions, limits }))
   api.route('/', recordRoutes({ db, sessions }))
@@ -68,6 +72,8 @@ export function createApp({
   api.route('/', passkeyRoutes({ db, sessions, limits }))
 
   const app = new Hono()
+  app.onError(failed)
+  app.use(appHeaders)
   app.route('/api', api)
   // An unknown API path is a 404, never the web app's page.
   app.all('/api/*', (c) => c.notFound())
@@ -91,4 +97,42 @@ export function createApp({
   }
 
   return app
+}
+
+// SEC-01, NFR-01: the browser holds the keys and the decrypted data, so a script that got into
+// the page could read everything. React already escapes what it shows; this policy is
+// the second line: only the app's own files may run, load or be sent anywhere, and no
+// other site may show the app in a frame. hash-wasm runs Argon2id as WebAssembly, which
+// needs 'wasm-unsafe-eval' (it allows WebAssembly only, not eval). Sent from the app
+// itself, on every response (the worker's script too), so every server has it, whatever
+// sits in front.
+const appHeaders = secureHeaders({
+  contentSecurityPolicy: {
+    defaultSrc: ["'none'"],
+    scriptSrc: ["'self'", "'wasm-unsafe-eval'"],
+    styleSrc: ["'self'"],
+    imgSrc: ["'self'"],
+    connectSrc: ["'self'"],
+    manifestSrc: ["'self'"],
+    workerSrc: ["'self'"],
+    baseUri: ["'none'"],
+    formAction: ["'none'"],
+    frameAncestors: ["'none'"],
+    objectSrc: ["'none'"],
+  },
+  strictTransportSecurity: 'max-age=31536000',
+  xFrameOptions: 'DENY',
+  referrerPolicy: 'no-referrer',
+})
+
+// A failed query's message holds its values (Drizzle puts them there), which can be
+// usernames, hashes or wrapped keys. The log gets only where it failed and what kind of
+// error it was.
+const failed: ErrorHandler = (error, c) => {
+  if (error instanceof HTTPException) return error.getResponse()
+  const cause: unknown = error.cause
+  const code =
+    cause && typeof cause === 'object' && 'code' in cause ? ` (${String(cause.code)})` : ''
+  console.error(`${c.req.method} ${routePath(c)} failed: ${error.name}${code}`)
+  return c.json({ error: 'server-error' }, 500)
 }

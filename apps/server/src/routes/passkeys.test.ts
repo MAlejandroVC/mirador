@@ -300,10 +300,54 @@ describe('passkeys', () => {
     expect((await signInWith(server, passkey)).status).toBe(401)
   })
 
+  it('SEC-07: recovering with the recovery key removes every passkey', async () => {
+    await addPasskey(server, phone, passkey)
+    const fresh = newAccount('ana', { loginSecret: base64Url(43, 'after recovery') })
+
+    const recovered = await post(server, '/api/accounts/recovery', {
+      username: 'ana',
+      recoverySecret: ana.recoverySecret,
+      loginSecret: fresh.loginSecret,
+      kdf: fresh.kdf,
+      wrappedAccountKey: base64Url(54, 'rewrapped'),
+    })
+
+    expect(recovered.status).toBe(204)
+    expect(await passkeysOf(server, cookieOf(recovered))).toEqual([])
+    expect((await signInWith(server, passkey)).status).toBe(401)
+  })
+
+  it('SEC-07: changing the password keeps the passkeys', async () => {
+    await addPasskey(server, phone, passkey)
+
+    const changed = await post(
+      server,
+      '/api/accounts/password',
+      {
+        loginSecret: ana.loginSecret,
+        newLoginSecret: base64Url(43, 'new password'),
+        kdf: ana.kdf,
+        wrappedAccountKey: base64Url(54, 'rewrapped'),
+      },
+      { Cookie: phone },
+    )
+
+    expect(changed.status).toBe(204)
+    expect(await passkeysOf(server, cookieOf(changed))).toHaveLength(1)
+  })
+
+  it('SEC-09: a passkey id that could never exist is not found, not an error', async () => {
+    expect((await del(server, '/api/passkeys/bad%00id', phone)).status).toBe(404)
+  })
+
   it('SYS-06: needs the Origin header to know which site the passkey is for', async () => {
     const response = await server.app.request('/api/passkeys/sign-in/options', {
       method: 'POST',
-      headers: { Host: 'localhost', 'Content-Type': 'application/json' },
+      headers: {
+        Host: 'localhost',
+        'Content-Type': 'application/json',
+        'Sec-Fetch-Site': 'same-origin',
+      },
       body: '{}',
     })
 

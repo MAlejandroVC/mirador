@@ -1,3 +1,4 @@
+import { createMiddleware } from 'hono/factory'
 import { validator } from 'hono/validator'
 import type { z } from 'zod'
 
@@ -11,3 +12,10 @@ export function jsonBody<Schema extends z.ZodType>(schema: Schema) {
     return parsed.data
   })
 }
+
+// Ids in paths are random base64url tokens or passkey credential ids (base64url too).
+// Anything else, such as a NUL byte PostgreSQL would refuse, is a 404 before any query.
+export const idParam = createMiddleware(async (c, next) => {
+  if (!/^[A-Za-z0-9_-]{1,1024}$/.test(c.req.param('id') ?? '')) return c.notFound()
+  await next()
+})

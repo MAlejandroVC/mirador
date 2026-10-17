@@ -174,7 +174,7 @@
     },
     "recover": {
       "title": "Recupera tu cuenta",
-      "intro": "Tu clave de recuperación abre tus datos y define una contraseña nueva. Se cerrará la sesión en tus otros dispositivos.",
+      "intro": "Tu clave de recuperación abre tus datos y define una contraseña nueva. Se cerrará la sesión en tus otros dispositivos y se quitarán tus llaves de acceso.",
       "recoveryKey": "Clave de recuperación",
       "recoveryKeyHint": "La clave que guardaste al crear tu cuenta. Los espacios y guiones no importan.",
       "newPassword": "Contraseña nueva",
