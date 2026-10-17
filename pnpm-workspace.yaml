@@ -10,6 +10,6 @@ allowBuilds:
 catalog:
   '@types/node': ^24.19.1
   # TypeScript 7 waits until typescript-eslint supports it (it allows <6.1 today).
-  typescript: ~6.0.3
+  typescript: ~7.0.2
   vitest: ^5.0.3
   zod: ^4.6.5
