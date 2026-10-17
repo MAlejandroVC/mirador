@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/MAlejandroVC/mirador/compare/v0.3.0...v0.4.0) (2026-10-17)
+
+
+### Features
+
+* **security:** add group invite links and removing people ([#302](https://github.com/MAlejandroVC/mirador/issues/302)) ([612cf0b](https://github.com/MAlejandroVC/mirador/commit/612cf0b578b447a8e109ffb95a9bd7929f1a2f44))
+
+
+### Bug fixes
+
+* **web:** polish sheets, switches, back buttons, reordering, icons and sign-up ([#300](https://github.com/MAlejandroVC/mirador/issues/300)) ([0b2cca3](https://github.com/MAlejandroVC/mirador/commit/0b2cca3d0e87f834ca5552dc480485f60133282c))
+
 ## [0.3.0](https://github.com/MAlejandroVC/mirador/compare/v0.2.0...v0.3.0) (2026-10-16)
 
 
