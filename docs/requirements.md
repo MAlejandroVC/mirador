@@ -388,13 +388,15 @@ The taxonomy is permanently limited to category groups, categories and flat tags
 
 ## Epic 5: Spending analysis and insights
 
-The analysis section answers four questions at any granularity: where does my money go, when do I spend it, what habits drive it, and where could I spend less. Every chart filters and drills down to the transactions behind it, and every insight shows its numbers.
+The analysis section helps the user understand where they are: what they spend on, where, when, how and why, and what drives the changes. From there it points toward the budget: where they could spend less and what that does for their goals. It answers at any granularity. Every chart filters and drills down to the transactions behind it, and every insight shows its numbers.
 
 **User stories**
 
 - As a user, I want to compare this period with my usual period, so I spot what changed.
 - As a user, I want to know which habits drive my spending (many small purchases or a few big ones, weekends, paydays, who I'm with), so I know what to change.
 - As a user, I want a ranked list of where cutting back would be easiest, so improving is concrete.
+- As a user, I want to know whether I spend more because I buy more often or because each purchase costs more, so I know which habit to change.
+- As a user, I want to see how much of the coming months is already committed, so I am not surprised by installments and recurring payments.
 
 **Views and filters**
 
@@ -416,6 +418,8 @@ The analysis section answers four questions at any granularity: where does my mo
 | ANA-14 | The app shall rank payees by total spent, number of transactions and average ticket. | Should |
 | ANA-15 | The app shall show income by source and how stable it is period to period. | Could |
 | ANA-16 | The app shall show net worth, what I have and what I owe as a history by period, derived from transactions and valuations. | Should |
+| ANA-17 | The app shall show how much of a period's spending came out of each wallet and each wallet type. | Could |
+| ANA-18 | The app shall show, per payee, how its average ticket and number of transactions changed over the last 12 periods, so the user can tell a higher price from a more frequent habit. | Could |
 
 **When and how the money goes (habits)**
 
@@ -427,6 +431,10 @@ The analysis section answers four questions at any granularity: where does my mo
 | ANA-23 | The app shall show, per category and per tag, the number of transactions and the average ticket, so the user can tell "many small" habits from "few large" ones. | Should |
 | ANA-24 | The app shall detect recurring charges (similar description, similar amount, regular interval) and list them with their yearly cost. | Should |
 | ANA-25 | The app shall show total spending against income on a rolling 12-month basis, to reveal lifestyle creep. | Could |
+| ANA-26 | When the app compares a category's spending with another period or an average, it shall split the difference into the part that comes from more or fewer transactions and the part that comes from a higher or lower average ticket. | Could |
+| ANA-27 | The app shall show, for each of the next 12 periods, the amount already committed: installment parts and recurring transactions not yet due. | Could |
+| ANA-28 | The app shall show, per tag, how a day with that tag compares with a day without it, in total and per category. | Could |
+| ANA-29 | The app shall list pairs of categories where the second appears on at least half of the days the first appears (with at least 5 such days in the lookback), with the second's usual amount on those days. | Could |
 
 **Where to improve**
 
@@ -438,8 +446,17 @@ The analysis section answers four questions at any granularity: where does my mo
 | ANA-33 | The app shall write insights as plain sentences, for example: "Lunch with the work tag was 38% above your 6-period average, mostly on Fridays." | Should |
 | ANA-34 | The app shall let the user send any improvement opportunity straight into a budget scenario. | Could |
 | ANA-35 | The app shall let the user export the data behind any chart as CSV or download the chart as PNG. | Could |
+| ANA-36 | Where there are at least 13 periods of history, the app shall show the periods of the year that usually cost more than the usual period, compared with the same periods in earlier years, and the amount to set aside each period to cover them (BUD-14). | Could |
+| ANA-37 | The app shall total, per period, the expenses below a set amount (default: the median expense amount of the lookback) and compare that total with each category group. | Could |
+| ANA-38 | Where the user has an active goal, the app shall express a category's yearly cost as the number of weeks or periods of that goal's contribution it equals. | Could |
 
-All insights are computed by deterministic rules on the user's own data, in the browser, so the same data always gives the same result and the server never sees it in plain text.
+**Where it's heading**
+
+| ID | Requirement | Priority |
+|---|---|---|
+| ANA-40 | The app shall project net worth over the next 24 periods at the user's usual left over and, while a plan is active, with the plan, and show when it reaches an amount the user enters. | Could |
+
+All insights are computed by deterministic rules on the user's own data, in the browser, so the same data always gives the same result and the server never sees it in plain text. They describe only what the user recorded (amounts, dates, wallets, payees, categories and tags) and never assume the intent behind a label: the app cannot tell a coffee from a tuition payment except by the category the user chose, so it never judges one category as better or worse than another. Analysis asks for nothing beyond what logging a transaction already asks for.
 
 ## Epic 6: Habit-driven, goal-oriented budget
 
@@ -782,6 +799,7 @@ These are deliberately excluded from V1 so the core loop ships first; some may r
 | A hosted cloud version run by the project | Won't |
 | Where and how the server is hosted | Up to whoever runs it (cheap web host, VPS or home server); the project documents the options (NFR-15) |
 | Full offline use | Won't in V1; only adding transactions works offline (WID-09) |
+| Asking for the reason behind a transaction (planned or impulse, mood) | Won't: it adds friction to logging; analysis works from categories, tags and patterns |
 
 ## Sources
 
