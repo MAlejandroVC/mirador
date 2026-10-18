@@ -248,7 +248,7 @@ A transaction records one money movement: an expense, an income or a transfer be
 | TXN-08 | When the user picks a payee, the app shall pre-fill the category, tags and wallet last used with that payee. | Should |
 | TXN-09 | The app shall let the user define recurring transactions (daily, weekly, every two weeks, monthly, yearly or custom) that generate scheduled entries, shown ahead of time in the periods to come. | Should |
 | TXN-10 | When a scheduled entry comes due, the app shall, the next time the user unlocks it (the server cannot create encrypted entries), either post it automatically or wait for the user's confirmation, per the template's setting. | Should |
-| TXN-11 | The app shall record refunds as income transactions. | Must |
+| TXN-11 | The app shall record a refund as money in that takes the category of what was refunded, and count it as less spending in that category, never as income, in analysis and the budget; a refund left in the Refunds system category lowers total spending. | Must |
 | TXN-12 | The app shall let the user duplicate a transaction. | Could |
 | TXN-13 | When the user deletes a transaction, the app shall offer an undo for at least 10 seconds. | Should |
 | TXN-14 | The app shall let the user attach a receipt image to a transaction. | Could |
@@ -388,7 +388,7 @@ The taxonomy is permanently limited to category groups, categories and flat tags
 
 ## Epic 5: Spending analysis and insights
 
-The analysis section helps the user understand where they are: what they spend on, where, when, how and why, and what drives the changes. From there it points toward the budget: where they could spend less and what that does for their goals. It answers at any granularity. Every chart filters and drills down to the transactions behind it, and every insight shows its numbers.
+The analysis section helps the user understand where they are: what they spend on, where, when, how and why, and what drives the changes. From there it points toward the budget: where they could spend less and what that does for their goals. It answers at any granularity. Analysis lives in the Budget tab, beside the plan, because understanding spending and planning it are two sides of the same picture; Home stays a dashboard of what matters now (Epic 7). Every chart filters and drills down to the transactions behind it, and every insight shows its numbers.
 
 **User stories**
 
@@ -759,7 +759,7 @@ Every question raised in review is decided and already reflected in the requirem
 | Q13 | Several people on one installation? | Separate accounts on one server with no sharing in V1; households after V1 (see Q24) | Assumptions, Out of scope |
 | Q14 | Remote AI for imports? | No. Extraction runs only on the user's own server | IMP-11, IMP-12 |
 | Q15 | Platforms | Web first, responsive for heavy phone use; native iOS and Android apps later if there is interest (2026-10-06) | NFR-04, WID epic |
-| Q16 | How is a refund recorded? | As income | TXN-11 |
+| Q16 | How is a refund recorded? | As money in that lowers the spending of the refunded category, so it doesn't inflate both income and expenses (changed 2026-10-18) | TXN-11 |
 | Q17 | Languages at launch | English and Spanish | SYS-10 |
 | Q18 | License | AGPL-3.0 | NFR-12 |
 | Q19 | Keep a payee field? | Yes, optional; revisit in a UX review of friction points | TXN-08, IMP-27, ANA-14 |
