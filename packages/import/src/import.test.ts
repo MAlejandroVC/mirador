@@ -236,6 +236,11 @@ describe('importing', () => {
       skipped: 1,
       waiting: [{ line: 5, problem: 'zero' }],
     })
+    // IMP-33: what could be read, so the row opens filled in when it is fixed.
+    expect(result.batch.waiting[0]).toMatchObject({ date: '2026-07-12', walletId })
+    // Pharmacy is used only by that row, so no category was made for it.
+    expect(result.batch.waiting[0]?.categoryId).toBeUndefined()
+    expect(result.batch.waiting[0]?.amount).toBeUndefined()
     const transactions = result.changes.filter(
       (c) => !c.body.deleted && c.body.type === 'transaction',
     )

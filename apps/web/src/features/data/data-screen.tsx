@@ -29,8 +29,9 @@ import { List, ListButtonRow } from '../../components/ui/list'
 import { Page } from '../../components/ui/page'
 import { Sheet } from '../../components/ui/sheet'
 import { formatShortDate, useLocale } from '../../lib/format'
+import { EntrySheet } from '../transactions/entry-sheet'
 import { newId, useLedger, useSaveRecords } from '../wallets/use-ledger'
-import { BatchSheet, EraseSheet, RestoreSheet } from './data-sheets'
+import { BatchSheet, EraseSheet, RestoreSheet, type WaitingRow } from './data-sheets'
 import { buildChanges, currencyOf, type ImportFile } from './import-model'
 import { DoneStep, type ImportDone, ImportSheet } from './import-sheet'
 import { downloadSpreadsheet, useDownloadBackup, useUndoImport } from './use-data'
@@ -52,6 +53,8 @@ export function DataScreen() {
   const [again, setAgain] = useState<{ file: ImportFile; date: string } | null>(null)
   const [archive, setArchive] = useState<{ name: string; result: ArchiveResult } | null>(null)
   const [batchId, setBatchId] = useState<string | null>(null)
+  // IMP-33: a row an import left for later, opened in the transaction form.
+  const [fixing, setFixing] = useState<{ batchId: string; row: WaitingRow } | null>(null)
   const [erasing, setErasing] = useState(false)
   const [unreadable, setUnreadable] = useState(false)
   const [sampleDone, setSampleDone] = useState<ImportDone | null>(null)
@@ -322,8 +325,26 @@ export function DataScreen() {
             batch={ledger.batches.find((batch) => batch.id === batchId) ?? null}
             pending={undo.isPending}
             onUndo={undoBatch}
+            onFix={(row) => {
+              if (batchId) setFixing({ batchId, row })
+              setBatchId(null)
+            }}
             onClose={() => {
               setBatchId(null)
+            }}
+          />
+          <EntrySheet
+            open={fixing !== null}
+            mode={{
+              kind: 'new',
+              source: 'import',
+              seed: fixing ? waitingSeed(fixing.row) : {},
+              ...(fixing ? { fromImport: { batchId: fixing.batchId, line: fixing.row.line } } : {}),
+            }}
+            onClose={() => {
+              // Back to the import, to fix the next one.
+              setBatchId(fixing?.batchId ?? null)
+              setFixing(null)
             }}
           />
           <EraseSheet
@@ -336,4 +357,16 @@ export function DataScreen() {
       )}
     </Page>
   )
+}
+
+/** What the form starts with for a row left for later: whatever could be read. */
+function waitingSeed(row: WaitingRow) {
+  return {
+    type: row.amount !== undefined && row.amount > 0 ? ('income' as const) : ('expense' as const),
+    ...(row.amount !== undefined ? { amount: Math.abs(row.amount) } : {}),
+    ...(row.date ? { date: row.date } : {}),
+    ...(row.walletId ? { walletId: row.walletId } : {}),
+    ...(row.categoryId ? { categoryId: row.categoryId } : {}),
+    ...(row.note ? { note: row.note } : {}),
+  }
 }

@@ -38,6 +38,12 @@ export const importBatchRecord = z.object({
         line: z.int().positive(),
         problem: z.enum(rowProblems),
         text: z.string().max(300),
+        // What could be read, so the row opens filled in when the person fixes it.
+        date: calendarDate.optional(),
+        amount: z.int().optional(),
+        walletId: recordId.optional(),
+        categoryId: recordId.optional(),
+        note: z.string().max(500).optional(),
       }),
     )
     .max(2000),

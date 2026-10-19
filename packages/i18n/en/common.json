@@ -1368,7 +1368,7 @@
       "noCategoryNote": "Rows you don’t sort go in Uncategorized.",
       "uncategorized": "Uncategorized",
       "unreadable": "Couldn’t read",
-      "unreadableNote": "These rows wait under Imports, in Settings › Your data.",
+      "unreadableNote": "You can fix these one by one later, under Imports in Settings › Your data.",
       "row": "Row {{line}}",
       "more": "{{count}} more",
       "import_one": "Import {{count}} transaction",
@@ -1402,7 +1402,8 @@
       "imported": "Transactions added",
       "skipped": "Rows skipped",
       "waiting": "Left for later",
-      "waitingNote": "Add these by hand, or fix them in the file and import it again.",
+      "waitingNote": "Tap one to fix it and add it here, or fix them in the file and import it again.",
+      "fix": "Fix",
       "confirmTitle": "Undo this import?",
       "confirmMessage_one": "This removes the {{count}} transaction it added, and the wallets and categories it made that nothing else uses.",
       "confirmMessage_other": "This removes the {{count}} transactions it added, and the wallets and categories it made that nothing else uses."

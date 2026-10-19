@@ -198,8 +198,23 @@ export function buildImport(input: BuildInput): BuildResult {
     const { row, status } = item
     const walletId = walletIds.get(item.walletKey)
     if (status.kind === 'unreadable' || !walletId || row.date === null || row.amount === null) {
-      if (status.kind === 'unreadable')
-        waiting.push({ line: row.line, problem: status.problem, text: row.text })
+      if (status.kind === 'unreadable') {
+        const categoryId =
+          (item.categoryKey !== null ? categoryIds.get(item.categoryKey) : undefined) ??
+          item.suggestedCategoryId ??
+          undefined
+        const note = row.note || row.payee
+        waiting.push({
+          line: row.line,
+          problem: status.problem,
+          text: row.text,
+          ...(row.date !== null ? { date: row.date } : {}),
+          ...(row.amount !== null && row.amount !== 0 ? { amount: row.amount } : {}),
+          ...(walletId ? { walletId } : {}),
+          ...(categoryId ? { categoryId } : {}),
+          ...(note ? { note: note.slice(0, 500) } : {}),
+        })
+      }
       skipped += 1
       continue
     }

@@ -1368,7 +1368,7 @@
       "noCategoryNote": "Las filas que no clasifiques quedan en Sin categoría.",
       "uncategorized": "Sin categoría",
       "unreadable": "No se pudo leer",
-      "unreadableNote": "Estas filas esperan en Importaciones, en Configuración › Tus datos.",
+      "unreadableNote": "Podrás corregirlas una por una en Importaciones, en Configuración › Tus datos.",
       "row": "Fila {{line}}",
       "more": "{{count}} más",
       "import_one": "Importar {{count}} movimiento",
@@ -1402,7 +1402,8 @@
       "imported": "Movimientos agregados",
       "skipped": "Filas omitidas",
       "waiting": "Pendientes",
-      "waitingNote": "Agrégalas a mano, o corrígelas en el archivo e impórtalo otra vez.",
+      "waitingNote": "Toca una para corregirla y agregarla aquí, o corrígelas en el archivo e impórtalo otra vez.",
+      "fix": "Corregir",
       "confirmTitle": "¿Deshacer esta importación?",
       "confirmMessage_one": "Esto quita el {{count}} movimiento que agregó, y las carteras y categorías que creó y que nada más usa.",
       "confirmMessage_other": "Esto quita los {{count}} movimientos que agregó, y las carteras y categorías que creó y que nada más usa."

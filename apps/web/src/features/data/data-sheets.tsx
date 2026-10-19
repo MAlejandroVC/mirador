@@ -9,7 +9,7 @@ import { Button } from '../../components/ui/button'
 import { ChoiceRow } from '../../components/ui/choice-row'
 import { IconTile } from '../../components/ui/icon-tile'
 import { FileTextIcon } from '../../components/ui/icons'
-import { List, ListRow } from '../../components/ui/list'
+import { List, ListButtonRow, ListRow } from '../../components/ui/list'
 import { Sheet } from '../../components/ui/sheet'
 import { TextField } from '../../components/ui/text-field'
 import { formatShortDate, useLocale } from '../../lib/format'
@@ -214,16 +214,23 @@ export function RestoreSheet({
   )
 }
 
-/** IMP-34, IMP-35: one import, what it did, the rows left for later, and its undo. */
+export type WaitingRow = ImportBatchRecord['waiting'][number]
+
+/**
+ * IMP-34, IMP-35: one import, what it did, and its undo. IMP-33: the rows it left for
+ * later, each opening the transaction form filled in with what could be read.
+ */
 export function BatchSheet({
   batch,
   pending,
   onUndo,
+  onFix,
   onClose,
 }: {
   batch: (ImportBatchRecord & { id: string }) | null
   pending: boolean
   onUndo: (batchId: string) => void
+  onFix: (row: WaitingRow) => void
   onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -255,10 +262,17 @@ export function BatchSheet({
             <>
               <List inset label={t('data.batch.waiting')}>
                 {batch.waiting.slice(0, 50).map((row) => (
-                  <ListRow
+                  <ListButtonRow
                     key={row.line}
+                    tone="text"
                     title={t('data.review.row', { line: number(row.line) })}
                     subtitle={`${t(`data.problems.${row.problem}`)}${row.text ? ` · ${row.text}` : ''}`}
+                    trailing={
+                      <span className="text-[0.9375rem] text-brand">{t('data.batch.fix')}</span>
+                    }
+                    onClick={() => {
+                      onFix(row)
+                    }}
                   />
                 ))}
               </List>
