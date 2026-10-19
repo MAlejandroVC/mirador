@@ -354,4 +354,12 @@ describe('importing', () => {
       id: walletId,
     })
   })
+
+  it('IMP-08: reads a long run of symbols quickly and a minus sign as negative', () => {
+    const started = Date.now()
+    expect(readAmount(`${'+'.repeat(50_000)}x`, '.', 'MXN')).toBeNull()
+    expect(Date.now() - started).toBeLessThan(500)
+    expect(readAmount('\u221212.50', '.', 'MXN')).toBe(-1250)
+    expect(readAmount('$ 1,234.00 MXN', '.', 'MXN')).toBe(123_400)
+  })
 })

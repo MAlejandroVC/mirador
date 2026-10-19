@@ -76,7 +76,13 @@ export function readAmount(text: string, mark: DecimalMark, currency: string): n
     negative = true
     cleaned = cleaned.slice(0, -1)
   }
-  cleaned = cleaned.replace(/^[^\d\-+.,]+|[^\d.,]+$/g, '')
+  // Symbols and words around the number, trimmed with loops: a regex anchored at the
+  // end backtracks on long runs such as "++++…" (CodeQL js/polynomial-redos).
+  let start = 0
+  while (start < cleaned.length && !/[\d\-+.,\u2212]/.test(cleaned.charAt(start))) start += 1
+  let end = cleaned.length
+  while (end > start && !/[\d.,]/.test(cleaned.charAt(end - 1))) end -= 1
+  cleaned = cleaned.slice(start, end)
   if (cleaned.startsWith('-') || cleaned.startsWith('\u2212')) {
     negative = !negative
     cleaned = cleaned.slice(1)
