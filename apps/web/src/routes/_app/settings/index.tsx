@@ -5,6 +5,7 @@ import { useBack } from '../../../components/shell/back'
 import { IconTile } from '../../../components/ui/icon-tile'
 import {
   CurrencyCircleDollarIcon,
+  DatabaseIcon,
   FolderSimpleIcon,
   LockSimpleIcon,
   PaletteIcon,
@@ -29,7 +30,7 @@ export const Route = createFileRoute('/_app/settings/')({
 
 // Epic 10: Settings opens with the account, then one row per area: Appearance
 // (SYS-16, SYS-17), Language (SYS-19), Currency (SYS-01), Categories and Tags (Epic 4),
-// Password and security (SEC) and, for the person who runs the server, People (SYS-13,
+// Your data (Epic 9), Password and security (SEC) and, for the person who runs the server, People (SYS-13,
 // SYS-21, SYS-22).
 // Areas such as budget defaults and data join as they are built. Add to Home Screen follows until Mirador runs from there
 // (SYS-20). Lock and Sign out close the list, as in iOS.
@@ -107,6 +108,11 @@ function Settings() {
           to="/settings/tags"
           leading={<IconTile icon={TagIcon} />}
           title={t('tags.title')}
+        />
+        <ListLinkRow
+          to="/settings/data"
+          leading={<IconTile icon={DatabaseIcon} />}
+          title={t('data.title')}
         />
         <ListLinkRow
           to="/settings/security"

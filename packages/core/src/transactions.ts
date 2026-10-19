@@ -48,6 +48,8 @@ export interface TransactionFields {
   /** TXN-10: the recurring transaction that added it, and for which date. */
   recurringId?: string
   occurrence?: string
+  /** IMP-34, IMP-35: the import that added it, so undoing that import removes it. */
+  importBatchId?: string
   createdAt?: string
   updatedAt?: string
 }

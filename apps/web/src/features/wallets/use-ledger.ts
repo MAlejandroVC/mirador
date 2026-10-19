@@ -6,6 +6,12 @@ import {
   type ExchangeRateRecord,
   exchangeRateRecord,
   exchangeRateRecordType,
+  type ImportBatchRecord,
+  importBatchRecord,
+  importBatchRecordType,
+  type ImportProfileRecord,
+  importProfileRecord,
+  importProfileRecordType,
   maxPushChanges,
   payeeRecord,
   payeeRecordType,
@@ -73,6 +79,10 @@ export interface Ledger {
   defaultWalletId: string | null
   preferencesId: string | null
   preferences: PreferencesRecord | null
+  /** IMP-34: the imports, newest first, each of which can be undone (IMP-35). */
+  batches: (ImportBatchRecord & { id: string })[]
+  /** IMP-02, IMP-03: how to read files with columns seen before. */
+  profiles: (ImportProfileRecord & { id: string })[]
 }
 
 async function readLedger(vault: VaultClient): Promise<Ledger> {
@@ -84,6 +94,8 @@ async function readLedger(vault: VaultClient): Promise<Ledger> {
   const tags: Tag[] = []
   const payees: Payee[] = []
   const recurring: Recurring[] = []
+  const batches: Ledger['batches'] = []
+  const profiles: Ledger['profiles'] = []
   let preferences: (PreferencesRecord & { id: string }) | null = null
   for (const { id, body } of await vault.listRecords()) {
     if (body.deleted) continue
@@ -128,6 +140,16 @@ async function readLedger(vault: VaultClient): Promise<Ledger> {
         if (parsed.success) recurring.push({ id, ...parsed.data })
         break
       }
+      case importBatchRecordType: {
+        const parsed = importBatchRecord.safeParse(body.data)
+        if (parsed.success) batches.push({ id, ...parsed.data })
+        break
+      }
+      case importProfileRecordType: {
+        const parsed = importProfileRecord.safeParse(body.data)
+        if (parsed.success) profiles.push({ id, ...parsed.data })
+        break
+      }
       case preferencesRecordType: {
         const parsed = preferencesRecord.safeParse(body.data)
         if (parsed.success) preferences = { id, ...parsed.data }
@@ -153,6 +175,8 @@ async function readLedger(vault: VaultClient): Promise<Ledger> {
     defaultWalletId: preferences?.defaultWalletId ?? null,
     preferencesId: preferences?.id ?? null,
     preferences: preferences && preferencesRecord.parse(preferences),
+    batches: batches.sort((a, b) => b.importedAt.localeCompare(a.importedAt)),
+    profiles,
   }
 }
 

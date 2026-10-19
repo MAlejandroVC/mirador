@@ -1,6 +1,10 @@
 // @vitest-environment node
 import {
   addPasskeyRequest,
+  importBatchRecord,
+  importBatchRecordType,
+  importProfileRecord,
+  importProfileRecordType,
   changePasswordRequest,
   changeUsernameRequest,
   deleteAccountRequest,
@@ -889,5 +893,77 @@ describe('vault', () => {
     expect(await failure(limited.signIn('ana', password))).toBe('too-many-attempts')
     const offline = new Vault(createApi(() => Promise.reject(new TypeError('Failed to fetch'))))
     expect(await failure(offline.signIn('ana', password))).toBe('network')
+  })
+
+  it('IMP-34, IMP-02, IMP-36: an import batch and the columns it remembers reach the server only encrypted', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    await phone.signUp({ username: 'ana', password })
+    const [batchId, walletId] = [newRecordId(), newRecordId()]
+    const fingerprint = 'ab'.repeat(32)
+
+    await phone.saveRecords([
+      {
+        id: batchId,
+        body: recordBody(
+          importBatchRecordType,
+          importBatchRecord.parse({
+            source: 'csv',
+            fileName: 'banorte-octubre.csv',
+            fingerprint,
+            importedAt: '2026-10-19T12:00:00.000Z',
+            rows: 3,
+            imported: 2,
+            skipped: 1,
+            created: [walletId],
+            merged: [],
+            waiting: [{ line: 4, problem: 'amount', text: 'Farmacia Guadalajara;abc' }],
+          }),
+        ),
+      },
+      {
+        id: newRecordId(),
+        body: recordBody(
+          importProfileRecordType,
+          importProfileRecord.parse({
+            headerKey: 'fecha|concepto|importe',
+            columns: ['date', 'note', 'amount'],
+            dateOrder: 'dmy',
+            decimalMark: ',',
+            amountSign: 'negativeIsExpense',
+            walletId,
+          }),
+        ),
+      },
+      {
+        id: newRecordId(),
+        body: transactionBody({
+          ...entryFields(
+            { type: 'expense', amount: 4_520, walletId, date: '2026-10-12', note: 'Oxxo' },
+            'import',
+            '2026-10-19T12:00:00.000Z',
+          ),
+          importBatchId: batchId,
+        }),
+      },
+    ])
+
+    const everything = server.sent.join('\n')
+    for (const plaintext of [
+      'banorte',
+      fingerprint,
+      'Farmacia',
+      'fecha',
+      'concepto',
+      'negativeIsExpense',
+      'importBatch',
+      'importProfile',
+      'Oxxo',
+      '4520',
+      // The batch's own id is a record id, which the server sees; the wallet's is only
+      // referenced inside records.
+      walletId,
+    ])
+      expect(everything).not.toContain(plaintext)
   })
 })

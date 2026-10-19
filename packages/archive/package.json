@@ -11,6 +11,12 @@
     "typecheck": "tsc",
     "test": "vitest run --passWithNoTests"
   },
+  "dependencies": {
+    "@repo/api": "workspace:*",
+    "@repo/core": "workspace:*",
+    "@repo/import": "workspace:*",
+    "zod": "catalog:"
+  },
   "devDependencies": {
     "@repo/config": "workspace:*",
     "typescript": "catalog:",

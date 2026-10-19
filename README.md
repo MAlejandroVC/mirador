@@ -16,16 +16,16 @@ A *mirador* is a lookout: the spot on a trail where you stop and see the whole p
 - **Wallets, net worth and net debt.** Cash, cards, savings, investments and loans in one place, with interest, fees, credit limits and statement balances where they apply.
 - **Transactions**, period by period, sorted and filtered your way, with one category and any number of tags each, plus recurring transactions and purchases paid in installments.
 - **Your own categories.** Category groups, categories and tags you define; every account starts with a complete set you can change, and nothing is hard-coded.
+- **Your data, yours to take.** Download a backup or every transaction as a spreadsheet, restore a backup, and import any CSV from a bank, another app or a spreadsheet. Every import can be undone on its own.
 - **Made to feel at home on your phone**, in English or Spanish, with eight palettes in light and dark, and installable on the Home Screen.
 
 ## What comes next
 
-- **Statement and image import.** Upload a CSV, PDF, screenshot or a photo of a ticket; the app extracts the transactions on your own server and only asks about the rows it is unsure of.
+- **Statement and image import.** Upload a PDF, screenshot or a photo of a ticket; the app extracts the transactions on your own server and only asks about the rows it is unsure of.
 - **Spending analysis** that answers where, when and why the money goes, and where cutting back would be easiest.
 - **A habit-driven, goal-oriented budget.** It starts from your real typical month, adds your goals, and closes the gap with cuts no deeper than levels you have already reached.
 - **A dashboard** that tells you in one glance whether you are on track this period.
 - **Quick add** on every screen, that also works offline and syncs later.
-- **Full export and import** in documented, open formats.
 
 ## Principles
 
@@ -49,6 +49,7 @@ To run your own, follow [docs/self-hosting.md](docs/self-hosting.md).
 | [Design language](docs/design-language.md) | How it looks, behaves and writes: every rule, with its ID |
 | [Self-hosting](docs/self-hosting.md) | Running the Docker image with PostgreSQL and HTTPS, and keeping it updated |
 | [What the server sees](docs/what-the-server-sees.md) | Everything the server stores about its users, and what it can never read |
+| [Backup file](docs/archive-format.md) and [CSV import](docs/importing-csv.md) | The backup's format, and the columns a CSV import understands |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How we work: setup, layout, code rules, issues, branches, commits, tests, releases |
 | [docs/](docs/) | Everything else, including architecture decision records |
 
