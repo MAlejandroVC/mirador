@@ -257,6 +257,9 @@ importers:
       '@repo/api':
         specifier: workspace:*
         version: link:../../packages/api
+      '@repo/archive':
+        specifier: workspace:*
+        version: link:../../packages/archive
       '@repo/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -266,6 +269,9 @@ importers:
       '@repo/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@repo/import':
+        specifier: workspace:*
+        version: link:../../packages/import
       '@repo/sync':
         specifier: workspace:*
         version: link:../../packages/sync
@@ -351,6 +357,19 @@ importers:
         version: 5.0.3(@types/node@24.19.1)(jsdom@30.1.2(@noble/hashes@2.4.0))(vite@8.3.3(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
 
   packages/archive:
+    dependencies:
+      '@repo/api':
+        specifier: workspace:*
+        version: link:../api
+      '@repo/core':
+        specifier: workspace:*
+        version: link:../core
+      '@repo/import':
+        specifier: workspace:*
+        version: link:../import
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.5
     devDependencies:
       '@repo/config':
         specifier: workspace:*
@@ -436,6 +455,13 @@ importers:
         version: 5.0.3(@types/node@24.19.1)(jsdom@30.1.2(@noble/hashes@2.4.0))(vite@8.3.3(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
 
   packages/import:
+    dependencies:
+      '@repo/api':
+        specifier: workspace:*
+        version: link:../api
+      '@repo/core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       '@repo/config':
         specifier: workspace:*

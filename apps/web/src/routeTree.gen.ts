@@ -22,6 +22,7 @@ import { Route as AppSettingsAccountRouteImport } from './routes/_app/settings/a
 import { Route as AppSettingsAppearanceRouteImport } from './routes/_app/settings/appearance'
 import { Route as AppSettingsCategoriesRouteImport } from './routes/_app/settings/categories'
 import { Route as AppSettingsCurrencyRouteImport } from './routes/_app/settings/currency'
+import { Route as AppSettingsDataRouteImport } from './routes/_app/settings/data'
 import { Route as AppSettingsLanguageRouteImport } from './routes/_app/settings/language'
 import { Route as AppSettingsPeopleRouteImport } from './routes/_app/settings/people'
 import { Route as AppSettingsSecurityRouteImport } from './routes/_app/settings/security'
@@ -96,6 +97,11 @@ const AppSettingsCurrencyRoute = AppSettingsCurrencyRouteImport.update({
   path: '/settings/currency',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsDataRoute = AppSettingsDataRouteImport.update({
+  id: '/settings/data',
+  path: '/settings/data',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsLanguageRoute = AppSettingsLanguageRouteImport.update({
   id: '/settings/language',
   path: '/settings/language',
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/settings/appearance': typeof AppSettingsAppearanceRoute
   '/settings/categories': typeof AppSettingsCategoriesRoute
   '/settings/currency': typeof AppSettingsCurrencyRoute
+  '/settings/data': typeof AppSettingsDataRoute
   '/settings/language': typeof AppSettingsLanguageRoute
   '/settings/people': typeof AppSettingsPeopleRoute
   '/settings/security': typeof AppSettingsSecurityRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/settings/appearance': typeof AppSettingsAppearanceRoute
   '/settings/categories': typeof AppSettingsCategoriesRoute
   '/settings/currency': typeof AppSettingsCurrencyRoute
+  '/settings/data': typeof AppSettingsDataRoute
   '/settings/language': typeof AppSettingsLanguageRoute
   '/settings/people': typeof AppSettingsPeopleRoute
   '/settings/security': typeof AppSettingsSecurityRoute
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   '/_app/settings/appearance': typeof AppSettingsAppearanceRoute
   '/_app/settings/categories': typeof AppSettingsCategoriesRoute
   '/_app/settings/currency': typeof AppSettingsCurrencyRoute
+  '/_app/settings/data': typeof AppSettingsDataRoute
   '/_app/settings/language': typeof AppSettingsLanguageRoute
   '/_app/settings/people': typeof AppSettingsPeopleRoute
   '/_app/settings/security': typeof AppSettingsSecurityRoute
@@ -229,6 +238,7 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/categories'
     | '/settings/currency'
+    | '/settings/data'
     | '/settings/language'
     | '/settings/people'
     | '/settings/security'
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/categories'
     | '/settings/currency'
+    | '/settings/data'
     | '/settings/language'
     | '/settings/people'
     | '/settings/security'
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/_app/settings/appearance'
     | '/_app/settings/categories'
     | '/_app/settings/currency'
+    | '/_app/settings/data'
     | '/_app/settings/language'
     | '/_app/settings/people'
     | '/_app/settings/security'
@@ -390,6 +402,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsCurrencyRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings/data': {
+      id: '/_app/settings/data'
+      path: '/settings/data'
+      fullPath: '/settings/data'
+      preLoaderRoute: typeof AppSettingsDataRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings/language': {
       id: '/_app/settings/language'
       path: '/settings/language'
@@ -463,6 +482,7 @@ interface AppRouteChildren {
   AppSettingsAppearanceRoute: typeof AppSettingsAppearanceRoute
   AppSettingsCategoriesRoute: typeof AppSettingsCategoriesRoute
   AppSettingsCurrencyRoute: typeof AppSettingsCurrencyRoute
+  AppSettingsDataRoute: typeof AppSettingsDataRoute
   AppSettingsLanguageRoute: typeof AppSettingsLanguageRoute
   AppSettingsPeopleRoute: typeof AppSettingsPeopleRoute
   AppSettingsSecurityRoute: typeof AppSettingsSecurityRoute
@@ -482,6 +502,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsAppearanceRoute: AppSettingsAppearanceRoute,
   AppSettingsCategoriesRoute: AppSettingsCategoriesRoute,
   AppSettingsCurrencyRoute: AppSettingsCurrencyRoute,
+  AppSettingsDataRoute: AppSettingsDataRoute,
   AppSettingsLanguageRoute: AppSettingsLanguageRoute,
   AppSettingsPeopleRoute: AppSettingsPeopleRoute,
   AppSettingsSecurityRoute: AppSettingsSecurityRoute,

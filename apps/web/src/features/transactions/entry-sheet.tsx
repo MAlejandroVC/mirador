@@ -1,4 +1,6 @@
 import {
+  importBatchRecord,
+  importBatchRecordType,
   payeeRecord,
   payeeRecordType,
   recurringRecord,
@@ -91,6 +93,8 @@ export type EntryMode =
       source: TransactionSource
       seed?: Partial<EntryDraft>
       repeat?: Repeat
+      /** IMP-33: a row an import left for later, added by hand into that import. */
+      fromImport?: { batchId: string; line: number }
     }
   | { kind: 'edit'; transaction: Transaction & { kind: EntryType } }
   | { kind: 'series'; recurring: Recurring }
@@ -602,11 +606,25 @@ function EntryForm({
                       occurrence: mode.transaction.occurrence,
                     }
                   : {}),
+                // IMP-35: still part of its import, so undoing that import removes it.
+                ...(mode.transaction.importBatchId !== undefined
+                  ? { importBatchId: mode.transaction.importBatchId }
+                  : {}),
               }
             : entryFields(entry, mode.kind === 'new' ? mode.source : 'manual', now)
+        const fromImport = mode.kind === 'new' ? mode.fromImport : undefined
+        const batch = fromImport && ledger.batches.find((item) => item.id === fromImport.batchId)
         changes = [
           ...extras(fields),
-          { id, body: transactionBody(transactionRecord.parse(fields)) },
+          {
+            id,
+            body: transactionBody(
+              transactionRecord.parse(batch ? { ...fields, importBatchId: batch.id } : fields),
+            ),
+          },
+          // IMP-33, IMP-35: the row is no longer waiting, and undoing the import
+          // removes it with the rest.
+          ...(fromImport && batch ? [fixedRow(batch, fromImport.line)] : []),
         ]
       }
       save.mutate(changes, {
@@ -1013,7 +1031,7 @@ function EntryForm({
             >
               {t('recurring.skip')}
             </Button>
-          ) : mode.kind === 'new' && !repeating ? (
+          ) : mode.kind === 'new' && !repeating && !mode.fromImport ? (
             // DL-CMP-05: a tinted second action beside the main one.
             <Button
               variant="secondary"
@@ -1162,4 +1180,23 @@ function EntryForm({
       />
     </>
   )
+}
+
+/** An import batch with one row it left for later now added. */
+function fixedRow(batch: Ledger['batches'][number], line: number): RecordChange {
+  const { id, ...data } = batch
+  const waiting = data.waiting.filter((row) => row.line !== line)
+  const added = data.waiting.length - waiting.length
+  return {
+    id,
+    body: recordBody(
+      importBatchRecordType,
+      importBatchRecord.parse({
+        ...data,
+        waiting,
+        imported: data.imported + added,
+        skipped: Math.max(0, data.skipped - added),
+      }),
+    ),
+  }
 }

@@ -1,5 +1,5 @@
 import { type ReactNode, useId, useState } from 'react'
-import { CheckIcon, XIcon } from './icons'
+import { CaretLeftIcon, CheckIcon, XIcon } from './icons'
 import { roundButton, SheetActionSlot } from './sheet-action'
 import { useModal } from './use-modal'
 import { useSwipeDown } from './use-swipe-down'
@@ -17,6 +17,8 @@ export function Sheet(props: {
   cancelLabel?: string
   /** A check at the top right that only closes, for a settings-like sheet; its name. */
   doneLabel?: string
+  /** A step past the first of a sheet in steps: a round back chevron replaces the X. */
+  back?: { label: string; onClick: () => void }
   onClose: () => void
   children: ReactNode
 }) {
@@ -53,7 +55,16 @@ export function Sheet(props: {
         <div data-sheet-bar className="sticky top-0 z-10 flex flex-col bg-surface">
           <span aria-hidden className="mx-auto mt-1.5 h-[5px] w-9 rounded-full bg-fill md:hidden" />
           <header className="grid grid-cols-[2.75rem_1fr_2.75rem] items-center gap-2 px-3 pt-1.5 pb-1 md:pt-3">
-            {shown?.cancelLabel ? (
+            {shown?.back ? (
+              <button
+                type="button"
+                aria-label={shown.back.label}
+                onClick={shown.back.onClick}
+                className={`${roundButton} bg-fill text-text`}
+              >
+                <CaretLeftIcon aria-hidden weight="bold" className="size-5" />
+              </button>
+            ) : shown?.cancelLabel ? (
               <button
                 type="button"
                 aria-label={shown.cancelLabel}
