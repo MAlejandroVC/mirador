@@ -606,6 +606,10 @@ function EntryForm({
                       occurrence: mode.transaction.occurrence,
                     }
                   : {}),
+                // IMP-35: still part of its import, so undoing that import removes it.
+                ...(mode.transaction.importBatchId !== undefined
+                  ? { importBatchId: mode.transaction.importBatchId }
+                  : {}),
               }
             : entryFields(entry, mode.kind === 'new' ? mode.source : 'manual', now)
         const fromImport = mode.kind === 'new' ? mode.fromImport : undefined
