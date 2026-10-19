@@ -38,7 +38,7 @@ function Settings() {
   const { t } = useTranslation()
   const vault = useVault()
   const navigate = useNavigate()
-  const back = useBack(t('nav.back'), { to: '/' })
+  const back = useBack()
   const queryClient = useQueryClient()
   const { data: session } = useSuspenseQuery(sessionQuery)
   const picture = useProfilePicture()
@@ -67,8 +67,9 @@ function Settings() {
   return (
     <Page
       title={t('nav.settings')}
-      // DL-CMP-06: back to wherever Settings was opened from, or Home after a reload.
-      back={{ ...back, hideWithSidebar: true }}
+      // DL-CMP-06: back to wherever Settings was opened from. With the sidebar showing,
+      // Settings is a place of its own, so it has none.
+      back={back && { ...back, hideWithSidebar: true }}
     >
       <List>
         <ListLinkRow

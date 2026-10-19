@@ -52,7 +52,7 @@ function selectFor(by: SliceBy, id: string) {
 export function SliceScreen({ by, id }: { by: string; id: string }) {
   const { t } = useTranslation()
   const analysis = useAnalysis()
-  const back = useBack(t('nav.budget'), { to: '/budget' })
+  const back = useBack()
   if (!analysis) return <Page title="" back={back} />
   if (!slices.includes(by)) return <Page title={t('analysis.unknown')} back={back} />
   return <Slice analysis={analysis} by={by as SliceBy} id={id} back={back} />

@@ -26,6 +26,7 @@ export function TabBar() {
             <Link
               key={to}
               to={to}
+              state={{ root: true }}
               aria-current={current ? 'page' : undefined}
               onClick={current ? scrollToTop : undefined}
               // DL-A11Y-05: each tab is a full-height target, well over 44 px.

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSettingsBack } from '../../../components/shell/settings-back'
+import { useBack } from '../../../components/shell/back'
 import { ChoiceRow } from '../../../components/ui/choice-row'
 import { IconTile } from '../../../components/ui/icon-tile'
 import { TranslateIcon } from '../../../components/ui/icons'
@@ -25,7 +25,7 @@ export const Route = createFileRoute('/_app/settings/language')({
 // choice takes effect at once, so there is no Save (DL-CMP-10).
 function Language() {
   const { t, i18n } = useTranslation()
-  const back = useSettingsBack()
+  const back = useBack()
   const [choice, setChoice] = useState(readLanguageChoice)
 
   function choose(next: LanguageChoice) {

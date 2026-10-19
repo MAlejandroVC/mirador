@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { useTranslation } from 'react-i18next'
 import { useBack } from '../../components/shell/back'
 import { IconTile } from '../../components/ui/icon-tile'
 import type { Icon } from '../../components/ui/icons'
@@ -24,9 +23,8 @@ export function DetailPage({
   leading?: ReactNode
   children: (analysis: Analysis) => ReactNode
 }) {
-  const { t } = useTranslation()
   const analysis = useAnalysis()
-  const back = useBack(t('nav.budget'), { to: '/budget' })
+  const back = useBack()
   return (
     <Page
       title={title}

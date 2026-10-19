@@ -24,7 +24,7 @@ import { PickerRow } from '../../../components/ui/picker-row'
 import { Sheet } from '../../../components/ui/sheet'
 import { SubmitButton } from '../../../components/ui/submit-button'
 import { useSubmit } from '../../../components/ui/use-submit'
-import { useSettingsBack } from '../../../components/shell/settings-back'
+import { useBack } from '../../../components/shell/back'
 import { api } from '../../../lib/api'
 import { ProfilePicture } from '../../profile'
 import { endOfDay, inviteLink, invitesQuery, peopleQuery } from '../hooks/people'
@@ -45,7 +45,7 @@ function useDate() {
 // (NFR-05), so the operator shares each link.
 export function PeopleScreen() {
   const { t } = useTranslation()
-  const settingsBack = useSettingsBack()
+  const settingsBack = useBack()
 
   return (
     <Page

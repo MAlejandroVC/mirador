@@ -59,6 +59,7 @@ function SidebarLink({
   return (
     <Link
       to={to}
+      state={{ root: true }}
       aria-current={current ? 'page' : undefined}
       onClick={current ? scrollToTop : undefined}
       // Selected as in iPadOS: a tinted row with the brand color (DL-COL-03).

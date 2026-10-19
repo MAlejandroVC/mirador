@@ -48,6 +48,7 @@ import { FilterSheet } from './filter-sheet'
 import { SortSheet } from './sort-sheet'
 import { TransactionRow } from './transaction-row'
 import { useTransactionEditor } from './use-transaction-editor'
+import { useBack } from '../../components/shell/back'
 
 /** ANA-04: what a chart in Budget opens the list on: a period and one thing to filter by. */
 export interface TransactionsSearch {
@@ -90,6 +91,8 @@ const scopes: readonly PeriodScope[] = ['week', 'month', 'quarter', 'year']
 // The arrows go on into months to come, to see what is scheduled there.
 export function TransactionsScreen({ search = {} }: { search?: TransactionsSearch }) {
   const { t } = useTranslation()
+  // DL-CMP-06: opened from another screen, a tab's page can pop back to it too.
+  const back = useBack()
   const { data: ledger } = useLedger()
   const quickAdd = useQuickAdd()
   const editor = useTransactionEditor()
@@ -126,7 +129,7 @@ export function TransactionsScreen({ search = {} }: { search?: TransactionsSearc
     </>
   )
 
-  if (!ledger) return <Page title={t('nav.transactions')} actions={<AccountButton />} />
+  if (!ledger) return <Page title={t('nav.transactions')} back={back} actions={<AccountButton />} />
 
   const wallets = new Map(ledger.wallets.map((wallet) => [wallet.id, wallet]))
   const currencies = new Map(ledger.wallets.map((wallet) => [wallet.id, wallet.currency]))
@@ -142,7 +145,7 @@ export function TransactionsScreen({ search = {} }: { search?: TransactionsSearc
 
   if (all.length === 0 && recurrings.length === 0)
     return (
-      <Page title={t('nav.transactions')} actions={<AccountButton />}>
+      <Page title={t('nav.transactions')} back={back} actions={<AccountButton />}>
         {/* DL-CMP-14, DL-VOC-02: a touch of whimsy where nothing is there yet. */}
         <EmptyState
           icon={ReceiptIcon}
@@ -255,7 +258,7 @@ export function TransactionsScreen({ search = {} }: { search?: TransactionsSearc
   }
 
   return (
-    <Page title={t('nav.transactions')} actions={actions}>
+    <Page title={t('nav.transactions')} back={back} actions={actions}>
       {/* TXN-22: the period, with the ones before and after. */}
       <div className="flex items-center gap-1 rounded-2xl bg-surface p-1">
         <button

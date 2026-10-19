@@ -15,6 +15,7 @@ import { PeriodHeader } from './period-header'
 import { SpendingView } from './spending-view'
 import { type Analysis, useAnalysis } from './use-analysis'
 import { useWords } from './use-words'
+import { useBack } from '../../components/shell/back'
 
 // Epic 5 and Epic 6 share the Budget tab, as two sides of one coin: Plan, the budget
 // and its goals (BUD, still to come), and Spending, what the money did (ANA). A
@@ -22,6 +23,8 @@ import { useWords } from './use-words'
 // address so going back returns to the same side.
 export function BudgetScreen({ view }: { view: 'plan' | 'spending' }) {
   const { t } = useTranslation()
+  // DL-CMP-06: opened from another screen, a tab's page can pop back to it too.
+  const back = useBack()
   const navigate = useNavigate()
   const analysis = useAnalysis()
   const [filtering, setFiltering] = useState(false)
@@ -44,7 +47,7 @@ export function BudgetScreen({ view }: { view: 'plan' | 'spending' }) {
   )
 
   return (
-    <Page title={t('nav.budget')} actions={actions}>
+    <Page title={t('nav.budget')} back={back} actions={actions}>
       <SegmentedControl
         label={t('analysis.sides.label')}
         options={[

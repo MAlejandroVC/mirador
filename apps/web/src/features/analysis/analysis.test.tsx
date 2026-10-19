@@ -176,6 +176,12 @@ describe('spending analysis', () => {
     await user.click(screen.getByRole('link', { name: 'See transactions' }))
     expect(await screen.findByRole('button', { name: 'Filter, 1 on' })).toBeVisible()
     expect(screen.getByText('2 transactions')).toBeVisible()
+    // DL-CMP-06: Transactions was pushed from the group, so back pops to it, then Budget.
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(await screen.findByRole('heading', { name: 'Everyday', level: 1 })).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(await screen.findByText('Spent so far')).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull()
   })
 
   it('ANA-31, ANA-32: Flexible categories ranked by what a step saves, never below a month already lived', async () => {

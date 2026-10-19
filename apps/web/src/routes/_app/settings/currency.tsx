@@ -2,7 +2,7 @@ import { currencyName, rateInUse, toCalendarDate, unitsPerOne } from '@repo/core
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSettingsBack } from '../../../components/shell/settings-back'
+import { useBack } from '../../../components/shell/back'
 import { IconTile } from '../../../components/ui/icon-tile'
 import { CurrencyCircleDollarIcon } from '../../../components/ui/icons'
 import { List, ListButtonRow } from '../../../components/ui/list'
@@ -27,7 +27,7 @@ export const Route = createFileRoute('/_app/settings/currency')({
 function Currency() {
   const { t } = useTranslation()
   const locale = useLocale()
-  const back = useSettingsBack()
+  const back = useBack()
   const { data: ledger } = useLedger()
   const save = useSaveRecords()
   const [rateFor, setRateFor] = useState<string | null>(null)

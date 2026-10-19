@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { useSettingsBack } from '../../../components/shell/settings-back'
+import { useBack } from '../../../components/shell/back'
 import { Page } from '../../../components/ui/page'
 import {
   PicturePicker,
@@ -20,7 +20,7 @@ export const Route = createFileRoute('/_app/settings/account')({
 // and deleting the account (SYS-06).
 function Account() {
   const { t } = useTranslation()
-  const back = useSettingsBack()
+  const back = useBack()
   const { data: session } = useSuspenseQuery(sessionQuery)
   const username = session?.user.username ?? ''
   const picture = useProfilePicture()
