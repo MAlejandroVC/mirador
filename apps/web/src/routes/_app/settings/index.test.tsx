@@ -133,14 +133,15 @@ describe('settings', () => {
     const user = userEvent.setup()
     const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
-    const { router } = renderApp('/settings/appearance', unlockedVault(server))
+    const { router } = renderApp('/settings', unlockedVault(server))
 
+    await user.click(await screen.findByRole('link', { name: /^Appearance/ }))
     const title = await screen.findByRole('heading', { name: 'Appearance', level: 1 })
     expect(title.closest('header')).toHaveTextContent(
       "Choose light or dark and the app's colors on this device.",
     )
-    const back = screen.getByRole('button', { name: 'Settings' })
-    expect(back).not.toHaveTextContent('Settings')
+    const back = screen.getByRole('button', { name: 'Back' })
+    expect(back).not.toHaveTextContent('Back')
     await user.click(back)
     expect(router.state.location.pathname).toBe('/settings')
   })

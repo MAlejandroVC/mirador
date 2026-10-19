@@ -829,11 +829,14 @@
     "showArchived_other": "Show {{count}} archived",
     "hideArchived": "Hide archived",
     "flexibility": {
-      "locked": "Locked",
-      "fixed": "Fixed",
-      "flexible": "Flexible",
-      "lockedHint": "Can’t change month to month, like rent or insurance. The budget never suggests cutting it.",
-      "fixedHint": "Needed, but the amount moves a little, like groceries or electricity. The budget keeps it steady.",
+      "locked": "Commitment",
+      "fixed": "Need",
+      "flexible": "Want",
+      "lockedPlural": "Commitments",
+      "fixedPlural": "Needs",
+      "flexiblePlural": "Wants",
+      "lockedHint": "A bill you’ve signed up for, like rent or insurance. The budget never suggests cutting it.",
+      "fixedHint": "Something you need, though the amount moves a little, like groceries or electricity. The budget keeps it steady.",
       "flexibleHint": "Up to you, like eating out or hobbies. This is where the budget looks for room to save."
     },
     "icons": {
@@ -958,7 +961,7 @@
       "group": "Category group",
       "groupMissing": "Pick the category group it belongs to.",
       "kind": "Used for",
-      "flexibility": "In the budget",
+      "flexibility": "Counts as",
       "icon": "Icon",
       "colorHint": "It takes its category group’s color.",
       "description": "Description",
@@ -993,6 +996,28 @@
       "delete": "Delete category group",
       "deleteHint": "Move or delete its categories first; a category group can only be deleted when it’s empty.",
       "discard": "Your changes to this category group won’t be saved."
+    },
+    "refund": {
+      "action": "A refund for something you bought",
+      "hint": "Pick what was refunded. It counts as less spending there, not as income.",
+      "back": "Income categories",
+      "in": "Refund for {{group}}",
+      "for": "Refund for {{name}}"
+    },
+    "types": {
+      "title": "Needs and wants",
+      "description": "What the budget may suggest cutting. Tap a category to move it.",
+      "now": {
+        "locked": "It counts as a commitment.",
+        "fixed": "It counts as a need.",
+        "flexible": "It counts as a want."
+      },
+      "moveTo": {
+        "locked": "Move to Commitments",
+        "fixed": "Move to Needs",
+        "flexible": "Move to Wants"
+      },
+      "none": "No categories here yet."
     }
   },
   "tags": {
@@ -1072,7 +1097,9 @@
       "import": "Import",
       "recurring": "Recurring"
     },
-    "clear": "Clear filters"
+    "clear": "Clear filters",
+    "countExcluded": "Count what's left out of the budget",
+    "countExcludedHint": "Transactions you left out of the budget, like a one-off, don't count in spending unless this is on."
   },
   "recurring": {
     "title": "Recurring",
@@ -1455,6 +1482,259 @@
       "label": "Type “{{username}}” to confirm",
       "done": "Everything was erased.",
       "failed": "Not everything was erased. Check your connection and try again."
+    }
+  },
+  "analysis": {
+    "sides": {
+      "label": "Budget view",
+      "plan": "Plan",
+      "spending": "Spending"
+    },
+    "empty": {
+      "title": "Nothing to look back on yet",
+      "body": "Once you record what you spend, this shows where the money goes, how this month compares with a usual one and what drives it."
+    },
+    "unknown": "Unknown",
+    "hero": {
+      "spentSoFar": "Spent so far",
+      "spentIn": "Spent in {{period}}",
+      "noHistory": "Your usual period shows once there's a full one to compare with.",
+      "same": "About the same as a usual period",
+      "sameSoFar": "About the same as usual by {{date}}",
+      "less": "{{amount}} less than a usual period",
+      "more": "{{amount}} more than a usual period",
+      "lessSoFar": "{{amount}} less than usual by {{date}}",
+      "moreSoFar": "{{amount}} more than usual by {{date}}"
+    },
+    "totals": {
+      "income": "Income",
+      "leftOver": "Left over",
+      "savingsRate": "Saved",
+      "spent": "Spending"
+    },
+    "pace": {
+      "title": "Pace",
+      "usual": "Usual",
+      "label": "Spent so far, {{spent}}, against a usual period, {{usual}}."
+    },
+    "changed": {
+      "title": "What changed?",
+      "description": "Each category against a usual month, and whether it’s from buying more often or paying more each time.",
+      "above": "Above usual",
+      "below": "Below usual",
+      "less": "{{amount}} below usual.",
+      "none": "Nothing has changed from a usual month yet.",
+      "moreOften_one": "{{amount}} above usual: one more purchase at about the same price.",
+      "moreOften_other": "{{amount}} above usual: {{count}} more purchases at about the same price.",
+      "pricier": "{{amount}} above usual: about as many purchases, each costing more.",
+      "both": "{{amount}} above usual: more purchases, and each costing more.",
+      "lessOften_one": "{{amount}} below usual: one purchase fewer.",
+      "lessOften_other": "{{amount}} below usual: {{count}} fewer purchases."
+    },
+    "usual": {
+      "same": "same as usual",
+      "above": "{{percent}} above usual",
+      "below": "{{percent}} below usual"
+    },
+    "compare": {
+      "same": "about the same as this period",
+      "above": "this period is {{percent}} more",
+      "below": "this period is {{percent}} less"
+    },
+    "where": {
+      "title": "Where it went",
+      "all": "See everything",
+      "screenTitle": "Where does it go?",
+      "description": "What the money went to, who got it and which wallets it came from.",
+      "splitLabel": "Split by",
+      "by": {
+        "group": "Groups",
+        "category": "Categories",
+        "tag": "Tags",
+        "payee": "By payee",
+        "wallet": "By wallet"
+      },
+      "open": {
+        "payee": "Who you pay",
+        "wallet": "Which wallets pay"
+      },
+      "none": "Nothing spent in this period.",
+      "ticket_one": "1 purchase",
+      "ticket_other": "{{count}} purchases, {{average}} each",
+      "tagsHint": "A transaction with two tags counts under both, so the shares can add up to more than 100%.",
+      "presets": "By wallet type"
+    },
+    "flexibility": {
+      "title": "Commitments, needs and wants",
+      "edit": "Choose what’s a need or a want"
+    },
+    "tiles": {
+      "title": "Dig deeper",
+      "notYet": "Needs a little more history",
+      "when": {
+        "question": "When do I spend?",
+        "detail": "{{times}}× an average day"
+      },
+      "coming": {
+        "question": "What's coming?",
+        "detail": "already committed for {{month}}"
+      },
+      "cut": {
+        "question": "What can I cut?",
+        "detail_one": "a month, in a category you've spent less on before",
+        "detail_other": "a month, in {{count}} categories you've spent less on before"
+      },
+      "trends": {
+        "question": "Where is this going?",
+        "detail": "net worth in a year, at your usual pace",
+        "now": "net worth today"
+      }
+    },
+    "weekdaysPlural": {
+      "0": "Sundays",
+      "1": "Mondays",
+      "2": "Tuesdays",
+      "3": "Wednesdays",
+      "4": "Thursdays",
+      "5": "Fridays",
+      "6": "Saturdays"
+    },
+    "when": {
+      "title": "When do I spend?",
+      "description": "The days and weeks that cost the most, what comes along together and the small purchases that add up.",
+      "calendar": "Day by day",
+      "day": "{{date}}: {{amount}}",
+      "span": "{{from}} – {{to}}",
+      "weekdays": "Days of the week",
+      "weekdayValue": "{{day}}: {{amount}} on average",
+      "weekdaySentence": "{{day}} cost the most: {{amount}} on average.",
+      "weeks": "Weeks of the month",
+      "week": "Week {{number}}",
+      "weekValue": "Week {{number}}: {{amount}} on average",
+      "payday": "In the 3 days from payday you spend {{after}} a day, against {{other}} on other days.",
+      "tags": "Days with a tag",
+      "tagDay": "{{with}} a day with it, {{without}} without.",
+      "tagMostly": "Mostly {{category}}.",
+      "pairs": "Often on the same day",
+      "pair": "{{second}} with {{first}}",
+      "pairDetail": "Together on {{together}} of {{days}} days, usually {{amount}}",
+      "small": "Small purchases",
+      "smallSentence_one": "1 purchase under {{below}} added up to {{total}}.",
+      "smallSentence_other": "{{count}} purchases under {{below}} added up to {{total}}.",
+      "smallMore": "That's more than all of {{group}}, at {{amount}}."
+    },
+    "coming": {
+      "title": "What's coming?",
+      "description": "Installments and recurring payments already set for the coming months, and the charges that keep coming back.",
+      "monthValue": "{{month}}: {{amount}} committed",
+      "hint": "Tap a month to see what's in it.",
+      "none": "Nothing committed for this month yet.",
+      "installment": "Installment",
+      "recurring": "Recurring",
+      "repeats": "Charges that repeat",
+      "noRepeats": "Nothing repeats yet. A charge shows here once it has come back at least 3 times.",
+      "every": {
+        "day_one": "{{amount}} about every day",
+        "day_other": "{{amount}} about every {{count}} days",
+        "week_one": "{{amount}} a week",
+        "week_other": "{{amount}} every {{count}} weeks",
+        "month_one": "{{amount}} a month",
+        "month_other": "{{amount}} every {{count}} months",
+        "year_one": "{{amount}} a year",
+        "year_other": "{{amount}} every {{count}} years"
+      },
+      "notScheduled": "not in Recurring",
+      "perYear": "a year",
+      "repeatsHint": "Found in your own transactions: the same payee or note, a similar amount and a regular gap."
+    },
+    "cut": {
+      "title": "What can I cut?",
+      "description": "Wants, ranked by how much one small step could save.",
+      "none": "Nothing to suggest yet. A want shows here once it has a few months of history, with a lower month among them.",
+      "total_one": "One step in it saves {{amount}} a month, {{year}} a year.",
+      "total_other": "One step in each saves {{amount}} a month, {{year}} a year.",
+      "numbers": "Usually {{usual}}, lowest {{lowest}}",
+      "growing": "up {{percent}} lately",
+      "shrinking": "down {{percent}} lately",
+      "perMonth": "a month",
+      "rule": "A step is at most 15% of a usual month and never below your lowest of the last 6, so it's something you've already done.",
+      "seasons": "Months that cost more",
+      "seasonsLater": "After 13 months of history, the months of the year that cost more show here.",
+      "noSeasons": "No month of the year stands out.",
+      "seasonDetail_one": "{{amount}} above a usual month, seen in 1 year",
+      "seasonDetail_other": "{{amount}} above a usual month, over {{count}} years",
+      "setAside": "Setting aside {{amount}} a month covers them."
+    },
+    "trends": {
+      "title": "Where is this going?",
+      "description": "Month by month: spending, income and where your net worth is heading.",
+      "spending": "Spending by month",
+      "monthValue": "{{month}}: {{amount}}",
+      "average": "On average {{amount}} a month.",
+      "creep": "Income and spending",
+      "creepLabel": "Income and spending over the last 12 months",
+      "creepLater": "After 2 years of history, this compares the last 12 months with the 12 before.",
+      "creepSentence": "In the last 12 months, spending went {{spentWay}} {{spent}} and income went {{incomeWay}} {{income}}, against the 12 before.",
+      "up": "up",
+      "down": "down",
+      "netWorth": "Net worth",
+      "netWorthLabel": "Net worth over the last 12 months and where it heads in the next 24",
+      "projection": "At your usual {{leftOver}} left over a month, about {{amount}} in 2 years.",
+      "projectionLater": "Where it's heading shows after a full month of history.",
+      "target": "Net worth to reach",
+      "targetHint": "Type an amount to see when you'd reach it.",
+      "reachedIn_one": "In 1 month, around {{month}}.",
+      "reachedIn_other": "In {{count}} months, around {{month}}.",
+      "never": "At your usual pace net worth isn't growing, so it wouldn't get there.",
+      "already": "You're already there.",
+      "sources": "Where income comes from",
+      "steady": "Steady",
+      "variesLittle": "Varies a little",
+      "variesLot": "Varies a lot",
+      "perMonth": "a month"
+    },
+    "slice": {
+      "kinds": {
+        "group": "Category group",
+        "category": "Category in {{group}}",
+        "tag": "Tag",
+        "payee": "Payee",
+        "wallet": "Wallet"
+      },
+      "usual": "Usually {{amount}}",
+      "compare": "Compared with",
+      "previous": {
+        "week": "Last week",
+        "month": "Last month",
+        "quarter": "Last quarter",
+        "year": "Last year"
+      },
+      "average": {
+        "week": "{{count}}-week average",
+        "month": "{{count}}-month average",
+        "quarter": "{{count}}-quarter average",
+        "year": "{{count}}-year average"
+      },
+      "sameDays": "While this period runs, each one counts only its days up to {{date}}.",
+      "history": {
+        "week": "Last 12 weeks",
+        "month": "Last 12 months",
+        "quarter": "Last 12 quarters",
+        "year": "Last 12 years"
+      },
+      "purchaseCount_one": "1 purchase",
+      "purchaseCount_other": "{{count}} purchases",
+      "purchases": "Purchases",
+      "count": "Number of purchases",
+      "ticket": "Average purchase",
+      "splitUp": "{{amount}} above a usual period: {{frequency}} from buying more often and {{price}} from paying more each time.",
+      "splitDown": "{{amount}} below a usual period: {{frequency}} from buying less often and {{price}} from paying less each time.",
+      "categories": "Categories",
+      "payees": "Top payees",
+      "savings": "If you spent less",
+      "less": "{{percent}}% less",
+      "perYear": "{{amount}} a year",
+      "transactions": "See transactions"
     }
   }
 }

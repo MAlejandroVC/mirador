@@ -25,7 +25,7 @@ export function RecurringScreen() {
   const [adding, setAdding] = useState(false)
   const money = useMoney(ledger?.defaultCurrency ?? 'USD')
   const today = toCalendarDate(new Date())
-  const back = useBack(t('nav.transactions'), { to: '/transactions' })
+  const back = useBack()
   if (!ledger) return <Page title={t('recurring.title')} back={back} />
 
   const wallets = new Map(ledger.wallets.map((wallet) => [wallet.id, wallet]))

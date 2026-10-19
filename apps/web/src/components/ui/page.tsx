@@ -17,7 +17,7 @@ export function Page({
   children,
 }: {
   title: string
-  back?: { label: string; onClick: () => void; hideWithSidebar?: boolean }
+  back?: { label: string; onClick: () => void; hideWithSidebar?: boolean } | undefined
   actions?: ReactNode
   card?: { icon: ReactNode; description: string }
   children?: ReactNode

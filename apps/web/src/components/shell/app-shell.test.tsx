@@ -70,7 +70,8 @@ describe('app shell', () => {
     stubServer(server)
     renderApp('/budget', unlockedVault(server))
 
-    const [button] = await screen.findAllByRole('link', { name: 'Settings' })
+    // The profile picture, after the sidebar's own Settings link.
+    const button = (await screen.findAllByRole('link', { name: 'Settings' })).at(-1)
     if (!button) throw new Error('No settings button')
     await user.click(button)
     expect(await screen.findByRole('heading', { name: 'Settings', level: 1 })).toBeInTheDocument()
@@ -79,38 +80,57 @@ describe('app shell', () => {
     expect(await screen.findByRole('heading', { name: 'Budget', level: 1 })).toBeInTheDocument()
   })
 
-  it('DL-CMP-06: back returns to the page it came from, never to the page just left', async () => {
+  it('DL-CMP-06: back pops the stack, so it returns to the page it came from, never the page just left', async () => {
     await i18n.changeLanguage('en')
     const user = userEvent.setup()
     const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
     const { router } = renderApp('/budget', unlockedVault(server))
 
-    const [button] = await screen.findAllByRole('link', { name: 'Settings' })
+    const button = (await screen.findAllByRole('link', { name: 'Settings' })).at(-1)
     if (!button) throw new Error('No settings button')
     await user.click(button)
     await user.click(await screen.findByRole('link', { name: /Appearance/ }))
     expect(await screen.findByRole('heading', { name: 'Appearance' })).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    await user.click(screen.getByRole('button', { name: 'Back' }))
     expect(await screen.findByRole('heading', { name: 'Settings', level: 1 })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Back' }))
     expect(await screen.findByRole('heading', { name: 'Budget', level: 1 })).toBeInTheDocument()
     expect(router.history.location.pathname).toBe('/budget')
   })
 
-  it('DL-CMP-06: opened directly, back goes to the page above, in its place', async () => {
+  it('DL-CMP-06: a screen opened directly, or from a tab, has nowhere to go back to', async () => {
     await i18n.changeLanguage('en')
     const user = userEvent.setup()
     const server: FakeServer = { signedIn: 'ana' }
     stubServer(server)
-    const { router } = renderApp('/settings/appearance', unlockedVault(server))
+    renderApp('/settings/appearance', unlockedVault(server))
 
-    await user.click(await screen.findByRole('button', { name: 'Settings' }))
-    expect(await screen.findByRole('heading', { name: 'Settings', level: 1 })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Appearance' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull()
+
+    // A tab is a change of place, not a step deeper: it starts a new stack.
+    const [tab] = screen.getAllByRole('link', { name: 'Transactions' })
+    if (!tab) throw new Error('No Transactions tab')
+    await user.click(tab)
+    expect(await screen.findByRole('heading', { name: 'Transactions', level: 1 })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull()
+  })
+
+  it('DL-CMP-06: a tab page opened from a link has a back button to where it was opened', async () => {
+    await i18n.changeLanguage('en')
+    const user = userEvent.setup()
+    const server: FakeServer = { signedIn: 'ana' }
+    stubServer(server)
+    const { router } = renderApp('/wallets', unlockedVault(server))
+
+    expect(await screen.findByRole('heading', { name: 'Wallets', level: 1 })).toBeVisible()
+    await router.navigate({ to: '/transactions' })
+    expect(await screen.findByRole('heading', { name: 'Transactions', level: 1 })).toBeVisible()
     await user.click(screen.getByRole('button', { name: 'Back' }))
-    expect(await screen.findByRole('heading', { name: 'Home', level: 1 })).toBeInTheDocument()
-    expect(router.history.canGoBack()).toBe(false)
+    expect(await screen.findByRole('heading', { name: 'Wallets', level: 1 })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull()
   })
 
   it('SYS-06: sends someone who is signed out to sign in', async () => {

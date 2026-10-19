@@ -281,6 +281,9 @@ function EntryForm({
         ? (ledger.categories.find((item) => item.systemKey === 'uncategorized')?.id ?? null)
         : null),
   )
+  // TXN-11: the type the category was picked for, so an income can take the expense
+  // category of what was refunded, but an expense's category never carries into one.
+  const [categoryFor, setCategoryFor] = useState<EntryType>(initial.type)
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds ?? [])
   const [payeeId, setPayeeId] = useState<string | null>(initial.payeeId ?? null)
   const [newTags, setNewTags] = useState<Tag[]>([])
@@ -334,9 +337,14 @@ function EntryForm({
   const chosenCategory =
     categoryId === null ? undefined : ledger.categories.find((item) => item.id === categoryId)
   const category =
-    !transfer && chosenCategory && (chosenCategory.kind === type || chosenCategory.kind === 'any')
+    !transfer &&
+    chosenCategory &&
+    (chosenCategory.kind === type ||
+      chosenCategory.kind === 'any' ||
+      (type === 'income' && categoryFor === 'income' && chosenCategory.kind === 'expense'))
       ? chosenCategory
       : undefined
+  const refund = type === 'income' && category?.kind === 'expense'
   const payee = payeeId === null ? undefined : allPayees.find((item) => item.id === payeeId)
   const chosenTags = tagIds.flatMap((id) => allTags.find((tag) => tag.id === id) ?? [])
   const exchange = transfer && from && to && from.currency !== to.currency ? { from, to } : null
@@ -753,7 +761,13 @@ function EntryForm({
             <ul>
               <PickerRow
                 label={t('transactions.category')}
-                value={category?.name ?? t('pickers.choose')}
+                value={
+                  category
+                    ? refund
+                      ? t('categories.refund.for', { name: category.name })
+                      : category.name
+                    : t('pickers.choose')
+                }
                 valueLeading={
                   category && (
                     <CategoryTile
@@ -1096,6 +1110,7 @@ function EntryForm({
         value={category?.id ?? null}
         onChoose={(chosen) => {
           setCategoryId(chosen.id)
+          setCategoryFor(type)
           setChoosing(null)
         }}
         onClose={() => {

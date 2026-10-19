@@ -14,7 +14,7 @@ import {
 } from '@repo/import'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSettingsBack } from '../../components/shell/settings-back'
+import { useBack } from '../../components/shell/back'
 import { ActionSheet } from '../../components/ui/action-sheet'
 import { Alert } from '../../components/ui/alert'
 import { IconTile } from '../../components/ui/icon-tile'
@@ -42,7 +42,7 @@ import { downloadSpreadsheet, useDownloadBackup, useUndoImport } from './use-dat
 // (DAT-11). Files are made and read on this device; the server never sees them (SEC-01).
 export function DataScreen() {
   const { t } = useTranslation()
-  const back = useSettingsBack()
+  const back = useBack()
   const locale = useLocale()
   const { data: ledger } = useLedger()
   const backup = useDownloadBackup()

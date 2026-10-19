@@ -90,8 +90,8 @@ export function changeTo(transaction: TransactionFields, walletId: string): numb
 
 /**
  * Whether a transaction is money spent, money earned or neither. Transfers are neither
- * (TXN-03), so paying a credit card is not spending (TXN-04); refunds are income
- * (TXN-11). Opening balances, adjustments and market changes only set a balance.
+ * (TXN-03), so paying a credit card is not spending (TXN-04). A refund is money in
+ * here; analysis counts it as less spending (TXN-11). Opening balances, adjustments and market changes only set a balance.
  */
 export function flow(transaction: TransactionFields): 'expense' | 'income' | null {
   switch (transaction.kind) {
@@ -242,13 +242,15 @@ export interface FlowTotals {
 /**
  * TXN-24, TXN-28: the income, expenses and net of `transactions` in `currency`.
  * Transfers and balance changes count as neither (TXN-03); amounts in another currency
- * count at the rate in use on their date, and those without a rate are left out.
+ * count at the rate in use on their date, and those without a rate are left out. Money
+ * in that `refund` picks out lowers expenses instead of adding to income (TXN-11).
  */
-export function flowTotals(
-  transactions: readonly TransactionFields[],
+export function flowTotals<T extends TransactionFields>(
+  transactions: readonly T[],
   walletCurrency: ReadonlyMap<string, string>,
   currency: string,
   rates: readonly ExchangeRate[],
+  refund: (transaction: T) => boolean = () => false,
 ): FlowTotals {
   let income = 0
   let expenses = 0
@@ -257,7 +259,7 @@ export function flowTotals(
     if (direction === null) continue
     const amount = amountIn(transaction, walletCurrency, currency, rates)
     if (amount === null) continue
-    if (direction === 'income') income += amount
+    if (direction === 'income' && !refund(transaction)) income += amount
     else expenses -= amount
   }
   return { income, expenses, net: income - expenses }
