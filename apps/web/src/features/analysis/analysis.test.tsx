@@ -158,6 +158,61 @@ describe('spending analysis', () => {
     expect(screen.getByRole('link', { name: /When do I spend\?/ })).toBeVisible()
   })
 
+  it('ANA-26, ANA-30: the wide tile says what changed most and opens every change', async () => {
+    const user = userEvent.setup()
+    const cash = wallet('Cash')
+    const set = categories()
+    const server: FakeServer = {
+      signedIn: 'ana',
+      records: [cash, ...set.records, ...history(cash, set)],
+    }
+    stubServer(server)
+    renderApp('/budget', unlockedVault(server))
+
+    // Four questions and the wide one, each opening a different screen.
+    const tile = await screen.findByRole('link', { name: /What changed\?/ })
+    expect(within(tile).getByText('Groceries')).toBeVisible()
+    // One purchase, as usual, at $1,500 instead of $1,000: the price went up.
+    const sentence = '$500.00 above usual: about as many purchases, each costing more.'
+    expect(within(tile).getByText(sentence)).toBeVisible()
+    for (const question of [
+      /When do I spend\?/,
+      /What's coming\?/,
+      /What can I cut\?/,
+      /Where is this going\?/,
+    ])
+      expect(screen.getByRole('link', { name: question })).toBeVisible()
+    expect(screen.queryByRole('link', { name: /What repeats\?/ })).toBeNull()
+    expect(screen.queryByRole('link', { name: /Who do I pay most\?/ })).toBeNull()
+
+    await user.click(tile)
+    expect(await screen.findByRole('heading', { name: 'What changed?', level: 1 })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Above usual' })).toBeVisible()
+    const row = screen.getByRole('link', { name: /Groceries/ })
+    expect(within(row).getByText(sentence)).toBeVisible()
+  })
+
+  it('ANA-13, CAT-26: the card splits commitments, needs and wants and opens where to change them', async () => {
+    const user = userEvent.setup()
+    const cash = wallet('Cash')
+    const set = categories()
+    const server: FakeServer = {
+      signedIn: 'ana',
+      records: [cash, ...set.records, ...history(cash, set)],
+    }
+    stubServer(server)
+    renderApp('/budget', unlockedVault(server))
+
+    expect(await screen.findByText('Commitments, needs and wants')).toBeVisible()
+    await user.click(screen.getByRole('link', { name: 'Choose what’s a need or a want' }))
+    expect(await screen.findByRole('heading', { name: 'Needs and wants', level: 1 })).toBeVisible()
+    expect(screen.getByRole('button', { name: /Eating out/ })).toBeVisible()
+    // Income categories are not spending, so they have no place here.
+    expect(screen.queryByRole('button', { name: /Salary/ })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(await screen.findByText('Spent so far')).toBeVisible()
+  })
+
   it('ANA-10, ANA-04: a category group opens its own screen, and its transactions open filtered', async () => {
     const user = userEvent.setup()
     const cash = wallet('Cash')
@@ -184,7 +239,7 @@ describe('spending analysis', () => {
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull()
   })
 
-  it('ANA-31, ANA-32: Flexible categories ranked by what a step saves, never below a month already lived', async () => {
+  it('ANA-31, ANA-32: wants ranked by what a step saves, never below a month already lived', async () => {
     const user = userEvent.setup()
     const cash = wallet('Cash')
     const set = categories()
@@ -196,7 +251,7 @@ describe('spending analysis', () => {
     renderApp('/budget/cut', unlockedVault(server))
 
     // Eating out: usually $250 (median of $200 to $300), lowest $200: a step is 15% of
-    // $250, $37.50. Groceries are Fixed, so they are never ranked.
+    // $250, $37.50. Groceries are a need, so they are never ranked.
     const row = await screen.findByRole('link', { name: /Eating out/ })
     expect(within(row).getByText('$37.50')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Groceries/ })).toBeNull()

@@ -87,28 +87,28 @@ export function FigureRow({
 
 /**
  * A question tile: the question, the answer as a big figure, one line of context and
- * an optional small visual, opening the screen that answers it in full.
+ * an optional small visual, opening the screen that answers it in full. A `wide` tile
+ * spans two columns, for the question that matters most.
  */
 export function QuestionTile({
   to,
-  search,
   question,
   answer,
   detail,
   visual,
+  wide = false,
 }: {
-  to: '/budget/when' | '/budget/coming' | '/budget/where' | '/budget/cut' | '/budget/trends'
-  search?: { by?: SliceBy }
+  to: '/budget/when' | '/budget/coming' | '/budget/cut' | '/budget/trends' | '/budget/changes'
   question: string
   answer: ReactNode
   detail: ReactNode
   visual?: ReactNode
+  wide?: boolean
 }) {
   return (
     <Link
       to={to}
-      {...(search ? { search } : {})}
-      className="flex min-h-[9.5rem] min-w-0 flex-col gap-1 rounded-2xl bg-surface p-3.5 active:bg-fill focus-visible:outline-2 focus-visible:outline-brand"
+      className={`${wide ? 'col-span-2' : 'min-h-[9.5rem]'} flex min-w-0 flex-col gap-1 rounded-2xl bg-surface p-3.5 active:bg-fill focus-visible:outline-2 focus-visible:outline-brand`}
     >
       <span className="flex items-center justify-between gap-1 text-[0.8125rem] font-semibold text-text-muted">
         <span>{question}</span>

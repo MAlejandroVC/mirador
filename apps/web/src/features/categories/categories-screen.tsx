@@ -4,8 +4,13 @@ import { type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useBack } from '../../components/shell/back'
 import { IconTile } from '../../components/ui/icon-tile'
-import { ArrowsDownUpIcon, FolderSimpleIcon, PlusIcon } from '../../components/ui/icons'
-import { List, ListButtonRow } from '../../components/ui/list'
+import {
+  ArrowsDownUpIcon,
+  FolderSimpleIcon,
+  PlusIcon,
+  SlidersHorizontalIcon,
+} from '../../components/ui/icons'
+import { List, ListButtonRow, ListLinkRow } from '../../components/ui/list'
 import { Page } from '../../components/ui/page'
 import { ReorderSheet } from '../../components/ui/reorder-sheet'
 import { ShowMoreRow } from '../../components/ui/show-more-row'
@@ -82,6 +87,15 @@ export function CategoriesScreen() {
 
   return page(
     <>
+      {/* BUD-10: every category's commitment, need or want, changed in one place. */}
+      <List>
+        <ListLinkRow
+          to="/settings/needs-and-wants"
+          leading={<IconTile icon={SlidersHorizontalIcon} />}
+          title={t('categories.types.title')}
+        />
+      </List>
+
       {activeGroups.map((item) => (
         <List key={item.id}>
           {/* CAT-14: the group's row carries its color; tapping it opens the group. */}

@@ -829,11 +829,14 @@
     "showArchived_other": "Mostrar {{count}} archivadas",
     "hideArchived": "Ocultar archivadas",
     "flexibility": {
-      "locked": "Fijo",
-      "fixed": "Necesario",
-      "flexible": "Flexible",
-      "lockedHint": "No cambia de un mes a otro, como la renta o un seguro. El presupuesto nunca sugiere recortarlo.",
-      "fixedHint": "Hace falta, pero el monto se mueve un poco, como el súper o la luz. El presupuesto lo mantiene estable.",
+      "locked": "Compromiso",
+      "fixed": "Necesidad",
+      "flexible": "Gusto",
+      "lockedPlural": "Compromisos",
+      "fixedPlural": "Necesidades",
+      "flexiblePlural": "Gustos",
+      "lockedHint": "Un pago al que te comprometiste, como la renta o un seguro. El presupuesto nunca sugiere recortarlo.",
+      "fixedHint": "Algo que necesitas, aunque el monto cambia un poco, como el súper o la luz. El presupuesto lo mantiene estable.",
       "flexibleHint": "Depende de ti, como comer fuera o tus pasatiempos. Aquí es donde el presupuesto busca cómo ahorrar."
     },
     "icons": {
@@ -958,7 +961,7 @@
       "group": "Grupo de categorías",
       "groupMissing": "Elige el grupo al que pertenece.",
       "kind": "Se usa para",
-      "flexibility": "En el presupuesto",
+      "flexibility": "Cuenta como",
       "icon": "Ícono",
       "colorHint": "Toma el color de su grupo de categorías.",
       "description": "Descripción",
@@ -1000,6 +1003,21 @@
       "back": "Categorías de ingreso",
       "in": "Reembolso de {{group}}",
       "for": "Reembolso de {{name}}"
+    },
+    "types": {
+      "title": "Necesidades y gustos",
+      "description": "Lo que el presupuesto puede sugerir recortar. Toca una categoría para cambiarla.",
+      "now": {
+        "locked": "Cuenta como compromiso.",
+        "fixed": "Cuenta como necesidad.",
+        "flexible": "Cuenta como gusto."
+      },
+      "moveTo": {
+        "locked": "Pasar a Compromisos",
+        "fixed": "Pasar a Necesidades",
+        "flexible": "Pasar a Gustos"
+      },
+      "none": "Aún no hay categorías aquí."
     }
   },
   "tags": {
@@ -1500,14 +1518,18 @@
       "label": "Gastado hasta ahora, {{spent}}, contra un periodo habitual, {{usual}}."
     },
     "changed": {
-      "title": "Qué cambió",
-      "moreOften_one": "{{name}} va {{amount}} arriba de lo habitual: una compra más, a casi el mismo precio.",
-      "moreOften_other": "{{name}} va {{amount}} arriba de lo habitual: {{count}} compras más, a casi el mismo precio.",
-      "pricier": "{{name}} va {{amount}} arriba de lo habitual: casi las mismas compras, pero cada una cuesta más.",
-      "both": "{{name}} va {{amount}} arriba de lo habitual: más compras, y cada una cuesta más.",
-      "lessOften_one": "{{name}} va {{amount}} abajo de lo habitual: una compra menos.",
-      "lessOften_other": "{{name}} va {{amount}} abajo de lo habitual: {{count}} compras menos.",
-      "less": "{{name}} va {{amount}} abajo de lo habitual."
+      "title": "¿Qué cambió?",
+      "description": "Cada categoría contra un mes habitual, y si es porque compras más seguido o pagas más cada vez.",
+      "above": "Arriba de lo habitual",
+      "below": "Abajo de lo habitual",
+      "less": "{{amount}} abajo de lo habitual.",
+      "none": "Aún no hay cambios contra un mes habitual.",
+      "moreOften_one": "{{amount}} arriba de lo habitual: una compra más, a casi el mismo precio.",
+      "moreOften_other": "{{amount}} arriba de lo habitual: {{count}} compras más, a casi el mismo precio.",
+      "pricier": "{{amount}} arriba de lo habitual: casi las mismas compras, pero cada una cuesta más.",
+      "both": "{{amount}} arriba de lo habitual: más compras, y cada una cuesta más.",
+      "lessOften_one": "{{amount}} abajo de lo habitual: una compra menos.",
+      "lessOften_other": "{{amount}} abajo de lo habitual: {{count}} compras menos."
     },
     "usual": {
       "same": "igual que lo habitual",
@@ -1543,7 +1565,8 @@
       "presets": "Por tipo de cartera"
     },
     "flexibility": {
-      "title": "Fijo, Necesario y Flexible"
+      "title": "Compromisos, necesidades y gustos",
+      "edit": "Elegir qué es necesidad o gusto"
     },
     "tiles": {
       "title": "Profundiza",
@@ -1565,18 +1588,6 @@
         "question": "¿A dónde voy?",
         "detail": "de patrimonio en un año, a tu ritmo habitual",
         "now": "de patrimonio hoy"
-      },
-      "payees": {
-        "question": "¿A quién le pago más?",
-        "detail_one": "{{amount}} en 1 compra",
-        "detail_other": "{{amount}} en {{count}} compras",
-        "none": "Aún no hay beneficiarios"
-      },
-      "repeats": {
-        "question": "¿Qué se repite?",
-        "detail_one": "al año, en 1 cargo que vuelve",
-        "detail_other": "al año, en {{count}} cargos que vuelven",
-        "none": "Aún no se repite nada"
       }
     },
     "weekdaysPlural": {
@@ -1638,8 +1649,8 @@
     },
     "cut": {
       "title": "¿Qué puedo recortar?",
-      "description": "Las categorías flexibles, ordenadas por cuánto podría ahorrar un pasito.",
-      "none": "Aún no hay sugerencias. Una categoría flexible aparece aquí cuando tiene unos meses de historial, con algún mes más bajo entre ellos.",
+      "description": "Tus gustos, ordenados por cuánto podría ahorrar un pasito.",
+      "none": "Aún no hay sugerencias. Un gusto aparece aquí cuando tiene unos meses de historial, con algún mes más bajo entre ellos.",
       "total_one": "Un pasito en ella ahorra {{amount}} al mes, {{year}} al año.",
       "total_other": "Un pasito en cada una ahorra {{amount}} al mes, {{year}} al año.",
       "numbers": "Por lo general {{usual}}, lo más bajo {{lowest}}",

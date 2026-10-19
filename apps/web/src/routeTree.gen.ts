@@ -17,6 +17,7 @@ import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as UnlockRouteImport } from './routes/unlock'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppBudgetIndexRouteImport } from './routes/_app/budget/index'
+import { Route as AppBudgetChangesRouteImport } from './routes/_app/budget/changes'
 import { Route as AppBudgetComingRouteImport } from './routes/_app/budget/coming'
 import { Route as AppBudgetCutRouteImport } from './routes/_app/budget/cut'
 import { Route as AppBudgetTrendsRouteImport } from './routes/_app/budget/trends'
@@ -29,6 +30,7 @@ import { Route as AppSettingsCategoriesRouteImport } from './routes/_app/setting
 import { Route as AppSettingsCurrencyRouteImport } from './routes/_app/settings/currency'
 import { Route as AppSettingsDataRouteImport } from './routes/_app/settings/data'
 import { Route as AppSettingsLanguageRouteImport } from './routes/_app/settings/language'
+import { Route as AppSettingsNeedsAndWantsRouteImport } from './routes/_app/settings/needs-and-wants'
 import { Route as AppSettingsPeopleRouteImport } from './routes/_app/settings/people'
 import { Route as AppSettingsSecurityRouteImport } from './routes/_app/settings/security'
 import { Route as AppSettingsTagsRouteImport } from './routes/_app/settings/tags'
@@ -76,6 +78,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppBudgetIndexRoute = AppBudgetIndexRouteImport.update({
   id: '/budget/',
   path: '/budget/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBudgetChangesRoute = AppBudgetChangesRouteImport.update({
+  id: '/budget/changes',
+  path: '/budget/changes',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBudgetComingRoute = AppBudgetComingRouteImport.update({
@@ -138,6 +145,12 @@ const AppSettingsLanguageRoute = AppSettingsLanguageRouteImport.update({
   path: '/settings/language',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsNeedsAndWantsRoute =
+  AppSettingsNeedsAndWantsRouteImport.update({
+    id: '/settings/needs-and-wants',
+    path: '/settings/needs-and-wants',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppSettingsPeopleRoute = AppSettingsPeopleRouteImport.update({
   id: '/settings/people',
   path: '/settings/people',
@@ -193,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/unlock': typeof UnlockRoute
+  '/budget/changes': typeof AppBudgetChangesRoute
   '/budget/coming': typeof AppBudgetComingRoute
   '/budget/cut': typeof AppBudgetCutRoute
   '/budget/trends': typeof AppBudgetTrendsRoute
@@ -204,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/settings/currency': typeof AppSettingsCurrencyRoute
   '/settings/data': typeof AppSettingsDataRoute
   '/settings/language': typeof AppSettingsLanguageRoute
+  '/settings/needs-and-wants': typeof AppSettingsNeedsAndWantsRoute
   '/settings/people': typeof AppSettingsPeopleRoute
   '/settings/security': typeof AppSettingsSecurityRoute
   '/settings/tags': typeof AppSettingsTagsRoute
@@ -223,6 +238,7 @@ export interface FileRoutesByTo {
   '/sign-up': typeof SignUpRoute
   '/unlock': typeof UnlockRoute
   '/': typeof AppIndexRoute
+  '/budget/changes': typeof AppBudgetChangesRoute
   '/budget/coming': typeof AppBudgetComingRoute
   '/budget/cut': typeof AppBudgetCutRoute
   '/budget/trends': typeof AppBudgetTrendsRoute
@@ -234,6 +250,7 @@ export interface FileRoutesByTo {
   '/settings/currency': typeof AppSettingsCurrencyRoute
   '/settings/data': typeof AppSettingsDataRoute
   '/settings/language': typeof AppSettingsLanguageRoute
+  '/settings/needs-and-wants': typeof AppSettingsNeedsAndWantsRoute
   '/settings/people': typeof AppSettingsPeopleRoute
   '/settings/security': typeof AppSettingsSecurityRoute
   '/settings/tags': typeof AppSettingsTagsRoute
@@ -255,6 +272,7 @@ export interface FileRoutesById {
   '/sign-up': typeof SignUpRoute
   '/unlock': typeof UnlockRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/budget/changes': typeof AppBudgetChangesRoute
   '/_app/budget/coming': typeof AppBudgetComingRoute
   '/_app/budget/cut': typeof AppBudgetCutRoute
   '/_app/budget/trends': typeof AppBudgetTrendsRoute
@@ -266,6 +284,7 @@ export interface FileRoutesById {
   '/_app/settings/currency': typeof AppSettingsCurrencyRoute
   '/_app/settings/data': typeof AppSettingsDataRoute
   '/_app/settings/language': typeof AppSettingsLanguageRoute
+  '/_app/settings/needs-and-wants': typeof AppSettingsNeedsAndWantsRoute
   '/_app/settings/people': typeof AppSettingsPeopleRoute
   '/_app/settings/security': typeof AppSettingsSecurityRoute
   '/_app/settings/tags': typeof AppSettingsTagsRoute
@@ -287,6 +306,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/unlock'
+    | '/budget/changes'
     | '/budget/coming'
     | '/budget/cut'
     | '/budget/trends'
@@ -298,6 +318,7 @@ export interface FileRouteTypes {
     | '/settings/currency'
     | '/settings/data'
     | '/settings/language'
+    | '/settings/needs-and-wants'
     | '/settings/people'
     | '/settings/security'
     | '/settings/tags'
@@ -317,6 +338,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/unlock'
     | '/'
+    | '/budget/changes'
     | '/budget/coming'
     | '/budget/cut'
     | '/budget/trends'
@@ -328,6 +350,7 @@ export interface FileRouteTypes {
     | '/settings/currency'
     | '/settings/data'
     | '/settings/language'
+    | '/settings/needs-and-wants'
     | '/settings/people'
     | '/settings/security'
     | '/settings/tags'
@@ -348,6 +371,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/unlock'
     | '/_app/'
+    | '/_app/budget/changes'
     | '/_app/budget/coming'
     | '/_app/budget/cut'
     | '/_app/budget/trends'
@@ -359,6 +383,7 @@ export interface FileRouteTypes {
     | '/_app/settings/currency'
     | '/_app/settings/data'
     | '/_app/settings/language'
+    | '/_app/settings/needs-and-wants'
     | '/_app/settings/people'
     | '/_app/settings/security'
     | '/_app/settings/tags'
@@ -437,6 +462,13 @@ declare module '@tanstack/react-router' {
       path: '/budget'
       fullPath: '/budget/'
       preLoaderRoute: typeof AppBudgetIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/budget/changes': {
+      id: '/_app/budget/changes'
+      path: '/budget/changes'
+      fullPath: '/budget/changes'
+      preLoaderRoute: typeof AppBudgetChangesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/budget/coming': {
@@ -523,6 +555,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsLanguageRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings/needs-and-wants': {
+      id: '/_app/settings/needs-and-wants'
+      path: '/settings/needs-and-wants'
+      fullPath: '/settings/needs-and-wants'
+      preLoaderRoute: typeof AppSettingsNeedsAndWantsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings/people': {
       id: '/_app/settings/people'
       path: '/settings/people'
@@ -591,6 +630,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
+  AppBudgetChangesRoute: typeof AppBudgetChangesRoute
   AppBudgetComingRoute: typeof AppBudgetComingRoute
   AppBudgetCutRoute: typeof AppBudgetCutRoute
   AppBudgetTrendsRoute: typeof AppBudgetTrendsRoute
@@ -602,6 +642,7 @@ interface AppRouteChildren {
   AppSettingsCurrencyRoute: typeof AppSettingsCurrencyRoute
   AppSettingsDataRoute: typeof AppSettingsDataRoute
   AppSettingsLanguageRoute: typeof AppSettingsLanguageRoute
+  AppSettingsNeedsAndWantsRoute: typeof AppSettingsNeedsAndWantsRoute
   AppSettingsPeopleRoute: typeof AppSettingsPeopleRoute
   AppSettingsSecurityRoute: typeof AppSettingsSecurityRoute
   AppSettingsTagsRoute: typeof AppSettingsTagsRoute
@@ -617,6 +658,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
+  AppBudgetChangesRoute: AppBudgetChangesRoute,
   AppBudgetComingRoute: AppBudgetComingRoute,
   AppBudgetCutRoute: AppBudgetCutRoute,
   AppBudgetTrendsRoute: AppBudgetTrendsRoute,
@@ -628,6 +670,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsCurrencyRoute: AppSettingsCurrencyRoute,
   AppSettingsDataRoute: AppSettingsDataRoute,
   AppSettingsLanguageRoute: AppSettingsLanguageRoute,
+  AppSettingsNeedsAndWantsRoute: AppSettingsNeedsAndWantsRoute,
   AppSettingsPeopleRoute: AppSettingsPeopleRoute,
   AppSettingsSecurityRoute: AppSettingsSecurityRoute,
   AppSettingsTagsRoute: AppSettingsTagsRoute,

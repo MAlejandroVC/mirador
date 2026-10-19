@@ -87,7 +87,7 @@ These terms have one meaning throughout the document, the code and the UI.
 | Budget period | The span a budget covers: one month long, starting on a day the user chooses (for example payday). |
 | Baseline | The user's typical period per category (optionally per category and tag), computed from history. The starting point of every budget. |
 | Proven level | A category's lowest period in the lookback: spending the user has already shown they can live with. |
-| Flexibility | A category's budget attribute: **Locked** (non-negotiable), **Fixed** (changes only by hand) or **Flexible** (discretionary, can be suggested for cuts). |
+| Flexibility | A category's budget attribute: **Commitment** (a bill signed up for, such as rent or insurance; never suggested for cuts), **Need** (needed, though the amount moves a little, such as groceries; changed only by hand) or **Want** (up to the user, such as eating out; can be suggested for cuts). |
 | Left over | Baseline income minus baseline expenses: what a typical period leaves free. |
 | Goal | Something the user is saving or paying toward, with a target amount and a date or periodic contribution, or an affordability question. |
 | Funding gap | Money the goals need per period minus the left over. Positive means the goals don't fit yet. |
@@ -359,7 +359,7 @@ Every expense and income has exactly one category, each category belongs to exac
 | ID | Requirement | Priority |
 |---|---|---|
 | CAT-01 | The app shall let the user create, rename, reorder, archive and delete categories and category groups. | Must |
-| CAT-02 | The app shall store for each category: name, category group, kind (expense or income), icon, flexibility (Locked, Fixed or Flexible) and an optional description. A category shows in its category group's color (CAT-14). | Must |
+| CAT-02 | The app shall store for each category: name, category group, kind (expense or income), icon, flexibility (Commitment, Need or Want) and an optional description. A category shows in its category group's color (CAT-14). | Must |
 | CAT-03 | The app shall require category names to be unique within their category group, and category group names to be unique. | Must |
 | CAT-04 | The app shall start every account with an editable starter set (for example Housing, Food & drinks, Transportation, Health, Shopping and personal, Entertainment, Financial, Income) that the user can change, add to or remove from. | Must |
 | CAT-05 | The app shall provide system categories (Uncategorized, Balance adjustment, Interest, Fees, Refunds) that can be renamed but not deleted. | Must |
@@ -383,6 +383,7 @@ Every expense and income has exactly one category, each category belongs to exac
 | CAT-23 | The app shall suggest tags from those most used with the chosen category. | Should |
 | CAT-24 | The app shall let rules and recurring templates set tags. | Should |
 | CAT-25 | The app shall let the user choose a color for each tag from the curated color palette. | Should |
+| CAT-26 | The app shall list every expense category under commitments, needs and wants on one screen, opened from the category settings and from the spending split (ANA-13), and let the user move a category to another flexibility with one choice. | Should |
 
 The taxonomy is permanently limited to category groups, categories and flat tags: groups and categories are enough for most users, and tags give unlimited extra detail for those who want it. Icons and colors are stored as data and always chosen from the curated sets in the design language document, never free-form: there is no custom color picker, no uploaded image, and no emoji, because the app uses icons only.
 
@@ -414,7 +415,7 @@ The analysis section helps the user understand where they are: what they spend o
 | ANA-10 | The app shall break spending down by category group, category and tag, as amounts and shares of the total, with drill-down from category group to category to transactions. | Must |
 | ANA-11 | The app shall show each category group's, category's and tag's spending per period over at least the last 12 periods, with its average. | Must |
 | ANA-12 | The app shall compare the selected period with the previous period and with the trailing 3, 6 and 12-period averages, in absolute amounts and percentages. | Must |
-| ANA-13 | The app shall split spending into Locked, Fixed and Flexible, using the category flexibility. | Must |
+| ANA-13 | The app shall split spending into commitments, needs and wants, using the category flexibility. | Must |
 | ANA-14 | The app shall rank payees by total spent, number of transactions and average ticket. | Should |
 | ANA-15 | The app shall show income by source and how stable it is period to period. | Could |
 | ANA-16 | The app shall show net worth, what I have and what I owe as a history by period, derived from transactions and valuations. | Should |
@@ -441,7 +442,7 @@ The analysis section helps the user understand where they are: what they spend o
 | ID | Requirement | Priority |
 |---|---|---|
 | ANA-30 | When a category's spending in the current period exceeds its trailing average by more than a set threshold (default 25%), the app shall flag it. | Should |
-| ANA-31 | The app shall rank Flexible categories by improvement potential, using their amount, growth trend, variability and the gap to their proven level, and show the numbers behind each rank. | Must |
+| ANA-31 | The app shall rank Want categories by improvement potential, using their amount, growth trend, variability and the gap to their proven level, and show the numbers behind each rank. | Must |
 | ANA-32 | The app shall show, for any category, what a reduction of 5%, 10% or 20% would save per period and per year. | Must |
 | ANA-33 | The app shall write insights as plain sentences, for example: "Lunch with the work tag was 38% above your 6-period average, mostly on Fridays." | Should |
 | ANA-34 | The app shall let the user send any improvement opportunity straight into a budget scenario. | Could |
@@ -525,10 +526,10 @@ The app would also translate the biggest cut into a habit: at an average of abou
 
 | ID | Requirement | Priority |
 |---|---|---|
-| BUD-10 | The app shall give every expense category a flexibility of Locked (non-negotiable, never suggested for cuts), Fixed (changed only by hand, such as rent) or Flexible (discretionary). | Must |
+| BUD-10 | The app shall give every expense category a flexibility of Commitment (non-negotiable, never suggested for cuts, such as rent), Need (changed only by hand, such as groceries) or Want (discretionary, such as eating out). | Must |
 | BUD-11 | The app shall let the user change a category's flexibility globally or only within one scenario. | Should |
 | BUD-12 | The app shall show left over as baseline income minus total baseline expenses, and free left over as left over minus the contributions already committed to goals. | Must |
-| BUD-13 | The app shall show the baseline split into Locked, Fixed and Flexible, so the user sees how much of their spending is actually negotiable. | Must |
+| BUD-13 | The app shall show the baseline split into commitments, needs and wants, so the user sees how much of their spending is actually negotiable. | Must |
 | BUD-14 | The app shall spread known yearly expenses (insurance, subscriptions, gifts) into a set-aside amount per period and track it. | Should |
 
 **3. Goals and the funding gap**
@@ -542,7 +543,7 @@ The app would also translate the biggest cut into a habit: at an average of abou
 | BUD-24 | When the left over cannot fund every goal, the app shall fund goals in priority order and show the projected date of each underfunded goal. | Must |
 | BUD-25 | Where a goal is linked to wallets, the app shall measure progress from those wallets' balance growth since the goal started. | Must |
 | BUD-26 | Where a goal has no linked wallet, the app shall measure progress from contributions the user records against it. | Must |
-| BUD-27 | Where a goal is an emergency fund, the app shall let the user set its target as a number of periods of Locked and Fixed baseline spending. | Should |
+| BUD-27 | Where a goal is an emergency fund, the app shall let the user set its target as a number of periods of Commitment and Need baseline spending. | Should |
 | BUD-28 | Where a goal pays off a debt wallet, the app shall use that wallet's interest settings to compute the payoff schedule and interest saved. | Should |
 
 **3b. Affordability goals ("what can I afford?")**
@@ -551,12 +552,12 @@ This goal type runs the other way: instead of saving toward a known price, the u
 
 | ID | Requirement | Priority |
 |---|---|---|
-| BUD-60 | The app shall let the user create an affordability goal with a purchase name and date, the wallets whose savings may be used, and a safety buffer to keep (an amount, or a number of periods of Locked and Fixed baseline spending). | Should |
+| BUD-60 | The app shall let the user create an affordability goal with a purchase name and date, the wallets whose savings may be used, and a safety buffer to keep (an amount, or a number of periods of Commitment and Need baseline spending). | Should |
 | BUD-61 | The app shall compute the largest affordable down payment as the projected balance of the chosen wallets on the purchase date, minus the safety buffer, minus money committed to other goals. | Should |
 | BUD-62 | The app shall compute the largest affordable payment per period as the free left over after other goals' contributions, both with the active plan and with the best scenario's cuts. | Should |
 | BUD-63 | Where the user enters financing terms (interest rate and number of payments), the app shall compute the largest affordable price as the down payment plus the loan principal that payment can repay over that term. | Should |
 | BUD-64 | The app shall show the result as two levels, comfortable (keeping 10% of the free left over unspent) and maximum, with the effect of each on other goals' dates. | Should |
-| BUD-65 | When the user records the purchase, the app shall add the loan as a wallet with a loan schedule and its payment to the plan as a Fixed expense, and update every goal's projected date. | Should |
+| BUD-65 | When the user records the purchase, the app shall add the loan as a wallet with a loan schedule and its payment to the plan as a Need expense, and update every goal's projected date. | Should |
 | BUD-66 | If the maximum payment is zero or negative, then the app shall say so and show which cuts or goal changes would make room. | Should |
 
 **Acceptance example (BUD-61 to BUD-63)**: *Given* 100,126 in savings, a 30,000 safety buffer, no other goals using that savings, a free left over of 8,372 per period, and financing at 1% per period over 48 periods, *when* the user asks what car they can afford in 6 weeks, *then* the app shows a maximum down payment of 70,126, a maximum payment of 8,372 per period and a maximum price of about 388,000 (ignoring contributions made in those 6 weeks).
@@ -565,12 +566,12 @@ This goal type runs the other way: instead of saving toward a known price, the u
 
 | ID | Requirement | Priority |
 |---|---|---|
-| BUD-30 | The app shall let the user create a scenario from the baseline and adjust any Flexible or Fixed category by a percentage, an amount or a new target value. | Must |
+| BUD-30 | The app shall let the user create a scenario from the baseline and adjust any Want or Need category by a percentage, an amount or a new target value. | Must |
 | BUD-31 | The app shall let a scenario also change income (a raise, side income) and goals (amount, date, priority), and add new expenses. | Must |
 | BUD-32 | When any scenario value changes, the app shall immediately recompute freed money, left over, funding gap and every goal's projected date. | Must |
-| BUD-33 | If the user tries to adjust a Locked category in a scenario, then the app shall require unlocking it for that scenario first. | Must |
+| BUD-33 | If the user tries to adjust a Commitment category in a scenario, then the app shall require unlocking it for that scenario first. | Must |
 | BUD-34 | The app shall express each adjustment per week, per period and per year, and as a habit change using the category's average ticket ("about 1 fewer restaurant date a month"). | Should |
-| BUD-35 | When the user asks the app to close the gap, the app shall propose adjustments across Flexible categories, favouring those with the largest gap between baseline and proven level and those that are large, growing or variable, capping each cut at a maximum step (default 15% of baseline) and never going below the proven level, and explain each choice with the period when the user last spent that little. | Should |
+| BUD-35 | When the user asks the app to close the gap, the app shall propose adjustments across Want categories, favouring those with the largest gap between baseline and proven level and those that are large, growing or variable, capping each cut at a maximum step (default 15% of baseline) and never going below the proven level, and explain each choice with the period when the user last spent that little. | Should |
 | BUD-36 | If the gap cannot be closed within the caps and proven levels, then the app shall say by how much it falls short and offer to move goal dates or lower goal amounts. | Should |
 | BUD-37 | The app shall let the user apply each adjustment at once or phase it in over several periods (a glide path, for example −5% a period until −15%), and set each period's target accordingly. | Must |
 | BUD-38 | The app shall let the user save, name, duplicate and delete scenarios, and compare two or more side by side on left over, total cut and goal dates. | Should |
@@ -597,13 +598,13 @@ This goal type runs the other way: instead of saving toward a known price, the u
 | BUD-51 | During period close, the app shall let the user send any surplus to one or more goals or keep it unassigned. | Must |
 | BUD-52 | The app shall not carry a category's unspent or overspent amount into the next period by default, and shall let the user choose to carry it over for any category during period close. | Must |
 | BUD-53 | If a category ended the period over target, then the app shall show the effect on goal dates. | Must |
-| BUD-54 | When a Flexible category misses its target 3 periods in a row, the app shall suggest easing the target or re-planning, and show what that does to the goals. | Should |
+| BUD-54 | When a Want category misses its target 3 periods in a row, the app shall suggest easing the target or re-planning, and show what that does to the goals. | Should |
 | BUD-55 | During period close, the app shall show how far actual spending deviated from the plan per category and ask whether to re-adjust the targets or keep them; the targets stay the same unless the user re-adjusts. | Must |
 | BUD-56 | When a period is closed, the app shall store an unchangeable snapshot of that period's plan, targets, actuals and goal progress. | Must |
 | BUD-57 | The app shall show the history of past periods' snapshots, including how goal dates moved over time. | Should |
 | BUD-58 | When a category has hit its target 3 periods in a row, the app shall suggest the next step of its glide path or a new goal for the freed money. | Could |
 
-**Acceptance example (BUD-35)**: *Given* a funding gap of 1,628 and Flexible categories Food - Dates 6,212 (proven level 4,900), Shopping 3,627 (proven level 2,800) and Gas 5,152 (proven level 4,950) with a 15% cap, *when* the user asks the app to close the gap, *then* it proposes cuts totalling at least 1,628, none deeper than 15% or below the proven level, each with its reason, and no Locked category touched.
+**Acceptance example (BUD-35)**: *Given* a funding gap of 1,628 and Want categories Food - Dates 6,212 (proven level 4,900), Shopping 3,627 (proven level 2,800) and Gas 5,152 (proven level 4,950) with a 15% cap, *when* the user asks the app to close the gap, *then* it proposes cuts totalling at least 1,628, none deeper than 15% or below the proven level, each with its reason, and no Commitment category touched.
 
 Every budget decision so far is recorded under Decisions. One point is still open: whether a goal contribution should be a flag on a transaction.
 

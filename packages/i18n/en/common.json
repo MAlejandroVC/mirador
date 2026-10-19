@@ -829,11 +829,14 @@
     "showArchived_other": "Show {{count}} archived",
     "hideArchived": "Hide archived",
     "flexibility": {
-      "locked": "Locked",
-      "fixed": "Fixed",
-      "flexible": "Flexible",
-      "lockedHint": "Can’t change month to month, like rent or insurance. The budget never suggests cutting it.",
-      "fixedHint": "Needed, but the amount moves a little, like groceries or electricity. The budget keeps it steady.",
+      "locked": "Commitment",
+      "fixed": "Need",
+      "flexible": "Want",
+      "lockedPlural": "Commitments",
+      "fixedPlural": "Needs",
+      "flexiblePlural": "Wants",
+      "lockedHint": "A bill you’ve signed up for, like rent or insurance. The budget never suggests cutting it.",
+      "fixedHint": "Something you need, though the amount moves a little, like groceries or electricity. The budget keeps it steady.",
       "flexibleHint": "Up to you, like eating out or hobbies. This is where the budget looks for room to save."
     },
     "icons": {
@@ -958,7 +961,7 @@
       "group": "Category group",
       "groupMissing": "Pick the category group it belongs to.",
       "kind": "Used for",
-      "flexibility": "In the budget",
+      "flexibility": "Counts as",
       "icon": "Icon",
       "colorHint": "It takes its category group’s color.",
       "description": "Description",
@@ -1000,6 +1003,21 @@
       "back": "Income categories",
       "in": "Refund for {{group}}",
       "for": "Refund for {{name}}"
+    },
+    "types": {
+      "title": "Needs and wants",
+      "description": "What the budget may suggest cutting. Tap a category to move it.",
+      "now": {
+        "locked": "It counts as a commitment.",
+        "fixed": "It counts as a need.",
+        "flexible": "It counts as a want."
+      },
+      "moveTo": {
+        "locked": "Move to Commitments",
+        "fixed": "Move to Needs",
+        "flexible": "Move to Wants"
+      },
+      "none": "No categories here yet."
     }
   },
   "tags": {
@@ -1500,14 +1518,18 @@
       "label": "Spent so far, {{spent}}, against a usual period, {{usual}}."
     },
     "changed": {
-      "title": "What changed",
-      "moreOften_one": "{{name}} is {{amount}} above usual: one more purchase at about the same price.",
-      "moreOften_other": "{{name}} is {{amount}} above usual: {{count}} more purchases at about the same price.",
-      "pricier": "{{name}} is {{amount}} above usual: about as many purchases, each costing more.",
-      "both": "{{name}} is {{amount}} above usual: more purchases, and each costing more.",
-      "lessOften_one": "{{name}} is {{amount}} below usual: one purchase fewer.",
-      "lessOften_other": "{{name}} is {{amount}} below usual: {{count}} fewer purchases.",
-      "less": "{{name}} is {{amount}} below usual."
+      "title": "What changed?",
+      "description": "Each category against a usual month, and whether it’s from buying more often or paying more each time.",
+      "above": "Above usual",
+      "below": "Below usual",
+      "less": "{{amount}} below usual.",
+      "none": "Nothing has changed from a usual month yet.",
+      "moreOften_one": "{{amount}} above usual: one more purchase at about the same price.",
+      "moreOften_other": "{{amount}} above usual: {{count}} more purchases at about the same price.",
+      "pricier": "{{amount}} above usual: about as many purchases, each costing more.",
+      "both": "{{amount}} above usual: more purchases, and each costing more.",
+      "lessOften_one": "{{amount}} below usual: one purchase fewer.",
+      "lessOften_other": "{{amount}} below usual: {{count}} fewer purchases."
     },
     "usual": {
       "same": "same as usual",
@@ -1543,7 +1565,8 @@
       "presets": "By wallet type"
     },
     "flexibility": {
-      "title": "Locked, Fixed and Flexible"
+      "title": "Commitments, needs and wants",
+      "edit": "Choose what’s a need or a want"
     },
     "tiles": {
       "title": "Dig deeper",
@@ -1565,18 +1588,6 @@
         "question": "Where is this going?",
         "detail": "net worth in a year, at your usual pace",
         "now": "net worth today"
-      },
-      "payees": {
-        "question": "Who do I pay most?",
-        "detail_one": "{{amount}} in 1 purchase",
-        "detail_other": "{{amount}} in {{count}} purchases",
-        "none": "No payees yet"
-      },
-      "repeats": {
-        "question": "What repeats?",
-        "detail_one": "a year, in 1 charge that keeps coming back",
-        "detail_other": "a year, in {{count}} charges that keep coming back",
-        "none": "Nothing repeats yet"
       }
     },
     "weekdaysPlural": {
@@ -1638,8 +1649,8 @@
     },
     "cut": {
       "title": "What can I cut?",
-      "description": "Flexible categories, ranked by how much one small step could save.",
-      "none": "Nothing to suggest yet. A Flexible category shows here once it has a few months of history, with a lower month among them.",
+      "description": "Wants, ranked by how much one small step could save.",
+      "none": "Nothing to suggest yet. A want shows here once it has a few months of history, with a lower month among them.",
       "total_one": "One step in it saves {{amount}} a month, {{year}} a year.",
       "total_other": "One step in each saves {{amount}} a month, {{year}} a year.",
       "numbers": "Usually {{usual}}, lowest {{lowest}}",
