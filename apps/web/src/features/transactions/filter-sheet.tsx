@@ -29,19 +29,23 @@ type Choosing = 'wallets' | 'groups' | 'categories' | 'tags' | 'payees'
 
 // TXN-22, TXN-23: narrowing the list. Every change applies at once, behind the sheet,
 // and the period's totals follow (TXN-24). The dates come from the period above the
-// list, so they aren't repeated here.
+// list, so they aren't repeated here. ANA-03: spending analysis uses the same sheet
+// with only what it filters by: wallets, categories, tags, payees, and a switch to
+// count what is left out of the budget (`budget` is "included" while it is off).
 export function FilterSheet({
   open,
   ledger,
   value,
   onChange,
   onClose,
+  analysis = false,
 }: {
   open: boolean
   ledger: Ledger
   value: TransactionFilter
   onChange: (filter: TransactionFilter) => void
   onClose: () => void
+  analysis?: boolean
 }) {
   const { t } = useTranslation()
   const locale = useLocale()
@@ -115,18 +119,20 @@ export function FilterSheet({
 
   return (
     <Sheet open={open} title={t('filters.title')} doneLabel={t('nav.done')} onClose={onClose}>
-      <List label={t('filters.type')} inset>
-        {types.map((type) => (
-          <ChoiceRow
-            key={type}
-            title={t(`filters.types.${type}`)}
-            checked={(value.types ?? []).includes(type)}
-            onToggle={() => {
-              set({ types: toggle(value.types, type) })
-            }}
-          />
-        ))}
-      </List>
+      {analysis ? null : (
+        <List label={t('filters.type')} inset>
+          {types.map((type) => (
+            <ChoiceRow
+              key={type}
+              title={t(`filters.types.${type}`)}
+              checked={(value.types ?? []).includes(type)}
+              onToggle={() => {
+                set({ types: toggle(value.types, type) })
+              }}
+            />
+          ))}
+        </List>
+      )}
 
       <FieldRows>
         {(['wallets', 'groups', 'categories', 'tags', 'payees'] as const).map((kind) => (
@@ -142,79 +148,99 @@ export function FilterSheet({
         ))}
       </FieldRows>
 
-      <FieldRows note={<FieldNote>{t('filters.amountHint')}</FieldNote>}>
-        <MoneyRow
-          label={t('filters.atLeast')}
-          value={minText}
-          onChange={(next) => {
-            setMinText(next)
-            set({ minAmount: amount(next) })
-          }}
-          locale={locale}
-          decimals={decimals}
-        />
-        <MoneyRow
-          label={t('filters.atMost')}
-          value={maxText}
-          onChange={(next) => {
-            setMaxText(next)
-            set({ maxAmount: amount(next) })
-          }}
-          locale={locale}
-          decimals={decimals}
-        />
-      </FieldRows>
+      {analysis ? (
+        <section className="flex flex-col gap-1.5">
+          <List inset>
+            <ChoiceRow
+              role="switch"
+              title={t('filters.countExcluded')}
+              checked={value.budget !== 'included'}
+              onToggle={() => {
+                onChange({ ...value, budget: value.budget === 'included' ? undefined : 'included' })
+              }}
+            />
+          </List>
+          <p className="px-4 text-[0.8125rem] text-text-muted">{t('filters.countExcludedHint')}</p>
+        </section>
+      ) : (
+        <>
+          <FieldRows note={<FieldNote>{t('filters.amountHint')}</FieldNote>}>
+            <MoneyRow
+              label={t('filters.atLeast')}
+              value={minText}
+              onChange={(next) => {
+                setMinText(next)
+                set({ minAmount: amount(next) })
+              }}
+              locale={locale}
+              decimals={decimals}
+            />
+            <MoneyRow
+              label={t('filters.atMost')}
+              value={maxText}
+              onChange={(next) => {
+                setMaxText(next)
+                set({ maxAmount: amount(next) })
+              }}
+              locale={locale}
+              decimals={decimals}
+            />
+          </FieldRows>
 
-      <FieldRows>
-        <FieldRow
-          label={t('filters.text')}
-          value={value.text ?? ''}
-          placeholder={t('filters.textPlaceholder')}
-          onChange={(event) => {
-            set({ text: event.target.value === '' ? undefined : event.target.value })
-          }}
-        />
-      </FieldRows>
+          <FieldRows>
+            <FieldRow
+              label={t('filters.text')}
+              value={value.text ?? ''}
+              placeholder={t('filters.textPlaceholder')}
+              onChange={(event) => {
+                set({ text: event.target.value === '' ? undefined : event.target.value })
+              }}
+            />
+          </FieldRows>
 
-      {/* TXN-23 */}
-      <section className="flex flex-col gap-1.5">
-        <h3 className="px-4 text-xs tracking-[0.04em] text-text-muted uppercase">
-          {t('filters.budget')}
-        </h3>
-        <SegmentedControl
-          label={t('filters.budget')}
-          options={[
-            { value: 'all', label: t('filters.budgetAll') },
-            { value: 'included', label: t('filters.budgetIncluded') },
-            { value: 'excluded', label: t('filters.budgetExcluded') },
-          ]}
-          value={value.budget ?? 'all'}
-          onChange={(budget) => {
-            set({ budget: budget === 'all' ? undefined : budget })
-          }}
-        />
-      </section>
+          {/* TXN-23 */}
+          <section className="flex flex-col gap-1.5">
+            <h3 className="px-4 text-xs tracking-[0.04em] text-text-muted uppercase">
+              {t('filters.budget')}
+            </h3>
+            <SegmentedControl
+              label={t('filters.budget')}
+              options={[
+                { value: 'all', label: t('filters.budgetAll') },
+                { value: 'included', label: t('filters.budgetIncluded') },
+                { value: 'excluded', label: t('filters.budgetExcluded') },
+              ]}
+              value={value.budget ?? 'all'}
+              onChange={(budget) => {
+                set({ budget: budget === 'all' ? undefined : budget })
+              }}
+            />
+          </section>
 
-      <List label={t('filters.source')} inset>
-        {sources.map((source) => (
-          <ChoiceRow
-            key={source}
-            title={t(`filters.sources.${source}`)}
-            checked={(value.sources ?? []).includes(source)}
-            onToggle={() => {
-              set({ sources: toggle(value.sources, source) })
-            }}
-          />
-        ))}
-      </List>
+          <List label={t('filters.source')} inset>
+            {sources.map((source) => (
+              <ChoiceRow
+                key={source}
+                title={t(`filters.sources.${source}`)}
+                checked={(value.sources ?? []).includes(source)}
+                onToggle={() => {
+                  set({ sources: toggle(value.sources, source) })
+                }}
+              />
+            ))}
+          </List>
+        </>
+      )}
 
-      {activeFilters(value) > 0 && (
+      {(analysis
+        ? activeFilters(value) - (value.budget === 'included' ? 1 : 0) + (value.budget ? 0 : 1)
+        : activeFilters(value)) > 0 && (
         <Button
           variant="secondary"
           onClick={() => {
             setMinText('')
             setMaxText('')
-            onChange({})
+            onChange(analysis ? { budget: 'included' } : {})
           }}
         >
           {t('filters.clear')}

@@ -4,6 +4,7 @@ import {
   byDay,
   flowTotals,
   inPeriod,
+  isRefund,
   matchesFilter,
   newestFirst,
   occurrenceFields,
@@ -31,12 +32,12 @@ import {
   CaretLeftIcon,
   CaretRightIcon,
   FunnelIcon,
-  type Icon,
   ReceiptIcon,
 } from '../../components/ui/icons'
 import { List, ListLinkRow } from '../../components/ui/list'
 import { Page } from '../../components/ui/page'
 import { Sheet } from '../../components/ui/sheet'
+import { ToolbarButton } from '../../components/ui/toolbar-button'
 import { formatDay, formatPeriod, formatShortDate, useMoney } from '../../lib/format'
 import { taxonomy } from '../categories/lookups'
 import { useQuickAdd } from '../quick-add'
@@ -47,6 +48,33 @@ import { FilterSheet } from './filter-sheet'
 import { SortSheet } from './sort-sheet'
 import { TransactionRow } from './transaction-row'
 import { useTransactionEditor } from './use-transaction-editor'
+
+/** ANA-04: what a chart in Budget opens the list on: a period and one thing to filter by. */
+export interface TransactionsSearch {
+  date?: string
+  scope?: PeriodScope
+  wallet?: string
+  group?: string
+  category?: string
+  tag?: string
+  payee?: string
+}
+
+/**
+ * ANA-04: the filter a drill-down opens with: the one thing the chart showed. Refunds
+ * in it show too, as the money in that lowered its spending (TXN-11).
+ */
+function searchFilter(search: TransactionsSearch): TransactionFilter {
+  const { wallet, group, category, tag, payee } = search
+  if (!wallet && !group && !category && !tag && !payee) return {}
+  return {
+    ...(wallet ? { walletIds: [wallet] } : {}),
+    ...(group ? { groupIds: [group] } : {}),
+    ...(category ? { categoryIds: [category] } : {}),
+    ...(tag ? { tagIds: [tag] } : {}),
+    ...(payee ? { payeeIds: [payee] } : {}),
+  }
+}
 
 // How many rows show at first, and how many more each "Show more" adds.
 const page = 100
@@ -60,16 +88,16 @@ const scopes: readonly PeriodScope[] = ['week', 'month', 'quarter', 'year']
 // installments counts one installment in each month (TXN-32). Above this period's
 // days, what recurring transactions have coming, and a way to all of them (TXN-09).
 // The arrows go on into months to come, to see what is scheduled there.
-export function TransactionsScreen() {
+export function TransactionsScreen({ search = {} }: { search?: TransactionsSearch }) {
   const { t } = useTranslation()
   const { data: ledger } = useLedger()
   const quickAdd = useQuickAdd()
   const editor = useTransactionEditor()
   const today = toCalendarDate(new Date())
-  const [scope, setScope] = useState<PeriodScope>('month')
-  const [anchor, setAnchor] = useState(today)
+  const [scope, setScope] = useState<PeriodScope>(search.scope ?? 'month')
+  const [anchor, setAnchor] = useState(search.date ?? today)
   const [sort, setSort] = useState<TransactionSort>('newest')
-  const [filter, setFilter] = useState<TransactionFilter>({})
+  const [filter, setFilter] = useState<TransactionFilter>(() => searchFilter(search))
   const [sheet, setSheet] = useState<'scope' | 'sort' | 'filter' | null>(null)
   const [limit, setLimit] = useState(page)
   const defaultCurrency = ledger?.defaultCurrency ?? 'USD'
@@ -183,7 +211,16 @@ export function TransactionsScreen() {
       ...occurrenceFields(item.recurring, item.date, item.date),
       id: `${item.recurring.id}@${item.date}`,
     }))
-  const totals = flowTotals([...inView, ...forecast], currencies, defaultCurrency, ledger.rates)
+  // TXN-11: a refund lowers expenses rather than adding to income.
+  const refund = (transaction: Transaction) =>
+    isRefund(transaction, lookups.categoryOf(transaction))
+  const totals = flowTotals(
+    [...inView, ...forecast],
+    currencies,
+    defaultCurrency,
+    ledger.rates,
+    refund,
+  )
 
   const row = (transaction: Transaction) => (
     <TransactionRow
@@ -364,7 +401,13 @@ export function TransactionsScreen() {
         </section>
       ) : byDate ? (
         byDay(shown).map((day) => {
-          const dayNet = flowTotals(day.transactions, currencies, defaultCurrency, ledger.rates).net
+          const dayNet = flowTotals(
+            day.transactions,
+            currencies,
+            defaultCurrency,
+            ledger.rates,
+            refund,
+          ).net
           return (
             <List
               key={day.date}
@@ -447,32 +490,5 @@ export function TransactionsScreen() {
       />
       {editor.sheet}
     </Page>
-  )
-}
-
-/** A round toolbar button beside the large title; filled in `brand` while it is on. */
-function ToolbarButton({
-  icon: IconComponent,
-  label,
-  active,
-  onClick,
-}: {
-  icon: Icon
-  label: string
-  active: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      aria-pressed={active}
-      onClick={onClick}
-      className={`grid size-11 shrink-0 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-brand ${
-        active ? 'bg-brand text-on-brand' : 'bg-surface text-brand'
-      }`}
-    >
-      <IconComponent aria-hidden weight={active ? 'fill' : 'regular'} className="size-[1.25rem]" />
-    </button>
   )
 }

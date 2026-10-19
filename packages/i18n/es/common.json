@@ -993,6 +993,13 @@
       "delete": "Eliminar grupo de categorías",
       "deleteHint": "Mueve o elimina sus categorías primero; un grupo solo se puede eliminar cuando está vacío.",
       "discard": "Tus cambios a este grupo de categorías no se guardarán."
+    },
+    "refund": {
+      "action": "Un reembolso de algo que compraste",
+      "hint": "Elige qué se reembolsó. Cuenta como menos gasto ahí, no como ingreso.",
+      "back": "Categorías de ingreso",
+      "in": "Reembolso de {{group}}",
+      "for": "Reembolso de {{name}}"
     }
   },
   "tags": {
@@ -1072,7 +1079,9 @@
       "import": "Importación",
       "recurring": "Recurrente"
     },
-    "clear": "Quitar filtros"
+    "clear": "Quitar filtros",
+    "countExcluded": "Contar lo que dejaste fuera del presupuesto",
+    "countExcludedHint": "Las transacciones que dejaste fuera del presupuesto, como un gasto único, no cuentan en el gasto a menos que esto esté activado."
   },
   "recurring": {
     "title": "Recurrentes",
@@ -1455,6 +1464,266 @@
       "label": "Escribe “{{username}}” para confirmar",
       "done": "Se borró todo.",
       "failed": "No se borró todo. Revisa tu conexión e inténtalo otra vez."
+    }
+  },
+  "analysis": {
+    "sides": {
+      "label": "Vista del presupuesto",
+      "plan": "Plan",
+      "spending": "Gastos"
+    },
+    "empty": {
+      "title": "Aún no hay nada que revisar",
+      "body": "Cuando registres lo que gastas, aquí verás a dónde se va el dinero, cómo va este mes contra uno normal y qué lo mueve."
+    },
+    "unknown": "Desconocido",
+    "hero": {
+      "spentSoFar": "Llevas gastado",
+      "spentIn": "Gastado en {{period}}",
+      "noHistory": "Tu periodo habitual aparece cuando haya uno completo con qué comparar.",
+      "same": "Casi lo mismo que un periodo habitual",
+      "sameSoFar": "Casi lo mismo que lo habitual al {{date}}",
+      "less": "{{amount}} menos que un periodo habitual",
+      "more": "{{amount}} más que un periodo habitual",
+      "lessSoFar": "{{amount}} menos que lo habitual al {{date}}",
+      "moreSoFar": "{{amount}} más que lo habitual al {{date}}"
+    },
+    "totals": {
+      "income": "Ingresos",
+      "leftOver": "Te sobra",
+      "savingsRate": "Ahorrado",
+      "spent": "Gastos"
+    },
+    "pace": {
+      "title": "Ritmo",
+      "usual": "Habitual",
+      "label": "Gastado hasta ahora, {{spent}}, contra un periodo habitual, {{usual}}."
+    },
+    "changed": {
+      "title": "Qué cambió",
+      "moreOften_one": "{{name}} va {{amount}} arriba de lo habitual: una compra más, a casi el mismo precio.",
+      "moreOften_other": "{{name}} va {{amount}} arriba de lo habitual: {{count}} compras más, a casi el mismo precio.",
+      "pricier": "{{name}} va {{amount}} arriba de lo habitual: casi las mismas compras, pero cada una cuesta más.",
+      "both": "{{name}} va {{amount}} arriba de lo habitual: más compras, y cada una cuesta más.",
+      "lessOften_one": "{{name}} va {{amount}} abajo de lo habitual: una compra menos.",
+      "lessOften_other": "{{name}} va {{amount}} abajo de lo habitual: {{count}} compras menos.",
+      "less": "{{name}} va {{amount}} abajo de lo habitual."
+    },
+    "usual": {
+      "same": "igual que lo habitual",
+      "above": "{{percent}} arriba de lo habitual",
+      "below": "{{percent}} abajo de lo habitual"
+    },
+    "compare": {
+      "same": "casi igual que este periodo",
+      "above": "este periodo va {{percent}} arriba",
+      "below": "este periodo va {{percent}} abajo"
+    },
+    "where": {
+      "title": "A dónde se fue",
+      "all": "Ver todo",
+      "screenTitle": "¿A dónde se va?",
+      "description": "En qué se fue el dinero, a quién se le pagó y de qué carteras salió.",
+      "splitLabel": "Dividir por",
+      "by": {
+        "group": "Grupos",
+        "category": "Categorías",
+        "tag": "Etiquetas",
+        "payee": "Por beneficiario",
+        "wallet": "Por cartera"
+      },
+      "open": {
+        "payee": "A quién le pagas",
+        "wallet": "De qué carteras sale"
+      },
+      "none": "Nada gastado en este periodo.",
+      "ticket_one": "1 compra",
+      "ticket_other": "{{count}} compras de {{average}} en promedio",
+      "tagsHint": "Una transacción con dos etiquetas cuenta en las dos, así que los porcentajes pueden sumar más de 100%.",
+      "presets": "Por tipo de cartera"
+    },
+    "flexibility": {
+      "title": "Fijo, Necesario y Flexible"
+    },
+    "tiles": {
+      "title": "Profundiza",
+      "notYet": "Falta un poco más de historial",
+      "when": {
+        "question": "¿Cuándo gasto?",
+        "detail": "{{times}}× un día promedio"
+      },
+      "coming": {
+        "question": "¿Qué viene?",
+        "detail": "ya comprometido para {{month}}"
+      },
+      "cut": {
+        "question": "¿Qué puedo recortar?",
+        "detail_one": "al mes, en una categoría donde ya gastaste menos",
+        "detail_other": "al mes, en {{count}} categorías donde ya gastaste menos"
+      },
+      "trends": {
+        "question": "¿A dónde voy?",
+        "detail": "de patrimonio en un año, a tu ritmo habitual",
+        "now": "de patrimonio hoy"
+      },
+      "payees": {
+        "question": "¿A quién le pago más?",
+        "detail_one": "{{amount}} en 1 compra",
+        "detail_other": "{{amount}} en {{count}} compras",
+        "none": "Aún no hay beneficiarios"
+      },
+      "repeats": {
+        "question": "¿Qué se repite?",
+        "detail_one": "al año, en 1 cargo que vuelve",
+        "detail_other": "al año, en {{count}} cargos que vuelven",
+        "none": "Aún no se repite nada"
+      }
+    },
+    "weekdaysPlural": {
+      "0": "Domingos",
+      "1": "Lunes",
+      "2": "Martes",
+      "3": "Miércoles",
+      "4": "Jueves",
+      "5": "Viernes",
+      "6": "Sábados"
+    },
+    "when": {
+      "title": "¿Cuándo gasto?",
+      "description": "Los días y semanas que más cuestan, lo que suele ir junto y las compras chicas que se acumulan.",
+      "calendar": "Día por día",
+      "day": "{{date}}: {{amount}}",
+      "span": "{{from}} – {{to}}",
+      "weekdays": "Días de la semana",
+      "weekdayValue": "{{day}}: {{amount}} en promedio",
+      "weekdaySentence": "{{day}}: los días que más cuestan, {{amount}} en promedio.",
+      "weeks": "Semanas del mes",
+      "week": "Sem. {{number}}",
+      "weekValue": "Semana {{number}}: {{amount}} en promedio",
+      "payday": "En los 3 días desde que te pagan gastas {{after}} al día, contra {{other}} los demás días.",
+      "tags": "Días con una etiqueta",
+      "tagDay": "{{with}} un día con ella, {{without}} sin ella.",
+      "tagMostly": "Sobre todo en {{category}}.",
+      "pairs": "Suelen ir el mismo día",
+      "pair": "{{second}} con {{first}}",
+      "pairDetail": "Juntos {{together}} de {{days}} días, por lo general {{amount}}",
+      "small": "Compras chicas",
+      "smallSentence_one": "1 compra de menos de {{below}} sumó {{total}}.",
+      "smallSentence_other": "{{count}} compras de menos de {{below}} sumaron {{total}}.",
+      "smallMore": "Es más que todo {{group}}, que fue {{amount}}."
+    },
+    "coming": {
+      "title": "¿Qué viene?",
+      "description": "Mensualidades y pagos recurrentes que ya están fijos para los próximos meses, y los cargos que siempre vuelven.",
+      "monthValue": "{{month}}: {{amount}} comprometido",
+      "hint": "Toca un mes para ver qué incluye.",
+      "none": "Aún no hay nada comprometido para este mes.",
+      "installment": "Mensualidad",
+      "recurring": "Recurrente",
+      "repeats": "Cargos que se repiten",
+      "noRepeats": "Aún no se repite nada. Un cargo aparece aquí cuando ha vuelto al menos 3 veces.",
+      "every": {
+        "day_one": "{{amount}} casi a diario",
+        "day_other": "{{amount}} más o menos cada {{count}} días",
+        "week_one": "{{amount}} a la semana",
+        "week_other": "{{amount}} cada {{count}} semanas",
+        "month_one": "{{amount}} al mes",
+        "month_other": "{{amount}} cada {{count}} meses",
+        "year_one": "{{amount}} al año",
+        "year_other": "{{amount}} cada {{count}} años"
+      },
+      "notScheduled": "no está en Recurrentes",
+      "perYear": "al año",
+      "repeatsHint": "Encontrados en tus propias transacciones: el mismo beneficiario o nota, un monto parecido y un intervalo regular."
+    },
+    "cut": {
+      "title": "¿Qué puedo recortar?",
+      "description": "Las categorías flexibles, ordenadas por cuánto podría ahorrar un pasito.",
+      "none": "Aún no hay sugerencias. Una categoría flexible aparece aquí cuando tiene unos meses de historial, con algún mes más bajo entre ellos.",
+      "total_one": "Un pasito en ella ahorra {{amount}} al mes, {{year}} al año.",
+      "total_other": "Un pasito en cada una ahorra {{amount}} al mes, {{year}} al año.",
+      "numbers": "Por lo general {{usual}}, lo más bajo {{lowest}}",
+      "growing": "sube {{percent}} últimamente",
+      "shrinking": "baja {{percent}} últimamente",
+      "perMonth": "al mes",
+      "rule": "Un pasito es a lo mucho 15% de un mes habitual y nunca menos que tu mes más bajo de los últimos 6, así que ya lo has hecho antes.",
+      "seasons": "Meses que cuestan más",
+      "seasonsLater": "Con 13 meses de historial, aquí aparecen los meses del año que cuestan más.",
+      "noSeasons": "Ningún mes del año destaca.",
+      "seasonDetail_one": "{{amount}} arriba de un mes habitual, visto en 1 año",
+      "seasonDetail_other": "{{amount}} arriba de un mes habitual, en {{count}} años",
+      "setAside": "Apartar {{amount}} al mes los cubre."
+    },
+    "trends": {
+      "title": "¿A dónde voy?",
+      "description": "Mes a mes: tus gastos, tus ingresos y hacia dónde va tu patrimonio.",
+      "spending": "Gastos por mes",
+      "monthValue": "{{month}}: {{amount}}",
+      "average": "En promedio {{amount}} al mes.",
+      "creep": "Ingresos y gastos",
+      "creepLabel": "Ingresos y gastos de los últimos 12 meses",
+      "creepLater": "Con 2 años de historial, aquí se comparan los últimos 12 meses con los 12 anteriores.",
+      "creepSentence": "En los últimos 12 meses, tus gastos {{spentWay}} {{spent}} y tus ingresos {{incomeWay}} {{income}}, contra los 12 anteriores.",
+      "up": "subieron",
+      "down": "bajaron",
+      "netWorth": "Patrimonio",
+      "netWorthLabel": "Patrimonio de los últimos 12 meses y hacia dónde va en los próximos 24",
+      "projection": "Con lo que te sobra por lo general, {{leftOver}} al mes, serían unos {{amount}} en 2 años.",
+      "projectionLater": "Hacia dónde va aparece con un mes completo de historial.",
+      "target": "Patrimonio a alcanzar",
+      "targetHint": "Escribe un monto para ver cuándo llegarías.",
+      "reachedIn_one": "En 1 mes, por {{month}}.",
+      "reachedIn_other": "En {{count}} meses, por {{month}}.",
+      "never": "A tu ritmo habitual tu patrimonio no está creciendo, así que no llegaría.",
+      "already": "Ya llegaste.",
+      "sources": "De dónde vienen tus ingresos",
+      "steady": "Estable",
+      "variesLittle": "Varía un poco",
+      "variesLot": "Varía mucho",
+      "perMonth": "al mes"
+    },
+    "slice": {
+      "kinds": {
+        "group": "Grupo de categorías",
+        "category": "Categoría en {{group}}",
+        "tag": "Etiqueta",
+        "payee": "Beneficiario",
+        "wallet": "Cartera"
+      },
+      "usual": "Por lo general {{amount}}",
+      "compare": "Comparado con",
+      "previous": {
+        "week": "Semana pasada",
+        "month": "Mes pasado",
+        "quarter": "Trimestre pasado",
+        "year": "Año pasado"
+      },
+      "average": {
+        "week": "Promedio de {{count}} semanas",
+        "month": "Promedio de {{count}} meses",
+        "quarter": "Promedio de {{count}} trimestres",
+        "year": "Promedio de {{count}} años"
+      },
+      "sameDays": "Mientras este periodo sigue, cada uno cuenta solo sus días hasta el {{date}}.",
+      "history": {
+        "week": "Últimas 12 semanas",
+        "month": "Últimos 12 meses",
+        "quarter": "Últimos 12 trimestres",
+        "year": "Últimos 12 años"
+      },
+      "purchaseCount_one": "1 compra",
+      "purchaseCount_other": "{{count}} compras",
+      "purchases": "Compras",
+      "count": "Número de compras",
+      "ticket": "Compra promedio",
+      "splitUp": "{{amount}} arriba de un periodo habitual: {{frequency}} por comprar más seguido y {{price}} por pagar más cada vez.",
+      "splitDown": "{{amount}} abajo de un periodo habitual: {{frequency}} por comprar menos seguido y {{price}} por pagar menos cada vez.",
+      "categories": "Categorías",
+      "payees": "Principales beneficiarios",
+      "savings": "Si gastaras menos",
+      "less": "{{percent}}% menos",
+      "perYear": "{{amount}} al año",
+      "transactions": "Ver transacciones"
     }
   }
 }
