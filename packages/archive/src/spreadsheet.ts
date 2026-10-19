@@ -90,5 +90,5 @@ export function transactionsSpreadsheet(ledger: SpreadsheetLedger): string {
 }
 
 export function spreadsheetFileName(date: string) {
-  return `mirador-transactions-${date}.csv`
+  return `mirador-transactions-export-${date}.csv`
 }

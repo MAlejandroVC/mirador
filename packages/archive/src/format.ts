@@ -63,7 +63,7 @@ export function archiveFile(
 }
 
 export function archiveFileName(username: string, date: string) {
-  return `mirador-${username}-${date}.json`
+  return `mirador-backup-${username}-${date}.json`
 }
 
 /** The schema of each record type the app makes, at the version it writes (schema 1). */

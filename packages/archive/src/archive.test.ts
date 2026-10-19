@@ -10,9 +10,9 @@ import {
   summarize,
 } from '@repo/import'
 import { describe, expect, it } from 'vitest'
-import { archiveFile, readArchive } from './format.ts'
+import { archiveFile, archiveFileName, readArchive } from './format.ts'
 import { restoreChanges } from './restore.ts'
-import { transactionsSpreadsheet } from './spreadsheet.ts'
+import { spreadsheetFileName, transactionsSpreadsheet } from './spreadsheet.ts'
 
 const id = (n: number) => `0190a000-0000-7000-8000-${String(n).padStart(12, '0')}`
 const body = (type: string, data: unknown): RecordBody => ({
@@ -171,5 +171,10 @@ describe('sample data', () => {
       true,
     )
     expect(planned.filter((p) => p.status.kind === 'transfer').length).toBe(14 * 3 * 2)
+  })
+
+  it('DAT-01, DAT-02: file names say which is the backup and which the export', () => {
+    expect(archiveFileName('ana', '2026-10-19')).toBe('mirador-backup-ana-2026-10-19.json')
+    expect(spreadsheetFileName('2026-10-19')).toBe('mirador-transactions-export-2026-10-19.csv')
   })
 })

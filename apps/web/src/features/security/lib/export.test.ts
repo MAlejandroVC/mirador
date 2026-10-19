@@ -31,6 +31,6 @@ describe('export', () => {
         { id: 'b', type: 'wallet', schema: 1, data: { name: 'Checking' } },
       ],
     })
-    expect(exportFileName('ben', '2026-10-16')).toBe('mirador-ben-2026-10-16.json')
+    expect(exportFileName('ben', '2026-10-16')).toBe('mirador-backup-ben-2026-10-16.json')
   })
 })

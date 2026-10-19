@@ -4,7 +4,7 @@ This page describes the file that **Settings › Your data › Download a backup
 
 ## The file
 
-A backup is one UTF-8 JSON file named `mirador-<username>-<YYYY-MM-DD>.json`:
+A backup is one UTF-8 JSON file named `mirador-backup-<username>-<YYYY-MM-DD>.json`:
 
 ```json
 {
