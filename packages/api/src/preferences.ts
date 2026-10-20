@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { budgetSettings } from './budget.ts'
 import { currencyCode } from './wallets.ts'
 
 // Epic 10 settings that follow the person to every device, in one encrypted record.
@@ -10,5 +11,7 @@ export const preferencesRecord = z.object({
   defaultCurrency: currencyCode,
   // WAL-24: the wallet new transactions start in, until the person picks another.
   defaultWalletId: z.string().min(1).max(64).optional(),
+  // SYS-02, SYS-09: when budget months start and how the plan is built.
+  budget: budgetSettings.optional(),
 })
 export type PreferencesRecord = z.infer<typeof preferencesRecord>

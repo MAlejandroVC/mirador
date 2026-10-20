@@ -145,7 +145,7 @@ describe('spending analysis', () => {
       records: [cash, ...set.records, ...history(cash, set)],
     }
     stubServer(server)
-    renderApp('/budget', unlockedVault(server))
+    renderApp('/budget?view=spending', unlockedVault(server))
 
     expect(await screen.findByText('Spent so far')).toBeVisible()
     // By March 15 a usual month had spent groceries ($1,000) and eating out ($200 to
@@ -167,7 +167,7 @@ describe('spending analysis', () => {
       records: [cash, ...set.records, ...history(cash, set)],
     }
     stubServer(server)
-    renderApp('/budget', unlockedVault(server))
+    renderApp('/budget?view=spending', unlockedVault(server))
 
     // Four questions and the wide one, each opening a different screen.
     const tile = await screen.findByRole('link', { name: /What changed\?/ })
@@ -201,7 +201,7 @@ describe('spending analysis', () => {
       records: [cash, ...set.records, ...history(cash, set)],
     }
     stubServer(server)
-    renderApp('/budget', unlockedVault(server))
+    renderApp('/budget?view=spending', unlockedVault(server))
 
     expect(await screen.findByText('Commitments, needs and wants')).toBeVisible()
     await user.click(screen.getByRole('link', { name: 'Choose what’s a need or a want' }))
@@ -222,7 +222,7 @@ describe('spending analysis', () => {
       records: [cash, ...set.records, ...history(cash, set)],
     }
     stubServer(server)
-    renderApp('/budget', unlockedVault(server))
+    renderApp('/budget?view=spending', unlockedVault(server))
 
     await user.click(await screen.findByRole('link', { name: /Everyday/ }))
     expect(await screen.findByRole('heading', { name: 'Everyday', level: 1 })).toBeVisible()
@@ -303,7 +303,7 @@ describe('spending analysis', () => {
     const server: FakeServer = { signedIn: 'ana', records: [...records] }
     stubServer(server)
     const fetches = vi.mocked(globalThis.fetch)
-    renderApp('/budget', unlockedVault(server))
+    renderApp('/budget?view=spending', unlockedVault(server))
 
     await user.click(await screen.findByRole('link', { name: /When do I spend\?/ }))
     expect(await screen.findByRole('heading', { name: 'When do I spend?', level: 1 })).toBeVisible()

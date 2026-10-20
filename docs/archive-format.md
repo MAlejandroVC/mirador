@@ -56,6 +56,11 @@ The fields of each type are the Zod schemas in [`packages/api/src`](../packages/
 | `profile` | `profileRecord` in `profile.ts` | The profile picture. One per account. |
 | `importBatch` | `importBatchRecord` in `imports.ts` | One import: its file, counts, the rows left out and what it created, so it can be undone (IMP-34, IMP-35). |
 | `importProfile` | `importProfileRecord` in `imports.ts` | The column settings remembered for files with the same header (IMP-03). |
+| `budgetPlan` | `budgetPlanRecord` in `budget.ts` | The budget plan: targets set by hand or kept, expected income, phased cuts, months and transactions left out of the usual month, and tag lines. One per account. |
+| `goal` | `goalRecord` in `budget.ts` | A goal: its kind, target, date or monthly amount, the wallets it follows and its place in the order (BUD-20). |
+| `goalContribution` | `goalContributionRecord` in `budget.ts` | Money added to a goal that follows no wallet (BUD-26). |
+| `scenario` | `scenarioRecord` in `budget.ts` | A saved what-if (BUD-38). |
+| `budgetSnapshot` | `budgetSnapshotRecord` in `budget.ts` | A closed month as it was: targets, spending, income, goals, where the extra went and what was carried over (BUD-56). |
 
 The rules that apply to every type:
 
@@ -64,6 +69,7 @@ The rules that apply to every type:
 - An amount is signed from the wallet's side. An expense or a transfer is negative and income is positive.
 - A transfer's `toAmount` is what arrived in `toWalletId`, in that wallet's currency. An exchange `rate` is in millionths, so 18.45 is `18450000`.
 - System categories, such as Uncategorized, have a `systemKey`. Their names can be changed, so tools should look for the key, not the name.
+- A budget plan line is a category's id, or a category's and a tag's ids joined by `~`.
 
 ## Restoring
 

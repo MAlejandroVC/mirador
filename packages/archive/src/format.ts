@@ -1,7 +1,11 @@
 import {
+  budgetPlanRecord,
+  budgetSnapshotRecord,
   categoryGroupRecord,
   categoryRecord,
   exchangeRateRecord,
+  goalContributionRecord,
+  goalRecord,
   importBatchRecord,
   importProfileRecord,
   payeeRecord,
@@ -10,6 +14,7 @@ import {
   type RecordBody,
   recordId,
   recurringRecord,
+  scenarioRecord,
   tagRecord,
   transactionRecord,
   walletRecord,
@@ -80,6 +85,11 @@ export const recordSchemas: Record<string, z.ZodType> = {
   profile: profileRecord,
   importBatch: importBatchRecord,
   importProfile: importProfileRecord,
+  budgetPlan: budgetPlanRecord,
+  goal: goalRecord,
+  goalContribution: goalContributionRecord,
+  scenario: scenarioRecord,
+  budgetSnapshot: budgetSnapshotRecord,
 }
 
 /** DAT-07: one thing wrong with a file, and where. */

@@ -1,9 +1,9 @@
 import {
   type AnalysisView,
   committed,
+  budgetMonthOf,
   lookbackPeriods,
   median,
-  monthOf,
   type Period,
   periodTotals,
   type SliceBy,
@@ -24,7 +24,11 @@ export function lookbackRange(view: AnalysisView, count = 6): Period {
 
 /** This month, as the view that monthly figures (what's coming, projections) start from. */
 export function monthView(analysis: Analysis): AnalysisView {
-  return { ...analysis.view, period: monthOf(analysis.today), scope: 'month' }
+  return {
+    ...analysis.view,
+    period: budgetMonthOf(analysis.today, analysis.view.monthStart),
+    scope: 'month',
+  }
 }
 
 /**

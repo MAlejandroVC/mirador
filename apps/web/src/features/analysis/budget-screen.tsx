@@ -5,6 +5,8 @@ import { AccountButton } from '../../components/shell'
 import { Button } from '../../components/ui/button'
 import { EmptyState } from '../../components/ui/empty-state'
 import { ChartPieSliceIcon, FunnelIcon } from '../../components/ui/icons'
+import { PlanView } from '../budget/plan-view'
+import { useBudget } from '../budget/use-budget'
 import { Page } from '../../components/ui/page'
 import { SegmentedControl } from '../../components/ui/segmented-control'
 import { ToolbarButton } from '../../components/ui/toolbar-button'
@@ -18,15 +20,16 @@ import { useWords } from './use-words'
 import { useBack } from '../../components/shell/back'
 
 // Epic 5 and Epic 6 share the Budget tab, as two sides of one coin: Plan, the budget
-// and its goals (BUD, still to come), and Spending, what the money did (ANA). A
-// segmented control switches between them (DL-CMP-11), and the choice is kept in the
-// address so going back returns to the same side.
+// and its goals (BUD), and Spending, what the money did (ANA). A segmented control
+// switches between them (DL-CMP-11), and the choice is kept in the address so going
+// back returns to the same side. Budget opens on Plan (Alejandro's call, 2026-10-20).
 export function BudgetScreen({ view }: { view: 'plan' | 'spending' }) {
   const { t } = useTranslation()
   // DL-CMP-06: opened from another screen, a tab's page can pop back to it too.
   const back = useBack()
   const navigate = useNavigate()
   const analysis = useAnalysis()
+  const budget = useBudget()
   const [filtering, setFiltering] = useState(false)
   const filters = analysis ? analysisFilters(analysis.state.filter) : 0
 
@@ -58,19 +61,14 @@ export function BudgetScreen({ view }: { view: 'plan' | 'spending' }) {
         onChange={(side) => {
           void navigate({
             to: '/budget',
-            search: side === 'plan' ? { view: 'plan' } : {},
+            search: side === 'spending' ? { view: 'spending' } : {},
             replace: true,
           })
         }}
       />
-      {view === 'plan' ? (
-        // Epic 6: the budget and its goals (BUD) replace the placeholder.
-        <EmptyState icon={ChartPieSliceIcon} title={t('placeholder.budget.title')}>
-          {t('placeholder.budget.body')}
-        </EmptyState>
-      ) : (
-        analysis && <Spending analysis={analysis} />
-      )}
+      {view === 'plan'
+        ? budget && <PlanView budget={budget} />
+        : analysis && <Spending analysis={analysis} />}
       {analysis && (
         <>
           <FilterSheet

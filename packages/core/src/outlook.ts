@@ -315,7 +315,8 @@ export function incomeAndSpending(
   view: AnalysisView,
   count = 12,
 ): { points: FlowPoint[]; spentChange: number | null; incomeChange: number | null } {
-  const at = (step: number) => shiftPeriod(view.period.start, view.scope, -step, view.firstDay)
+  const at = (step: number) =>
+    shiftPeriod(view.period.start, view.scope, -step, view.firstDay, view.monthStart)
   const totals = (from: number, to: number) => {
     let income = 0
     let spent = 0

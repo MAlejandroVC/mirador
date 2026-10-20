@@ -1,6 +1,16 @@
 // @vitest-environment node
 import {
   addPasskeyRequest,
+  budgetPlanRecord,
+  budgetPlanRecordType,
+  budgetSnapshotRecord,
+  budgetSnapshotRecordType,
+  goalContributionRecord,
+  goalContributionRecordType,
+  goalRecord,
+  goalRecordType,
+  scenarioRecord,
+  scenarioRecordType,
   importBatchRecord,
   importBatchRecordType,
   importProfileRecord,
@@ -574,6 +584,115 @@ describe('vault', () => {
       'exchangeRate',
       'nominal',
       'closingDay',
+    ])
+      expect(everything).not.toContain(plaintext)
+  })
+
+  it('BUD-04, BUD-20, BUD-26, BUD-38, BUD-56, SYS-09: the plan, goals, money added, what-ifs and closed months reach the server only encrypted', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    await phone.signUp({ username: 'ana', password })
+    const categoryId = newRecordId()
+    const goalId = newRecordId()
+
+    await phone.saveRecords([
+      {
+        id: newRecordId(),
+        body: recordBody(
+          budgetPlanRecordType,
+          budgetPlanRecord.parse({
+            targets: [{ line: categoryId, amount: 432_100, byHand: true }],
+            adjustments: [],
+            exclusions: { periods: ['2026-07-01'], linePeriods: [], transactionIds: [] },
+            tagLines: [],
+            income: 6_543_200,
+            estimates: [{ line: categoryId, amount: 765_400 }],
+          }),
+        ),
+      },
+      {
+        id: goalId,
+        body: recordBody(
+          goalRecordType,
+          goalRecord.parse({
+            name: 'Viaje a Oaxaca',
+            kind: 'save',
+            target: 1_234_500,
+            by: '2027-04-30',
+            saved: 0,
+            walletIds: [],
+            start: '2026-10-01',
+            order: 0,
+          }),
+        ),
+      },
+      {
+        id: newRecordId(),
+        body: recordBody(
+          goalContributionRecordType,
+          goalContributionRecord.parse({ goalId, amount: 98_700, date: '2026-10-19' }),
+        ),
+      },
+      {
+        id: newRecordId(),
+        body: recordBody(
+          scenarioRecordType,
+          scenarioRecord.parse({
+            name: 'Menos antojos',
+            changes: [{ line: categoryId, kind: 'percent', value: -0.15 }],
+            goals: [],
+            unlocked: [],
+            flexibility: [],
+            steps: 3,
+          }),
+        ),
+      },
+      {
+        id: newRecordId(),
+        body: recordBody(
+          budgetSnapshotRecordType,
+          budgetSnapshotRecord.parse({
+            start: '2026-09-01',
+            end: '2026-09-30',
+            lines: [{ line: categoryId, flexibility: 'flexible', target: 432_100, spent: 456_700 }],
+            income: { planned: 6_543_200, actual: 6_600_000 },
+            leftOver: { planned: 111_100, actual: 222_200 },
+            goals: [],
+            surplus: [],
+            carry: [],
+            targets: 'kept',
+            closedAt: '2026-10-01T12:00:00.000Z',
+          }),
+        ),
+      },
+      {
+        id: newRecordId(),
+        body: recordBody('preferences', {
+          defaultCurrency: 'MXN',
+          budget: { startDay: 17, lookback: 12, maxCut: 0.15, atRisk: 0.1 },
+        }),
+      },
+    ])
+
+    const everything = server.sent.join('\n')
+    for (const plaintext of [
+      'Oaxaca',
+      'antojos',
+      'budgetPlan',
+      'goalContribution',
+      'budgetSnapshot',
+      'scenario',
+      'estimates',
+      'startDay',
+      '432100',
+      '6543200',
+      '765400',
+      '1234500',
+      '98700',
+      '2027-04-30',
+      '2026-07-01',
+      categoryId,
+      'walletIds',
     ])
       expect(everything).not.toContain(plaintext)
   })

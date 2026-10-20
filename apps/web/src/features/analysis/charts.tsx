@@ -115,6 +115,8 @@ export interface Column {
   description: string
   /** Drawn in full color: the one being looked at. */
   highlight?: boolean
+  /** Drawn in `text-faint`: left out of what the chart is about, such as a month (BUD-03). */
+  muted?: boolean
 }
 
 /**
@@ -148,7 +150,11 @@ export function ColumnChart({
         {columns.map((column) => {
           const style: CSSProperties = {
             height: `${String(Math.max(column.value > 0 ? 3 : 0, (column.value / top) * 100))}%`,
-            backgroundColor: column.highlight ? fullColor(color) : softColor(color),
+            backgroundColor: column.muted
+              ? softColor('other')
+              : column.highlight
+                ? fullColor(color)
+                : softColor(color),
           }
           const bar = <span className="block w-full rounded-t-[0.3125rem]" style={style} />
           return onSelect ? (

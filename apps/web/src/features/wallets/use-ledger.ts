@@ -1,4 +1,10 @@
 import {
+  type BudgetPlanRecord,
+  budgetPlanRecord,
+  budgetPlanRecordType,
+  type BudgetSnapshotRecord,
+  budgetSnapshotRecord,
+  budgetSnapshotRecordType,
   categoryGroupRecord,
   categoryGroupRecordType,
   categoryRecord,
@@ -6,6 +12,11 @@ import {
   type ExchangeRateRecord,
   exchangeRateRecord,
   exchangeRateRecordType,
+  goalContributionRecord,
+  goalContributionRecordType,
+  type GoalRecord,
+  goalRecord,
+  goalRecordType,
   type ImportBatchRecord,
   importBatchRecord,
   importBatchRecordType,
@@ -21,6 +32,9 @@ import {
   type RecordBody,
   recurringRecord,
   recurringRecordType,
+  type ScenarioRecord,
+  scenarioRecord,
+  scenarioRecordType,
   tagRecord,
   tagRecordType,
   type TransactionRecord,
@@ -33,6 +47,7 @@ import {
 import {
   balanceTransactions,
   type Category,
+  type Contribution,
   type CategoryGroup,
   type ExchangeRate,
   guessCurrency,
@@ -83,6 +98,16 @@ export interface Ledger {
   batches: (ImportBatchRecord & { id: string })[]
   /** IMP-02, IMP-03: how to read files with columns seen before. */
   profiles: (ImportProfileRecord & { id: string })[]
+  /** Epic 6: the plan, if the person changed anything in it yet. */
+  plan: (BudgetPlanRecord & { id: string }) | null
+  /** BUD-20: goals in their order (BUD-24), done and paused ones included. */
+  goals: (GoalRecord & { id: string })[]
+  /** BUD-26: money added to goals by hand. */
+  contributions: Contribution[]
+  /** BUD-38: saved what-ifs, newest first. */
+  scenarios: (ScenarioRecord & { id: string })[]
+  /** BUD-56: closed months, oldest first. */
+  snapshots: (BudgetSnapshotRecord & { id: string })[]
 }
 
 async function readLedger(vault: VaultClient): Promise<Ledger> {
@@ -97,6 +122,11 @@ async function readLedger(vault: VaultClient): Promise<Ledger> {
   const batches: Ledger['batches'] = []
   const profiles: Ledger['profiles'] = []
   let preferences: (PreferencesRecord & { id: string }) | null = null
+  let plan: Ledger['plan'] = null
+  const goals: Ledger['goals'] = []
+  const contributions: Contribution[] = []
+  const scenarios: Ledger['scenarios'] = []
+  const snapshots: Ledger['snapshots'] = []
   for (const { id, body } of await vault.listRecords()) {
     if (body.deleted) continue
     switch (body.type) {
@@ -155,6 +185,32 @@ async function readLedger(vault: VaultClient): Promise<Ledger> {
         if (parsed.success) preferences = { id, ...parsed.data }
         break
       }
+      case budgetPlanRecordType: {
+        // Two devices that both made the first plan: the one made first wins.
+        const parsed = budgetPlanRecord.safeParse(body.data)
+        if (parsed.success && (plan === null || id < plan.id)) plan = { id, ...parsed.data }
+        break
+      }
+      case goalRecordType: {
+        const parsed = goalRecord.safeParse(body.data)
+        if (parsed.success) goals.push({ id, ...parsed.data })
+        break
+      }
+      case goalContributionRecordType: {
+        const parsed = goalContributionRecord.safeParse(body.data)
+        if (parsed.success) contributions.push({ id, ...parsed.data })
+        break
+      }
+      case scenarioRecordType: {
+        const parsed = scenarioRecord.safeParse(body.data)
+        if (parsed.success) scenarios.push({ id, ...parsed.data })
+        break
+      }
+      case budgetSnapshotRecordType: {
+        const parsed = budgetSnapshotRecord.safeParse(body.data)
+        if (parsed.success) snapshots.push({ id, ...parsed.data })
+        break
+      }
       default:
         break
     }
@@ -177,6 +233,14 @@ async function readLedger(vault: VaultClient): Promise<Ledger> {
     preferences: preferences && preferencesRecord.parse(preferences),
     batches: batches.sort((a, b) => b.importedAt.localeCompare(a.importedAt)),
     profiles,
+    plan,
+    goals: goals.sort((a, b) => a.order - b.order || a.id.localeCompare(b.id)),
+    contributions: contributions.sort((a, b) => a.date.localeCompare(b.date)),
+    scenarios: scenarios.sort((a, b) => b.id.localeCompare(a.id)),
+    // BUD-56: a month closed on two devices keeps the first close.
+    snapshots: snapshots
+      .sort((a, b) => a.start.localeCompare(b.start) || a.id.localeCompare(b.id))
+      .filter((snapshot, index, all) => all[index - 1]?.start !== snapshot.start),
   }
 }
 

@@ -739,7 +739,7 @@ These constrain how the features above are built without choosing a technology s
 
 ## Decisions
 
-Every question raised in review is decided and already reflected in the requirements above, including those raised by the move to a web app with a self-hosted server (Q23 to Q27, 2026-10-06). Three points remain open.
+Every question raised in review is decided and already reflected in the requirements above, including those raised by the move to a web app with a self-hosted server (Q23 to Q27, 2026-10-06). Two points remain open.
 
 **Decided** (2026-10-06)
 
@@ -772,10 +772,10 @@ Every question raised in review is decided and already reflected in the requirem
 | Q25 | Web push through the browser makers' push services? | Accepted, encrypted; reminders carry no financial details | SYS-12, SEC-14 |
 | Q26 | Encryption | End to end: only the client can decrypt; the network and the server see ciphertext. Files sent for extraction are encrypted in transit and read by the server only in memory | SEC epic |
 | Q27 | Forgotten password | A recovery key, shown once at sign-up, lets the user regain access; losing both password and key means the data is lost (2026-10-06) | SEC-07, SEC-08 |
+| Q28 | Should a goal contribution be a flag on a transaction (from Q6)? | No. A goal without a wallet gets money through "Add money" on the goal, so logging a transaction keeps no extra field (2026-10-20) | BUD-26 |
 
 **Still open**
 
-- Should a goal contribution be a flag on a transaction (from Q6)? To discuss when designing goals.
 - Product goal targets G1 to G5 and the non-functional targets (NFR-06) are still proposals.
 - **Category suggestions** (IMP-24): the model must come pre-trained, with no training on the device or the server, and runs in the browser. Which model is still a proposal from the stack document, not a decision.
 
