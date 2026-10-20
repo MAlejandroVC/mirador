@@ -8,10 +8,17 @@ import { SubmitButton } from '../../components/ui/submit-button'
 import { useSubmit } from '../../components/ui/use-submit'
 import { useMoney } from '../../lib/format'
 import { markNew } from '../../lib/motion'
-import { type LedgerWallet, newId, transactionBody, useSaveRecords } from './use-ledger'
+import {
+  type LedgerWallet,
+  newId,
+  transactionBody,
+  useSaveRecords,
+  walletChange,
+} from './use-ledger'
 
 // WAL-07: the person types the balance their bank or their pocket shows; when it
 // differs from Mirador's, the difference is recorded as an adjustment dated today.
+// Either way the wallet is marked checked today, so Home stops asking (DSH-05).
 // WAL-18: with valuations on, it is the investment's value, and the difference is a
 // market-value update, counted as a gain or loss rather than money put in.
 export function BalanceSheet({
@@ -133,18 +140,19 @@ function BalanceForm({
         }
         onClick={() => {
           form.submit(actual !== null, () => {
-            // Already the same: nothing to record.
-            if (!adjustment) {
-              onClose()
-              return
-            }
+            // DSH-05: the wallet remembers the day it was checked, even when the balance
+            // was already right and there is nothing else to record.
+            const checked = walletChange(wallet, { checkedOn: toCalendarDate(new Date()) })
             const id = newId()
-            save.mutate([{ id, body: transactionBody(adjustment) }], {
-              onSuccess: () => {
-                markNew(id)
-                form.finish(onClose)
+            save.mutate(
+              adjustment ? [{ id, body: transactionBody(adjustment) }, checked] : [checked],
+              {
+                onSuccess: () => {
+                  if (adjustment) markNew(id)
+                  form.finish(onClose)
+                },
               },
-            })
+            )
           })
         }}
       >

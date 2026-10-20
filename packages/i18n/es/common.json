@@ -18,14 +18,120 @@
   "quickAdd": {
     "title": "Nuevo movimiento"
   },
-  "placeholder": {
-    "home": {
-      "title": "Tu dinero de un vistazo",
-      "body": "Aquí verás cómo va tu periodo, tus metas y lo que necesite tu atención."
+  "home": {
+    "month": {
+      "perDay": "unos {{amount}} al día",
+      "spent": "Gastado en {{month}}",
+      "income": "Ingresos",
+      "spentShort": "Gastado",
+      "leftOver": "Sobrante",
+      "today": "Hoy",
+      "of": "{{spent}} de {{target}} presupuestados.",
+      "under": "Vas para terminar con {{amount}} de sobra.",
+      "pace": "A este ritmo, {{amount}} al {{date}}."
     },
-    "budget": {
-      "title": "Tu presupuesto viene en camino",
-      "body": "Se irá armando con tus propios hábitos de gasto, un pasito a la vez."
+    "attention": {
+      "title": "Necesita tu atención",
+      "none": "Estás al día",
+      "noneBody": "Nada necesita tu atención por ahora.",
+      "showAll_one": "Mostrar los {{count}}",
+      "showAll_other": "Mostrar los {{count}}",
+      "showFewer": "Mostrar menos",
+      "pay": "Pagar {{name}}",
+      "due": "Vence el {{date}}",
+      "dueToday": "Vence hoy",
+      "over": "{{name}} se pasó",
+      "atRisk": "{{name}} va para pasarse",
+      "pace": "A este ritmo, {{amount}} al {{date}}",
+      "confirmOne": "Confirmar {{name}}",
+      "confirm_one": "Confirmar {{count}} movimiento recurrente",
+      "confirm_other": "Confirmar {{count}} movimientos recurrentes",
+      "make": "Haz el presupuesto de {{month}}",
+      "makeBody": "Empieza desde tu mes habitual y fíjalo.",
+      "lock": "Fija el presupuesto de {{month}}",
+      "categorize_one": "Categoriza {{count}} movimiento",
+      "categorize_other": "Categoriza {{count}} movimientos",
+      "categorizeBody": "Siguen sin categoría este año",
+      "imports_one": "Revisa {{count}} fila importada",
+      "imports_other": "Revisa {{count}} filas importadas",
+      "importsBody": "Quedaron para después en una importación",
+      "check": "Revisa el saldo de {{name}}",
+      "checked": "Lo revisaste el {{date}}",
+      "checkMany_one": "Revisa {{count}} saldo",
+      "checkMany_other": "Revisa {{count}} saldos"
+    },
+    "coming": {
+      "title": "Próximamente",
+      "none": "Nada en las próximas dos semanas.",
+      "totals": "En las próximas dos semanas salen {{out}} y entran {{in}}.",
+      "totalsOut": "En las próximas dos semanas salen {{out}}.",
+      "totalsIn": "En las próximas dos semanas entran {{in}}.",
+      "seeAll": "Ver todo lo que viene",
+      "part": "Mensualidad {{number}} de {{of}}"
+    },
+    "goals": {
+      "seeAll_one": "Ver las {{count}} metas",
+      "seeAll_other": "Ver las {{count}} metas"
+    },
+    "worth": {
+      "title": "Patrimonio",
+      "up": "{{amount}} más que en {{month}}",
+      "down": "{{amount}} menos que en {{month}}",
+      "same": "Igual que en {{month}}",
+      "across_one": "En {{count}} cartera",
+      "across_other": "En {{count}} carteras",
+      "owe": "Debes",
+      "oweLess": "{{amount}} menos que en {{month}}",
+      "oweMore": "{{amount}} más que en {{month}}"
+    },
+    "highlights": {
+      "title": "Lo destacado",
+      "more": "Llevas {{percent}} más de lo habitual en {{name}} al {{date}}.",
+      "less": "Llevas {{percent}} menos de lo habitual en {{name}} al {{date}}.",
+      "usual": "Habitual"
+    },
+    "latest": {
+      "title": "Últimos movimientos"
+    },
+    "setup": {
+      "title": "Para empezar",
+      "count": "{{done}} de {{count}} listos",
+      "done": "Listo",
+      "wallets": {
+        "title": "Agrega tus carteras",
+        "body": "Tu banco, tus tarjetas y tu efectivo",
+        "done_one": "{{count}} cartera agregada",
+        "done_other": "{{count}} carteras agregadas"
+      },
+      "history": {
+        "title": "Trae tu historial",
+        "body": "De una hoja de cálculo o tu banco"
+      },
+      "categories": {
+        "title": "Revisa tus categorías",
+        "body": "Marca lo que necesitas y tus gustos"
+      },
+      "budget": {
+        "title": "Haz tu primer presupuesto",
+        "body": "Empieza desde tu mes habitual"
+      },
+      "goal": {
+        "title": "Pon tu primera meta",
+        "body": "Ahorra para algo o termina de pagar una deuda"
+      }
+    },
+    "edit": {
+      "title": "Editar Inicio",
+      "intro": "Este mes siempre va primero. Arrastra las demás tarjetas para cambiar su orden y apaga las que no necesites.",
+      "show": "Mostrar {{name}}"
+    },
+    "cards": {
+      "attention": "Necesita tu atención",
+      "coming": "Próximamente",
+      "goals": "Metas",
+      "netWorth": "Patrimonio",
+      "highlights": "Lo destacado",
+      "latest": "Últimos movimientos"
     }
   },
   "settings": {

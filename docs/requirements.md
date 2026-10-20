@@ -626,7 +626,7 @@ Every budget decision is recorded under Decisions.
 
 ## Epic 7: Main dashboard
 
-The dashboard is the home screen and answers three questions in one glance: am I on track this period, how are my finances overall, and what needs my attention now. Every card links to the screen with the detail.
+The dashboard is the home screen and answers four questions in one glance: am I on track this period, what needs my attention now, what is coming up, and how are my finances overall. What needs a tap from the user goes in the attention list; what happens on its own, such as a recurring payment or an installment, goes under coming up. Every card links to the screen with the detail.
 
 | ID | Requirement | Priority |
 |---|---|---|
@@ -634,12 +634,13 @@ The dashboard is the home screen and answers three questions in one glance: am I
 | DSH-02 | The app shall show this period's income, expenses and left over so far. | Must |
 | DSH-03 | The app shall show progress and projected date for each active goal. | Must |
 | DSH-04 | The app shall show net worth and net debt with their change since the last period. | Must |
-| DSH-05 | The app shall show an attention list, most urgent first: categories at risk or over target, transactions to categorize, flagged import rows, scheduled transactions to confirm, bills and card payments due in the next 7 days, a pending period-close review, and wallets not reconciled in 30 days. | Must |
+| DSH-05 | The app shall show an attention list of what needs the user's action, most urgent first: card payments due in the next 7 days or overdue, categories over or heading over their target (BUD-45), recurring transactions and fees waiting to be confirmed, a pending period-close review, a period without a budget, transactions to categorize, import rows left for later, the next period's budget to lock in, and wallets whose balance was not checked in 30 days. | Must |
 | DSH-06 | The app shall show the latest transactions and a quick-add button. | Must |
 | DSH-07 | The app shall show the top one to three insights from the analysis section. | Should |
 | DSH-08 | When the user clicks any dashboard card or item, the app shall open the matching detail screen, already filtered. | Must |
 | DSH-09 | While the user has not finished setup, the app shall show an onboarding checklist: add wallets, import history, review categories, generate the baseline, set a first goal. | Must |
 | DSH-10 | The app shall let the user hide, show and reorder dashboard cards. | Could |
+| DSH-11 | The app shall show what happens on its own in the next 14 days, soonest first: recurring transactions that don't ask first, installments, fees, and card payments due later than the attention list shows them, with the total going out and coming in. | Must |
 
 ## Epic 8: Quick add
 

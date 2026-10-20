@@ -410,7 +410,7 @@ function GoalsList({ budget, words }: { budget: Budget; words: BudgetWords }) {
 }
 
 /** One goal: its name, date and bar, then how far it has come or what it lacks (BUD-23). */
-function GoalRow({
+export function GoalRow({
   budget,
   goal,
   plan,

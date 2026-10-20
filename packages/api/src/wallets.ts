@@ -135,6 +135,9 @@ export const walletRecord = z.object({
   fees: z.array(feeSettings).max(20).optional(),
   credit: creditSettings.optional(),
   loan: loanSettings.optional(),
+  // WAL-07, DSH-05: the last day the person checked its balance, even when it matched,
+  // so Home asks again only after a while.
+  checkedOn: calendarDate.optional(),
 })
 export type WalletRecord = z.infer<typeof walletRecord>
 

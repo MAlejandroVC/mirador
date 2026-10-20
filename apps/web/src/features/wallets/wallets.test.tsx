@@ -235,11 +235,14 @@ describe('wallets', () => {
     await user.type(screen.getByRole('textbox', { name: 'Balance now' }), '100')
     expect(screen.getByText("That's what Mirador has. Nothing to adjust.")).toBeVisible()
     await user.click(screen.getByRole('button', { name: 'Record adjustment' }))
-    // Nothing is recorded, and the sheet closes: only the opening balance is there.
+    // No adjustment is recorded, and the sheet closes: only the opening balance is
+    // there. The wallet remembers it was checked today (DSH-05).
     await waitFor(() => {
       expect(screen.queryByRole('textbox', { name: 'Balance now' })).toBeNull()
     })
     expect(saved(server, 'transaction')).toHaveLength(1)
+    const checked = saved(server, 'wallet').at(-1)?.data as { checkedOn?: string } | undefined
+    expect(checked?.checkedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })
 
   it('WAL-05: the opening balance can be moved to an earlier date and amount', async () => {

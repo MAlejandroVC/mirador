@@ -14,14 +14,21 @@ export function Page({
   back,
   actions,
   card,
+  date,
+  wide,
   children,
 }: {
   title: string
   back?: { label: string; onClick: () => void; hideWithSidebar?: boolean } | undefined
   actions?: ReactNode
   card?: { icon: ReactNode; description: string }
+  /** DL-CMP-06: today's date over a tab's large title, as Home shows it. */
+  date?: string
+  /** DL-LAY-06: Home's two columns on a computer. */
+  wide?: boolean
   children?: ReactNode
 }) {
+  const width = wide ? 'max-w-(--wide-page-width)' : 'max-w-(--page-width)'
   const titleRef = useRef<HTMLHeadingElement>(null)
   const scrolled = useScrolledPast(titleRef)
   // A screen with a header card keeps its bar, with the back button, from the start.
@@ -50,7 +57,9 @@ export function Page({
           barShown ? 'opacity-100' : 'pointer-events-none opacity-0'
         } ${scrolled ? 'shadow-[0_0.5px_0_var(--color-separator)]' : ''}`}
       >
-        <div className="mx-auto grid h-14 w-full max-w-(--page-width) grid-cols-[1fr_auto_1fr] items-center px-4">
+        <div
+          className={`mx-auto grid h-14 w-full ${width} grid-cols-[1fr_auto_1fr] items-center px-4`}
+        >
           <div className="flex justify-start">{barShown && backButton}</div>
           <p
             aria-hidden
@@ -65,7 +74,7 @@ export function Page({
         </div>
       </div>
       <div
-        className={`mx-auto flex w-full max-w-(--page-width) flex-col gap-3 px-4 ${
+        className={`mx-auto flex w-full ${width} flex-col gap-3 px-4 ${
           pinned ? '' : 'pt-[calc(env(safe-area-inset-top)+0.75rem)] lg:pt-6'
         }`}
       >
@@ -81,13 +90,19 @@ export function Page({
         ) : (
           <div className="flex items-center gap-3 pt-1 pb-2">
             {backButton}
-            {/* DL-TYP-03: large title, 30 px bold. */}
-            <h1
-              ref={titleRef}
-              className="flex-1 text-[1.875rem] leading-tight font-bold tracking-[-0.02em] text-text"
-            >
-              {title}
-            </h1>
+            <div className="flex min-w-0 flex-1 flex-col">
+              {/* DL-TYP-03: a section label, as Fitness and News date their summaries. */}
+              {date && (
+                <p className="text-xs tracking-[0.04em] text-text-muted uppercase">{date}</p>
+              )}
+              {/* DL-TYP-03: large title, 30 px bold. */}
+              <h1
+                ref={titleRef}
+                className="text-[1.875rem] leading-tight font-bold tracking-[-0.02em] text-text"
+              >
+                {title}
+              </h1>
+            </div>
             {actions && <div className="flex shrink-0 items-center gap-1">{actions}</div>}
           </div>
         )}
