@@ -29,7 +29,7 @@ const key = (name: unknown) =>
     : ''
 
 // Settings the account has only one of.
-const singletons = new Set(['preferences', 'profile'])
+const singletons = new Set(['preferences', 'profile', 'budgetPlan'])
 // The fields that point at another record, by record type.
 const references = ['walletId', 'toWalletId', 'categoryId', 'payeeId', 'groupId'] as const
 

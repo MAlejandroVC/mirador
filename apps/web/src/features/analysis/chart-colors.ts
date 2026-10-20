@@ -3,7 +3,7 @@ import type { TileColor } from '../../components/ui/tile-style'
 // DL-VIZ-02, DL-COL-06: the colors charts draw with.
 
 /** A color for a chart mark: a category color, `brand`, or `other` for the rest. */
-export type MarkColor = TileColor | 'brand' | 'other'
+export type MarkColor = TileColor | 'brand' | 'sun' | 'other'
 
 /** DL-COL-06: the softer tone of a color, for bars; `other` is `text-faint` (DL-VIZ-03). */
 export function softColor(color: MarkColor, strength = 1): string {

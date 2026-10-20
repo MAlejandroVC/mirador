@@ -2,13 +2,14 @@ import {
   type CategoryRecord,
   categoryGroupRecordType,
   categoryRecordType,
+  monthBudgetRecordType,
   type RecordBody,
   type TransactionRecord,
   type WalletRecord,
 } from '@repo/api'
 import { newRecordId } from '@repo/crypto'
 import type { SyncedRecord } from '@repo/sync'
-import { configure, screen, waitFor, within } from '@testing-library/react'
+import { configure, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../lib/i18n'
@@ -145,17 +146,61 @@ describe('spending analysis', () => {
       records: [cash, ...set.records, ...history(cash, set)],
     }
     stubServer(server)
-    renderApp('/budget', unlockedVault(server))
+    renderApp('/budget?view=spending', unlockedVault(server))
 
     expect(await screen.findByText('Spent so far')).toBeVisible()
     // By March 15 a usual month had spent groceries ($1,000) and eating out ($200 to
     // $300, median $250), so $1,500 is $250 more than usual.
     expect(screen.getByText('$250.00 more than usual by Mar 15')).toBeVisible()
+    // BUD-70: a month never budgeted has no budget's pace to compare with.
+    expect(screen.queryByText(/budget’s pace/)).toBeNull()
     expect(screen.getByText('63%')).toBeVisible()
     expect(screen.getByRole('button', { name: 'Spending', pressed: true })).toBeVisible()
     // The bigger questions are tiles that open their own screens.
     expect(screen.getByRole('link', { name: /What can I cut\?/ })).toBeVisible()
     expect(screen.getByRole('link', { name: /When do I spend\?/ })).toBeVisible()
+  })
+
+  it('BUD-78: with a budget, the pace chart says how far spending is from the budget’s pace', async () => {
+    const cash = wallet('Cash')
+    const set = categories()
+    const march = {
+      id: newRecordId(),
+      revision: 1,
+      body: recordBody(monthBudgetRecordType, {
+        start: '2026-03-01',
+        targets: [
+          { line: set.groceries.id, amount: 100_000 },
+          { line: set.eatingOut.id, amount: 25_000 },
+        ].sort((a, b) => a.line.localeCompare(b.line)),
+        income: 400_000,
+        lockedAt: '2026-03-01T09:00:00.000Z',
+      }),
+    }
+    const server: FakeServer = {
+      signedIn: 'ana',
+      records: [cash, ...set.records, ...history(cash, set), march],
+    }
+    stubServer(server)
+    renderApp('/budget?view=spending', unlockedVault(server))
+
+    // The budget's pace spends the same every day: by the end of March 15 that is 15/31
+    // of $1,250, $604.84, so $1,500 is $895.16 over it.
+    expect(await screen.findByText('$895.16 over the budget’s pace')).toBeVisible()
+    expect(screen.getByText('Mar 1')).toBeVisible()
+    expect(screen.getByText('Mar 31')).toBeVisible()
+
+    // DL-VIZ-05: pointing at a day shows each line's amount by the end of it. The chart
+    // is 300 px wide, so 140 px is the 15th of 31 days.
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, 300, 128),
+    )
+    const chart = screen.getByRole('img', { name: /Spent so far/ }).parentElement as Element
+    fireEvent.pointerMove(chart, { clientX: 140, clientY: 60 })
+    const callout = within(screen.getByText('Mar 15').parentElement ?? document.body)
+    expect(callout.getByText('$1,500.00')).toBeVisible()
+    expect(callout.getByText('Budget')).toBeVisible()
+    expect(callout.getByText('$604.84')).toBeVisible()
   })
 
   it('ANA-26, ANA-30: the wide tile says what changed most and opens every change', async () => {
@@ -167,7 +212,7 @@ describe('spending analysis', () => {
       records: [cash, ...set.records, ...history(cash, set)],
     }
     stubServer(server)
-    renderApp('/budget', unlockedVault(server))
+    renderApp('/budget?view=spending', unlockedVault(server))
 
     // Four questions and the wide one, each opening a different screen.
     const tile = await screen.findByRole('link', { name: /What changed\?/ })
@@ -201,7 +246,7 @@ describe('spending analysis', () => {
       records: [cash, ...set.records, ...history(cash, set)],
     }
     stubServer(server)
-    renderApp('/budget', unlockedVault(server))
+    renderApp('/budget?view=spending', unlockedVault(server))
 
     expect(await screen.findByText('Commitments, needs and wants')).toBeVisible()
     await user.click(screen.getByRole('link', { name: 'Choose what’s a need or a want' }))
@@ -222,7 +267,7 @@ describe('spending analysis', () => {
       records: [cash, ...set.records, ...history(cash, set)],
     }
     stubServer(server)
-    renderApp('/budget', unlockedVault(server))
+    renderApp('/budget?view=spending', unlockedVault(server))
 
     await user.click(await screen.findByRole('link', { name: /Everyday/ }))
     expect(await screen.findByRole('heading', { name: 'Everyday', level: 1 })).toBeVisible()
@@ -303,7 +348,7 @@ describe('spending analysis', () => {
     const server: FakeServer = { signedIn: 'ana', records: [...records] }
     stubServer(server)
     const fetches = vi.mocked(globalThis.fetch)
-    renderApp('/budget', unlockedVault(server))
+    renderApp('/budget?view=spending', unlockedVault(server))
 
     await user.click(await screen.findByRole('link', { name: /When do I spend\?/ }))
     expect(await screen.findByRole('heading', { name: 'When do I spend?', level: 1 })).toBeVisible()

@@ -132,6 +132,7 @@ export function PeriodControl({
   onPrevious,
   onNext,
   onPick,
+  previousDisabled,
   nextDisabled,
 }: {
   name: string
@@ -141,6 +142,7 @@ export function PeriodControl({
   onPrevious: () => void
   onNext: () => void
   onPick: () => void
+  previousDisabled?: boolean
   nextDisabled?: boolean
 }) {
   const arrow = (icon: Icon, label: string, onClick: () => void, disabled?: boolean) => {
@@ -159,7 +161,7 @@ export function PeriodControl({
   }
   return (
     <div className="flex items-center gap-1 rounded-2xl bg-surface p-1">
-      {arrow(CaretLeftIcon, previousLabel, onPrevious)}
+      {arrow(CaretLeftIcon, previousLabel, onPrevious, previousDisabled)}
       <button
         type="button"
         onClick={onPick}

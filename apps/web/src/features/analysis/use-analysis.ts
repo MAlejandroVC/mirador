@@ -54,6 +54,8 @@ export function buildAnalysis(ledger: Ledger, state: AnalysisState, today: strin
   // Analysis looks back, never ahead: installments and dates still to come wait for
   // their day (What's coming shows them, ANA-27).
   const all = analysisEntries(kept, context).filter((entry) => entry.date <= today)
+  // SYS-02: a month runs from the day budget months start on.
+  const monthStart = ledger.preferences?.budget?.startDay ?? 1
   return {
     ledger,
     lookups: taxonomy(ledger),
@@ -61,9 +63,10 @@ export function buildAnalysis(ledger: Ledger, state: AnalysisState, today: strin
     context,
     today,
     view: {
-      period: periodOf(state.anchor, state.scope),
+      period: periodOf(state.anchor, state.scope, 0, monthStart),
       scope: state.scope,
       firstDay: 0,
+      monthStart,
       today,
       firstDate: all[0]?.date ?? null,
     },

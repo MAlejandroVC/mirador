@@ -1,8 +1,12 @@
-import { screen, within } from '@testing-library/react'
+import { configure, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../lib/i18n'
 import { fakeVault, type FakeServer, renderApp, stubServer, unlockedVault } from '../../test-utils'
+
+// Each place is its own chunk (autoCodeSplitting), loaded on first visit, and Budget is a
+// full page; on a busy runner that can take longer than the default second.
+configure({ asyncUtilTimeout: 5000 })
 
 describe('app shell', () => {
   afterEach(() => {

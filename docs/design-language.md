@@ -370,7 +370,7 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 | Quick-add button | Circle |
 | Bars | Fully rounded |
 
-**DL-SHP-03** Cards and lists have no shadow and no border. They stand apart from the `background` by their `surface` color alone. Only floating elements are lifted: the tab bar (a hairline outline), the quick-add button and sheets (a soft shadow).
+**DL-SHP-03** Cards and lists have no shadow and no border. They stand apart from the `background` by their `surface` color alone. Only floating elements are lifted: the tab bar (a hairline outline), the quick-add button and sheets (a soft shadow), and chart callouts (both, DL-VIZ-05).
 
 **DL-SHP-04** Rows in a list are divided by hairline separators that start where the text starts, not under the icon.
 
@@ -457,6 +457,8 @@ A day's or a period's net follows the same rule: money in shows its plus in Moss
 **DL-VIZ-03** A phone chart shows at most six series; the rest are grouped as "Other" in `text-faint`. Labels sit on or next to the data, not in a separate legend, wherever they fit.
 
 **DL-VIZ-04** Bars and lines are flat. The only gradient allowed is an area fill under a line, fading to transparent (DL-COL-02).
+
+**DL-VIZ-05** Every chart can be read point by point in a callout: a small floating card just above the chart with the date or name, then each series' amount beside its legend mark, kept within the chart's width. A thin `text-faint` rule and a dot on each line mark the point; on columns and bar parts, the one being read turns full color (a stacked bar fades the other parts). On a computer the callout follows the mouse. On a phone the person touches and holds the chart, then drags along it, and lifting the finger hides it, as in Apple's Stocks. A tap keeps doing what it did, such as opening a month, and a swipe still scrolls the page. Keyboard focus on a column or a day shows its callout too. A tile's small line has no callout: the tile opens its own screen. *Why:* the sentence with the chart says what matters (DL-PRI-07); the callout is for a closer look, so it never costs a tap or gets in the way of scrolling.
 
 ## Voice and tone
 

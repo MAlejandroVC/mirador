@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ClockCountdownIcon } from '../../components/ui/icons'
 import { CategoryTile } from '../categories/category-tile'
+import { amountTip } from './chart-pointer'
 import { ColumnChart } from './charts'
 import { DetailPage } from './detail-page'
 import { Card, FigureRow, SectionLabel } from './parts'
@@ -50,6 +51,13 @@ function Coming({ analysis }: { analysis: Analysis }) {
           }))}
           onSelect={(column) => {
             setChosen(months.findIndex((item) => item.period.start === column.key))
+          }}
+          tip={(column) => {
+            const item = months.find((each) => each.period.start === column.key)
+            return amountTip(
+              item ? words.period(item.period, 'month') : column.label,
+              words.text(column.value),
+            )
           }}
         />
         <p className="text-[0.8125rem] text-text-muted">{t('analysis.coming.hint')}</p>

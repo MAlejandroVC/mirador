@@ -147,6 +147,8 @@ export interface AnalysisView {
   scope: PeriodScope
   /** SYS-03: the first day of the week, 0 for Sunday. */
   firstDay: number
+  /** SYS-02: the day budget months start on; 1, the calendar month, when left out. */
+  monthStart?: number
   today: string
   /** The first date with any record, so periods before it don't count as zero. */
   firstDate: string | null
@@ -194,7 +196,7 @@ export function inProgress(view: Pick<AnalysisView, 'period' | 'today'>): boolea
 export function lookbackPeriods(view: AnalysisView, count = 6): Period[] {
   const periods: Period[] = []
   for (let step = count; step >= 1; step -= 1) {
-    const period = shiftPeriod(view.period.start, view.scope, -step, view.firstDay)
+    const period = shiftPeriod(view.period.start, view.scope, -step, view.firstDay, view.monthStart)
     if (view.firstDate !== null && period.end >= view.firstDate) periods.push(period)
   }
   return periods
@@ -346,6 +348,16 @@ export function pace(
   return { days, current, usual: curves.length > 0 ? usual : [] }
 }
 
+/**
+ * BUD-78: where spending would stand at the end of each day to finish the period
+ * on `target` spending the same every day: a straight line. It never follows the usual
+ * curve, since the budget comes from the usual period and the two lines would sit on top
+ * of each other.
+ */
+export function budgetPace(target: number, days: number): number[] {
+  return Array.from({ length: days }, (_, day) => Math.round((target * (day + 1)) / days))
+}
+
 /** One slice of spending: a category group, category, tag, payee or wallet. */
 export interface Slice {
   key: string
@@ -442,7 +454,7 @@ export function spendingSeries(
 ): PeriodPoint[] {
   const points: PeriodPoint[] = []
   for (let step = count - 1; step >= 0; step -= 1) {
-    const period = shiftPeriod(view.period.start, view.scope, -step, view.firstDay)
+    const period = shiftPeriod(view.period.start, view.scope, -step, view.firstDay, view.monthStart)
     if (view.firstDate !== null && period.end < view.firstDate) continue
     let spent = 0
     let bought = 0
