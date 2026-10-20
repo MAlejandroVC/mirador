@@ -17,6 +17,7 @@ import { useBack } from '../../components/shell/back'
 import { HeroCard } from '../../components/ui/hero-card'
 import { Page } from '../../components/ui/page'
 import { CategoryTile } from '../categories/category-tile'
+import { amountTip } from './chart-pointer'
 import { ColumnChart } from './charts'
 import { Card, FigureRow, SectionLabel, SliceLink, TransactionsLink } from './parts'
 import { useSliceLook } from './use-slice-look'
@@ -192,6 +193,13 @@ function Slice({
               search: drillDown({ start: column.key, end: column.key }, view.scope, { by, id }),
             })
           }}
+          tip={(column) => {
+            const point = series.find((each) => each.period.start === column.key)
+            return amountTip(
+              point ? words.period(point.period, view.scope) : column.label,
+              words.text(point?.spent ?? column.value),
+            )
+          }}
         />
         {average !== null && (
           <p className="text-[0.9375rem] text-text-muted">
@@ -264,6 +272,12 @@ function Slice({
                 }),
                 highlight: day === busiest,
               }))}
+              tip={(column) =>
+                amountTip(
+                  words.weekdays('long')[Number(column.key)] ?? column.label,
+                  words.text(column.value),
+                )
+              }
             />
             <p className="text-[0.9375rem] text-text-muted">
               {t('analysis.when.weekdaySentence', {

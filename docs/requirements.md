@@ -601,6 +601,7 @@ A period's budget is where the user tries what-ifs: it starts from the latest bu
 | BUD-40 | While a period has a budget, the app shall set each category's target for the period to that budget's amount, plus anything carried over at close (BUD-52). | Must |
 | BUD-41 | The app shall show, per category and in total, the period's target, actual spending, amount remaining and pace. | Must |
 | BUD-42 | The app shall compute pace from the user's usual spending curve within a period, not as a straight line. | Should |
+| BUD-78 | While the current period has a budget, the app shall also draw the budget on the cumulative spending chart (ANA-21) as a straight line that spends the same amount every day and ends on the period's total target, and say how far spending so far is above or below that line; unlike the pace of BUD-42, this line never follows the usual curve, which the budget already comes from. | Should |
 | BUD-43 | The app shall mark each category as on track, at risk (projected to end the period more than 10% over target) or over target. | Must |
 | BUD-44 | The app shall leave transfers and budget-excluded transactions out of all budget figures. | Must |
 | BUD-45 | When a category becomes at risk, the app shall show an alert on the dashboard with the projected overrun and the days left in the period. | Should |

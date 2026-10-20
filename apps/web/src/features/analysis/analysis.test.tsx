@@ -9,7 +9,7 @@ import {
 } from '@repo/api'
 import { newRecordId } from '@repo/crypto'
 import type { SyncedRecord } from '@repo/sync'
-import { configure, screen, waitFor, within } from '@testing-library/react'
+import { configure, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../lib/i18n'
@@ -161,7 +161,7 @@ describe('spending analysis', () => {
     expect(screen.getByRole('link', { name: /When do I spend\?/ })).toBeVisible()
   })
 
-  it('BUD-41, BUD-42: with a budget, the pace chart says how far spending is from the budget’s pace', async () => {
+  it('BUD-78: with a budget, the pace chart says how far spending is from the budget’s pace', async () => {
     const cash = wallet('Cash')
     const set = categories()
     const march = {
@@ -184,11 +184,23 @@ describe('spending analysis', () => {
     stubServer(server)
     renderApp('/budget?view=spending', unlockedVault(server))
 
-    // A usual month has spent all of its $1,250 by the 15th, so the budget's pace has
-    // all $1,250 spent by then too; $1,500 is $250 over it.
-    expect(await screen.findByText('$250.00 over the budget’s pace')).toBeVisible()
+    // The budget's pace spends the same every day: by the end of March 15 that is 15/31
+    // of $1,250, $604.84, so $1,500 is $895.16 over it.
+    expect(await screen.findByText('$895.16 over the budget’s pace')).toBeVisible()
     expect(screen.getByText('Mar 1')).toBeVisible()
     expect(screen.getByText('Mar 31')).toBeVisible()
+
+    // DL-VIZ-05: pointing at a day shows each line's amount by the end of it. The chart
+    // is 300 px wide, so 140 px is the 15th of 31 days.
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, 300, 128),
+    )
+    const chart = screen.getByRole('img', { name: /Spent so far/ }).parentElement as Element
+    fireEvent.pointerMove(chart, { clientX: 140, clientY: 60 })
+    const callout = within(screen.getByText('Mar 15').parentElement ?? document.body)
+    expect(callout.getByText('$1,500.00')).toBeVisible()
+    expect(callout.getByText('Budget')).toBeVisible()
+    expect(callout.getByText('$604.84')).toBeVisible()
   })
 
   it('ANA-26, ANA-30: the wide tile says what changed most and opens every change', async () => {

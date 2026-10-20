@@ -25,6 +25,7 @@ import { CaretRightIcon } from '../../components/ui/icons'
 import { List, ListButtonRow, ListRow } from '../../components/ui/list'
 import { Page } from '../../components/ui/page'
 import { Sheet } from '../../components/ui/sheet'
+import { amountTip } from '../analysis/chart-pointer'
 import { ColumnChart } from '../analysis/charts'
 import { Card, SectionLabel } from '../analysis/parts'
 import { CategoryTile, TagDot } from '../categories/category-tile'
@@ -624,6 +625,15 @@ function History({
                 }),
             muted: item.excluded,
           }))}
+          tip={(column) => {
+            const item = usual.months.find((each) => each.period.start === column.key)
+            if (!item) return amountTip(column.label, words.text(column.value))
+            const month = words.monthTitle(item.period)
+            return amountTip(
+              item.excluded ? t('budget.line.monthLeftOutTip', { month }) : month,
+              words.text(item.spent),
+            )
+          }}
         />
         {target !== null && (
           <div

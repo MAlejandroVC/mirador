@@ -1,4 +1,5 @@
 import {
+  addDays,
   breakdown,
   budgetPace,
   byWeekday,
@@ -16,6 +17,8 @@ import {
 import { HeroCard } from '../../components/ui/hero-card'
 import { ListLinkRow } from '../../components/ui/list'
 import { softColor, topParts } from './chart-colors'
+import { amountTip, type TipRow } from './chart-pointer'
+import { TipMark } from './chart-tip'
 import { PaceChart, StackedBar, Sparkline } from './charts'
 import { changeSentence } from './sentences'
 import { Card, QuestionTile, SectionLabel, SliceLink, Versus } from './parts'
@@ -28,7 +31,7 @@ import { flagThreshold, type Words } from './use-words'
 // (ANA-01, ANA-12, ANA-21), where the money went (ANA-10, ANA-13), then a tile for
 // each bigger question, which opens its screen; what changed most (ANA-26) leads them.
 // `budget` is the period's budget in total, when it has one and nothing is filtered, so
-// the pace chart can show the budget's pace too (BUD-41, BUD-42).
+// the pace chart can show the budget's pace too (BUD-78).
 export function SpendingView({
   analysis,
   words,
@@ -45,9 +48,10 @@ export function SpendingView({
   const usual = usualSpending(entries, view)
   const totals = periodTotals(entries, view.period)
   const curve = pace(entries, view)
-  // BUD-41, BUD-42: how far spending so far is from where the budget's pace has it
-  // today, read off the chart's own lines; within 2% of the budget is "right on" it.
-  const budgetCurve = budget === null ? [] : budgetPace(budget, curve.usual, curve.days)
+  // BUD-78: how far spending so far is from where an even daily pace to the
+  // budget has it today, read off the chart's own lines; within 2% of the budget is
+  // "right on" it.
+  const budgetCurve = budget === null ? [] : budgetPace(budget, curve.days)
   const budgetGap =
     budget === null
       ? null
@@ -129,6 +133,20 @@ export function SpendingView({
               end: words.date(view.period.end),
               ...(going ? { today: t('dates.today') } : {}),
             }}
+            tip={(day) => ({
+              title: words.date(addDays(view.period.start, day)),
+              rows: (
+                [
+                  ['spent', periodName, curve.current[day], 'line'],
+                  ['usual', t('analysis.pace.usual'), curve.usual[day], 'dashed'],
+                  ['budget', t('analysis.pace.budget'), budgetCurve[day], 'solid'],
+                ] as const
+              ).flatMap(([key, label, value, mark]): TipRow[] =>
+                value === undefined
+                  ? []
+                  : [{ key, label, value: words.text(value), mark: <TipMark kind={mark} /> }],
+              ),
+            })}
           />
           <div
             aria-hidden
@@ -168,6 +186,12 @@ export function SpendingView({
                     color: look('group', group.key).color,
                   })),
                 )}
+                tip={(part, share) =>
+                  amountTip(
+                    part.key === 'other' ? t('analysis.other') : look('group', part.key).name,
+                    `${words.text(part.value)} · ${words.share(share)}`,
+                  )
+                }
               />
             </div>
             <ul>
@@ -221,6 +245,12 @@ export function SpendingView({
                 { key: 'fixed', value: flexibility.fixed, color: 'brand', strength: 0.6 },
                 { key: 'flexible', value: flexibility.flexible, color: 'brand', strength: 0.3 },
               ]}
+              tip={(part, share) =>
+                amountTip(
+                  t(`categories.flexibility.${part.key as 'locked' | 'fixed' | 'flexible'}Plural`),
+                  `${words.text(part.value)} · ${words.share(share)}`,
+                )
+              }
             />
           </div>
           <dl className="grid grid-cols-3 gap-2 px-4">

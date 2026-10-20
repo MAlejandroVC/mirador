@@ -142,7 +142,7 @@ function Spending({
   const { t } = useTranslation()
   const quickAdd = useQuickAdd()
   const words = useWords(analysis.context.currency, analysis.today)
-  // BUD-41, BUD-42: a month with a budget shows the budget's pace on its chart too; not
+  // BUD-78: a month with a budget shows the budget's pace on its chart too; not
   // with filters on, since the budget counts the whole month.
   const start = analysis.view.scope === 'month' ? analysis.view.period.start : null
   const target = useMemo(() => {

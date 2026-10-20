@@ -1698,7 +1698,8 @@
       "steady": "Steady",
       "variesLittle": "Varies a little",
       "variesLot": "Varies a lot",
-      "perMonth": "a month"
+      "perMonth": "a month",
+      "projected": "Projected"
     },
     "slice": {
       "kinds": {
@@ -1742,7 +1743,8 @@
       "less": "{{percent}}% less",
       "perYear": "{{amount}} a year",
       "transactions": "See transactions"
-    }
+    },
+    "other": "Other"
   },
   "budget": {
     "review": {
@@ -1897,7 +1899,8 @@
       "lastYear": "Same month last year",
       "covers_other": "{{amount}} would have been enough in {{covered}} of your last {{count}} months.",
       "coversAll_other": "{{amount}} would have been enough in each of your last {{count}} months.",
-      "coversNone_other": "{{amount}} wouldn’t have been enough in any of your last {{count}} months."
+      "coversNone_other": "{{amount}} wouldn’t have been enough in any of your last {{count}} months.",
+      "monthLeftOutTip": "{{month}}, left out"
     },
     "leaveOut": {
       "title": "Leave out",

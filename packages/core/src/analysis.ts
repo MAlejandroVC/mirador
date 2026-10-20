@@ -349,15 +349,13 @@ export function pace(
 }
 
 /**
- * BUD-41, BUD-42: where spending would stand at the end of each day to finish the period
- * on `target`, following the usual curve's shape; an even line when there is no usual
- * curve to follow.
+ * BUD-78: where spending would stand at the end of each day to finish the period
+ * on `target` spending the same every day: a straight line. It never follows the usual
+ * curve, since the budget comes from the usual period and the two lines would sit on top
+ * of each other.
  */
-export function budgetPace(target: number, usual: readonly number[], days: number): number[] {
-  const end = usual[days - 1] ?? 0
-  return Array.from({ length: days }, (_, day) =>
-    Math.round(end > 0 ? (target * (usual[day] ?? end)) / end : (target * (day + 1)) / days),
-  )
+export function budgetPace(target: number, days: number): number[] {
+  return Array.from({ length: days }, (_, day) => Math.round((target * (day + 1)) / days))
 }
 
 /** One slice of spending: a category group, category, tag, payee or wallet. */

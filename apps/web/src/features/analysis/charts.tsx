@@ -1,27 +1,66 @@
 import { calendarWeeks } from '@repo/core'
 import type { CSSProperties, ReactNode } from 'react'
 import { fullColor, type MarkColor, softColor } from './chart-colors'
+import { columnAt, holdable, nearestPoint, type Tip, useChartPointer } from './chart-pointer'
+import { ChartRule, ChartTip } from './chart-tip'
 
 // Epic 5's charts: flat SVG and CSS, no library, so nothing leaves the device and the
 // bundle stays small. DL-VIZ-02: a chart about categories, wallets or tags takes their
 // colors; one with a single series takes `brand`. DL-COL-06: bars take the softer tone.
 // DL-VIZ-04: flat, with the one gradient allowed: the area under a line, fading out.
+// DL-VIZ-05: with `tip`, a chart shows what is at the mouse, or under a finger that
+// touches and holds it, in a callout; the screen says what the callout reads.
 
-/** ANA-10, ANA-13: one bar split by share, largest first, at most 6 parts plus Other. */
+/** A point on a line, drawn over the chart in HTML so it stays round as the SVG stretches. */
+function Dot({ left, top, tone }: { left: number; top: number; tone: string }) {
+  return (
+    <span
+      aria-hidden
+      className={`pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface ${tone}`}
+      style={{ left: `${String(left)}%`, top: `${String(top)}%` }}
+    />
+  )
+}
+
+/** One part of a stacked bar. */
+export interface Part {
+  key: string
+  value: number
+  color: MarkColor
+  strength?: number
+}
+
+/**
+ * ANA-10, ANA-13: one bar split by share, largest first, at most 6 parts plus Other.
+ * Looking at a part fades the others, as Swift Charts does with a pie's sectors.
+ */
 export function StackedBar({
   parts,
   height = 12,
+  tip,
 }: {
-  parts: readonly { key: string; value: number; color: MarkColor; strength?: number }[]
+  parts: readonly Part[]
   height?: number
+  tip?: (part: Part, share: number) => Tip
 }) {
-  const total = parts.reduce((sum, part) => sum + Math.max(0, part.value), 0)
+  const shown = parts.filter((part) => part.value > 0)
+  const total = shown.reduce((sum, part) => sum + part.value, 0)
+  const starts = shown.map(
+    (_, index) => shown.slice(0, index).reduce((sum, part) => sum + part.value, 0) / total,
+  )
+  const { attach, active: pointed } = useChartPointer((x, _y, box) => {
+    if (!tip || total <= 0 || box.width <= 0) return null
+    const fraction = Math.min(1, Math.max(0, (x - box.left) / box.width))
+    return starts.findLastIndex((start) => start <= fraction)
+  })
   if (total <= 0) return <div aria-hidden className="h-3 rounded-full bg-fill" />
+  const active = pointed === null ? undefined : shown[pointed]
+  const activeStart = pointed === null ? 0 : (starts[pointed] ?? 0)
   return (
-    <div aria-hidden className="flex gap-0.5 overflow-hidden rounded-full" style={{ height }}>
-      {parts
-        .filter((part) => part.value > 0)
-        .map((part) => (
+    // The padding gives a finger more room to hold the thin bar, without moving it.
+    <div ref={attach} className={`relative -my-2 py-2 ${tip ? holdable : ''}`}>
+      <div aria-hidden className="flex gap-0.5 overflow-hidden rounded-full" style={{ height }}>
+        {shown.map((part) => (
           <div
             key={part.key}
             className="min-w-1"
@@ -29,9 +68,17 @@ export function StackedBar({
               flexGrow: part.value,
               flexBasis: 0,
               backgroundColor: softColor(part.color, part.strength),
+              opacity: active && active.key !== part.key ? 0.35 : 1,
             }}
           />
         ))}
+      </div>
+      {active && tip && (
+        <ChartTip
+          left={(activeStart + active.value / total / 2) * 100}
+          tip={tip(active, active.value / total)}
+        />
+      )}
     </div>
   )
 }
@@ -40,7 +87,8 @@ const chartHeight = 120
 
 /**
  * ANA-21: spending through the period, day by day, against the usual period's curve
- * (dashed) and, when the period has a budget, the budget's pace (BUD-42, thin solid).
+ * (dashed) and, when the period has a budget, the budget's even daily pace (BUD-78, a
+ * thin solid straight line).
  * Each point is the total at the end of its day, so the line starts on the first day's
  * spending, not at nothing; the dates under it say so. Today's point is marked.
  */
@@ -51,6 +99,7 @@ export function PaceChart({
   days,
   label,
   dates,
+  tip,
 }: {
   current: readonly number[]
   usual: readonly number[]
@@ -59,7 +108,12 @@ export function PaceChart({
   label: string
   /** Under the chart: the first and last day, and today while the period runs. */
   dates: { start: string; end: string; today?: string }
+  /** What the callout says about a day, counted from 0. */
+  tip?: (day: number) => Tip
 }) {
+  const { attach, active: pointed } = useChartPointer((left, _top, box) =>
+    tip ? nearestPoint(left, box, days) : null,
+  )
   const top = Math.max(1, ...current, ...usual, ...budget) * 1.08
   const width = 300
   const x = (day: number) => (days <= 1 ? 0 : (day / (days - 1)) * width)
@@ -67,14 +121,15 @@ export function PaceChart({
   const line = (values: readonly number[]) =>
     values.map((value, day) => `${x(day).toFixed(1)},${y(value).toFixed(1)}`).join(' ')
   const last = current.length - 1
-  // The SVG stretches to the card, so today's dot sits over it in HTML and stays round.
-  const todayAt = last >= 0 ? (x(last) / width) * 100 : null
-  const todayTop = last >= 0 ? ((y(current[last] ?? 0) + 4) / (chartHeight + 8)) * 100 : null
+  const across = (day: number) => (x(day) / width) * 100
+  const down = (value: number) => ((y(value) + 4) / (chartHeight + 8)) * 100
+  const todayAt = last >= 0 ? across(last) : null
+  const day = pointed
   // Today's date shows under its dot only where it clears the first and last day.
   const todayLabel = dates.today && todayAt !== null && todayAt > 20 && todayAt < 80
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="relative">
+      <div ref={attach} className={`relative ${tip ? holdable : ''}`}>
         <svg
           role="img"
           aria-label={label}
@@ -126,12 +181,23 @@ export function PaceChart({
             />
           )}
         </svg>
-        {dates.today && todayAt !== null && todayTop !== null && (
-          <span
-            aria-hidden
-            className="absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand ring-2 ring-surface"
-            style={{ left: `${String(todayAt)}%`, top: `${String(todayTop)}%` }}
-          />
+        {day !== null && tip && <ChartRule left={across(day)} />}
+        {dates.today && todayAt !== null && (
+          <Dot left={todayAt} top={down(current[last] ?? 0)} tone="bg-brand" />
+        )}
+        {day !== null && tip && (
+          <>
+            {usual[day] !== undefined && (
+              <Dot left={across(day)} top={down(usual[day])} tone="bg-text-faint" />
+            )}
+            {budget[day] !== undefined && (
+              <Dot left={across(day)} top={down(budget[day])} tone="bg-text-muted" />
+            )}
+            {current[day] !== undefined && (
+              <Dot left={across(day)} top={down(current[day])} tone="bg-brand" />
+            )}
+            <ChartTip left={across(day)} tip={tip(day)} />
+          </>
         )}
       </div>
       <div aria-hidden className="relative h-4 text-[0.6875rem] text-text-muted tabular-nums">
@@ -167,7 +233,8 @@ export interface Column {
 /**
  * ANA-11, ANA-22, ANA-27: columns with their labels under them and, optionally, the
  * average as a dashed line and a target as a thin solid one (BUD-77), as the pace chart
- * draws the budget. With `onSelect`, each column is a button (ANA-04).
+ * draws the budget. With `onSelect`, each column is a button (ANA-04). The column being
+ * looked at is drawn in full color under its callout.
  */
 export function ColumnChart({
   columns,
@@ -176,6 +243,7 @@ export function ColumnChart({
   color = 'brand',
   onSelect,
   height = 'h-28',
+  tip,
 }: {
   columns: readonly Column[]
   average?: number | null
@@ -183,11 +251,21 @@ export function ColumnChart({
   color?: MarkColor
   onSelect?: (column: Column) => void
   height?: string
+  tip?: (column: Column) => Tip
 }) {
+  const {
+    attach,
+    active: pointed,
+    show,
+  } = useChartPointer((left, _top, box) => (tip ? columnAt(left, box, columns.length) : null))
+  const active = pointed === null ? undefined : columns[pointed]
   const top = Math.max(1, ...columns.map((column) => column.value), average ?? 0, target ?? 0)
   return (
     <div className="flex flex-col gap-1.5">
-      <div className={`relative flex items-end gap-1 ${height}`}>
+      <div
+        ref={attach}
+        className={`relative flex items-end gap-1 ${height} ${tip ? holdable : ''}`}
+      >
         {average != null && average > 0 && (
           <div
             aria-hidden
@@ -202,12 +280,12 @@ export function ColumnChart({
             style={{ bottom: `${String((target / top) * 100)}%` }}
           />
         )}
-        {columns.map((column) => {
+        {columns.map((column, index) => {
           const style: CSSProperties = {
             height: `${String(Math.max(column.value > 0 ? 3 : 0, (column.value / top) * 100))}%`,
             backgroundColor: column.muted
               ? softColor('other')
-              : column.highlight
+              : column.highlight || column === active
                 ? fullColor(color)
                 : softColor(color),
           }
@@ -220,6 +298,13 @@ export function ColumnChart({
               onClick={() => {
                 onSelect(column)
               }}
+              onFocus={(event) => {
+                // DL-VIZ-05: a column reached with the keyboard shows its callout too.
+                if (tip && event.currentTarget.matches(':focus-visible')) show(index)
+              }}
+              onBlur={() => {
+                show(null)
+              }}
               className="flex h-full min-w-0 flex-1 items-end rounded-md focus-visible:outline-2 focus-visible:outline-brand"
             >
               {bar}
@@ -231,6 +316,9 @@ export function ColumnChart({
             </span>
           )
         })}
+        {active && tip && pointed !== null && (
+          <ChartTip left={((pointed + 0.5) / columns.length) * 100} tip={tip(active)} />
+        )}
       </div>
       <div aria-hidden className="flex gap-1">
         {columns.map((column) => (
@@ -283,11 +371,18 @@ export function LineChart({
   lines,
   label,
   footer,
+  tip,
 }: {
   lines: readonly { values: readonly (number | null)[]; style: 'solid' | 'dashed' | 'muted' }[]
   label: string
   footer?: ReactNode
+  /** What the callout says about a point, counted from 0; null for nothing there. */
+  tip?: (index: number) => Tip | null
 }) {
+  const count = Math.max(0, ...lines.map((line) => line.values.length))
+  const { attach, active: pointed } = useChartPointer((left, _top, box) =>
+    tip ? nearestPoint(left, box, count) : null,
+  )
   const all = lines.flatMap((line) =>
     line.values.filter((value): value is number => value !== null),
   )
@@ -295,51 +390,74 @@ export function LineChart({
   const low = Math.min(0, ...all)
   const high = Math.max(1, ...all)
   const span = (high - low) * 1.08 || 1
-  const count = Math.max(...lines.map((line) => line.values.length))
   const width = 300
   const x = (index: number) => (count <= 1 ? 0 : (index / (count - 1)) * width)
   const y = (value: number) => chartHeight - ((value - low) / span) * chartHeight
+  const at = pointed
+  const shown = at === null || !tip ? null : tip(at)
+  const across = (index: number) => (x(index) / width) * 100
   return (
     <div className="flex flex-col gap-1.5">
-      <svg
-        role="img"
-        aria-label={label}
-        viewBox={`0 -4 ${String(width)} ${String(chartHeight + 8)}`}
-        preserveAspectRatio="none"
-        className="h-32 w-full overflow-visible"
-      >
-        {low < 0 && (
-          <line
-            x1="0"
-            x2={width}
-            y1={y(0)}
-            y2={y(0)}
-            stroke="var(--mirador-separator)"
-            vectorEffect="non-scaling-stroke"
-          />
-        )}
-        {lines.map((line, index) => {
-          const points = line.values
-            .map((value, at) =>
-              value === null ? null : `${x(at).toFixed(1)},${y(value).toFixed(1)}`,
-            )
-            .filter((point) => point !== null)
-            .join(' ')
-          return (
-            <polyline
-              key={index}
-              points={points}
-              fill="none"
-              stroke={line.style === 'muted' ? 'var(--mirador-text-muted)' : 'var(--mirador-brand)'}
-              strokeWidth={line.style === 'solid' ? 2.5 : 1.75}
-              strokeDasharray={line.style === 'solid' ? undefined : '4 4'}
-              strokeLinecap="round"
-              strokeLinejoin="round"
+      <div ref={attach} className={`relative ${tip ? holdable : ''}`}>
+        <svg
+          role="img"
+          aria-label={label}
+          viewBox={`0 -4 ${String(width)} ${String(chartHeight + 8)}`}
+          preserveAspectRatio="none"
+          className="block h-32 w-full overflow-visible"
+        >
+          {low < 0 && (
+            <line
+              x1="0"
+              x2={width}
+              y1={y(0)}
+              y2={y(0)}
+              stroke="var(--mirador-separator)"
               vectorEffect="non-scaling-stroke"
             />
-          )
-        })}
-      </svg>
+          )}
+          {lines.map((line, index) => {
+            const points = line.values
+              .map((value, at) =>
+                value === null ? null : `${x(at).toFixed(1)},${y(value).toFixed(1)}`,
+              )
+              .filter((point) => point !== null)
+              .join(' ')
+            return (
+              <polyline
+                key={index}
+                points={points}
+                fill="none"
+                stroke={
+                  line.style === 'muted' ? 'var(--mirador-text-muted)' : 'var(--mirador-brand)'
+                }
+                strokeWidth={line.style === 'solid' ? 2.5 : 1.75}
+                strokeDasharray={line.style === 'solid' ? undefined : '4 4'}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            )
+          })}
+        </svg>
+        {at !== null && shown && (
+          <>
+            <ChartRule left={across(at)} />
+            {lines.map((line, index) => {
+              const value = line.values[at]
+              return value == null ? null : (
+                <Dot
+                  key={index}
+                  left={across(at)}
+                  top={((y(value) + 4) / (chartHeight + 8)) * 100}
+                  tone={line.style === 'muted' ? 'bg-text-muted' : 'bg-brand'}
+                />
+              )
+            })}
+            <ChartTip left={across(at)} tip={shown} />
+          </>
+        )}
+      </div>
       {footer}
     </div>
   )
@@ -356,6 +474,7 @@ export function Heatmap({
   weekdays,
   describe,
   onSelect,
+  tip,
 }: {
   /** Any date in the month. */
   month: string
@@ -365,7 +484,19 @@ export function Heatmap({
   weekdays: readonly string[]
   describe: (date: string, spent: number) => string
   onSelect: (date: string) => void
+  tip?: (date: string, spent: number) => Tip
 }) {
+  // The day under the pointer, from the cell itself, since the calendar is a grid.
+  const {
+    attach,
+    active: pointed,
+    show,
+  } = useChartPointer((left, top) => {
+    const cell = tip
+      ? document.elementFromPoint(left, top)?.closest<HTMLElement>('[data-day]')
+      : null
+    return cell ? Number(cell.dataset.day) : null
+  })
   const spent = [...daily.values()].filter((value) => value > 0).sort((a, b) => a - b)
   const step = (value: number) => {
     if (value <= 0 || spent.length === 0) return 0
@@ -374,7 +505,7 @@ export function Heatmap({
   }
   const weeks = calendarWeeks(month, 0)
   return (
-    <div className="grid grid-cols-7 gap-1">
+    <div ref={attach} className={`grid grid-cols-7 gap-1 ${tip ? holdable : ''}`}>
       {weekdays.map((name, index) => (
         <span key={index} aria-hidden className="text-center text-[0.6875rem] text-text-muted">
           {name}
@@ -385,16 +516,24 @@ export function Heatmap({
         const value = daily.get(date) ?? 0
         const level = step(value)
         const future = date > today
+        const looked = pointed === index && tip
         return (
           <button
             key={date}
             type="button"
             disabled={future}
             aria-label={describe(date, value)}
+            {...(future ? {} : { 'data-day': index })}
             onClick={() => {
               onSelect(date)
             }}
-            className={`flex aspect-square min-h-9 items-center justify-center rounded-lg text-[0.75rem] tabular-nums focus-visible:outline-2 focus-visible:outline-brand ${
+            onFocus={(event) => {
+              if (tip && event.currentTarget.matches(':focus-visible')) show(index)
+            }}
+            onBlur={() => {
+              show(null)
+            }}
+            className={`relative flex aspect-square min-h-9 items-center justify-center rounded-lg text-[0.75rem] tabular-nums focus-visible:outline-2 focus-visible:outline-brand ${
               future ? 'text-text-faint' : level >= 3 ? 'text-on-brand' : 'text-text'
             } ${date === today ? 'ring-2 ring-brand ring-offset-1 ring-offset-surface' : ''}`}
             style={{
@@ -406,6 +545,8 @@ export function Heatmap({
             }}
           >
             {Number(date.slice(8))}
+            {/* Anchored by its weekday, so the callout stays within the calendar. */}
+            {looked && <ChartTip left={((index % 7) / 6) * 100} tip={tip(date, value)} />}
           </button>
         )
       })}
