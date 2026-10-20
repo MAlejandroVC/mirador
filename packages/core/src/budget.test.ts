@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import type { AnalysisEntry, AnalysisView } from './analysis.ts'
 import {
   baseline,
+  committedTo,
+  coverage,
   defaultBudgetSettings,
   emptyPlan,
   findOneOffs,
@@ -12,6 +14,7 @@ import {
   planMonth,
   planSplit,
 } from './budget.ts'
+import type { CommittedItem } from './outlook.ts'
 import type { Category } from './categories.ts'
 import { budgetMonthOf, periodOf, shiftPeriod } from './dates.ts'
 
@@ -357,5 +360,53 @@ describe('BUD-40 to BUD-44: a month’s budget against its spending', () => {
     expect(eat?.target).toBe(360_000)
     expect(eat?.base).toBe(300_000)
     expect(eat?.carry).toBe(60_000)
+  })
+})
+
+describe('BUD-77: what helps set a month’s target', () => {
+  const month = (start: string, spent: number, excluded = false) => ({
+    period: periodOf(start, 'month', 0, 1),
+    spent,
+    oneOff: 0,
+    excluded,
+  })
+
+  it('BUD-77: counts the months a target would have been enough for, left-out ones aside', () => {
+    const months = [
+      month('2026-05-01', 380_000),
+      month('2026-06-01', 420_000),
+      month('2026-07-01', 900_000, true),
+      month('2026-08-01', 400_000),
+    ]
+    expect(coverage({ months }, 400_000)).toEqual({ covered: 2, months: 3 })
+    expect(coverage({ months }, 0)).toEqual({ covered: 0, months: 3 })
+  })
+
+  it('BUD-77: adds up what is already committed to a line in the month, by its tags', () => {
+    const item = (date: string, categoryId: string, amount: number, tagIds: string[] = []) =>
+      ({
+        date,
+        amount,
+        source: 'installment',
+        id: date,
+        categoryId,
+        tagIds,
+        payeeId: null,
+        note: null,
+      }) satisfies CommittedItem
+    const items = [
+      item('2026-12-05', 'eat', 20_000),
+      item('2026-12-20', 'eat', 30_000, ['trip']),
+      item('2027-01-05', 'eat', 20_000),
+      item('2026-12-09', 'food', 50_000),
+    ]
+    const december = periodOf('2026-12-01', 'month', 0, 1)
+    const tagLines = [{ categoryId: 'eat', tagId: 'trip' }]
+    expect(committedTo(items, december, 'eat', tagLines)).toEqual({ amount: 20_000, count: 1 })
+    expect(committedTo(items, december, lineKey('eat', 'trip'), tagLines)).toEqual({
+      amount: 30_000,
+      count: 1,
+    })
+    expect(committedTo(items, december, 'eat', [])).toEqual({ amount: 50_000, count: 2 })
   })
 })

@@ -2,6 +2,8 @@ import { categoryRecord, categoryRecordType } from '@repo/api'
 import {
   type AnalysisEntry,
   budgeted,
+  committedTo,
+  coverage,
   elapsedDays,
   type Flexibility,
   type LineBaseline,
@@ -9,6 +11,8 @@ import {
   type PlanLine,
   parseLineKey,
   periodDays,
+  shiftPeriod,
+  spentIn,
   usualShare,
 } from '@repo/core'
 import { Link, useNavigate } from '@tanstack/react-router'
@@ -31,7 +35,15 @@ import { LeaveOutSheet } from './leave-out-sheet'
 import { commitmentStatus, lineLook, lineName } from './lines'
 import { Over, ProgressBar } from './parts'
 import { currentPlan, monthChange, planChange } from './records'
-import { type Budget, monthOf, periodOf, placeOf, planFor, useBudget } from './use-budget'
+import {
+  type Budget,
+  committedItems,
+  monthOf,
+  periodOf,
+  placeOf,
+  planFor,
+  useBudget,
+} from './use-budget'
 
 const types: readonly Flexibility[] = ['flexible', 'fixed', 'locked']
 
@@ -39,6 +51,9 @@ const types: readonly Flexibility[] = ['flexible', 'fixed', 'locked']
 // its target, the target itself, its type, its last months with the numbers behind its
 // starting amount, and the ways to shape it: leave a month or a purchase out, or give
 // one of its tags a target of its own. It shows this month unless opened from another.
+// While a month can still change, it also shows what helps set its target (BUD-77): what
+// is already committed to it, the same month a year before, and how many recent months
+// the target would have been enough for.
 export function LineScreen({ line, month }: { line: string; month?: string }) {
   const budget = useBudget()
   const back = useBack()
@@ -75,6 +90,8 @@ function Line({
   const place = placeOf(budget, period.start)
   // BUD-72: the budget of this month or one ahead can change; a past one stays as it was.
   const editable = place !== 'past'
+  // A month still to come has nothing spent yet, so its page opens on planning it.
+  const ahead = place === 'ahead'
   const { category, group, tag, color } = lineLook(budget, key)
   const { categoryId, tagId } = parseLineKey(key)
   const usual = budget.usual.lines.find((item) => item.key === key) ?? null
@@ -103,6 +120,16 @@ function Line({
 
   // BUD-42: what is usually spent by today along this line's own curve.
   const select = (entry: AnalysisEntry) => !entry.excluded && lineOf(entry, plan.tagLines) === key
+
+  // BUD-77: what is already committed to the month, and the same month a year before,
+  // when the history reaches that far back.
+  const coming = editable
+    ? committedTo(committedItems(budget), month.period, key, plan.tagLines)
+    : null
+  const lastYear = shiftPeriod(month.period.start, 'month', -12, 0, budget.settings.startDay)
+  const reachesBack = budget.view.firstDate !== null && budget.view.firstDate <= lastYear.end
+  const lastYearSpent = editable && reachesBack ? spentIn(budget.entries, lastYear, select) : null
+  const hasComing = coming !== null && coming.count > 0
   const usualSoFar = usual
     ? Math.round(
         usual.baseline *
@@ -205,52 +232,56 @@ function Line({
       }}
     >
       {/* BUD-41 to BUD-43: this month against the target. */}
-      <Card className="flex flex-col gap-2">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-[0.9375rem] font-semibold text-text">
-            {words.monthTitle(month.period)}
-          </h2>
-          <span className="text-[0.9375rem] tabular-nums">
-            {flexibility === 'locked' ? (
-              <span className="text-text-muted">
-                {commitmentStatus(budget, planned, words).text}
-              </span>
-            ) : planned.left < 0 ? (
-              <Over>{t('budget.lines.over', { amount: words.text(-planned.left) })}</Over>
-            ) : (
-              <span className="text-text-muted">
-                {t('budget.lines.left', { amount: words.text(planned.left) })}
-              </span>
-            )}
-          </span>
-        </div>
-        {flexibility !== 'locked' && (
-          <ProgressBar
-            value={planned.target > 0 ? planned.spent / planned.target : planned.spent > 0 ? 1 : 0}
-            color={color}
-          />
-        )}
-        <p className="text-[0.8125rem] text-text-muted">
-          {t('budget.line.spentOf', {
-            spent: words.text(planned.spent),
-            target: words.text(planned.target),
-          })}
-          {usualSoFar !== null &&
-            flexibility !== 'locked' &&
-            place === 'current' &&
-            ` ${t('budget.line.usualSoFar', { date: words.day(budget.today), amount: words.text(usualSoFar) })}`}
-        </p>
-        {planned.status === 'atRisk' && (
-          <p className="text-[0.8125rem]">
-            <Over>
-              {t('budget.lines.atRisk', {
-                amount: words.text(planned.projected - planned.target),
-                date: words.day(month.period.end),
-              })}
-            </Over>
+      {!ahead && (
+        <Card className="flex flex-col gap-2">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-[0.9375rem] font-semibold text-text">
+              {words.monthTitle(month.period)}
+            </h2>
+            <span className="text-[0.9375rem] tabular-nums">
+              {flexibility === 'locked' ? (
+                <span className="text-text-muted">
+                  {commitmentStatus(budget, planned, words).text}
+                </span>
+              ) : planned.left < 0 ? (
+                <Over>{t('budget.lines.over', { amount: words.text(-planned.left) })}</Over>
+              ) : (
+                <span className="text-text-muted">
+                  {t('budget.lines.left', { amount: words.text(planned.left) })}
+                </span>
+              )}
+            </span>
+          </div>
+          {flexibility !== 'locked' && (
+            <ProgressBar
+              value={
+                planned.target > 0 ? planned.spent / planned.target : planned.spent > 0 ? 1 : 0
+              }
+              color={color}
+            />
+          )}
+          <p className="text-[0.8125rem] text-text-muted">
+            {t('budget.line.spentOf', {
+              spent: words.text(planned.spent),
+              target: words.text(planned.target),
+            })}
+            {usualSoFar !== null &&
+              flexibility !== 'locked' &&
+              place === 'current' &&
+              ` ${t('budget.line.usualSoFar', { date: words.day(budget.today), amount: words.text(usualSoFar) })}`}
           </p>
-        )}
-      </Card>
+          {planned.status === 'atRisk' && (
+            <p className="text-[0.8125rem]">
+              <Over>
+                {t('budget.lines.atRisk', {
+                  amount: words.text(planned.projected - planned.target),
+                  date: words.day(month.period.end),
+                })}
+              </Over>
+            </p>
+          )}
+        </Card>
+      )}
 
       {/* BUD-04, BUD-10: the target and the type. */}
       <div className="flex flex-col gap-1.5">
@@ -308,6 +339,26 @@ function Line({
         </p>
       </div>
 
+      {/* BUD-77: what the month already holds, to set its target by. */}
+      {(hasComing || lastYearSpent !== null) && (
+        <List label={t('budget.line.forMonth', { month: monthName })}>
+          {coming && hasComing && (
+            <ListRow
+              title={t('budget.line.committed')}
+              subtitle={t('budget.line.committedHint', { count: coming.count })}
+              trailing={words.amount(coming.amount)}
+            />
+          )}
+          {lastYearSpent !== null && (
+            <ListRow
+              title={words.monthBar(lastYear)}
+              subtitle={t('budget.line.lastYear')}
+              trailing={words.amount(lastYearSpent)}
+            />
+          )}
+        </List>
+      )}
+
       {/* BUD-07: the months behind the usual month. */}
       {usual && usual.months.length > 0 && (
         <History
@@ -315,6 +366,7 @@ function Line({
           oneOffs={budget.usual.oneOffs.filter((item) => item.line === key && !item.counted).length}
           words={words}
           color={color}
+          target={editable && planned.target > 0 ? planned.target : null}
         />
       )}
 
@@ -474,20 +526,42 @@ function Line({
   )
 }
 
-/** BUD-07: the last months as columns, left-out ones faint, and the numbers behind them. */
+/**
+ * BUD-07: the last months as columns, left-out ones faint, and the numbers behind them.
+ * BUD-77: with the month's target, a line for it and how many months it would have
+ * been enough for.
+ */
 function History({
   usual,
   oneOffs,
   words,
   color,
+  target,
 }: {
   usual: LineBaseline
   /** BUD-02: how many of its purchases are one-offs left out. */
   oneOffs: number
   words: BudgetWords
   color: ReturnType<typeof lineLook>['color']
+  target: number | null
 }) {
   const { t } = words
+  const covers = target === null ? null : coverage(usual, target)
+  const coverLine =
+    covers === null || covers.months < 2
+      ? null
+      : t(
+          covers.covered === covers.months
+            ? 'budget.line.coversAll'
+            : covers.covered === 0
+              ? 'budget.line.coversNone'
+              : 'budget.line.covers',
+          {
+            amount: words.text(target ?? 0),
+            covered: covers.covered,
+            count: covers.months,
+          },
+        )
   const first = usual.months[0]
   const last = usual.months.at(-1)
   const excluded = usual.months.filter((item) => item.excluded)
@@ -530,9 +604,11 @@ function History({
         {t('budget.line.lastMonths', { count: usual.months.length })}
       </SectionLabel>
       <Card className="flex flex-col gap-3">
+        {coverLine && <p className="text-[0.9375rem] text-text">{coverLine}</p>}
         <ColumnChart
           color={color}
           average={usual.baseline}
+          target={target}
           columns={usual.months.map((item) => ({
             key: item.period.start,
             label: words.monthShort(item.period),
@@ -549,6 +625,21 @@ function History({
             muted: item.excluded,
           }))}
         />
+        {target !== null && (
+          <div
+            aria-hidden
+            className="flex flex-wrap gap-x-4 gap-y-1 text-[0.75rem] text-text-muted"
+          >
+            <span className="flex items-center gap-1.5">
+              <span className="w-4 border-t-[1.5px] border-dashed border-text-faint" />
+              {t('budget.line.usual')}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-4 border-t-[1.5px] border-text-muted" />
+              {t('budget.line.target')}
+            </span>
+          </div>
+        )}
         <p className="text-[0.8125rem] text-text-muted">
           {t('budget.line.average')}
           {oneOffs > 0 && ` ${t('budget.line.oneOffs', { count: oneOffs })}`}

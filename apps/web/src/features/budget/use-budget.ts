@@ -11,6 +11,8 @@ import {
   budgetMonthOf,
   budgetsInForce,
   type BudgetSettings,
+  type CommittedItem,
+  committed,
   type Contribution,
   defaultBudgetSettings,
   fundGoals,
@@ -20,6 +22,7 @@ import {
   goalProgress,
   type MonthBudget,
   monthBudget,
+  monthsAhead,
   noExclusions,
   type Period,
   type PlanMonth,
@@ -160,6 +163,28 @@ export function planFor(budget: Budget, period: Period, options: { all?: boolean
     month.budget,
     { carry: carryInto(budget.ledger, period.start), ...options },
   )
+}
+
+/**
+ * ANA-27, BUD-77: the installment parts and recurring expenses still to come, as the
+ * budget counts them (WAL-09, BUD-44), through the last month a budget can be made for.
+ */
+export function committedItems(
+  budget: Pick<Budget, 'ledger' | 'context' | 'today'>,
+): CommittedItem[] {
+  const { ledger } = budget
+  const kept = new Set(
+    ledger.wallets.filter((wallet) => wallet.inBudget).map((wallet) => wallet.id),
+  )
+  return committed(
+    ledger.transactions.filter(
+      (transaction) => kept.has(transaction.walletId) && transaction.excludeFromBudget !== true,
+    ),
+    ledger.recurring.filter((recurring) => kept.has(recurring.walletId)),
+    budget.context,
+    budget.today,
+    monthsAhead + 2,
+  ).flatMap((month) => month.items)
 }
 
 /** BUD-21 to BUD-24 with another left over or other goals, from a month on. */

@@ -1515,7 +1515,14 @@
     "pace": {
       "title": "Pace",
       "usual": "Usual",
-      "label": "Spent so far, {{spent}}, against a usual period, {{usual}}."
+      "label": "Spent so far, {{spent}}, against a usual period, {{usual}}.",
+      "budget": "Budget",
+      "underBudget": "{{amount}} under the budget’s pace",
+      "overBudget": "{{amount}} over the budget’s pace",
+      "onBudget": "Right on the budget’s pace",
+      "underBudgetEnded": "Ended {{amount}} under budget",
+      "overBudgetEnded": "Ended {{amount}} over budget",
+      "onBudgetEnded": "Ended right on budget"
     },
     "changed": {
       "title": "What changed?",
@@ -1882,7 +1889,15 @@
       "draftHint": "{{month}}’s budget isn’t locked in yet.",
       "average": "Its starting amount is the average of these months, without one-offs.",
       "oneOffs_one": "{{count}} one-off is left out.",
-      "oneOffs_other": "{{count}} one-offs are left out."
+      "oneOffs_other": "{{count}} one-offs are left out.",
+      "forMonth": "For {{month}}",
+      "committed": "Already committed",
+      "committedHint_one": "{{count}} installment or recurring payment",
+      "committedHint_other": "{{count}} installments and recurring payments",
+      "lastYear": "Same month last year",
+      "covers_other": "{{amount}} would have been enough in {{covered}} of your last {{count}} months.",
+      "coversAll_other": "{{amount}} would have been enough in each of your last {{count}} months.",
+      "coversNone_other": "{{amount}} wouldn’t have been enough in any of your last {{count}} months."
     },
     "leaveOut": {
       "title": "Leave out",
@@ -2112,9 +2127,9 @@
       "importHint": "Start from what you really spent",
       "fromUsual": "Start from your usual month",
       "fromMonth": "Start from {{month}}’s budget",
-      "hint_one": "Each amount starts as your last month, without one-offs. Tap one to change it.",
-      "hint_other": "Each amount starts as your {{count}}-month average, without one-offs. Tap one to change it.",
-      "hintFrom": "Each amount starts as {{month}}’s. Tap one to change it.",
+      "hint_one": "Each amount starts as your last month, without one-offs. Tap an amount to change it, or a category to see more.",
+      "hint_other": "Each amount starts as your {{count}}-month average, without one-offs. Tap an amount to change it, or a category to see more.",
+      "hintFrom": "Each amount starts as {{month}}’s. Tap an amount to change it, or a category to see more.",
       "hintNew": "Enter about what each category costs in a month, and leave blank what you don’t spend on.",
       "lock": "Lock in {{month}}",
       "lockHint": "After that, it changes only when you edit it.",

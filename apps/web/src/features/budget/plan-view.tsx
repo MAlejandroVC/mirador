@@ -14,12 +14,7 @@ import { Button } from '../../components/ui/button'
 import { EmptyState } from '../../components/ui/empty-state'
 import { HeroCard } from '../../components/ui/hero-card'
 import { IconTile } from '../../components/ui/icon-tile'
-import {
-  CalendarCheckIcon,
-  CalendarDotsIcon,
-  CaretRightIcon,
-  PlusIcon,
-} from '../../components/ui/icons'
+import { CalendarCheckIcon, CalendarDotsIcon, CaretRightIcon } from '../../components/ui/icons'
 import { List, ListButtonRow, ListLinkRow, ListRow } from '../../components/ui/list'
 import { ShowMoreRow } from '../../components/ui/show-more-row'
 import { CategoryTile } from '../categories/category-tile'
@@ -31,7 +26,7 @@ import { goalSummary } from './goal-summary'
 import { commitmentStatus, lineName } from './lines'
 import { MonthBar } from './month-bar'
 import { MonthEditor } from './month-editor'
-import { GoalDates, GroupingSwitch, MonthHeader, PlanStrip } from './month-parts'
+import { GoalDates, GroupingSwitch, MonthHeader, NewGoalRow, PlanStrip } from './month-parts'
 import { type MonthView, sectionsOf, useGrouping } from './month-view'
 import { GoalTile, Over, ProgressBar, ProgressRow } from './parts'
 import { type Budget, findMoneySearch, fundWith, periodOf, planFor } from './use-budget'
@@ -207,7 +202,7 @@ function Ahead({ budget, view, words }: { budget: Budget; view: MonthView; words
           )
         }}
       />
-      <GoalDates plans={funding.goals} words={words} />
+      <GoalDates budget={budget} plans={funding.goals} words={words} />
       <p className="px-4 text-[0.8125rem] text-text-muted">{t('budget.ahead.hint')}</p>
     </>
   )
@@ -367,14 +362,9 @@ function GoalsList({ budget, words }: { budget: Budget; words: BudgetWords }) {
             }}
           />
         )}
-        <ListButtonRow
-          leading={
-            <span className="grid size-[2.125rem] place-items-center text-brand">
-              <PlusIcon aria-hidden className="size-5" />
-            </span>
-          }
-          title={t('budget.goals.new')}
-          {...(open.length === 0 ? { subtitle: t('budget.goals.newHint') } : {})}
+        <NewGoalRow
+          words={words}
+          hint={open.length === 0}
           onClick={() => {
             setCreating(true)
           }}

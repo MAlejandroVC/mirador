@@ -1515,7 +1515,14 @@
     "pace": {
       "title": "Ritmo",
       "usual": "Habitual",
-      "label": "Gastado hasta ahora, {{spent}}, contra un periodo habitual, {{usual}}."
+      "label": "Gastado hasta ahora, {{spent}}, contra un periodo habitual, {{usual}}.",
+      "budget": "Presupuesto",
+      "underBudget": "{{amount}} por debajo del ritmo del presupuesto",
+      "overBudget": "{{amount}} por encima del ritmo del presupuesto",
+      "onBudget": "Justo al ritmo del presupuesto",
+      "underBudgetEnded": "Terminó {{amount}} por debajo del presupuesto",
+      "overBudgetEnded": "Terminó {{amount}} por encima del presupuesto",
+      "onBudgetEnded": "Terminó justo en el presupuesto"
     },
     "changed": {
       "title": "¿Qué cambió?",
@@ -1882,7 +1889,15 @@
       "draftHint": "El presupuesto de {{month}} aún no está fijado.",
       "average": "Su monto inicial es el promedio de estos meses, sin gastos extraordinarios.",
       "oneOffs_one": "Se deja fuera {{count}} gasto extraordinario.",
-      "oneOffs_other": "Se dejan fuera {{count}} gastos extraordinarios."
+      "oneOffs_other": "Se dejan fuera {{count}} gastos extraordinarios.",
+      "forMonth": "Para {{month}}",
+      "committed": "Ya comprometido",
+      "committedHint_one": "{{count}} mensualidad o pago recurrente",
+      "committedHint_other": "{{count}} mensualidades y pagos recurrentes",
+      "lastYear": "El mismo mes del año pasado",
+      "covers_other": "{{amount}} te habría alcanzado en {{covered}} de tus últimos {{count}} meses.",
+      "coversAll_other": "{{amount}} te habría alcanzado en cada uno de tus últimos {{count}} meses.",
+      "coversNone_other": "{{amount}} no te habría alcanzado en ninguno de tus últimos {{count}} meses."
     },
     "leaveOut": {
       "title": "Dejar fuera",
@@ -2112,9 +2127,9 @@
       "importHint": "Empieza con lo que de verdad gastaste",
       "fromUsual": "Empezar desde tu mes habitual",
       "fromMonth": "Empezar desde el presupuesto de {{month}}",
-      "hint_one": "Cada monto empieza como tu último mes, sin gastos extraordinarios. Toca uno para cambiarlo.",
-      "hint_other": "Cada monto empieza con tu promedio de {{count}} meses, sin gastos extraordinarios. Toca uno para cambiarlo.",
-      "hintFrom": "Cada monto empieza como el de {{month}}. Toca uno para cambiarlo.",
+      "hint_one": "Cada monto empieza como tu último mes, sin gastos extraordinarios. Toca un monto para cambiarlo, o una categoría para ver más.",
+      "hint_other": "Cada monto empieza con tu promedio de {{count}} meses, sin gastos extraordinarios. Toca un monto para cambiarlo, o una categoría para ver más.",
+      "hintFrom": "Cada monto empieza como el de {{month}}. Toca un monto para cambiarlo, o una categoría para ver más.",
       "hintNew": "Escribe más o menos lo que cuesta cada categoría al mes, y deja en blanco en lo que no gastas.",
       "lock": "Fijar {{month}}",
       "lockHint": "Después, solo cambia cuando tú lo editas.",

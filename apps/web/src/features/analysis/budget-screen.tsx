@@ -1,5 +1,6 @@
+import { budgeted } from '@repo/core'
 import { useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AccountButton } from '../../components/shell'
 import { Button } from '../../components/ui/button'
@@ -7,7 +8,7 @@ import { EmptyState } from '../../components/ui/empty-state'
 import { ChartPieSliceIcon, FunnelIcon } from '../../components/ui/icons'
 import { viewOf } from '../budget/month-view'
 import { PlanView } from '../budget/plan-view'
-import { useBudget } from '../budget/use-budget'
+import { type Budget, monthOf, periodOf, planFor, useBudget } from '../budget/use-budget'
 import { Page } from '../../components/ui/page'
 import { SegmentedControl } from '../../components/ui/segmented-control'
 import { ToolbarButton } from '../../components/ui/toolbar-button'
@@ -108,7 +109,7 @@ export function BudgetScreen({ search }: { search: BudgetSearch }) {
       />
       {view === 'plan'
         ? budget && month && <PlanView budget={budget} view={month} find={search.find === true} />
-        : analysis && <Spending analysis={analysis} />}
+        : analysis && <Spending analysis={analysis} budget={budget} filters={filters} />}
       {analysis && (
         <>
           <FilterSheet
@@ -129,10 +130,26 @@ export function BudgetScreen({ search }: { search: BudgetSearch }) {
   )
 }
 
-function Spending({ analysis }: { analysis: Analysis }) {
+function Spending({
+  analysis,
+  budget,
+  filters,
+}: {
+  analysis: Analysis
+  budget: Budget | null
+  filters: number
+}) {
   const { t } = useTranslation()
   const quickAdd = useQuickAdd()
   const words = useWords(analysis.context.currency, analysis.today)
+  // BUD-41, BUD-42: a month with a budget shows the budget's pace on its chart too; not
+  // with filters on, since the budget counts the whole month.
+  const start = analysis.view.scope === 'month' ? analysis.view.period.start : null
+  const target = useMemo(() => {
+    if (!budget || start === null || filters > 0) return null
+    if (!budgeted(monthOf(budget, start))) return null
+    return planFor(budget, periodOf(budget, start)).target
+  }, [budget, start, filters])
 
   if (analysis.all.length === 0)
     return (
@@ -153,7 +170,7 @@ function Spending({ analysis }: { analysis: Analysis }) {
   return (
     <>
       <PeriodHeader analysis={analysis} />
-      <SpendingView analysis={analysis} words={words} />
+      <SpendingView analysis={analysis} words={words} budget={target} />
     </>
   )
 }

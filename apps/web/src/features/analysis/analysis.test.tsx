@@ -2,6 +2,7 @@ import {
   type CategoryRecord,
   categoryGroupRecordType,
   categoryRecordType,
+  monthBudgetRecordType,
   type RecordBody,
   type TransactionRecord,
   type WalletRecord,
@@ -151,11 +152,43 @@ describe('spending analysis', () => {
     // By March 15 a usual month had spent groceries ($1,000) and eating out ($200 to
     // $300, median $250), so $1,500 is $250 more than usual.
     expect(screen.getByText('$250.00 more than usual by Mar 15')).toBeVisible()
+    // BUD-70: a month never budgeted has no budget's pace to compare with.
+    expect(screen.queryByText(/budget’s pace/)).toBeNull()
     expect(screen.getByText('63%')).toBeVisible()
     expect(screen.getByRole('button', { name: 'Spending', pressed: true })).toBeVisible()
     // The bigger questions are tiles that open their own screens.
     expect(screen.getByRole('link', { name: /What can I cut\?/ })).toBeVisible()
     expect(screen.getByRole('link', { name: /When do I spend\?/ })).toBeVisible()
+  })
+
+  it('BUD-41, BUD-42: with a budget, the pace chart says how far spending is from the budget’s pace', async () => {
+    const cash = wallet('Cash')
+    const set = categories()
+    const march = {
+      id: newRecordId(),
+      revision: 1,
+      body: recordBody(monthBudgetRecordType, {
+        start: '2026-03-01',
+        targets: [
+          { line: set.groceries.id, amount: 100_000 },
+          { line: set.eatingOut.id, amount: 25_000 },
+        ].sort((a, b) => a.line.localeCompare(b.line)),
+        income: 400_000,
+        lockedAt: '2026-03-01T09:00:00.000Z',
+      }),
+    }
+    const server: FakeServer = {
+      signedIn: 'ana',
+      records: [cash, ...set.records, ...history(cash, set), march],
+    }
+    stubServer(server)
+    renderApp('/budget?view=spending', unlockedVault(server))
+
+    // A usual month has spent all of its $1,250 by the 15th, so the budget's pace has
+    // all $1,250 spent by then too; $1,500 is $250 over it.
+    expect(await screen.findByText('$250.00 over the budget’s pace')).toBeVisible()
+    expect(screen.getByText('Mar 1')).toBeVisible()
+    expect(screen.getByText('Mar 31')).toBeVisible()
   })
 
   it('ANA-26, ANA-30: the wide tile says what changed most and opens every change', async () => {

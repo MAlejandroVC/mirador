@@ -1,5 +1,6 @@
 import {
   breakdown,
+  budgetPace,
   byWeekday,
   type CategoryChange,
   flexibilitySplit,
@@ -26,7 +27,17 @@ import { flagThreshold, type Words } from './use-words'
 // Epic 5, the Spending side of Budget: how the period is going against the usual one
 // (ANA-01, ANA-12, ANA-21), where the money went (ANA-10, ANA-13), then a tile for
 // each bigger question, which opens its screen; what changed most (ANA-26) leads them.
-export function SpendingView({ analysis, words }: { analysis: Analysis; words: Words }) {
+// `budget` is the period's budget in total, when it has one and nothing is filtered, so
+// the pace chart can show the budget's pace too (BUD-41, BUD-42).
+export function SpendingView({
+  analysis,
+  words,
+  budget = null,
+}: {
+  analysis: Analysis
+  words: Words
+  budget?: number | null
+}) {
   const { t } = words
   const { entries, view, today } = analysis
   const look = useSliceLook(analysis)
@@ -34,6 +45,21 @@ export function SpendingView({ analysis, words }: { analysis: Analysis; words: W
   const usual = usualSpending(entries, view)
   const totals = periodTotals(entries, view.period)
   const curve = pace(entries, view)
+  // BUD-41, BUD-42: how far spending so far is from where the budget's pace has it
+  // today, read off the chart's own lines; within 2% of the budget is "right on" it.
+  const budgetCurve = budget === null ? [] : budgetPace(budget, curve.usual, curve.days)
+  const budgetGap =
+    budget === null
+      ? null
+      : (curve.current.at(-1) ?? 0) - (budgetCurve[curve.current.length - 1] ?? 0)
+  const budgetLine =
+    budgetGap === null
+      ? null
+      : Math.abs(budgetGap) <= Math.abs(budget ?? 0) * 0.02
+        ? t(going ? 'analysis.pace.onBudget' : 'analysis.pace.onBudgetEnded')
+        : t(`analysis.pace.${budgetGap < 0 ? 'under' : 'over'}Budget${going ? '' : 'Ended'}`, {
+            amount: words.text(Math.abs(budgetGap)),
+          })
   const groups = breakdown(entries, view.period, 'group')
   const flexibility = flexibilitySplit(entries, view.period)
   const flexibleTotal = flexibility.locked + flexibility.fixed + flexibility.flexible
@@ -82,28 +108,48 @@ export function SpendingView({ analysis, words }: { analysis: Analysis; words: W
         </div>
       </dl>
 
-      {/* ANA-21: the period so far against the usual one. */}
-      {curve.usual.length > 0 && (
+      {/* ANA-21: the period so far against the usual one and, when it has one, the budget. */}
+      {(curve.usual.length > 0 || budgetCurve.length > 0) && (
         <Card className="flex flex-col gap-2">
-          <h2 className="text-[0.9375rem] font-semibold text-text">{t('analysis.pace.title')}</h2>
+          <div className="flex flex-col gap-0.5">
+            <h2 className="text-[0.9375rem] font-semibold text-text">{t('analysis.pace.title')}</h2>
+            {budgetLine && <p className="text-[0.8125rem] text-text-muted">{budgetLine}</p>}
+          </div>
           <PaceChart
             current={curve.current}
             usual={curve.usual}
+            budget={budgetCurve}
             days={curve.days}
             label={t('analysis.pace.label', {
               spent: words.text(usual.current),
               usual: words.text(usual.usual ?? 0),
             })}
+            dates={{
+              start: words.date(view.period.start),
+              end: words.date(view.period.end),
+              ...(going ? { today: t('dates.today') } : {}),
+            }}
           />
-          <div aria-hidden className="flex gap-4 text-[0.75rem] text-text-muted">
+          <div
+            aria-hidden
+            className="flex flex-wrap gap-x-4 gap-y-1 text-[0.75rem] text-text-muted"
+          >
             <span className="flex items-center gap-1.5">
               <span className="h-[3px] w-4 rounded-full bg-brand" />
               {periodName}
             </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-4 border-t-[1.5px] border-dashed border-text-faint" />
-              {t('analysis.pace.usual')}
-            </span>
+            {curve.usual.length > 0 && (
+              <span className="flex items-center gap-1.5">
+                <span className="w-4 border-t-[1.5px] border-dashed border-text-faint" />
+                {t('analysis.pace.usual')}
+              </span>
+            )}
+            {budgetCurve.length > 0 && (
+              <span className="flex items-center gap-1.5">
+                <span className="w-4 border-t-[1.5px] border-text-muted" />
+                {t('analysis.pace.budget')}
+              </span>
+            )}
           </div>
         </Card>
       )}

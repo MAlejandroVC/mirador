@@ -1,13 +1,15 @@
 import type { GoalPlan, PlanMonth } from '@repo/core'
-import type { ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
 import { IconTile } from '../../components/ui/icon-tile'
-import type { Icon } from '../../components/ui/icons'
-import { List, ListLinkRow } from '../../components/ui/list'
+import { type Icon, PlusIcon } from '../../components/ui/icons'
+import { List, ListButtonRow, ListLinkRow } from '../../components/ui/list'
 import { SegmentedControl } from '../../components/ui/segmented-control'
 import type { BudgetWords } from './budget-words'
 import { goalDate } from './find-money-words'
+import { GoalSheet } from './goal-sheet'
 import { GoalTile } from './parts'
 import type { Grouping } from './month-view'
+import type { Budget } from './use-budget'
 
 // What a month's page shares whether the month is tracked, made or planned ahead: its
 // header card, the strip of income, budgeted and left over, the goal dates and the
@@ -56,33 +58,82 @@ export function PlanStrip({
   )
 }
 
-/** BUD-32: the goals a month pays for, each with the date its budget gives it. */
+/** BUD-20: the row that starts a new goal, on the goals list and on any month's page. */
+export function NewGoalRow({
+  words,
+  hint,
+  onClick,
+}: {
+  words: BudgetWords
+  /** The line under it while there are no goals yet. */
+  hint?: boolean
+  onClick: () => void
+}) {
+  const { t } = words
+  return (
+    <ListButtonRow
+      leading={
+        <span className="grid size-[2.125rem] place-items-center text-brand">
+          <PlusIcon aria-hidden className="size-5" />
+        </span>
+      }
+      title={t('budget.goals.new')}
+      {...(hint ? { subtitle: t('budget.goals.newHint') } : {})}
+      onClick={onClick}
+    />
+  )
+}
+
+/**
+ * BUD-32: the goals a month pays for, each with the date its budget gives it. A goal can
+ * start here too, so planning a month (a move, a trip) never means leaving it first.
+ */
 export function GoalDates({
+  budget,
   plans,
   words,
   children,
 }: {
+  budget: Budget
   plans: readonly GoalPlan[]
   words: BudgetWords
   /** Rows after the goals, such as Find money. */
   children?: ReactNode
 }) {
   const { t } = words
-  if (plans.length === 0 && !children) return null
+  const [creating, setCreating] = useState(false)
   return (
-    <List label={t('budget.goals.title')}>
-      {plans.map((plan) => (
-        <ListLinkRow
-          key={plan.goal.id}
-          to="/budget/goal/$goalId"
-          params={{ goalId: plan.goal.id }}
-          leading={<GoalTile kind={plan.goal.kind} />}
-          title={plan.goal.name}
-          subtitle={goalDate(words, plan)}
+    <>
+      <List label={t('budget.goals.title')}>
+        {plans.map((plan) => (
+          <ListLinkRow
+            key={plan.goal.id}
+            to="/budget/goal/$goalId"
+            params={{ goalId: plan.goal.id }}
+            leading={<GoalTile kind={plan.goal.kind} />}
+            title={plan.goal.name}
+            subtitle={goalDate(words, plan)}
+          />
+        ))}
+        {children}
+        <NewGoalRow
+          words={words}
+          hint={plans.length === 0}
+          onClick={() => {
+            setCreating(true)
+          }}
         />
-      ))}
-      {children}
-    </List>
+      </List>
+      {/* A native dialog can't sit inside the list, so the sheet follows it. */}
+      <GoalSheet
+        open={creating}
+        mode={{ kind: 'new' }}
+        budget={budget}
+        onClose={() => {
+          setCreating(false)
+        }}
+      />
+    </>
   )
 }
 

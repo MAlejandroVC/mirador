@@ -11,6 +11,7 @@ import {
 } from './analysis.ts'
 import type { Category, Flexibility } from './categories.ts'
 import { daysBetween, type Period } from './dates.ts'
+import type { CommittedItem } from './outlook.ts'
 
 // Epic 6: the budget. Pure functions over the analysis entries (transactions as the
 // budget counts them, in the default currency); the caller passes "today". A budget
@@ -55,7 +56,10 @@ export function parseLineKey(key: string): { categoryId: string; tagId: string |
  * BUD-08: which line an entry counts under. A tag line takes its category's entries
  * that carry its tag; the category's own line takes the rest, so nothing counts twice.
  */
-export function lineOf(entry: AnalysisEntry, tagLines: readonly TagLine[]): string | null {
+export function lineOf(
+  entry: Pick<AnalysisEntry, 'categoryId' | 'tagIds'>,
+  tagLines: readonly TagLine[],
+): string | null {
   if (entry.categoryId === null) return null
   for (const line of tagLines)
     if (line.categoryId === entry.categoryId && entry.tagIds.includes(line.tagId))
@@ -318,6 +322,39 @@ export function baseline(
       .reduce((sum, entry) => sum + entry.earned, 0),
   )
   return { periods, counted, lines, total: totalUsual, income: median(incomes), oneOffs }
+}
+
+/**
+ * BUD-77: how many of a line's recent months a target would have been enough for, as
+ * its columns show them: everything spent, one-offs too; months left out don't count.
+ */
+export function coverage(
+  line: Pick<LineBaseline, 'months'>,
+  target: number,
+): { covered: number; months: number } {
+  const counted = line.months.filter((month) => !month.excluded)
+  return {
+    covered: counted.filter((month) => month.spent <= target).length,
+    months: counted.length,
+  }
+}
+
+/**
+ * BUD-77: what is already committed to one line in a period: the installment parts and
+ * recurring expenses still to come there (ANA-27), each counted on the line its category
+ * and tags put it on (BUD-08).
+ */
+export function committedTo(
+  items: readonly CommittedItem[],
+  period: Period,
+  line: string,
+  tagLines: readonly TagLine[],
+): { amount: number; count: number } {
+  const mine = items.filter(
+    (item) =>
+      item.date >= period.start && item.date <= period.end && lineOf(item, tagLines) === line,
+  )
+  return { amount: mine.reduce((sum, item) => sum + item.amount, 0), count: mine.length }
 }
 
 /** How the budget counts, kept in the person's encrypted plan record. */

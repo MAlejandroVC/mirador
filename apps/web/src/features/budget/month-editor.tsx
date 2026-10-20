@@ -7,11 +7,11 @@ import {
   type PlanLine,
   type SuggestedCut,
 } from '@repo/core'
-import { useNavigate } from '@tanstack/react-router'
-import { useId, useState } from 'react'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { useState } from 'react'
 import { Button } from '../../components/ui/button'
 import { FieldNote, invalidRow, MoneyRow } from '../../components/ui/field-row'
-import { CalendarDotsIcon, CalendarCheckIcon } from '../../components/ui/icons'
+import { CalendarDotsIcon, CalendarCheckIcon, CaretRightIcon } from '../../components/ui/icons'
 import { List, ListButtonRow, ListLinkRow } from '../../components/ui/list'
 import { MoneyInput } from '../../components/ui/money-input'
 import { ShowMoreRow } from '../../components/ui/show-more-row'
@@ -224,6 +224,7 @@ export function MonthEditor({
                 key={line.key}
                 budget={budget}
                 line={line}
+                month={view.start}
                 value={edits.get(line.key) ?? text(line.base)}
                 note={note(line)}
                 locale={money.locale}
@@ -304,7 +305,7 @@ export function MonthEditor({
       </div>
 
       {/* BUD-32: the goal dates as this budget leaves them, and a way to bring them in. */}
-      <GoalDates plans={funding.goals} words={words}>
+      <GoalDates budget={budget} plans={funding.goals} words={words}>
         {funding.gap > 0 && (
           <ListButtonRow
             leading={<span className="w-[2.125rem]" />}
@@ -372,9 +373,15 @@ export function MonthEditor({
  * DL-CMP-09 on a page: a category's amount as a row: its tile and name, what it was
  * when it changed, and the amount typed at the right with its caret only.
  */
+/**
+ * One amount of the month's budget. The field sets it right here; the rest of the row,
+ * with its chevron, opens the line's page for that month, with what helps set it
+ * (BUD-77), as a list row does (DL-CMP-07).
+ */
 function AmountRow({
   budget,
   line,
+  month,
   value,
   note,
   locale,
@@ -384,6 +391,8 @@ function AmountRow({
 }: {
   budget: Budget
   line: PlanLine
+  /** The month's first day, for the line's page. */
+  month: string
   value: string
   note: string | undefined
   locale: string
@@ -391,32 +400,42 @@ function AmountRow({
   onChange: (value: string) => void
   onBlur: () => void
 }) {
-  const id = useId()
   const category = budget.lookups.categories.get(line.categoryId)
   const group = category ? budget.lookups.groupOf(category) : undefined
+  const name = lineName(budget, line.key)
+  const link = {
+    to: '/budget/line/$line',
+    params: { line: line.key },
+    search: { month },
+  } as const
   return (
-    <li className={`group ${invalidRow}`}>
-      <div className="flex min-h-[3.25rem] w-full items-center gap-3 pl-4">
+    <li className={`group flex min-h-[3.25rem] w-full items-stretch ${invalidRow}`}>
+      <Link
+        {...link}
+        className="flex min-w-0 flex-1 items-center gap-3 pl-4 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
+      >
         {category && <CategoryTile category={category} group={group} />}
         {/* DL-SHP-04: the hairline starts where the text starts. */}
-        <span className="flex min-h-[3.25rem] min-w-0 flex-1 items-center gap-2 self-stretch border-t-[0.5px] border-separator py-2 pr-4 group-first:border-t-0">
-          <label htmlFor={id} className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-[0.9375rem] text-text">
-              {lineName(budget, line.key)}
-            </span>
-            {note && <span className="text-[0.8125rem] text-text-muted">{note}</span>}
-          </label>
-          <MoneyInput
-            id={id}
-            value={value}
-            onChange={onChange}
-            onBlur={onBlur}
-            locale={locale}
-            decimals={decimals}
-            className="min-h-11 shrink-0 text-right text-[0.9375rem] text-text"
-          />
+        <span className="flex min-h-[3.25rem] min-w-0 flex-1 flex-col justify-center self-stretch border-t-[0.5px] border-separator py-2 group-first:border-t-0">
+          <span className="truncate text-[0.9375rem] text-text">{name}</span>
+          {note && <span className="text-[0.8125rem] text-text-muted">{note}</span>}
         </span>
-      </div>
+      </Link>
+      <span className="flex shrink-0 items-center gap-1 border-t-[0.5px] border-separator pr-2 group-first:border-t-0">
+        <MoneyInput
+          value={value}
+          onChange={onChange}
+          onBlur={onBlur}
+          locale={locale}
+          decimals={decimals}
+          aria-label={name}
+          className="min-h-11 min-w-[4.5rem] shrink-0 justify-end pl-2 text-right text-[0.9375rem] text-text"
+        />
+        {/* The chevron opens the same page; the name already says where, for a screen reader. */}
+        <Link {...link} aria-hidden tabIndex={-1} className="grid min-h-11 w-7 place-items-center">
+          <CaretRightIcon className="size-4 text-text-faint" />
+        </Link>
+      </span>
     </li>
   )
 }

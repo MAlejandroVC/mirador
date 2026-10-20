@@ -9,6 +9,7 @@ import {
   goalContributionRecordType,
   goalRecordType,
   type PreferencesRecord,
+  recurringRecordType,
   type RecordBody,
   type TransactionRecord,
   type WalletRecord,
@@ -409,6 +410,65 @@ describe('the budget plan', () => {
     expect(targetOf(month, set.groceries)).toBe(100_000)
     expect(await screen.findByText('Usual $200.00')).toBeVisible()
     expect(screen.getByText('$50.00 left')).toBeVisible()
+  })
+
+  it('BUD-77, BUD-20: planning a month ahead, a category opens with what helps set its target, and a goal can start there', async () => {
+    vi.setSystemTime(new Date(2026, 2, 20, 12))
+    const user = userEvent.setup()
+    const cash = wallet('Cash')
+    const set = categories()
+    const server: FakeServer = {
+      signedIn: 'ana',
+      records: [
+        cash,
+        ...set.records,
+        ...history(cash, set),
+        locked(set, '2026-03-01'),
+        // A dinner club from April on, and last April's eating out.
+        record(recurringRecordType, {
+          kind: 'expense',
+          walletId: cash.id,
+          amount: -15_000,
+          categoryId: set.eatingOut.id,
+          start: '2026-04-10',
+          every: { unit: 'month', count: 1 },
+          createdAt: '2026-03-10T09:00:00.000Z',
+        }),
+        transaction({
+          kind: 'expense',
+          walletId: cash.id,
+          date: '2025-04-12',
+          amount: -30_000,
+          categoryId: set.eatingOut.id,
+        }),
+      ],
+    }
+    stubServer(server)
+    renderApp('/budget?month=2026-04-01', unlockedVault(server))
+
+    expect(await screen.findByRole('heading', { name: 'April budget' })).toBeVisible()
+    // BUD-20: a goal can start while planning the month.
+    expect(section('Goals').getByRole('button', { name: /New goal/ })).toBeVisible()
+    // The amount is a field; the rest of the row opens the category for April.
+    expect(screen.getByRole('textbox', { name: 'Eating out' })).toHaveValue('200.00')
+    await user.click(screen.getByRole('link', { name: /^Eating out/ }))
+
+    expect(await screen.findByRole('heading', { name: 'Eating out' })).toBeVisible()
+    const april = section('For April')
+    expect(april.getByText('Already committed')).toBeVisible()
+    expect(april.getByText('1 installment or recurring payment')).toBeVisible()
+    expect(april.getByText('$150.00')).toBeVisible()
+    expect(april.getByText('April 2025')).toBeVisible()
+    expect(april.getByText('$300.00')).toBeVisible()
+    // Its months were $200, $160, $240, $200, $180 and $220.
+    expect(
+      screen.getByText('$200.00 would have been enough in 4 of your last 6 months.'),
+    ).toBeVisible()
+    // Nothing is spent in April yet, so there is no "left" to show.
+    expect(screen.queryByText(/left$/)).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(await screen.findByRole('heading', { name: 'April budget' })).toBeVisible()
   })
 
   it('BUD-06: with no month to learn from, every category takes a rough amount from day one', async () => {
