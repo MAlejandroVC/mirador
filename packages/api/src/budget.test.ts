@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { budgetPlanRecord, goalRecord, planLine, scenarioRecord } from './budget.ts'
+import { budgetPlanRecord, goalRecord, monthBudgetRecord, planLine } from './budget.ts'
 import { preferencesRecord } from './preferences.ts'
 
 const id = '01920000-0000-7000-8000-000000000001'
@@ -27,28 +27,28 @@ describe('budget records', () => {
     expect(goalRecord.safeParse({ ...goal, kind: 'afford' }).success).toBe(false)
   })
 
-  it('BUD-37: a cut is phased over 1 to 12 months', () => {
+  it('BUD-70, BUD-71: a month’s budget holds its targets and income, locked in or a draft', () => {
+    const month = {
+      start: '2026-11-01',
+      targets: [{ line: id, amount: 240_000 }],
+      income: 3_841_142,
+    }
+    expect(monthBudgetRecord.safeParse(month).success).toBe(true)
+    expect(
+      monthBudgetRecord.safeParse({ ...month, lockedAt: '2026-10-20T16:00:00.000Z' }).success,
+    ).toBe(true)
+    expect(
+      monthBudgetRecord.safeParse({ ...month, targets: [{ line: id, amount: -1 }] }).success,
+    ).toBe(false)
+    expect(monthBudgetRecord.safeParse({ ...month, start: '2026-11' }).success).toBe(false)
+  })
+
+  it('BUD-03, BUD-76: the plan keeps what it leaves out and the one-offs counted after all', () => {
     const plan = {
-      targets: [],
-      adjustments: [{ line: id, change: -100, steps: 3, from: '2026-11-01' }],
-      exclusions: { periods: [], linePeriods: [], transactionIds: [] },
+      exclusions: { periods: [], linePeriods: [], transactionIds: [], counted: [id] },
       tagLines: [],
     }
     expect(budgetPlanRecord.safeParse(plan).success).toBe(true)
-    expect(
-      budgetPlanRecord.safeParse({ ...plan, adjustments: [{ ...plan.adjustments[0], steps: 0 }] })
-        .success,
-    ).toBe(false)
-    expect(
-      scenarioRecord.safeParse({
-        name: 'Less eating out',
-        changes: [],
-        goals: [],
-        unlocked: [],
-        flexibility: [],
-        steps: 1,
-      }).success,
-    ).toBe(true)
   })
 
   it('SYS-02, SYS-09: budget settings travel with the preferences', () => {

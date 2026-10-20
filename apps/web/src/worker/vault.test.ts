@@ -9,12 +9,12 @@ import {
   goalContributionRecordType,
   goalRecord,
   goalRecordType,
-  scenarioRecord,
-  scenarioRecordType,
   importBatchRecord,
   importBatchRecordType,
   importProfileRecord,
   importProfileRecordType,
+  monthBudgetRecord,
+  monthBudgetRecordType,
   changePasswordRequest,
   changeUsernameRequest,
   deleteAccountRequest,
@@ -588,12 +588,13 @@ describe('vault', () => {
       expect(everything).not.toContain(plaintext)
   })
 
-  it('BUD-04, BUD-20, BUD-26, BUD-38, BUD-56, SYS-09: the plan, goals, money added, what-ifs and closed months reach the server only encrypted', async () => {
+  it('BUD-03, BUD-20, BUD-26, BUD-56, BUD-71, BUD-76, SYS-09: the plan, goals, money added, month budgets and closed months reach the server only encrypted', async () => {
     const server = fakeServer()
     const phone = new Vault(server.api)
     await phone.signUp({ username: 'ana', password })
     const categoryId = newRecordId()
     const goalId = newRecordId()
+    const oneOffId = newRecordId()
 
     await phone.saveRecords([
       {
@@ -601,11 +602,13 @@ describe('vault', () => {
         body: recordBody(
           budgetPlanRecordType,
           budgetPlanRecord.parse({
-            targets: [{ line: categoryId, amount: 432_100, byHand: true }],
-            adjustments: [],
-            exclusions: { periods: ['2026-07-01'], linePeriods: [], transactionIds: [] },
+            exclusions: {
+              periods: ['2026-07-01'],
+              linePeriods: [],
+              transactionIds: [],
+              counted: [oneOffId],
+            },
             tagLines: [],
-            income: 6_543_200,
             estimates: [{ line: categoryId, amount: 765_400 }],
           }),
         ),
@@ -636,14 +639,12 @@ describe('vault', () => {
       {
         id: newRecordId(),
         body: recordBody(
-          scenarioRecordType,
-          scenarioRecord.parse({
-            name: 'Menos antojos',
-            changes: [{ line: categoryId, kind: 'percent', value: -0.15 }],
-            goals: [],
-            unlocked: [],
-            flexibility: [],
-            steps: 3,
+          monthBudgetRecordType,
+          monthBudgetRecord.parse({
+            start: '2026-11-01',
+            targets: [{ line: categoryId, amount: 432_100 }],
+            income: 6_543_200,
+            lockedAt: '2026-10-20T17:00:00.000Z',
           }),
         ),
       },
@@ -660,7 +661,6 @@ describe('vault', () => {
             goals: [],
             surplus: [],
             carry: [],
-            targets: 'kept',
             closedAt: '2026-10-01T12:00:00.000Z',
           }),
         ),
@@ -681,7 +681,9 @@ describe('vault', () => {
       'budgetPlan',
       'goalContribution',
       'budgetSnapshot',
-      'scenario',
+      'monthBudget',
+      'lockedAt',
+      '2026-11-01',
       'estimates',
       'startDay',
       '432100',
@@ -692,6 +694,7 @@ describe('vault', () => {
       '2027-04-30',
       '2026-07-01',
       categoryId,
+      oneOffId,
       'walletIds',
     ])
       expect(everything).not.toContain(plaintext)

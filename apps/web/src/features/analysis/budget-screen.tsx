@@ -5,6 +5,7 @@ import { AccountButton } from '../../components/shell'
 import { Button } from '../../components/ui/button'
 import { EmptyState } from '../../components/ui/empty-state'
 import { ChartPieSliceIcon, FunnelIcon } from '../../components/ui/icons'
+import { viewOf } from '../budget/month-view'
 import { PlanView } from '../budget/plan-view'
 import { useBudget } from '../budget/use-budget'
 import { Page } from '../../components/ui/page'
@@ -19,11 +20,22 @@ import { type Analysis, useAnalysis } from './use-analysis'
 import { useWords } from './use-words'
 import { useBack } from '../../components/shell/back'
 
+export interface BudgetSearch {
+  view?: 'spending'
+  /** BUD-57, BUD-70: the month Plan shows, by its first day; this month when left out. */
+  month?: string
+  /** BUD-72: that month's budget open for editing. */
+  edit?: true
+  /** BUD-35: Find money open on that month. */
+  find?: true
+}
+
 // Epic 5 and Epic 6 share the Budget tab, as two sides of one coin: Plan, the budget
 // and its goals (BUD), and Spending, what the money did (ANA). A segmented control
 // switches between them (DL-CMP-11), and the choice is kept in the address so going
 // back returns to the same side. Budget opens on Plan (Alejandro's call, 2026-10-20).
-export function BudgetScreen({ view }: { view: 'plan' | 'spending' }) {
+export function BudgetScreen({ search }: { search: BudgetSearch }) {
+  const view = search.view === 'spending' ? 'spending' : 'plan'
   const { t } = useTranslation()
   // DL-CMP-06: opened from another screen, a tab's page can pop back to it too.
   const back = useBack()
@@ -32,9 +44,37 @@ export function BudgetScreen({ view }: { view: 'plan' | 'spending' }) {
   const budget = useBudget()
   const [filtering, setFiltering] = useState(false)
   const filters = analysis ? analysisFilters(analysis.state.filter) : 0
+  const month = budget ? viewOf(budget, search) : null
+  // BUD-72: a month with a budget, this one or one ahead, opens again with Edit, as a
+  // list does in iOS; Done closes it, each amount already saved.
+  const editing = view === 'plan' && month?.mode === 'edit'
+  const editable = view === 'plan' && (month?.mode === 'track' || month?.mode === 'ahead')
+  const setEditing = (edit: boolean) => {
+    void navigate({
+      to: '/budget',
+      search: {
+        ...(month && budget && month.start !== budget.view.period.start
+          ? { month: month.start }
+          : {}),
+        ...(edit ? { edit: true as const } : {}),
+      },
+      replace: true,
+    })
+  }
 
   const actions = (
     <>
+      {(editing || editable) && (
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(!editing)
+          }}
+          className={`min-h-11 rounded-xl px-2 text-[1.0625rem] text-brand focus-visible:outline-2 focus-visible:outline-brand ${editing ? 'font-semibold' : ''}`}
+        >
+          {editing ? t('nav.done') : t('budget.edit')}
+        </button>
+      )}
       {view === 'spending' && analysis && (
         <ToolbarButton
           icon={FunnelIcon}
@@ -67,7 +107,7 @@ export function BudgetScreen({ view }: { view: 'plan' | 'spending' }) {
         }}
       />
       {view === 'plan'
-        ? budget && <PlanView budget={budget} />
+        ? budget && month && <PlanView budget={budget} view={month} find={search.find === true} />
         : analysis && <Spending analysis={analysis} />}
       {analysis && (
         <>

@@ -1,6 +1,7 @@
 import { categoryRecord, categoryRecordType } from '@repo/api'
 import {
   type AnalysisEntry,
+  budgeted,
   elapsedDays,
   type Flexibility,
   type LineBaseline,
@@ -17,7 +18,7 @@ import { useBack } from '../../components/shell/back'
 import { Button } from '../../components/ui/button'
 import { ChoiceRow } from '../../components/ui/choice-row'
 import { CaretRightIcon } from '../../components/ui/icons'
-import { List, ListButtonRow } from '../../components/ui/list'
+import { List, ListButtonRow, ListRow } from '../../components/ui/list'
 import { Page } from '../../components/ui/page'
 import { Sheet } from '../../components/ui/sheet'
 import { ColumnChart } from '../analysis/charts'
@@ -29,32 +30,34 @@ import { type BudgetWords, useBudgetWords } from './budget-words'
 import { LeaveOutSheet } from './leave-out-sheet'
 import { commitmentStatus, lineLook, lineName } from './lines'
 import { Over, ProgressBar } from './parts'
-import { currentPlan, planChange } from './records'
-import { type Budget, useBudget } from './use-budget'
+import { currentPlan, monthChange, planChange } from './records'
+import { type Budget, monthOf, periodOf, placeOf, planFor, useBudget } from './use-budget'
 
 const types: readonly Flexibility[] = ['flexible', 'fixed', 'locked']
 
-// BUD-04, BUD-07, BUD-08, BUD-03, BUD-41: one line of the plan: this month against its
-// target, the target itself (the usual month unless set by hand), its type, its last
-// months with the numbers behind the usual month, and the ways to shape it: leave a
-// month or a purchase out, or give one of its tags a target of its own.
-export function LineScreen({ line }: { line: string }) {
+// BUD-04, BUD-07, BUD-08, BUD-03, BUD-41: one line of a month's budget: the month against
+// its target, the target itself, its type, its last months with the numbers behind its
+// starting amount, and the ways to shape it: leave a month or a purchase out, or give
+// one of its tags a target of its own. It shows this month unless opened from another.
+export function LineScreen({ line, month }: { line: string; month?: string }) {
   const budget = useBudget()
   const back = useBack()
   const { t } = useTranslation()
   if (!budget) return <Page title="" back={back} />
   const look = lineLook(budget, line)
   if (!look.category) return <Page title={t('analysis.unknown')} back={back} />
-  return <Line budget={budget} line={line} back={back} />
+  return <Line budget={budget} line={line} start={month} back={back} />
 }
 
 function Line({
   budget,
   line: key,
+  start,
   back,
 }: {
   budget: Budget
   line: string
+  start: string | undefined
   back: ReturnType<typeof useBack>
 }) {
   const words = useBudgetWords(budget.context.currency, budget.today)
@@ -65,7 +68,13 @@ function Line({
   const [typing, setTyping] = useState(false)
   const [leavingOut, setLeavingOut] = useState(false)
   const [tagging, setTagging] = useState(false)
-  const { ledger, month } = budget
+  const { ledger } = budget
+  const period = start ? periodOf(budget, start) : budget.month.period
+  const month = planFor(budget, period, { all: true })
+  const standing = monthOf(budget, period.start)
+  const place = placeOf(budget, period.start)
+  // BUD-72: the budget of this month or one ahead can change; a past one stays as it was.
+  const editable = place !== 'past'
   const { category, group, tag, color } = lineLook(budget, key)
   const { categoryId, tagId } = parseLineKey(key)
   const usual = budget.usual.lines.find((item) => item.key === key) ?? null
@@ -77,8 +86,7 @@ function Line({
     groupId: category?.groupId ?? '',
     base: 0,
     target: 0,
-    byHand: false,
-    adjustment: 0,
+    starting: 0,
     carry: 0,
     spent: 0,
     left: 0,
@@ -108,28 +116,42 @@ function Line({
       )
     : null
 
+  // BUD-04, BUD-70: the month's budget with this line's target changed; a month without
+  // a record of its own gets one with every target it shows.
+  const setTarget = (amount: number, done: () => void) => {
+    const targets = new Map(month.lines.map((line) => [line.key, line.base] as const))
+    targets.set(key, amount)
+    save.mutate([monthChange(ledger, period.start, targets, month.income)], { onSuccess: done })
+  }
+
   const editTarget = () => {
     setRequest({
-      title: t('budget.line.targetTitle'),
+      title: t('budget.line.targetTitle', { month: monthName }),
       intro: usual
         ? t('budget.line.targetIntro', { amount: words.text(usual.baseline) })
         : t('budget.line.targetIntroNone'),
-      label: t('budget.line.eachMonth'),
+      label: t('budget.line.target'),
       initial: planned.base,
       allowZero: true,
-      onSave: (amount, done) => {
-        // BUD-04: a target set by hand stays until the person changes it.
-        const targets = [
-          ...plan.targets.filter((item) => item.line !== key),
-          { line: key, amount, byHand: true },
-        ]
-        save.mutate([planChange(ledger, { targets })], { onSuccess: done })
-      },
+      ...(usual && planned.base !== planned.starting
+        ? {
+            secondary: (
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => {
+                  setTarget(planned.starting, () => {
+                    setRequest(null)
+                  })
+                }}
+              >
+                {t('budget.line.useStarting', { amount: words.text(planned.starting) })}
+              </Button>
+            ),
+          }
+        : {}),
+      onSave: setTarget,
     })
-  }
-
-  const followUsual = () => {
-    save.mutate([planChange(ledger, { targets: plan.targets.filter((item) => item.line !== key) })])
   }
 
   const setType = (next: Flexibility) => {
@@ -153,7 +175,6 @@ function Line({
           tagLines: plan.tagLines.filter(
             (item) => !(item.categoryId === categoryId && item.tagId === tagId),
           ),
-          targets: plan.targets.filter((item) => item.line !== key),
         }),
       ],
       {
@@ -216,7 +237,7 @@ function Line({
           })}
           {usualSoFar !== null &&
             flexibility !== 'locked' &&
-            budget.today <= month.period.end &&
+            place === 'current' &&
             ` ${t('budget.line.usualSoFar', { date: words.day(budget.today), amount: words.text(usualSoFar) })}`}
         </p>
         {planned.status === 'atRisk' && (
@@ -234,18 +255,27 @@ function Line({
       {/* BUD-04, BUD-10: the target and the type. */}
       <div className="flex flex-col gap-1.5">
         <List label={t('budget.line.target')}>
-          <ListButtonRow
-            tone="text"
-            title={t('budget.line.eachMonth')}
-            {...(planned.byHand ? { subtitle: t('budget.line.byHand') } : {})}
-            trailing={
-              <span className="flex items-center gap-2">
-                {words.amount(planned.base)}
-                <CaretRightIcon aria-hidden className="size-4 text-text-faint" />
-              </span>
-            }
-            onClick={editTarget}
-          />
+          {editable ? (
+            <ListButtonRow
+              tone="text"
+              title={t('budget.line.inMonth', { month: words.monthTitle(period) })}
+              {...(usual && planned.base !== planned.starting
+                ? { subtitle: t('budget.make.usual', { amount: words.text(planned.starting) }) }
+                : {})}
+              trailing={
+                <span className="flex items-center gap-2">
+                  {words.amount(planned.base)}
+                  <CaretRightIcon aria-hidden className="size-4 text-text-faint" />
+                </span>
+              }
+              onClick={editTarget}
+            />
+          ) : (
+            <ListRow
+              title={t('budget.line.inMonth', { month: words.monthTitle(period) })}
+              trailing={words.amount(planned.base)}
+            />
+          )}
           {!tag && (
             <ListButtonRow
               tone="text"
@@ -261,28 +291,32 @@ function Line({
               }}
             />
           )}
-          {planned.byHand && usual && (
-            <ListButtonRow
-              title={t('budget.line.followUsual', { amount: words.text(usual.baseline) })}
-              onClick={followUsual}
-            />
-          )}
         </List>
         <p className="px-4 text-[0.8125rem] text-text-muted">
-          {planned.byHand
-            ? t('budget.line.byHandHint')
-            : usual
-              ? t('budget.line.usualHint')
-              : t('budget.line.noUsualHint')}
-          {planned.adjustment !== 0 &&
-            ` ${t('budget.line.adjusted', { amount: words.text(planned.adjustment) })}`}
+          {/* BUD-73: a month that began without being locked in says what it carries on. */}
+          {standing.state === 'carried'
+            ? standing.from
+              ? t('budget.track.carriedFrom', {
+                  month: words.monthName(periodOf(budget, standing.from)),
+                })
+              : t('budget.track.carried')
+            : budgeted(standing)
+              ? t('budget.line.lockedHint', { month: monthName })
+              : t('budget.line.draftHint', { month: monthName })}
           {planned.carry !== 0 &&
             ` ${t('budget.line.carried', { amount: words.text(planned.carry) })}`}
         </p>
       </div>
 
       {/* BUD-07: the months behind the usual month. */}
-      {usual && usual.months.length > 0 && <History usual={usual} words={words} color={color} />}
+      {usual && usual.months.length > 0 && (
+        <History
+          usual={usual}
+          oneOffs={budget.usual.oneOffs.filter((item) => item.line === key && !item.counted).length}
+          words={words}
+          color={color}
+        />
+      )}
 
       <div className="flex flex-col gap-1.5">
         <List>
@@ -443,10 +477,13 @@ function Line({
 /** BUD-07: the last months as columns, left-out ones faint, and the numbers behind them. */
 function History({
   usual,
+  oneOffs,
   words,
   color,
 }: {
   usual: LineBaseline
+  /** BUD-02: how many of its purchases are one-offs left out. */
+  oneOffs: number
   words: BudgetWords
   color: ReturnType<typeof lineLook>['color']
 }) {
@@ -513,12 +550,8 @@ function History({
           }))}
         />
         <p className="text-[0.8125rem] text-text-muted">
-          {usual.spread
-            ? t('budget.line.spread', {
-                count: usual.months.filter((item) => item.spent > 0 && !item.excluded).length,
-                total: usual.months.filter((item) => !item.excluded).length,
-              })
-            : t('budget.line.median')}
+          {t('budget.line.average')}
+          {oneOffs > 0 && ` ${t('budget.line.oneOffs', { count: oneOffs })}`}
           {excluded.length > 0 &&
             ` ${t('budget.line.leftOut', {
               months: excluded

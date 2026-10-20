@@ -1,5 +1,5 @@
 import { goalContributionRecordType, goalRecordType } from '@repo/api'
-import { type Goal, type GoalPlan, monthsBetween } from '@repo/core'
+import { type Goal, type GoalPlan, goalDates, monthsBetween } from '@repo/core'
 import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -19,7 +19,7 @@ import { affordFor, contributedThisMonth, debtPlan, planOf } from './goal-math'
 import { GoalSheet } from './goal-sheet'
 import { GoalTile, ProgressBar } from './parts'
 import { contributionChange, deletion, goalChange } from './records'
-import { type Budget, useBudget } from './use-budget'
+import { type Budget, findMoneySearch, periodOf, useBudget } from './use-budget'
 
 // BUD-20 to BUD-28, BUD-46, BUD-60 to BUD-66: one goal: how far it has come and when it
 // gets there at the money it gets (BUD-24), this month's part (BUD-46), money added by
@@ -153,6 +153,7 @@ function GoalPage({
             <ThisMonth budget={budget} goal={goal} plan={plan} words={words} />
           )}
           {goal.kind === 'debt' && <Debt budget={budget} goal={goal} words={words} />}
+          <DateHistory budget={budget} goal={goal} words={words} />
           {linked ? (
             <p className="px-4 text-[0.8125rem] text-text-muted">
               {goal.kind === 'debt'
@@ -388,14 +389,12 @@ function ThisMonth({
         {plan.funding !== 'funded' && plan.funding !== 'reached' && (
           <li className="group">
             <Link
-              to="/budget/what-if"
-              search={{ gap: true }}
+              to="/budget"
+              search={findMoneySearch(budget)}
               className="flex min-h-[3.25rem] w-full items-center gap-3 pl-4 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
             >
               <span className="flex min-h-[3.25rem] min-w-0 flex-1 items-center gap-2 self-stretch border-t-[0.5px] border-separator py-2 pr-4">
-                <span className="flex-1 text-[0.9375rem] text-brand">
-                  {t('budget.goals.closeGap')}
-                </span>
+                <span className="flex-1 text-[0.9375rem] text-brand">{t('budget.find.row')}</span>
                 <CaretRightIcon aria-hidden className="size-4 shrink-0 text-text-faint" />
               </span>
             </Link>
@@ -508,7 +507,7 @@ function Afford({ budget, goal, words }: { budget: Budget; goal: Goal; words: Bu
         />
       </List>
 
-      {/* BUD-62, BUD-66: with the cuts a what-if would suggest, and the way there. */}
+      {/* BUD-62, BUD-66: with the cuts Find money would suggest, and the way there. */}
       <div className="flex flex-col gap-1.5">
         <List>
           {withCuts && (
@@ -527,13 +526,12 @@ function Afford({ budget, goal, words }: { budget: Budget; goal: Goal; words: Bu
           )}
           <li className="group">
             <Link
-              to="/budget/what-if"
+              to="/budget"
+              search={findMoneySearch(budget)}
               className="flex min-h-[3.25rem] w-full items-center gap-3 pl-4 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
             >
               <span className="flex min-h-[3.25rem] min-w-0 flex-1 items-center gap-2 self-stretch border-t-[0.5px] border-separator py-2 pr-4 group-first:border-t-0">
-                <span className="flex-1 text-[0.9375rem] text-brand">
-                  {t('budget.afford.tryWhatIf')}
-                </span>
+                <span className="flex-1 text-[0.9375rem] text-brand">{t('budget.find.row')}</span>
                 <CaretRightIcon aria-hidden className="size-4 shrink-0 text-text-faint" />
               </span>
             </Link>
@@ -562,5 +560,27 @@ function InOrOut({ onChange }: { onChange: (out: boolean) => void }) {
         onChange(next === 'out')
       }}
     />
+  )
+}
+
+/** BUD-57: the date the goal was expected at each month's close, oldest first. */
+function DateHistory({ budget, goal, words }: { budget: Budget; goal: Goal; words: BudgetWords }) {
+  const { t } = words
+  const dates = goalDates(budget.ledger.snapshots).find((item) => item.goalId === goal.id)
+  if (!dates || dates.dates.length === 0) return null
+  return (
+    <List label={t('budget.goalScreen.history')}>
+      {dates.dates.map((item) => (
+        <ListRow
+          key={item.start}
+          title={words.monthBar(periodOf(budget, item.start))}
+          trailing={
+            <span className="text-[0.9375rem] text-text-muted tabular-nums">
+              {item.projected ? words.monthYear(item.projected) : t('budget.goalScreen.noDate')}
+            </span>
+          }
+        />
+      ))}
+    </List>
   )
 }

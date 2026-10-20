@@ -10,7 +10,7 @@ import {
   spentIn,
 } from './analysis.ts'
 import type { Category, Flexibility } from './categories.ts'
-import { daysBetween, type Period, shiftPeriod } from './dates.ts'
+import { daysBetween, type Period } from './dates.ts'
 
 // Epic 6: the budget. Pure functions over the analysis entries (transactions as the
 // budget counts them, in the default currency); the caller passes "today". A budget
@@ -20,9 +20,9 @@ import { daysBetween, type Period, shiftPeriod } from './dates.ts'
 export interface BudgetSettings {
   /** SYS-02: the day of the month budget months start on. */
   startDay: number
-  /** BUD-01: how many complete months the usual month is the median of. */
+  /** BUD-01: how many complete months the starting amounts are the average of. */
   lookback: 3 | 6 | 12
-  /** BUD-35: the largest cut a what-if suggests per category per step, as a share. */
+  /** BUD-35: the largest cut Find money suggests per category, as a share of its target. */
   maxCut: number
   /** BUD-43: how far over target a category may be heading before it is at risk. */
   atRisk: number
@@ -63,7 +63,7 @@ export function lineOf(entry: AnalysisEntry, tagLines: readonly TagLine[]): stri
   return entry.categoryId
 }
 
-/** BUD-03: what the person left out of the usual month. */
+/** BUD-03: what the person left out of the starting amounts by hand. */
 export interface Exclusions {
   /** Whole months, by their first day. */
   periods: readonly string[]
@@ -71,27 +71,95 @@ export interface Exclusions {
   linePeriods: readonly { line: string; start: string }[]
   /** One-off transactions. */
   transactionIds: readonly string[]
+  /** BUD-76: one-offs the app found that the person chose to count after all. */
+  counted?: readonly string[]
 }
 
 export const noExclusions: Exclusions = { periods: [], linePeriods: [], transactionIds: [] }
 
-/** One month of a line's history, as the usual month counts it. */
+/** BUD-02: how many times a line's usual purchase a one-off is bigger than. */
+export const oneOffFactor = 3
+
+/** BUD-02: a purchase left out of the starting amount because it is out of the ordinary. */
+export interface OneOff {
+  transactionId: string
+  line: string
+  date: string
+  amount: number
+  /** Over 3 times the line's usual purchase, or its only purchase in the months looked at. */
+  reason: 'large' | 'only'
+  /** The line's usual purchase, the middle one; 0 for an only purchase. */
+  usual: number
+  /** BUD-76: counted in the starting amount after all. */
+  counted: boolean
+}
+
+/**
+ * BUD-02: the purchases out of the ordinary in each line: more than 3 times the line's
+ * usual purchase (the middle one, once there are at least 3), or its only purchase in
+ * the months looked at. A purchase from a recurring transaction never is: it is how
+ * the line usually goes, such as a yearly bill.
+ */
+export function findOneOffs(
+  entries: readonly AnalysisEntry[],
+  months: readonly Period[],
+  tagLines: readonly TagLine[],
+  counted: ReadonlySet<string> = new Set(),
+): OneOff[] {
+  const byLine = new Map<string, AnalysisEntry[]>()
+  for (const entry of entries) {
+    if (entry.spent <= 0) continue
+    if (!months.some((period) => entry.date >= period.start && entry.date <= period.end)) continue
+    const key = lineOf(entry, tagLines)
+    if (key === null) continue
+    const list = byLine.get(key) ?? []
+    list.push(entry)
+    byLine.set(key, list)
+  }
+  const found: OneOff[] = []
+  for (const [key, purchases] of byLine) {
+    const add = (entry: AnalysisEntry, reason: OneOff['reason'], usual: number) => {
+      found.push({
+        transactionId: entry.transactionId,
+        line: key,
+        date: entry.date,
+        amount: entry.spent,
+        reason,
+        usual,
+        counted: counted.has(entry.transactionId),
+      })
+    }
+    const only = purchases[0]
+    if (purchases.length === 1 && only?.recurringId === null) add(only, 'only', 0)
+    if (purchases.length < 3) continue
+    const usual = median(purchases.map((entry) => entry.spent)) ?? 0
+    for (const entry of purchases)
+      if (entry.recurringId === null && entry.spent > usual * oneOffFactor)
+        add(entry, 'large', usual)
+  }
+  return found.sort((a, b) => b.date.localeCompare(a.date) || b.amount - a.amount)
+}
+
+/** One month of a line's history, as the starting amount counts it. */
 export interface LineMonth {
   period: Period
+  /** Everything spent, one-offs included. */
   spent: number
-  /** BUD-03: left out of the usual month. */
+  /** BUD-02: what its one-offs came to, which the starting amount leaves out. */
+  oneOff: number
+  /** BUD-03: left out of the starting amount. */
   excluded: boolean
 }
 
-/** BUD-01, BUD-02, BUD-07: a line's usual month and the numbers behind it. */
+/** BUD-01, BUD-02, BUD-07: a line's starting amount and the numbers behind it. */
 export interface LineBaseline {
   key: string
   categoryId: string
   tagId: string | null
-  /** The usual month: the median, or the total spread evenly for an irregular cost. */
+  /** BUD-01: the starting amount, the average month without one-offs. */
   baseline: number
-  /** BUD-02: spread evenly because it was spent in fewer than half the months. */
-  spread: boolean
+  /** BUD-02: the average with its one-offs counted. */
+  withOneOffs: number
   median: number
   /** BUD-07: the proven level, the lowest month counted. */
   proven: number
@@ -120,13 +188,15 @@ export interface Baseline {
   total: number
   /** BUD-05: the median income of the months counted; null without any. */
   income: number | null
+  /** BUD-02, BUD-76: the one-offs found, those counted after all included. */
+  oneOffs: OneOff[]
 }
 
 /**
- * BUD-01, BUD-02, BUD-03, BUD-05, BUD-07: the usual month of every expense line, from
- * the last `lookback` complete months before the one viewed. Months and transactions
- * left out don't count. A line spent in fewer than half of the months is spread
- * evenly (its total over the months), so a yearly bill becomes a monthly amount.
+ * BUD-01, BUD-02, BUD-03, BUD-05, BUD-07: the starting amount of every expense line,
+ * from the last `lookback` complete months before the one viewed: its average month
+ * with one-offs left out. Months and transactions left out by hand don't count at all;
+ * a one-off still shows in its own month, it just doesn't raise the starting amount.
  */
 export function baseline(
   entries: readonly AnalysisEntry[],
@@ -143,9 +213,15 @@ export function baseline(
   const counted = periods.filter((period) => !exclusions.periods.includes(period.start))
   const leftOut = new Set(exclusions.transactionIds)
   const kept = entries.filter((entry) => !leftOut.has(entry.transactionId))
+  const oneOffs = findOneOffs(kept, counted, tagLines, new Set(exclusions.counted ?? []))
+  const unusual = new Set(oneOffs.filter((item) => !item.counted).map((item) => item.transactionId))
 
-  // What each line spent, and how many purchases, in each month.
-  const tallies = new Map<string, { spent: number[]; bought: number[]; count: number[] }>()
+  // What each line spent, what its one-offs came to, and its ordinary purchases, each month.
+  const zeros = () => periods.map(() => 0)
+  const tallies = new Map<
+    string,
+    { spent: number[]; oneOff: number[]; bought: number[]; count: number[] }
+  >()
   periods.forEach((period, index) => {
     for (const entry of kept) {
       if (entry.date < period.start || entry.date > period.end) continue
@@ -153,15 +229,13 @@ export function baseline(
       if (key === null || entry.spent === 0) continue
       let tally = tallies.get(key)
       if (!tally) {
-        tally = {
-          spent: periods.map(() => 0),
-          bought: periods.map(() => 0),
-          count: periods.map(() => 0),
-        }
+        tally = { spent: zeros(), oneOff: zeros(), bought: zeros(), count: zeros() }
         tallies.set(key, tally)
       }
       tally.spent[index] = (tally.spent[index] ?? 0) + entry.spent
-      if (entry.spent > 0) {
+      if (unusual.has(entry.transactionId))
+        tally.oneOff[index] = (tally.oneOff[index] ?? 0) + entry.spent
+      else if (entry.spent > 0) {
         tally.bought[index] = (tally.bought[index] ?? 0) + entry.spent
         tally.count[index] = (tally.count[index] ?? 0) + 1
       }
@@ -171,11 +245,7 @@ export function baseline(
   for (const line of tagLines) {
     const key = lineKey(line.categoryId, line.tagId)
     if (!tallies.has(key))
-      tallies.set(key, {
-        spent: periods.map(() => 0),
-        bought: periods.map(() => 0),
-        count: periods.map(() => 0),
-      })
+      tallies.set(key, { spent: zeros(), oneOff: zeros(), bought: zeros(), count: zeros() })
   }
 
   const lines: LineBaseline[] = []
@@ -183,30 +253,29 @@ export function baseline(
     const months: LineMonth[] = periods.map((period, index) => ({
       period,
       spent: tally.spent[index] ?? 0,
+      oneOff: tally.oneOff[index] ?? 0,
       excluded:
         exclusions.periods.includes(period.start) ||
         exclusions.linePeriods.some((item) => item.line === key && item.start === period.start),
     }))
     const included = months.filter((month) => !month.excluded)
-    const values = included.map((month) => month.spent)
-    const middle = median(values) ?? 0
+    // BUD-02: the usual numbers are those of ordinary spending, one-offs taken out.
+    const ordinary = (month: LineMonth) => month.spent - month.oneOff
+    const values = included.map(ordinary)
     const total = values.reduce((sum, value) => sum + value, 0)
-    const active = values.filter((value) => value > 0).length
-    // BUD-02: a cost that comes now and then is spread over every month.
-    const spread = values.length > 0 && active > 0 && active < values.length / 2
-    const usual = Math.max(0, spread ? Math.round(total / values.length) : middle)
+    const average = values.length > 0 ? total / values.length : 0
+    const all = included.reduce((sum, month) => sum + month.spent, 0)
     const lowest = included.reduce<LineMonth | null>(
-      (low, month) => (low === null || month.spent < low.spent ? month : low),
+      (low, month) => (low === null || ordinary(month) < ordinary(low) ? month : low),
       null,
     )
     const highest = included.reduce<LineMonth | null>(
-      (high, month) => (high === null || month.spent > high.spent ? month : high),
+      (high, month) => (high === null || ordinary(month) > ordinary(high) ? month : high),
       null,
     )
     const half = Math.floor(values.length / 2)
     const earlier = half > 0 ? mean(values.slice(0, half)) : null
     const later = half > 0 ? mean(values.slice(-half)) : null
-    const average = values.length > 0 ? total / values.length : 0
     const deviation =
       values.length > 0
         ? Math.sqrt(values.reduce((sum, value) => sum + (value - average) ** 2, 0) / values.length)
@@ -224,12 +293,12 @@ export function baseline(
       key,
       categoryId,
       tagId,
-      baseline: usual,
-      spread,
-      median: middle,
-      proven: Math.max(0, lowest?.spent ?? 0),
+      baseline: Math.max(0, Math.round(average)),
+      withOneOffs: Math.max(0, values.length > 0 ? Math.round(all / values.length) : 0),
+      median: median(values) ?? 0,
+      proven: Math.max(0, lowest ? ordinary(lowest) : 0),
       provenPeriod: lowest?.period ?? null,
-      highest: highest?.spent ?? 0,
+      highest: highest ? ordinary(highest) : 0,
       highestPeriod: highest?.period ?? null,
       trend: earlier !== null && later !== null && earlier > 0 ? (later - earlier) / earlier : null,
       share: 0,
@@ -248,71 +317,57 @@ export function baseline(
       .filter((entry) => entry.date >= period.start && entry.date <= period.end)
       .reduce((sum, entry) => sum + entry.earned, 0),
   )
-  return { periods, counted, lines, total: totalUsual, income: median(incomes) }
+  return { periods, counted, lines, total: totalUsual, income: median(incomes), oneOffs }
 }
 
-/** BUD-37: a change that a what-if made part of the plan, from a month on. */
-export interface Adjustment {
-  line: string
-  /** The full change to the line's target per month: negative for a cut. */
-  change: number
-  /** BUD-37: reached over this many months, a step each; 1 for at once. */
-  steps: number
-  /** The first month it applies to, by its first day. */
-  from: string
-}
-
-/** What the person set in the plan, kept in its encrypted record. */
+/** How the budget counts, kept in the person's encrypted plan record. */
 export interface PlanSettings {
-  /** BUD-04, BUD-55: targets set by hand or kept at a month's close; the rest follow the usual month. */
-  targets: readonly { line: string; amount: number; byHand?: boolean }[]
-  /** BUD-05: the income the person expects every month, in place of the usual one. */
-  income?: number
-  /** BUD-05: the income expected in one month only. */
-  incomeByPeriod?: readonly { start: string; amount: number }[]
-  adjustments: readonly Adjustment[]
   exclusions: Exclusions
   tagLines: readonly TagLine[]
   /** BUD-06: rough amounts entered before there is a month of history; real ones replace them. */
   estimates?: readonly { line: string; amount: number }[]
 }
 
-export const emptyPlan: PlanSettings = {
-  targets: [],
-  adjustments: [],
-  exclusions: noExclusions,
-  tagLines: [],
+export const emptyPlan: PlanSettings = { exclusions: noExclusions, tagLines: [] }
+
+/**
+ * BUD-01, BUD-06, BUD-70: what each line starts from in a new budget: its average month
+ * without one-offs, or the rough amount entered while it has no month of its own.
+ */
+export function startingAmounts(
+  usual: Baseline,
+  estimates: PlanSettings['estimates'] = [],
+): Map<string, number> {
+  const amounts = new Map<string, number>()
+  for (const item of estimates) amounts.set(item.line, item.amount)
+  for (const line of usual.lines)
+    if (line.months.some((month) => month.spent !== 0) || !amounts.has(line.key))
+      amounts.set(line.key, line.baseline)
+  return amounts
 }
 
-/** BUD-37: how much of an adjustment applies in the month starting `start`. */
-export function adjustmentIn(adjustment: Adjustment, start: string, monthStart: number): number {
-  if (start < adjustment.from) return 0
-  let months = 0
-  let cursor = adjustment.from
-  while (cursor < start && months < adjustment.steps) {
-    cursor = shiftPeriod(cursor, 'month', 1, 0, monthStart).start
-    months += 1
-  }
-  const step = Math.min(adjustment.steps, months + 1)
-  return Math.round((adjustment.change * step) / Math.max(1, adjustment.steps))
+/** BUD-40, BUD-70: a month's targets and income, from its own budget. */
+export interface MonthTargets {
+  /** Every line's target; a line not here has none. */
+  targets: ReadonlyMap<string, number>
+  income: number
 }
 
 /** BUD-43: how a line is doing this month. */
 export type LineStatus = 'onTrack' | 'atRisk' | 'over'
 
-/** BUD-40, BUD-41: one line of the plan in the month viewed. */
+/** BUD-40, BUD-41: one line of a month's budget. */
 export interface PlanLine {
   key: string
   categoryId: string
   tagId: string | null
   flexibility: Flexibility
   groupId: string
-  /** The target before this month's adjustment and carry-over. */
+  /** The month's own target, before anything carried over. */
   base: number
   target: number
-  /** BUD-04: set by hand rather than following the usual month. */
-  byHand: boolean
-  adjustment: number
+  /** BUD-04: what the line would start from in a new budget. */
+  starting: number
   /** BUD-52: carried over from last month's close. */
   carry: number
   spent: number
@@ -333,11 +388,10 @@ export interface PlanMonth {
   spent: number
   left: number
   projected: number
-  /** BUD-43 for the whole plan. */
+  /** BUD-43 for the whole budget. */
   status: LineStatus
-  /** BUD-05: the income expected this month, and whether the person set it. */
+  /** BUD-05: the income expected this month. */
   income: number
-  incomeSet: boolean
   /** BUD-12: expected income minus every target. */
   leftOver: number
   /** Income so far this month. */
@@ -370,39 +424,43 @@ export function usualShare(
 }
 
 /**
- * BUD-40 to BUD-44: the plan for the month viewed. Each line's target is its kept or
- * hand-set target, else its usual month, plus this month's adjustment and anything
+ * BUD-40 to BUD-44: a month's budget against what it spent. Each line's target is the
+ * month's own, or its starting amount when the month has no budget yet, plus anything
  * carried over. Spending counts only what the budget counts: the caller leaves out
- * transfers and transactions left out of the budget (BUD-44).
+ * transfers and wallets out of the budget, and transactions left out of the budget
+ * don't count here (BUD-44). `usual` is the baseline before today, so every month,
+ * this one or a later one, starts from the same complete months.
  */
 export function planMonth(
   entries: readonly AnalysisEntry[],
   view: AnalysisView,
   categories: readonly Category[],
+  usual: Baseline,
   plan: PlanSettings,
   settings: BudgetSettings,
-  carry: readonly { line: string; amount: number }[] = [],
-): { month: PlanMonth; baseline: Baseline } {
+  month: MonthTargets | null,
+  options: {
+    carry?: readonly { line: string; amount: number }[]
+    /** BUD-70: every line there was spending to start from, even at nothing, as when making a budget. */
+    all?: boolean
+  } = {},
+): PlanMonth {
   // BUD-44: what the person left out of the budget never counts here.
   entries = entries.filter((entry) => !entry.excluded)
-  const usual = baseline(entries, view, {
-    lookback: settings.lookback,
-    exclusions: plan.exclusions,
-    tagLines: plan.tagLines,
-  })
+  const carry = options.carry ?? []
   const byKey = new Map(usual.lines.map((line) => [line.key, line]))
   const byId = new Map(categories.map((category) => [category.id, category]))
+  const starting = startingAmounts(usual, plan.estimates)
+  const targets = month?.targets ?? starting
   const period = view.period
   const days = elapsedDays(period, view.today)
   const length = periodDays(period)
   const going = view.today >= period.start && view.today <= period.end
 
-  // Every line with a usual month, a target, an adjustment or spending this month.
-  const keys = new Set<string>(usual.lines.map((line) => line.key))
-  for (const target of plan.targets) keys.add(target.line)
-  for (const adjustment of plan.adjustments) keys.add(adjustment.line)
+  // Every line with a starting amount, a target, a carry-over or spending this month.
+  const keys = new Set<string>(starting.keys())
+  for (const key of targets.keys()) keys.add(key)
   for (const item of carry) keys.add(item.line)
-  for (const item of plan.estimates ?? []) keys.add(item.line)
   for (const entry of entries)
     if (entry.date >= period.start && entry.date <= period.end && entry.spent > 0) {
       const key = lineOf(entry, plan.tagLines)
@@ -416,18 +474,11 @@ export function planMonth(
     if (!category || category.kind === 'income') continue
     const select = (entry: AnalysisEntry) => lineOf(entry, plan.tagLines) === key
     const line = byKey.get(key) ?? null
-    const set = plan.targets.find((target) => target.line === key)
-    // BUD-06: an estimate stands in only for a line with no month of its own yet.
-    const estimate = plan.estimates?.find((item) => item.line === key)?.amount
-    const lived = line?.months.some((month) => month.spent !== 0) === true
-    const base = set?.amount ?? (line && lived ? line.baseline : (estimate ?? line?.baseline ?? 0))
-    const adjustment = plan.adjustments
-      .filter((item) => item.line === key)
-      .reduce((sum, item) => sum + adjustmentIn(item, period.start, settings.startDay), 0)
+    const base = targets.get(key) ?? 0
     const carried = carry
       .filter((item) => item.line === key)
       .reduce((sum, item) => sum + item.amount, 0)
-    const target = Math.max(0, base + adjustment + carried)
+    const target = Math.max(0, base + carried)
     let spent = 0
     let lastDate: string | null = null
     for (const entry of entries)
@@ -453,8 +504,7 @@ export function planMonth(
       groupId: category.groupId,
       base,
       target,
-      byHand: set?.byHand === true,
-      adjustment,
+      starting: starting.get(key) ?? 0,
       carry: carried,
       spent,
       left: target - spent,
@@ -464,44 +514,42 @@ export function planMonth(
       usual: line,
     })
   }
-  // Drop lines with nothing planned and nothing spent, such as a category used long ago.
+  // Drop lines with nothing planned and nothing spent, such as a category used long ago,
+  // unless the budget is being made and the line had spending to start from.
   const shown = lines
-    .filter((line) => line.target > 0 || line.spent !== 0)
+    .filter(
+      (line) =>
+        line.target > 0 || line.spent !== 0 || (options.all === true && line.usual !== null),
+    )
     .sort((a, b) => b.target - a.target || b.spent - a.spent || a.key.localeCompare(b.key))
 
   const target = shown.reduce((sum, line) => sum + line.target, 0)
   const spent = shown.reduce((sum, line) => sum + line.spent, 0)
   const projected = shown.reduce((sum, line) => sum + Math.max(line.projected, 0), 0)
-  const set =
-    plan.incomeByPeriod?.find((item) => item.start === period.start)?.amount ?? plan.income
-  const income = set ?? usual.income ?? 0
+  const income = month?.income ?? usual.income ?? 0
   const earned = entries
     .filter((entry) => entry.date >= period.start && entry.date <= period.end)
     .reduce((sum, entry) => sum + entry.earned, 0)
   return {
-    baseline: usual,
-    month: {
-      period,
-      lines: shown,
-      target,
-      spent,
-      left: target - spent,
-      projected,
-      status:
-        spent > target
-          ? 'over'
-          : going && projected > target * (1 + settings.atRisk)
-            ? 'atRisk'
-            : 'onTrack',
-      income,
-      incomeSet: set !== undefined,
-      leftOver: income - target,
-      earned,
-    },
+    period,
+    lines: shown,
+    target,
+    spent,
+    left: target - spent,
+    projected,
+    status:
+      spent > target
+        ? 'over'
+        : going && projected > target * (1 + settings.atRisk)
+          ? 'atRisk'
+          : 'onTrack',
+    income,
+    leftOver: income - target,
+    earned,
   }
 }
 
-/** BUD-13: the plan split into commitments, needs and wants. */
+/** BUD-13: a month's budget split into commitments, needs and wants. */
 export function planSplit(lines: readonly PlanLine[]): Record<Flexibility, number> {
   const split: Record<Flexibility, number> = { locked: 0, fixed: 0, flexible: 0 }
   for (const line of lines) split[line.flexibility] += line.target

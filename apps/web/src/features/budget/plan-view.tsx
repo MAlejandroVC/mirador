@@ -1,97 +1,214 @@
-import type { Flexibility, Goal, GoalPlan, PlanLine } from '@repo/core'
-import { addDays, daysLeft } from '@repo/core'
-import { Link } from '@tanstack/react-router'
-import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import {
+  daysLeft,
+  type Goal,
+  type GoalPlan,
+  type MonthBudget,
+  nextToPlan,
+  type PlanLine,
+  type PlanMonth,
+  toCalendarDate,
+} from '@repo/core'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { type ReactNode, useState } from 'react'
 import { Button } from '../../components/ui/button'
 import { EmptyState } from '../../components/ui/empty-state'
 import { HeroCard } from '../../components/ui/hero-card'
 import { IconTile } from '../../components/ui/icon-tile'
 import {
   CalendarCheckIcon,
+  CalendarDotsIcon,
   CaretRightIcon,
-  ClockCounterClockwiseIcon,
-  ColumnsIcon,
-  FlaskIcon,
   PlusIcon,
-  SlidersHorizontalIcon,
-  TargetIcon,
 } from '../../components/ui/icons'
 import { List, ListButtonRow, ListLinkRow, ListRow } from '../../components/ui/list'
-import { SegmentedControl } from '../../components/ui/segmented-control'
 import { ShowMoreRow } from '../../components/ui/show-more-row'
 import { CategoryTile } from '../categories/category-tile'
-import { useSaveRecords } from '../wallets/use-ledger'
-import { AmountSheet, type AmountRequest } from './amount-sheet'
+import { type BudgetWords, useBudgetWords } from './budget-words'
+import { contributedThisMonth } from './goal-math'
 import { GoalReorderSheet } from './goal-reorder-sheet'
 import { GoalSheet } from './goal-sheet'
-import { contributedThisMonth } from './goal-math'
-import { commitmentStatus, lineName } from './lines'
-import { type BudgetWords, useBudgetWords } from './budget-words'
 import { goalSummary } from './goal-summary'
+import { commitmentStatus, lineName } from './lines'
+import { MonthBar } from './month-bar'
+import { MonthEditor } from './month-editor'
+import { GoalDates, GroupingSwitch, MonthHeader, PlanStrip } from './month-parts'
+import { type MonthView, sectionsOf, useGrouping } from './month-view'
 import { GoalTile, Over, ProgressBar, ProgressRow } from './parts'
-import { planChange } from './records'
-import type { Budget } from './use-budget'
+import { type Budget, findMoneySearch, fundWith, periodOf, planFor } from './use-budget'
 
-// Epic 6, the Plan side of Budget: what is left to spend this month and whether it is
-// on track (BUD-41, BUD-43), what the month leaves over (BUD-12), the goals it pays for
-// (BUD-20 to BUD-24), and every category's target against what it spent, grouped by
-// Wants, Needs and Commitments or by category group. Then the way into what-ifs and
-// past months.
+// Epic 6, the Plan side of Budget: one page for every month (BUD-70 to BUD-75). A month
+// that isn't locked in yet, this one or one ahead, is made right here: every amount is
+// a field, the goal dates move as they change, and Lock in makes it the month's budget.
+// Once locked in, this month shows what is left to spend and whether it is on track
+// (BUD-41, BUD-43), and Edit in the title row reopens its amounts (BUD-72). The month
+// bar reaches past months with a budget too (BUD-57, BUD-74).
 
-const groupingKey = 'mirador.budget.grouping'
-type Grouping = 'type' | 'group'
-
-function savedGrouping(): Grouping {
-  try {
-    return globalThis.localStorage.getItem(groupingKey) === 'group' ? 'group' : 'type'
-  } catch {
-    return 'type'
-  }
-}
-
-export function PlanView({ budget }: { budget: Budget }) {
+export function PlanView({
+  budget,
+  view,
+  find,
+}: {
+  budget: Budget
+  view: MonthView
+  /** BUD-35: open Find money on the month being made. */
+  find: boolean
+}) {
   const words = useBudgetWords(budget.context.currency, budget.today)
-  if (!budget.ready) return <FirstMonth budget={budget} words={words} />
+  const navigate = useNavigate()
+  // Moving between months changes what the page shows, not where it is, so it never
+  // adds a step to go back through (DL-CMP-06).
+  const go = (start: string) => {
+    void navigate({
+      to: '/budget',
+      search: start === budget.view.period.start ? {} : { month: start },
+      replace: true,
+    })
+  }
   return (
     <>
-      {budget.review && <ReviewCard budget={budget} words={words} />}
-      <PlanHero budget={budget} words={words} />
-      <PlanStrip budget={budget} words={words} />
-      <GoalsList budget={budget} words={words} />
-      <Categories budget={budget} words={words} />
-      <MoreRows budget={budget} words={words} />
+      <MonthBar budget={budget} start={view.start} words={words} onChange={go} />
+      {view.place === 'current' && budget.review && <ReviewCard budget={budget} words={words} />}
+      {view.mode === 'make' || view.mode === 'edit' ? (
+        <MonthEditor
+          key={view.start}
+          budget={budget}
+          view={view}
+          words={words}
+          find={find}
+          onLocked={() => {
+            globalThis.scrollTo({ top: 0 })
+          }}
+        />
+      ) : view.mode === 'track' ? (
+        <Tracking budget={budget} words={words} onPlan={go} />
+      ) : view.mode === 'ahead' ? (
+        <Ahead budget={budget} view={view} words={words} />
+      ) : view.mode === 'past' ? (
+        <Past budget={budget} view={view} words={words} />
+      ) : (
+        <EmptyState icon={CalendarDotsIcon} title={words.t('budget.past.none')}>
+          {words.t('budget.past.noneBody', { month: words.monthName(view.period) })}
+        </EmptyState>
+      )}
     </>
   )
 }
 
-/** BUD-06: less than a month to start from: import, enter rough amounts, or just track. */
-function FirstMonth({ budget, words }: { budget: Budget; words: BudgetWords }) {
+/** BUD-71: "Locked in on Oct 20.", or how a month that wasn't locked in got its budget. */
+function lockedNote(budget: Budget, month: MonthBudget, words: BudgetWords): string {
   const { t } = words
-  // BUD-06: the plan is ready once this month is complete.
-  const next = words.day(addDays(budget.month.period.end, 1))
+  const lockedAt = month.record?.lockedAt
+  if (month.state === 'locked' && lockedAt)
+    return t('budget.track.lockedOn', { date: words.day(toCalendarDate(new Date(lockedAt))) })
+  return month.from
+    ? t('budget.track.carriedFrom', {
+        month: words.monthName(periodOf(budget, month.from)),
+      })
+    : t('budget.track.carried')
+}
+
+/** BUD-41, BUD-43, BUD-75: this month against its budget, and the next one to lock in. */
+function Tracking({
+  budget,
+  words,
+  onPlan,
+}: {
+  budget: Budget
+  words: BudgetWords
+  onPlan: (start: string) => void
+}) {
+  const { month } = budget
   return (
     <>
-      <EmptyState
-        icon={TargetIcon}
-        title={t('budget.first.title')}
-        action={
-          <Link
-            to="/settings/data"
-            className="mt-1 inline-flex min-h-[3.125rem] items-center justify-center rounded-[0.875rem] bg-brand px-6 text-[1.0625rem] font-semibold text-on-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-          >
-            {t('budget.first.import')}
-          </Link>
+      <PlanHero budget={budget} month={month} words={words} />
+      {/* One card at a time: the review, which gets this month ready, comes first. */}
+      {!budget.review && <NudgeCard budget={budget} words={words} onPlan={onPlan} />}
+      <PlanStrip month={month} words={words} />
+      <Categories
+        budget={budget}
+        month={month}
+        words={words}
+        row={(line) =>
+          line.flexibility === 'locked' ? (
+            <CommitmentRow key={line.key} budget={budget} line={line} words={words} />
+          ) : (
+            <LineRow key={line.key} budget={budget} month={month} line={line} words={words} />
+          )
         }
-      >
-        {t('budget.first.body', { date: next })}
-      </EmptyState>
-      <div className="flex flex-col gap-1.5">
-        <List>
-          <ListLinkRow to="/budget/usual" title={t('budget.first.enter')} tone="brand" />
-        </List>
-        <p className="px-4 text-[0.8125rem] text-text-muted">{t('budget.first.enterHint')}</p>
-      </div>
+      />
+      <GoalsList budget={budget} words={words} />
+      <p className="px-4 text-[0.8125rem] text-text-muted">
+        {lockedNote(budget, budget.current, words)}
+      </p>
+    </>
+  )
+}
+
+/** BUD-57: a past month against its budget, as it ended. */
+function Past({ budget, view, words }: { budget: Budget; view: MonthView; words: BudgetWords }) {
+  const month = planFor(budget, view.period)
+  return (
+    <>
+      <PlanHero budget={budget} month={month} words={words} />
+      <PlanStrip month={month} words={words} />
+      <Categories
+        budget={budget}
+        month={month}
+        words={words}
+        row={(line) => (
+          <LineRow
+            key={line.key}
+            budget={budget}
+            month={month}
+            line={line}
+            words={words}
+            start={view.start}
+          />
+        )}
+      />
+      <p className="px-4 text-[0.8125rem] text-text-muted">
+        {lockedNote(budget, view.month, words)}
+      </p>
+    </>
+  )
+}
+
+/** BUD-70, BUD-71: a month ahead, locked in: its amounts and what they do to the goals. */
+function Ahead({ budget, view, words }: { budget: Budget; view: MonthView; words: BudgetWords }) {
+  const { t } = words
+  const month = planFor(budget, view.period)
+  const funding = fundWith(budget, month.leftOver, budget.goals, view.period)
+  return (
+    <>
+      <MonthHeader
+        icon={CalendarCheckIcon}
+        title={t('budget.make.title', { month: words.monthTitle(view.period) })}
+        line={t('budget.ahead.line', { date: words.day(view.period.start) })}
+      />
+      <PlanStrip month={month} words={words} />
+      <Categories
+        budget={budget}
+        month={month}
+        words={words}
+        detail={(lines) => words.text(lines.reduce((sum, line) => sum + line.target, 0))}
+        row={(line) => {
+          const category = budget.lookups.categories.get(line.categoryId)
+          const group = category ? budget.lookups.groupOf(category) : undefined
+          return (
+            <ListLinkRow
+              key={line.key}
+              to="/budget/line/$line"
+              params={{ line: line.key }}
+              search={{ month: view.start }}
+              leading={category ? <CategoryTile category={category} group={group} /> : null}
+              title={lineName(budget, line.key)}
+              trailing={words.amount(line.target)}
+            />
+          )
+        }}
+      />
+      <GoalDates plans={funding.goals} words={words} />
+      <p className="px-4 text-[0.8125rem] text-text-muted">{t('budget.ahead.hint')}</p>
     </>
   )
 }
@@ -109,7 +226,7 @@ function ReviewCard({ budget, words }: { budget: Budget; words: BudgetWords }) {
       <IconTile icon={CalendarCheckIcon} />
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="text-[0.9375rem] font-semibold text-text">
-          {t('budget.reviewCard.title', { month: words.monthName(ended) })}
+          {t('budget.reviewCard.title', { month: words.monthTitle(ended) })}
         </span>
         <span className="text-[0.8125rem] text-text-muted">
           {t('budget.reviewCard.body', { month: words.monthName(budget.month.period) })}
@@ -120,17 +237,72 @@ function ReviewCard({ budget, words }: { budget: Budget; words: BudgetWords }) {
   )
 }
 
-/** DL-CMP-01, BUD-41, BUD-43: what is left to spend this month, and how it is going. */
-function PlanHero({ budget, words }: { budget: Budget; words: BudgetWords }) {
+/**
+ * BUD-75: from 14 days before next month begins, while its budget isn't locked in, a
+ * card asks for it, so the month starts with a budget already agreed.
+ */
+function NudgeCard({
+  budget,
+  words,
+  onPlan,
+}: {
+  budget: Budget
+  words: BudgetWords
+  onPlan: (start: string) => void
+}) {
   const { t } = words
-  const { month } = budget
+  const next = nextToPlan(
+    budget.ledger.months,
+    budget.view.period,
+    budget.today,
+    budget.settings.startDay,
+  )
+  if (!next) return null
+  const period = periodOf(budget, next.start)
+  const drafted = budget.ledger.months.some((record) => record.start === next.start)
+  return (
+    <section className="flex flex-col gap-3 rounded-2xl bg-surface p-4">
+      <div className="flex items-center gap-3">
+        <IconTile icon={CalendarDotsIcon} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <h2 className="text-[0.9375rem] font-semibold text-text">
+            {t('budget.nudge.title', { month: words.monthTitle(period), count: next.days })}
+          </h2>
+          <p className="text-[0.8125rem] text-text-muted">
+            {drafted ? t('budget.nudge.drafted') : t('budget.nudge.body')}
+          </p>
+        </div>
+      </div>
+      <Button
+        variant="secondary"
+        onClick={() => {
+          onPlan(next.start)
+        }}
+      >
+        {t('budget.nudge.action', { month: words.monthName(period) })}
+      </Button>
+    </section>
+  )
+}
+
+/** DL-CMP-01, BUD-41, BUD-43: what is left to spend in the month, and how it is going. */
+function PlanHero({
+  budget,
+  month,
+  words,
+}: {
+  budget: Budget
+  month: PlanMonth
+  words: BudgetWords
+}) {
+  const { t } = words
   const name = words.monthName(month.period)
-  const days = daysLeft(month.period, budget.today)
+  const going = budget.today <= month.period.end
   const over = month.left < 0
   const context = [
     t('budget.hero.of', { amount: words.text(month.target) }),
-    t('budget.hero.days', { count: days }),
-    ...(over ? [] : [t(`budget.status.${month.status}`)]),
+    ...(going ? [t('budget.hero.days', { count: daysLeft(month.period, budget.today) })] : []),
+    ...(over || !going ? [] : [t(`budget.status.${month.status}`)]),
   ].join(' · ')
   return (
     <HeroCard
@@ -141,130 +313,10 @@ function PlanHero({ budget, words }: { budget: Budget; words: BudgetWords }) {
   )
 }
 
-/** BUD-05, BUD-12: the income the plan counts on, what the plan spends and what's left over. */
-function PlanStrip({ budget, words }: { budget: Budget; words: BudgetWords }) {
-  const { t } = words
-  const { month, ledger } = budget
-  const save = useSaveRecords()
-  const [request, setRequest] = useState<AmountRequest | null>(null)
-  const name = words.monthName(month.period)
-
-  const editIncome = () => {
-    const usual = budget.usual.income ?? 0
-    let only = false
-    setRequest({
-      title: t('budget.income.title'),
-      intro: t('budget.income.intro', { amount: words.text(usual) }),
-      label: t('budget.income.label'),
-      initial: month.incomeSet ? month.income : usual,
-      allowZero: true,
-      extra: () => (
-        <OnlyThisMonth
-          month={name}
-          onChange={(value) => {
-            only = value
-          }}
-        />
-      ),
-      ...(month.incomeSet
-        ? {
-            secondary: (
-              <Button
-                variant="secondary"
-                className="flex-1"
-                onClick={() => {
-                  const byPeriod = (ledger.plan?.incomeByPeriod ?? []).filter(
-                    (item) => item.start !== month.period.start,
-                  )
-                  save.mutate(
-                    [planChange(ledger, { income: undefined, incomeByPeriod: byPeriod })],
-                    {
-                      onSuccess: () => {
-                        setRequest(null)
-                      },
-                    },
-                  )
-                }}
-              >
-                {t('budget.income.usual')}
-              </Button>
-            ),
-          }
-        : {}),
-      onSave: (amount, done) => {
-        const byPeriod = (ledger.plan?.incomeByPeriod ?? []).filter(
-          (item) => item.start !== month.period.start,
-        )
-        const change = only
-          ? planChange(ledger, {
-              incomeByPeriod: [...byPeriod, { start: month.period.start, amount }],
-            })
-          : planChange(ledger, { income: amount, incomeByPeriod: byPeriod })
-        save.mutate([change], { onSuccess: done })
-      },
-    })
-  }
-
-  return (
-    <>
-      <dl className="grid grid-cols-3 gap-2 rounded-2xl bg-surface px-1 py-1">
-        <div className="flex">
-          <button
-            type="button"
-            onClick={editIncome}
-            className="flex min-h-11 flex-1 flex-col gap-0.5 rounded-xl px-3 py-2 text-left focus-visible:outline-2 focus-visible:outline-brand active:bg-fill"
-          >
-            <dt className="text-xs text-text-muted">
-              {month.incomeSet ? t('budget.strip.expected') : t('budget.strip.usual')}
-            </dt>
-            <dd>{words.amount(month.income, 'moss')}</dd>
-          </button>
-        </div>
-        <div className="flex flex-col gap-0.5 px-2 py-2">
-          <dt className="text-xs text-text-muted">{t('budget.strip.plan')}</dt>
-          <dd>{words.amount(month.target)}</dd>
-        </div>
-        <div className="flex flex-col items-end gap-0.5 px-3 py-2">
-          <dt className="text-xs text-text-muted">{t('budget.strip.leftOver')}</dt>
-          <dd>{words.amount(month.leftOver)}</dd>
-        </div>
-      </dl>
-      <AmountSheet
-        request={request}
-        currency={budget.context.currency}
-        pending={save.isPending}
-        failed={save.isError}
-        onClose={() => {
-          setRequest(null)
-        }}
-      />
-    </>
-  )
-}
-
-/** BUD-05: an expected income for this month only, or for every month. */
-function OnlyThisMonth({ month, onChange }: { month: string; onChange: (only: boolean) => void }) {
-  const { t } = useTranslation()
-  const [value, setValue] = useState<'every' | 'only'>('every')
-  return (
-    <SegmentedControl
-      label={t('budget.income.when')}
-      options={[
-        { value: 'every', label: t('budget.income.every') },
-        { value: 'only', label: t('budget.income.only', { month }) },
-      ]}
-      value={value}
-      onChange={(next) => {
-        setValue(next)
-        onChange(next === 'only')
-      }}
-    />
-  )
-}
-
 /** BUD-20 to BUD-24, BUD-46: the goals in their order, each with its bar and its date. */
 function GoalsList({ budget, words }: { budget: Budget; words: BudgetWords }) {
   const { t } = words
+  const navigate = useNavigate()
   const [creating, setCreating] = useState(false)
   const [ordering, setOrdering] = useState(false)
   const [showDone, setShowDone] = useState(false)
@@ -304,14 +356,15 @@ function GoalsList({ budget, words }: { budget: Budget; words: BudgetWords }) {
           done.map((goal) => (
             <GoalRow key={goal.id} budget={budget} goal={goal} plan={undefined} words={words} />
           ))}
+        {/* BUD-35: Find money opens on this month's amounts, as Edit does. */}
         {funding.gap > 0 && (
-          <ListLinkRow
-            to="/budget/what-if"
-            search={{ gap: true }}
+          <ListButtonRow
             leading={<span className="w-[2.125rem]" />}
-            title={t('budget.goals.closeGap')}
+            title={t('budget.find.row')}
             subtitle={t('budget.goals.gap', { amount: words.text(funding.gap) })}
-            tone="brand"
+            onClick={() => {
+              void navigate({ to: '/budget', search: findMoneySearch(budget), replace: true })
+            }}
           />
         )}
         <ListButtonRow
@@ -367,7 +420,7 @@ function GoalsList({ budget, words }: { budget: Budget; words: BudgetWords }) {
 }
 
 /** One goal: its name, date and bar, then how far it has come or what it lacks (BUD-23). */
-export function GoalRow({
+function GoalRow({
   budget,
   goal,
   plan,
@@ -401,76 +454,46 @@ export function GoalRow({
   )
 }
 
-const types: readonly Flexibility[] = ['flexible', 'fixed', 'locked']
-
-/** BUD-41, BUD-43: every line of the plan, by Wants, Needs and Commitments or by group. */
-function Categories({ budget, words }: { budget: Budget; words: BudgetWords }) {
+/** BUD-41, BUD-43: every line of a month, by Wants, Needs and Commitments or by group. */
+function Categories({
+  budget,
+  month,
+  words,
+  row,
+  detail,
+}: {
+  budget: Budget
+  month: PlanMonth
+  words: BudgetWords
+  row: (line: PlanLine) => ReactNode
+  /** The figure at a section's right; what is left by default. */
+  detail?: (lines: readonly PlanLine[], key: string) => string
+}) {
   const { t } = words
-  const [grouping, setGrouping] = useState<Grouping>(savedGrouping)
-  const { lines } = budget.month
-
-  const sections =
-    grouping === 'type'
-      ? types.map((type) => ({
-          key: type,
-          title: t(`categories.flexibility.${type}Plural`),
-          lines: lines.filter((line) => line.flexibility === type),
-        }))
-      : budget.ledger.groups
-          .map((group) => ({
-            key: group.id,
-            title: group.name,
-            // In the person's order of categories (CAT-01), each tag line after its category.
-            lines: lines
-              .filter((line) => line.groupId === group.id)
-              .sort((a, b) => order(a) - order(b) || (a.tagId ?? '').localeCompare(b.tagId ?? '')),
-          }))
-          .filter((section) => section.lines.length > 0)
-
-  function order(line: PlanLine) {
-    return budget.ledger.categories.findIndex((category) => category.id === line.categoryId)
+  const [grouping, setGrouping] = useGrouping()
+  const sections = sectionsOf(budget, month.lines, grouping, words)
+  const left = (lines: readonly PlanLine[], key: string) => {
+    const amount = lines.reduce((sum, line) => sum + Math.max(0, line.left), 0)
+    if (key !== 'locked') return t('budget.lines.left', { amount: words.text(amount) })
+    return amount > 0
+      ? t('budget.lines.toGo', { amount: words.text(amount) })
+      : t('budget.lines.allPaid')
   }
-
   return (
     <>
-      <SegmentedControl
-        label={t('budget.grouping.label')}
-        options={[
-          { value: 'type', label: t('budget.grouping.type') },
-          { value: 'group', label: t('budget.grouping.group') },
-        ]}
-        value={grouping}
-        onChange={(next) => {
-          setGrouping(next)
-          try {
-            globalThis.localStorage.setItem(groupingKey, next)
-          } catch {
-            // Only this visit remembers it.
-          }
-        }}
-      />
-      {sections.map((section) => {
-        if (section.lines.length === 0) return null
-        const left = section.lines.reduce((sum, line) => sum + Math.max(0, line.left), 0)
-        const detail =
-          section.key !== 'locked'
-            ? t('budget.lines.left', { amount: words.text(left) })
-            : left > 0
-              ? t('budget.lines.toGo', { amount: words.text(left) })
-              : t('budget.lines.allPaid')
-        return (
-          <List key={section.key} label={section.title} detail={detail}>
-            {section.lines.map((line) =>
-              line.flexibility === 'locked' ? (
-                <CommitmentRow key={line.key} budget={budget} line={line} words={words} />
-              ) : (
-                <LineRow key={line.key} budget={budget} line={line} words={words} />
-              ),
-            )}
+      <GroupingSwitch grouping={grouping} onChange={setGrouping} words={words} />
+      {sections.map((section) =>
+        section.lines.length === 0 ? null : (
+          <List
+            key={section.key}
+            label={section.title}
+            detail={(detail ?? left)(section.lines, section.key)}
+          >
+            {section.lines.map(row)}
           </List>
-        )
-      })}
-      {lines.length === 0 && (
+        ),
+      )}
+      {month.lines.length === 0 && (
         <List>
           <ListRow title={<span className="text-text-muted">{t('budget.lines.none')}</span>} />
         </List>
@@ -480,7 +503,20 @@ function Categories({ budget, words }: { budget: Budget; words: BudgetWords }) {
 }
 
 /** BUD-41 to BUD-43: a Want or a Need: left or over, its bar, and where its pace leads. */
-function LineRow({ budget, line, words }: { budget: Budget; line: PlanLine; words: BudgetWords }) {
+function LineRow({
+  budget,
+  month,
+  line,
+  words,
+  start,
+}: {
+  budget: Budget
+  month: PlanMonth
+  line: PlanLine
+  words: BudgetWords
+  /** The month the row belongs to, when it isn't this one. */
+  start?: string
+}) {
   const { t } = words
   const category = budget.lookups.categories.get(line.categoryId)
   const group = category ? budget.lookups.groupOf(category) : undefined
@@ -489,6 +525,7 @@ function LineRow({ budget, line, words }: { budget: Budget; line: PlanLine; word
     <ProgressRow
       to="/budget/line/$line"
       params={{ line: line.key }}
+      {...(start ? { search: { month: start } } : {})}
       leading={category ? <CategoryTile category={category} group={group} /> : null}
       title={lineName(budget, line.key)}
       value={
@@ -510,7 +547,7 @@ function LineRow({ budget, line, words }: { budget: Budget; line: PlanLine; word
               <Over>
                 {t('budget.lines.atRisk', {
                   amount: words.text(line.projected - line.target),
-                  date: words.day(budget.month.period.end),
+                  date: words.day(month.period.end),
                 })}
               </Over>
             ),
@@ -542,45 +579,5 @@ function CommitmentRow({
       subtitle={status.text}
       trailing={words.amount(status.paid ? line.spent : line.target)}
     />
-  )
-}
-
-/** BUD-30, BUD-38, BUD-57: the what-ifs and the months already closed. */
-function MoreRows({ budget, words }: { budget: Budget; words: BudgetWords }) {
-  const { t } = words
-  const saved = budget.ledger.scenarios.length
-  const closed = budget.ledger.snapshots.length
-  return (
-    <List>
-      <ListLinkRow
-        to="/budget/what-if"
-        leading={<IconTile icon={FlaskIcon} />}
-        title={t('budget.whatIf.title')}
-        subtitle={t('budget.whatIf.row')}
-      />
-      {saved > 0 && (
-        <ListLinkRow
-          to="/budget/what-ifs"
-          leading={<IconTile icon={ColumnsIcon} />}
-          title={t('budget.saved.title')}
-          subtitle={t('budget.saved.row', { count: saved })}
-        />
-      )}
-      <ListLinkRow
-        to="/budget/history"
-        leading={<IconTile icon={ClockCounterClockwiseIcon} />}
-        title={t('budget.history.title')}
-        subtitle={
-          closed > 0 ? t('budget.history.row', { count: closed }) : t('budget.history.none')
-        }
-      />
-      {/* SYS-02, SYS-09: opened from here, Settings › Budget comes back here (DL-CMP-06). */}
-      <ListLinkRow
-        to="/settings/budget"
-        leading={<IconTile icon={SlidersHorizontalIcon} />}
-        title={t('budget.settings.title')}
-        subtitle={t('budget.settings.row')}
-      />
-    </List>
   )
 }

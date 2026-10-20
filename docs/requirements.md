@@ -85,15 +85,16 @@ These terms have one meaning throughout the document, the code and the UI.
 | Flagged row | An imported row the app is unsure about (low confidence, probable duplicate, possible transfer, no category). Only flagged rows need the user's attention. |
 | Rule | A user-defined "if the description matches X, then set category Y and tags Z" instruction applied on import. |
 | Budget period | The span a budget covers: one month long, starting on a day the user chooses (for example payday). |
-| Baseline | The user's typical period per category (optionally per category and tag), computed from history. The starting point of every budget. |
+| Baseline | The user's typical period per category (optionally per category and tag), computed from history as the average of the last complete periods, with one-offs left out. Every budget starts from it or from the latest budget before it. |
+| One-off | A purchase more than 3 times the category's usual purchase, or the category's only purchase in the lookback; a purchase from a recurring transaction never is. It counts in the period it was made but stays out of the baseline. |
 | Proven level | A category's lowest period in the lookback: spending the user has already shown they can live with. |
 | Flexibility | A category's budget attribute: **Commitment** (a bill signed up for, such as rent or insurance; never suggested for cuts), **Need** (needed, though the amount moves a little, such as groceries; changed only by hand) or **Want** (up to the user, such as eating out; can be suggested for cuts). |
-| Left over | Baseline income minus baseline expenses: what a typical period leaves free. |
+| Left over | Baseline income minus baseline expenses: what a typical period leaves free. A period's budget has its own: its expected income minus its targets. |
 | Goal | Something the user is saving or paying toward, with a target amount and a date or periodic contribution, or an affordability question. |
 | Funding gap | Money the goals need per period minus the left over. Positive means the goals don't fit yet. |
-| Scenario | A what-if copy of the baseline with adjustments to categories, income or goals. |
-| Plan | The scenario the user activated; it sets each period's target per category. |
-| Glide path | An adjustment phased in over several periods instead of applied at once. |
+| Budget | The contract the user locks in for one period: a target per category and the expected income. Until it is locked in it is a draft, a what-if in which nothing counts yet. A period has a budget only once the user locks one in or one is carried on into it. |
+| Carry on | When a period starts without a locked budget, it takes its draft if there is one, or else the latest budget before it, as long as an earlier period had a budget. |
+| Plan | The current period's budget together with the budgets locked in for the periods ahead. A plan is active while the current period has a budget. |
 | Pace | Expected spending to date given the user's usual pattern within a period. |
 | Period close | The review at the start of a period that settles the previous one. |
 
@@ -118,9 +119,8 @@ flowchart TB
   end
   subgraph Budget
     baseline["Baseline<br/>Typical period per category"]
-    scenario["Scenario<br/>What-if adjustments"]
     goal["Goal<br/>Target, date, priority"]
-    plan["Plan<br/>Active scenario's targets"]
+    periodBudget["Period budget<br/>Targets and income, locked in"]
     snapshot["Period snapshot<br/>Frozen at period close"]
   end
   importBatch --> transaction
@@ -132,13 +132,12 @@ flowchart TB
   category --> transaction
   group --> category
   category --> baseline
-  baseline --> scenario
-  goal --> scenario
-  scenario --> plan
-  plan --> snapshot
+  baseline --> periodBudget
+  goal --> periodBudget
+  periodBudget --> snapshot
 ```
 
-Arrows point from what feeds into what. Imports, recurring templates and rules create or shape transactions; the baseline is computed per category from them; scenarios adjust the baseline for goals; the activated scenario becomes the plan, frozen into a snapshot at each period close.
+Arrows point from what feeds into what. Imports, recurring templates and rules create or shape transactions; the baseline is computed per category from them; each period's budget starts from the baseline or the latest budget before it, makes room for the goals and is locked in by the user, then frozen into a snapshot at period close.
 
 ## Epic 1: Wallets, net worth and net debt
 
@@ -445,7 +444,7 @@ The analysis section helps the user understand where they are: what they spend o
 | ANA-31 | The app shall rank Want categories by improvement potential, using their amount, growth trend, variability and the gap to their proven level, and show the numbers behind each rank. | Must |
 | ANA-32 | The app shall show, for any category, what a reduction of 5%, 10% or 20% would save per period and per year. | Must |
 | ANA-33 | The app shall write insights as plain sentences, for example: "Lunch with the work tag was 38% above your 6-period average, mostly on Fridays." | Should |
-| ANA-34 | The app shall let the user send any improvement opportunity straight into a budget scenario. | Could |
+| ANA-34 | The app shall let the user send any improvement opportunity straight into a period's budget (BUD-70), where it counts once the user locks it in. | Could |
 | ANA-35 | The app shall let the user export the data behind any chart as CSV or download the chart as PNG. | Could |
 | ANA-36 | Where there are at least 13 periods of history, the app shall show the periods of the year that usually cost more than the usual period, compared with the same periods in earlier years, and the amount to set aside each period to cover them (BUD-14). | Could |
 | ANA-37 | The app shall total, per period, the expenses below a set amount (default: the median expense amount of the lookback) and compare that total with each category group. | Could |
@@ -461,7 +460,7 @@ All insights are computed by deterministic rules on the user's own data, in the 
 
 ## Epic 6: Habit-driven, goal-oriented budget
 
-The budget starts from the user's real average period (the baseline), adds their goals, and closes any gap with adjustments to flexible categories that the user has already shown they can live with, applied at once or phased in. The user plays with what-if scenarios until the goals fit, activates one as the plan, and the app tracks it period by period and adapts when a target proves unrealistic. A budget period is one month long and starts on the day the user chooses.
+The budget starts from the user's real average period (the baseline), adds their goals, and closes any gap with cuts to flexible categories that the user has already shown they can live with. Each period's budget is a contract the user locks in: they make it for the current period or, ahead of time, for any of the next 12, starting from the latest budget before it or from the baseline, try changes until the goals fit, and lock it in. The app tracks each period against its budget, carries the budget on into the next period unless the user has made another, and suggests easing a target that proves unrealistic. A budget period is one month long and starts on the day the user chooses.
 
 The budget is a loop, repeated every period, that starts from real habits.
 
@@ -470,25 +469,25 @@ flowchart LR
   baseline["Step 1: Baseline<br/>What does my period look like?"]
   leftover["Step 2: Left over<br/>What does a period leave free?"]
   goals["Step 3: Goals and gap<br/>Do my goals fit?"]
-  scenarios["Step 4: Scenarios<br/>Which small cuts close it?"]
+  budget["Step 4: Make the period's budget<br/>Which targets do I commit to?"]
   plan["Step 5: Plan and tracking<br/>Am I on track this period?"]
   close["Step 6: Period close<br/>Review, assign surplus, adapt"]
-  baseline --> leftover --> goals
-  goals -- if there is a gap --> scenarios
-  scenarios --> plan --> close
-  close -- next period --> baseline
+  baseline --> leftover --> goals --> budget
+  budget -- lock in --> plan --> close
+  close -- next period --> budget
 ```
 
-Each step below is one group of requirements. The loop repeats every budget period, with the baseline refreshed from the latest spending.
+Each step below is one group of requirements. The loop repeats every budget period: the baseline refreshes from the latest spending, while a locked budget keeps its targets until the user edits it.
 
 **User stories**
 
 - As a user, I want my budget to start from what I actually spend, so the targets feel achievable.
+- As a user, I want a one-off purchase left out of my usual period, so one big expense doesn't raise my targets.
 - As a user, I want to see how much I have left over each period and how far that is from paying for my goals.
 - As a user, I want to mark expenses I can't cut (rent, medicine), so the app never suggests cutting them.
 - As a user, I want suggested cuts to be levels I've already reached before, so I know they are realistic.
-- As a user, I want to try what-if cuts and see my goal dates move, so I choose the trade-off myself.
-- As a user, I want to choose whether a cut applies at once (a goal or a new expense needs it now) or ramps up gradually, so I build the habit.
+- As a user, I want to try changes in a period's budget and see my goal dates move before I lock it in, so I choose the trade-off myself.
+- As a user, I want to make the next period's budget before it starts and have it stay as I locked it in, so the budget is a commitment I chose, not numbers that drift.
 - As a user who has saved without a specific goal, I want to know how much I can afford for a purchase (down payment and periodic payment), so I shop within my means.
 
 **Worked example** (illustrative, using the May 2026 figures from the reference screenshots as if they were the baseline)
@@ -502,9 +501,9 @@ Each step below is one group of requirements. The loop repeats every budget peri
 | Goals | Trip: 30,000 in 6 periods | 5,000 |
 | Goals | Investing: fixed contribution | 10,000 |
 | Gap | Goals (25,000) minus left over | 1,628 short |
-| Scenario | Food - Dates 6,212, cut 15% | +932 |
-| Scenario | Shopping 3,627, cut 15% | +544 |
-| Scenario | Gas 5,152, cut 5% | +258 |
+| Find money | Food - Dates 6,212, cut 15% | +932 |
+| Find money | Shopping 3,627, cut 15% | +544 |
+| Find money | Gas 5,152, cut 5% | +258 |
 | Result | Freed 1,734; gap closed | 106 spare |
 
 The app would also translate the biggest cut into a habit: at an average of about 760 per date, 932 a period is roughly one fewer restaurant date a month.
@@ -513,21 +512,26 @@ The app would also translate the biggest cut into a habit: at an average of abou
 
 | ID | Requirement | Priority |
 |---|---|---|
-| BUD-01 | The app shall compute a baseline amount per period for every expense category as the median of its last N complete periods (default N = 6; options 3, 6, 12). | Must |
-| BUD-02 | Where a category has spending in fewer than half of the lookback periods, the app shall set its baseline to the lookback total divided by N, so irregular costs are spread evenly. | Must |
-| BUD-03 | The app shall let the user exclude whole periods or individual transactions (one-offs) from the baseline calculation. | Must |
-| BUD-04 | The app shall let the user override any category's baseline by hand, and show that it was overridden. | Must |
-| BUD-05 | The app shall compute baseline income as the median income per period over the lookback, and let the user override it with an expected income for any period. | Must |
+| BUD-01 | The app shall compute a baseline amount per period for every expense category as the average of its last N complete periods (default N = 6; options 3, 6, 12), leaving out one-offs (BUD-02). | Must |
+| BUD-02 | The app shall treat a purchase as a one-off, and leave it out of the baseline, when it is more than 3 times the category's usual purchase (the median purchase amount in the lookback, where the category has at least 3 purchases) or when it is the category's only purchase in the lookback; a purchase from a recurring transaction is never a one-off, and a one-off still counts in the period it was made. | Must |
+| BUD-03 | The app shall let the user exclude whole periods or individual transactions from the baseline by hand, besides the one-offs it leaves out itself (BUD-02). | Must |
+| BUD-04 | The app shall let the user change any category's target in a period's budget, and show the baseline next to a changed target. | Must |
+| BUD-05 | The app shall compute baseline income as the median income per period over the lookback, and let the user set the expected income in each period's budget. | Must |
 | BUD-06 | If there is less than one complete period of history, then the app shall offer to import past statements, to enter estimated amounts per category, or to track for a period and build the baseline afterwards. | Must |
-| BUD-07 | The app shall show the baseline per category with its median, its proven level (lowest period in the lookback, ignoring periods excluded under BUD-03), highest period, trend direction and share of total spending. | Must |
+| BUD-07 | The app shall show each category's baseline with its proven level (lowest period in the lookback, ignoring periods excluded under BUD-03), highest period, trend direction and share of total spending. | Must |
 | BUD-08 | The app shall let the user add a baseline and target for a category with an optional tag (for example Lunch with the work tag); a line without a tag covers all of the category's tags. | Must |
+| BUD-76 | The app shall list the one-offs it left out of each category's baseline, and let the user count any of them in the baseline. | Should |
+
+A one-off only stays out of the baseline, so one big purchase doesn't raise every later target; it still counts in its own period. A planned one-time cost, such as a trip or a new laptop, belongs in a goal (BUD-20), not in a period's budget.
+
+**Acceptance example (BUD-01, BUD-02, BUD-76)**: *Given* a 6-period lookback in which Shopping has purchases of 400, 450, 500, 600 and 3,000, none from a recurring transaction, *when* the baseline is computed, *then* the 3,000 purchase is a one-off (more than 3 times the usual 500), Shopping's baseline is 325 (1,950 over 6 periods), the 3,000 still counts in the period it was made, and the one-offs list shows it with a way to count it.
 
 **2. Category flexibility and left over**
 
 | ID | Requirement | Priority |
 |---|---|---|
 | BUD-10 | The app shall give every expense category a flexibility of Commitment (non-negotiable, never suggested for cuts, such as rent), Need (changed only by hand, such as groceries) or Want (discretionary, such as eating out). | Must |
-| BUD-11 | The app shall let the user change a category's flexibility globally or only within one scenario. | Should |
+| BUD-11 | The app shall let the user change a category's flexibility globally. | Should |
 | BUD-12 | The app shall show left over as baseline income minus total baseline expenses, and free left over as left over minus the contributions already committed to goals. | Must |
 | BUD-13 | The app shall show the baseline split into commitments, needs and wants, so the user sees how much of their spending is actually negotiable. | Must |
 | BUD-14 | The app shall spread known yearly expenses (insurance, subscriptions, gifts) into a set-aside amount per period and track it. | Should |
@@ -554,34 +558,46 @@ This goal type runs the other way: instead of saving toward a known price, the u
 |---|---|---|
 | BUD-60 | The app shall let the user create an affordability goal with a purchase name and date, the wallets whose savings may be used, and a safety buffer to keep (an amount, or a number of periods of Commitment and Need baseline spending). | Should |
 | BUD-61 | The app shall compute the largest affordable down payment as the projected balance of the chosen wallets on the purchase date, minus the safety buffer, minus money committed to other goals. | Should |
-| BUD-62 | The app shall compute the largest affordable payment per period as the free left over after other goals' contributions, both with the active plan and with the best scenario's cuts. | Should |
+| BUD-62 | The app shall compute the largest affordable payment per period as the free left over after other goals' contributions, both with the active plan and with the cuts Find money for your goals would suggest (BUD-35). | Should |
 | BUD-63 | Where the user enters financing terms (interest rate and number of payments), the app shall compute the largest affordable price as the down payment plus the loan principal that payment can repay over that term. | Should |
 | BUD-64 | The app shall show the result as two levels, comfortable (keeping 10% of the free left over unspent) and maximum, with the effect of each on other goals' dates. | Should |
-| BUD-65 | When the user records the purchase, the app shall add the loan as a wallet with a loan schedule and its payment to the plan as a Need expense, and update every goal's projected date. | Should |
+| BUD-65 | When the user records the purchase, the app shall add the loan as a wallet with a loan schedule, offer to add its payment as a Need expense to the budgets from its first payment on, and update every goal's projected date. | Should |
 | BUD-66 | If the maximum payment is zero or negative, then the app shall say so and show which cuts or goal changes would make room. | Should |
 
 **Acceptance example (BUD-61 to BUD-63)**: *Given* 100,126 in savings, a 30,000 safety buffer, no other goals using that savings, a free left over of 8,372 per period, and financing at 1% per period over 48 periods, *when* the user asks what car they can afford in 6 weeks, *then* the app shows a maximum down payment of 70,126, a maximum payment of 8,372 per period and a maximum price of about 388,000 (ignoring contributions made in those 6 weeks).
 
-**4. What-if scenarios**
+**4. Making a period's budget**
+
+A period's budget is where the user tries what-ifs: it starts from the latest budget or the baseline, every change shows what it does to the goals, and nothing counts until the user locks it in. Planning ahead is normal, so the user can make a period's budget long before it starts. When the goals don't fit, Find money for your goals proposes the cuts.
 
 | ID | Requirement | Priority |
 |---|---|---|
-| BUD-30 | The app shall let the user create a scenario from the baseline and adjust any Want or Need category by a percentage, an amount or a new target value. | Must |
-| BUD-31 | The app shall let a scenario also change income (a raise, side income) and goals (amount, date, priority), and add new expenses. | Must |
-| BUD-32 | When any scenario value changes, the app shall immediately recompute freed money, left over, funding gap and every goal's projected date. | Must |
-| BUD-33 | If the user tries to adjust a Commitment category in a scenario, then the app shall require unlocking it for that scenario first. | Must |
+| BUD-70 | The app shall let the user make the budget for the current period, or for any of the next 12 periods before it starts, as a draft that starts from the latest budget before that period, or from the baseline if the user chooses it or no earlier budget exists; nothing in a draft counts until it is locked in (BUD-71, BUD-73). | Must |
+| BUD-71 | When the user locks in a period's budget, the app shall make it that period's budget, whose targets and expected income change only when the user edits it (BUD-72) and never follow the baseline. | Must |
+| BUD-72 | The app shall let the user edit the budget of the current period or of any period ahead at any time; each change counts as soon as the user makes it, and budgets locked in for other periods stay as they are. | Must |
+| BUD-32 | When any value in a period's budget changes, the app shall immediately recompute freed money, left over, funding gap and every goal's projected date. | Must |
 | BUD-34 | The app shall express each adjustment per week, per period and per year, and as a habit change using the category's average ticket ("about 1 fewer restaurant date a month"). | Should |
-| BUD-35 | When the user asks the app to close the gap, the app shall propose adjustments across Want categories, favouring those with the largest gap between baseline and proven level and those that are large, growing or variable, capping each cut at a maximum step (default 15% of baseline) and never going below the proven level, and explain each choice with the period when the user last spent that little. | Should |
+| BUD-35 | When the user chooses Find money for your goals in a period's budget, the app shall propose cuts across Want categories only, favouring those with the largest gap between baseline and proven level and those that are large, growing or variable, capping each cut at a maximum step (default 15% of that period's target) and never going below the proven level or what the period has already spent, explain each choice with the period when the user last spent that little and as a habit (BUD-34), and put the cuts the user accepts into that period's budget, which later periods carry on (BUD-70, BUD-73). | Should |
 | BUD-36 | If the gap cannot be closed within the caps and proven levels, then the app shall say by how much it falls short and offer to move goal dates or lower goal amounts. | Should |
-| BUD-37 | The app shall let the user apply each adjustment at once or phase it in over several periods (a glide path, for example −5% a period until −15%), and set each period's target accordingly. | Must |
-| BUD-38 | The app shall let the user save, name, duplicate and delete scenarios, and compare two or more side by side on left over, total cut and goal dates. | Should |
-| BUD-39 | The app shall let the user activate a scenario as the plan, effective from a chosen period. | Must |
+| BUD-73 | When a period starts without a locked budget and an earlier period has a budget, the app shall carry a budget on into it: the period's draft if there is one, or else the latest budget before it. | Must |
+| BUD-74 | The app shall show targets, tracking, a period-close review (BUD-50) and history (BUD-57) only for periods that have a budget, so a period before the first locked budget never shows targets or a review; a current period without a budget shows its spending with a way to make its budget. | Must |
+| BUD-75 | While the next period has no locked budget and starts in 14 days or fewer, the app shall show on the current period's plan that the next period starts in N days, with a way to make its budget. | Should |
+| ~~BUD-30~~ | Dropped: making a period's budget is the what-if; the user changes any target and the expected income there (BUD-70, BUD-04, BUD-05). | Won't |
+| ~~BUD-31~~ | Dropped: a period's budget sets the expected income (BUD-05) and any category's target (BUD-04); goals change on the goal itself (BUD-20), and a planned one-time cost belongs in a goal. | Won't |
+| ~~BUD-33~~ | Dropped: the user can change any target in a period's budget, Commitments included (BUD-04), and Find money for your goals never suggests cutting one (BUD-35). | Won't |
+| ~~BUD-37~~ | Dropped: there is no glide path; a cut applies from the period whose budget holds it, and to phase one in the user makes the budgets of the periods ahead (BUD-70). | Won't |
+| ~~BUD-38~~ | Dropped: each period has one budget, and its draft is the only what-if, so there are no saved scenarios to compare (BUD-70). | Won't |
+| ~~BUD-39~~ | Dropped: locking in a period's budget replaces activating a scenario as the plan (BUD-71). | Won't |
+
+**Acceptance example (BUD-35)**: *Given* a period's budget with a funding gap of 1,628 and Want targets Food - Dates 6,212 (proven level 4,900), Shopping 3,627 (proven level 2,800) and Gas 5,152 (proven level 4,950) with a 15% cap, *when* the user chooses Find money for your goals, *then* it proposes cuts totalling at least 1,628, none deeper than 15% or below the proven level, each with its reason and habit, and no Commitment or Need category touched; the cuts the user accepts go into that period's budget.
+
+**Acceptance example (BUD-71 to BUD-74)**: *Given* the user's first locked budget is October's, with Lunch at 2,000, and a November draft with Lunch at 1,800 that was never locked in, *when* November starts, *then* November's budget is that draft, with Lunch at 1,800; *when* December starts with no budget or draft, *then* it carries on November's budget; and September, before the first locked budget, shows its spending but no targets and no review.
 
 **5. Plan and tracking**
 
 | ID | Requirement | Priority |
 |---|---|---|
-| BUD-40 | While a plan is active, the app shall set each category's target for the period to its baseline plus that period's adjustment. | Must |
+| BUD-40 | While a period has a budget, the app shall set each category's target for the period to that budget's amount, plus anything carried over at close (BUD-52). | Must |
 | BUD-41 | The app shall show, per category and in total, the period's target, actual spending, amount remaining and pace. | Must |
 | BUD-42 | The app shall compute pace from the user's usual spending curve within a period, not as a straight line. | Should |
 | BUD-43 | The app shall mark each category as on track, at risk (projected to end the period more than 10% over target) or over target. | Must |
@@ -594,19 +610,17 @@ This goal type runs the other way: instead of saving toward a known price, the u
 
 | ID | Requirement | Priority |
 |---|---|---|
-| BUD-50 | When a new budget period starts (on the user's chosen start day), the app shall offer a review of the previous period: target versus actual per category, planned versus actual left over, and goal contributions made. | Must |
+| BUD-50 | When a new budget period starts (on the user's chosen start day) and the previous period had a budget, the app shall offer a review of that period: target versus actual per category, planned versus actual left over, and goal contributions made. | Must |
 | BUD-51 | During period close, the app shall let the user send any surplus to one or more goals or keep it unassigned. | Must |
 | BUD-52 | The app shall not carry a category's unspent or overspent amount into the next period by default, and shall let the user choose to carry it over for any category during period close. | Must |
 | BUD-53 | If a category ended the period over target, then the app shall show the effect on goal dates. | Must |
-| BUD-54 | When a Want category misses its target 3 periods in a row, the app shall suggest easing the target or re-planning, and show what that does to the goals. | Should |
-| BUD-55 | During period close, the app shall show how far actual spending deviated from the plan per category and ask whether to re-adjust the targets or keep them; the targets stay the same unless the user re-adjusts. | Must |
+| BUD-54 | When a Want category misses its target 3 periods in a row, the app shall suggest an eased target for it in the next period's budget, show what that does to the goals, and put it into that budget if the user accepts it. | Should |
+| BUD-55 | During period close, the app shall show how far actual spending deviated from the budget per category and keep the targets as locked in, so the next period changes only when the user edits its budget (BUD-72). | Must |
 | BUD-56 | When a period is closed, the app shall store an unchangeable snapshot of that period's plan, targets, actuals and goal progress. | Must |
-| BUD-57 | The app shall show the history of past periods' snapshots, including how goal dates moved over time. | Should |
-| BUD-58 | When a category has hit its target 3 periods in a row, the app shall suggest the next step of its glide path or a new goal for the freed money. | Could |
+| BUD-57 | The app shall show the history of past periods' snapshots, reached from the period switcher, and show on each goal how its projected date moved over time. | Should |
+| ~~BUD-58~~ | Dropped: there is no glide path; to deepen a cut the user edits the budget of a period ahead (BUD-72). | Won't |
 
-**Acceptance example (BUD-35)**: *Given* a funding gap of 1,628 and Want categories Food - Dates 6,212 (proven level 4,900), Shopping 3,627 (proven level 2,800) and Gas 5,152 (proven level 4,950) with a 15% cap, *when* the user asks the app to close the gap, *then* it proposes cuts totalling at least 1,628, none deeper than 15% or below the proven level, each with its reason, and no Commitment category touched.
-
-Every budget decision so far is recorded under Decisions. One point is still open: whether a goal contribution should be a flag on a transaction.
+Every budget decision is recorded under Decisions.
 
 ## Epic 7: Main dashboard
 
@@ -649,7 +663,7 @@ Users can take all of their data out and put it back with nothing lost: one comp
 
 | ID | Requirement | Priority |
 |---|---|---|
-| DAT-01 | The app shall export everything into one archive: wallets and their settings, category groups, categories, tags, payees, rules, transactions and splits, recurring templates, import batch records, goals, scenarios, budget period snapshots and settings. | Must |
+| DAT-01 | The app shall export everything into one archive: wallets and their settings, category groups, categories, tags, payees, rules, transactions and splits, recurring templates, import batch records, goals, period budgets and drafts, budget period snapshots and settings. | Must |
 | DAT-02 | The app shall export transactions as one denormalized CSV, one row per transaction or split, with wallet, category, category group, tag and payee names written out. | Must |
 | DAT-03 | The app shall export wallets, categories, tags and budget history as separate CSV files. | Should |
 | DAT-04 | When the user imports a full archive into an empty installation, the app shall restore exactly the exported state. | Must |
@@ -700,7 +714,7 @@ Every user's financial data is end-to-end encrypted. The client encrypts it befo
 
 | ID | Requirement | Priority |
 |---|---|---|
-| SEC-01 | The app shall encrypt all of a user's data on the client before sending it to the server (wallets, transactions, categories, tags, payees, notes, rules, goals, scenarios, budgets, settings and stored files), so the server stores only ciphertext. | Must |
+| SEC-01 | The app shall encrypt all of a user's data on the client before sending it to the server (wallets, transactions, categories, tags, payees, notes, rules, goals, budgets, settings and stored files), so the server stores only ciphertext. | Must |
 | SEC-02 | The app shall derive the user's encryption key on the client from their password, and shall never send the password or the key to the server. | Must |
 | SEC-03 | The app shall sign users in without the server learning their password. | Must |
 | SEC-04 | Anyone with full access to the server, its database or its backups shall see only ciphertext plus the metadata listed in SEC-10. | Must |
@@ -745,16 +759,16 @@ Every question raised in review is decided and already reflected in the requirem
 
 | # | Question | Decision | Where |
 |---|---|---|---|
-| Q1 | How is a category's typical period computed? | Median. Compare with a weighted average without outliers once the feature works. | BUD-01 |
+| Q1 | How is a category's typical period computed? | The average of its last complete periods, with one-offs left out (Q29) (changed 2026-10-20) | BUD-01, BUD-02 |
 | Q2 | Default lookback for the baseline | 6 periods | BUD-01, SYS-09 |
 | Q3 | When does a budget period start? | On a day of the month the user chooses | SYS-02, BUD-50 |
 | Q4 | Do unspent or overspent amounts carry over? | Not by default; the user can choose to carry over at period close | BUD-52 |
 | Q5 | How is money shared between goals that don't all fit? | Priority order | BUD-24 |
 | Q6 | How is goal progress measured? | Linked wallet balances, or recorded contributions | BUD-25, BUD-26 |
 | Q7 | Largest suggested cut per category per step | 15%, never below the proven level | BUD-35, SYS-09 |
-| Q8 | Does the plan follow the baseline as it changes? | No. Targets stay fixed; at each period close the app shows the deviation and asks whether to re-adjust | BUD-55 |
-| Q9 | Which income does the budget use? | Median income, which the user can override with an expected income per period | BUD-05 |
-| Q10 | Dedicated envelope or zero-based budgeting tools? | No; users can still budget that way with scenario overrides | Out of scope |
+| Q8 | Does the plan follow the baseline as it changes? | No. Each period's budget is a contract the user locks in, for the current period or any of the next 12; its targets and income change only when the user edits that budget, never with the baseline. Period close shows the deviation, and the next period changes by editing its budget (changed 2026-10-20) | BUD-55, BUD-70, BUD-71, BUD-72 |
+| Q9 | Which income does the budget use? | Median income for the baseline; the user sets the expected income in each period's budget | BUD-05 |
+| Q10 | Dedicated envelope or zero-based budgeting tools? | No; users can still budget that way by setting every target in a period's budget | Out of scope |
 | Q11 | Name for super-categories | Category group | Glossary, CAT epic |
 | Q12 | Multi-currency | Per-wallet currency with exchange rates entered by the user (no rate API, 2026-10-06); cross-currency transfers take the rate or the amount received | SYS-04, SYS-05, TXN-05 |
 | Q13 | Several people on one installation? | Separate accounts on one server with no sharing in V1; households after V1 (see Q24) | Assumptions, Out of scope |
@@ -773,6 +787,9 @@ Every question raised in review is decided and already reflected in the requirem
 | Q26 | Encryption | End to end: only the client can decrypt; the network and the server see ciphertext. Files sent for extraction are encrypted in transit and read by the server only in memory | SEC epic |
 | Q27 | Forgotten password | A recovery key, shown once at sign-up, lets the user regain access; losing both password and key means the data is lost (2026-10-06) | SEC-07, SEC-08 |
 | Q28 | Should a goal contribution be a flag on a transaction (from Q6)? | No. A goal without a wallet gets money through "Add money" on the goal, so logging a transaction keeps no extra field (2026-10-20) | BUD-26 |
+| Q29 | What counts as a one-off? | A purchase more than 3 times the category's usual purchase (the median purchase in the lookback, with at least 3 purchases), or the category's only purchase in the lookback; never one from a recurring transaction. A one-off counts in the period it was made but stays out of the baseline; the app lists the one-offs it left out and the user can count any of them. A planned one-time cost belongs in a goal (2026-10-20) | BUD-02, BUD-03, BUD-76 |
+| Q30 | What happens when a period starts without a locked budget? | Carry on: the app uses the period's draft if there is one, else the latest budget before it, as long as an earlier period had a budget (2026-10-20) | BUD-73 |
+| Q31 | Separate what-if scenarios? | No. Making a period's budget is the what-if: nothing counts until it is locked in, and goal dates update as amounts change. Find money for your goals proposes the cuts there. Saved and compared scenarios, unlocking Commitments, scenario-only flexibility, changing goals inside a scenario and glide paths are dropped (2026-10-20) | BUD-32, BUD-35, BUD-70, BUD-71 |
 
 **Still open**
 
@@ -794,7 +811,7 @@ These are deliberately excluded from V1 so the core loop ships first; some may r
 | Home-screen widget | Not in V1, because it needs native apps; quick add is a button inside the app |
 | Shared households (shared wallets, hidden transactions, levels of transparency) | After V1; V1 has separate accounts with no sharing or communication between users (Q24) |
 | Automatic market prices for investments | Won't for V1 (manual valuations) |
-| Dedicated envelope or zero-based budgeting tools | Won't (achievable with scenario overrides) |
+| Dedicated envelope or zero-based budgeting tools | Won't (achievable by setting every target in a period's budget) |
 | Taxonomy beyond category groups, categories and tags | Won't, ever |
 | Bill payment, tax preparation, business accounting | Won't |
 | A hosted cloud version run by the project | Won't |

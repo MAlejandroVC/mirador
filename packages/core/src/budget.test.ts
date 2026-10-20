@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { AnalysisEntry, AnalysisView } from './analysis.ts'
 import {
-  adjustmentIn,
   baseline,
   defaultBudgetSettings,
   emptyPlan,
+  findOneOffs,
   lineKey,
   lineOf,
+  type MonthTargets,
+  type PlanSettings,
   planMonth,
   planSplit,
 } from './budget.ts'
@@ -112,23 +114,25 @@ describe('SYS-02: budget months that start on a chosen day', () => {
   })
 })
 
-describe('BUD-01 to BUD-08: the usual month', () => {
+describe('BUD-01 to BUD-08: the starting amounts', () => {
   // Restaurants: Apr 4,650, May 4,800, Jun 2,659, Jul 5,840, Aug 9,900, Sep 4,723.
   const months = ['04', '05', '06', '07', '08', '09']
   const amounts = [465_000, 480_000, 265_900, 584_000, 990_000, 472_300]
   const entries = [
     ...months.map((month, index) => entry(`2026-${month}-10`, 'eat', amounts[index] ?? 0)),
-    // A yearly gift in July only.
+    // A gift in July only.
     entry('2026-07-20', 'gift', 600_000),
     ...months.map((month) => entry(`2026-${month}-01`, 'salary', 5_800_000)),
   ]
+  // A 15,000 dinner in September, over 3 times the usual 4,800.
+  const dinner = entry('2026-09-14', 'eat', 1_500_000)
 
-  it('BUD-01: the median of the last 6 complete months', () => {
+  it('BUD-01: the average of the last 6 complete months', () => {
     const usual = baseline(entries, view('2026-10-19'))
     const eat = usual.lines.find((line) => line.key === 'eat')
     expect(usual.periods).toHaveLength(6)
-    expect(eat?.baseline).toBe(476_150)
-    expect(eat?.spread).toBe(false)
+    expect(eat?.baseline).toBe(542_867)
+    expect(eat?.median).toBe(476_150)
   })
 
   it('BUD-01: 3 months when the person picks 3', () => {
@@ -138,13 +142,51 @@ describe('BUD-01 to BUD-08: the usual month', () => {
       '2026-08-01',
       '2026-09-01',
     ])
-    expect(usual.lines.find((line) => line.key === 'eat')?.baseline).toBe(584_000)
+    expect(usual.lines.find((line) => line.key === 'eat')?.baseline).toBe(682_100)
   })
 
-  it('BUD-02: a cost spent in fewer than half the months is spread evenly', () => {
+  it('BUD-02: a purchase over 3 times the usual one is a one-off and stays out of the starting amount', () => {
+    const usual = baseline([...entries, dinner], view('2026-10-19'))
+    const eat = usual.lines.find((line) => line.key === 'eat')
+    expect(usual.oneOffs).toContainEqual({
+      transactionId: dinner.transactionId,
+      line: 'eat',
+      date: '2026-09-14',
+      amount: 1_500_000,
+      reason: 'large',
+      usual: 480_000,
+      counted: false,
+    })
+    expect(eat?.baseline).toBe(542_867)
+    expect(eat?.withOneOffs).toBe(792_867)
+    // It still counts in September, as its one-off part.
+    expect(eat?.months.at(-1)).toMatchObject({ spent: 1_972_300, oneOff: 1_500_000 })
+  })
+
+  it('BUD-02: a line’s only purchase in the months looked at is a one-off; a recurring one never is', () => {
     const gift = baseline(entries, view('2026-10-19')).lines.find((line) => line.key === 'gift')
-    expect(gift?.spread).toBe(true)
-    expect(gift?.baseline).toBe(100_000)
+    expect(gift?.baseline).toBe(0)
+    expect(gift?.withOneOffs).toBe(100_000)
+    const yearly = entries.map((item) =>
+      item.categoryId === 'gift' ? { ...item, recurringId: 'insurance' } : item,
+    )
+    expect(findOneOffs(yearly, baseline(yearly, view('2026-10-19')).counted, [])).toEqual([])
+    expect(
+      baseline(yearly, view('2026-10-19')).lines.find((line) => line.key === 'gift')?.baseline,
+    ).toBe(100_000)
+  })
+
+  it('BUD-76: a one-off counted after all raises the starting amount', () => {
+    const usual = baseline([...entries, dinner], view('2026-10-19'), {
+      exclusions: {
+        periods: [],
+        linePeriods: [],
+        transactionIds: [],
+        counted: [dinner.transactionId],
+      },
+    })
+    expect(usual.lines.find((line) => line.key === 'eat')?.baseline).toBe(792_867)
+    expect(usual.oneOffs.find((item) => item.line === 'eat')?.counted).toBe(true)
   })
 
   it('BUD-03, BUD-07: a month left out stops counting, and the proven level ignores it', () => {
@@ -156,7 +198,7 @@ describe('BUD-01 to BUD-08: the usual month', () => {
       },
     })
     const eat = usual.lines.find((line) => line.key === 'eat')
-    expect(eat?.baseline).toBe(472_300)
+    expect(eat?.baseline).toBe(453_440)
     expect(eat?.highest).toBe(584_000)
     expect(eat?.highestPeriod?.start).toBe('2026-07-01')
     expect(eat?.proven).toBe(265_900)
@@ -164,13 +206,13 @@ describe('BUD-01 to BUD-08: the usual month', () => {
     expect(eat?.months.find((month) => month.period.start === '2026-08-01')?.excluded).toBe(true)
   })
 
-  it('BUD-03: a one-off transaction left out stops counting', () => {
+  it('BUD-03: a transaction left out by hand stops counting', () => {
     const august = entries.find((item) => item.date === '2026-08-10')
     const usual = baseline(entries, view('2026-10-19'), {
       exclusions: { periods: [], linePeriods: [], transactionIds: [august?.transactionId ?? ''] },
     })
-    // August now counts as zero for Restaurants.
-    expect(usual.lines.find((line) => line.key === 'eat')?.baseline).toBe(468_650)
+    // August now counts as nothing for Restaurants.
+    expect(usual.lines.find((line) => line.key === 'eat')?.baseline).toBe(377_867)
   })
 
   it('BUD-05: the usual income is the median income', () => {
@@ -178,28 +220,31 @@ describe('BUD-01 to BUD-08: the usual month', () => {
   })
 
   it('BUD-07: share, trend and the usual purchase', () => {
-    const eat = baseline(entries, view('2026-10-19')).lines.find((line) => line.key === 'eat')
-    expect(eat?.share).toBeCloseTo(476_150 / (476_150 + 100_000))
+    const usual = baseline(entries, view('2026-10-19'))
+    const eat = usual.lines.find((line) => line.key === 'eat')
+    // The gift is a one-off, so Restaurants is all of the usual spending.
+    expect(eat?.share).toBe(1)
     expect(eat?.trend).toBeGreaterThan(0)
-    expect(eat?.averageTicket).toBe(Math.round(amounts.reduce((a, b) => a + b, 0) / 6))
+    expect(eat?.averageTicket).toBe(542_867)
     // One purchase in each of the 6 months.
     expect(eat?.purchasesPerMonth).toBe(1)
   })
 
   it('BUD-08: a tag line takes its tagged spending out of the category line', () => {
-    const tagged = entry('2026-09-12', 'eat', 50_000, { tagIds: ['work'] })
+    const tagged = [
+      entry('2026-08-12', 'eat', 50_000, { tagIds: ['work'] }),
+      entry('2026-09-12', 'eat', 50_000, { tagIds: ['work'] }),
+    ]
     const tagLines = [{ categoryId: 'eat', tagId: 'work' }]
-    expect(lineOf(tagged, tagLines)).toBe(lineKey('eat', 'work'))
+    expect(lineOf(tagged[0]!, tagLines)).toBe(lineKey('eat', 'work'))
     expect(lineOf(entries[0]!, tagLines)).toBe('eat')
-    const usual = baseline([...entries, tagged], view('2026-10-19'), { tagLines })
-    // Spent in one month of six, so spread evenly; the category line keeps the rest.
-    expect(usual.lines.find((line) => line.key === 'eat~work')?.baseline).toBe(8_333)
-    expect(usual.lines.find((line) => line.key === 'eat~work')?.spread).toBe(true)
-    expect(usual.lines.find((line) => line.key === 'eat')?.baseline).toBe(476_150)
+    const usual = baseline([...entries, ...tagged], view('2026-10-19'), { tagLines })
+    expect(usual.lines.find((line) => line.key === 'eat~work')?.baseline).toBe(16_667)
+    expect(usual.lines.find((line) => line.key === 'eat')?.baseline).toBe(542_867)
   })
 })
 
-describe('BUD-40 to BUD-44: the plan for this month', () => {
+describe('BUD-40 to BUD-44: a month’s budget against its spending', () => {
   const history = ['04', '05', '06', '07', '08', '09'].flatMap((month) => [
     entry(`2026-${month}-03`, 'rent', 1_450_000),
     entry(`2026-${month}-05`, 'food', 200_000),
@@ -208,15 +253,29 @@ describe('BUD-40 to BUD-44: the plan for this month', () => {
     entry(`2026-${month}-01`, 'salary', 5_800_000),
   ])
 
-  it('BUD-40, BUD-41: targets follow the usual month, with spent and left', () => {
-    const october = [entry('2026-10-03', 'rent', 1_450_000), entry('2026-10-05', 'food', 150_000)]
-    const { month } = planMonth(
-      [...history, ...october],
-      view('2026-10-19'),
+  function plan(
+    entries: readonly AnalysisEntry[],
+    today: string,
+    month: MonthTargets | null = null,
+    options: Parameters<typeof planMonth>[7] = {},
+    settings: PlanSettings = emptyPlan,
+  ) {
+    const usual = baseline(entries, view('2026-10-19'), settings)
+    return planMonth(
+      entries,
+      view(today),
       categories,
-      emptyPlan,
+      usual,
+      settings,
       defaultBudgetSettings,
+      month,
+      options,
     )
+  }
+
+  it('BUD-40, BUD-41: without a budget, each target is its starting amount, with spent and left', () => {
+    const october = [entry('2026-10-03', 'rent', 1_450_000), entry('2026-10-05', 'food', 150_000)]
+    const month = plan([...history, ...october], '2026-10-19')
     const food = month.lines.find((line) => line.key === 'food')
     expect(food?.target).toBe(400_000)
     expect(food?.spent).toBe(150_000)
@@ -227,26 +286,36 @@ describe('BUD-40 to BUD-44: the plan for this month', () => {
     expect(planSplit(month.lines)).toEqual({ locked: 1_450_000, fixed: 400_000, flexible: 300_000 })
   })
 
+  it('BUD-40, BUD-70: a month’s budget sets every target and the income', () => {
+    const october = [entry('2026-10-05', 'food', 150_000)]
+    const month = plan([...history, ...october], '2026-10-19', {
+      targets: new Map([
+        ['eat', 250_000],
+        ['rent', 1_450_000],
+      ]),
+      income: 6_500_000,
+    })
+    const eat = month.lines.find((line) => line.key === 'eat')
+    expect(eat?.target).toBe(250_000)
+    expect(eat?.starting).toBe(300_000)
+    // Groceries has no target in this budget, so what it spent is over.
+    expect(month.lines.find((line) => line.key === 'food')).toMatchObject({
+      target: 0,
+      left: -150_000,
+    })
+    expect(month.income).toBe(6_500_000)
+    expect(month.leftOver).toBe(6_500_000 - 1_700_000)
+  })
+
   it('BUD-42, BUD-43: pace follows the usual curve; heading over by more than 10% is at risk', () => {
     // Usually half of groceries is spent by the 19th; 390,000 by then heads for 590,000.
-    const october = [entry('2026-10-05', 'food', 390_000)]
-    const { month } = planMonth(
-      [...history, ...october],
-      view('2026-10-19'),
-      categories,
-      emptyPlan,
-      defaultBudgetSettings,
-    )
+    const month = plan([...history, entry('2026-10-05', 'food', 390_000)], '2026-10-19')
     const food = month.lines.find((line) => line.key === 'food')
     expect(food?.projected).toBe(590_000)
     expect(food?.status).toBe('atRisk')
-    const over = planMonth(
-      [...history, entry('2026-10-09', 'eat', 310_000)],
-      view('2026-10-19'),
-      categories,
-      emptyPlan,
-      defaultBudgetSettings,
-    ).month.lines.find((line) => line.key === 'eat')
+    const over = plan([...history, entry('2026-10-09', 'eat', 310_000)], '2026-10-19').lines.find(
+      (line) => line.key === 'eat',
+    )
     expect(over?.status).toBe('over')
     expect(over?.left).toBe(-10_000)
   })
@@ -256,87 +325,37 @@ describe('BUD-40 to BUD-44: the plan for this month', () => {
       entry('2026-10-05', 'food', 150_000),
       entry('2026-10-06', 'food', 900_000, { excluded: true }),
     ]
-    const { month } = planMonth(
-      [...history, ...october],
-      view('2026-10-19'),
-      categories,
-      emptyPlan,
-      defaultBudgetSettings,
-    )
-    expect(month.spent).toBe(150_000)
-  })
-
-  it('BUD-04, BUD-05: a hand-set target and expected income replace the usual ones', () => {
-    const plan = {
-      ...emptyPlan,
-      targets: [{ line: 'eat', amount: 250_000, byHand: true }],
-      income: 6_000_000,
-      incomeByPeriod: [{ start: '2026-10-01', amount: 6_500_000 }],
-    }
-    const { month } = planMonth(
-      history,
-      view('2026-10-19'),
-      categories,
-      plan,
-      defaultBudgetSettings,
-    )
-    const eat = month.lines.find((line) => line.key === 'eat')
-    expect(eat?.target).toBe(250_000)
-    expect(eat?.byHand).toBe(true)
-    expect(month.income).toBe(6_500_000)
-    expect(month.incomeSet).toBe(true)
-    const november = planMonth(history, view('2026-11-05'), categories, plan, defaultBudgetSettings)
-    expect(november.month.income).toBe(6_000_000)
-  })
-
-  it('BUD-37, BUD-40: a phased cut reaches its full size a step a month', () => {
-    const adjustment = { line: 'eat', change: -45_000, steps: 3, from: '2026-10-01' }
-    expect(adjustmentIn(adjustment, '2026-09-01', 1)).toBe(0)
-    expect(adjustmentIn(adjustment, '2026-10-01', 1)).toBe(-15_000)
-    expect(adjustmentIn(adjustment, '2026-11-01', 1)).toBe(-30_000)
-    expect(adjustmentIn(adjustment, '2027-03-01', 1)).toBe(-45_000)
-    const plan = { ...emptyPlan, adjustments: [adjustment] }
-    const { month } = planMonth(
-      history,
-      view('2026-11-05'),
-      categories,
-      plan,
-      defaultBudgetSettings,
-    )
-    expect(month.lines.find((line) => line.key === 'eat')?.target).toBe(270_000)
+    expect(plan([...history, ...october], '2026-10-19').spent).toBe(150_000)
   })
 
   it('BUD-06: an estimate stands in until the line has a month of its own', () => {
-    const plan = {
+    const settings = {
       ...emptyPlan,
       estimates: [
         { line: 'gift', amount: 50_000 },
         { line: 'eat', amount: 1 },
       ],
     }
-    const { month } = planMonth(
-      history,
-      view('2026-10-19'),
-      categories,
-      plan,
-      defaultBudgetSettings,
-    )
+    const month = plan(history, '2026-10-19', null, {}, settings)
     expect(month.lines.find((line) => line.key === 'gift')?.target).toBe(50_000)
     // Restaurants has six months of its own, so its estimate no longer counts.
     expect(month.lines.find((line) => line.key === 'eat')?.target).toBe(300_000)
   })
 
+  it('BUD-70: a budget being made shows every line there was spending to start from', () => {
+    // The gift was the only one in 6 months, so it starts at nothing.
+    const entries = [...history, entry('2026-07-20', 'gift', 600_000)]
+    expect(plan(entries, '2026-11-05').lines.some((line) => line.key === 'gift')).toBe(false)
+    expect(
+      plan(entries, '2026-11-05', null, { all: true }).lines.find((line) => line.key === 'gift'),
+    ).toMatchObject({ target: 0, starting: 0 })
+  })
+
   it('BUD-52: an amount carried over changes this month’s target', () => {
-    const { month } = planMonth(
-      history,
-      view('2026-10-19'),
-      categories,
-      emptyPlan,
-      defaultBudgetSettings,
-      [{ line: 'eat', amount: 60_000 }],
-    )
+    const month = plan(history, '2026-10-19', null, { carry: [{ line: 'eat', amount: 60_000 }] })
     const eat = month.lines.find((line) => line.key === 'eat')
     expect(eat?.target).toBe(360_000)
+    expect(eat?.base).toBe(300_000)
     expect(eat?.carry).toBe(60_000)
   })
 })

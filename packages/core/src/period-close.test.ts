@@ -1,13 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   carryOver,
-  changedTargets,
   type ClosedLine,
   goalDates,
-  keptTargets,
   missedInARow,
   surplusByOrder,
-  updatedTargets,
 } from './period-close.ts'
 
 const want = (line: string, target: number, spent: number): ClosedLine => ({
@@ -59,34 +56,6 @@ describe('BUD-50 to BUD-57: closing a month', () => {
       { line: 'eat', spent: [500_000, 510_000, 490_300], target: 472_300, eased: 500_000 },
     ])
     expect(missedInARow(months.slice(1))).toEqual([])
-  })
-
-  it('BUD-55: keeping the targets writes them in; updating keeps only those set by hand', () => {
-    const lines = [
-      { key: 'eat', base: 472_300, byHand: false },
-      { key: 'rent', base: 1_450_000, byHand: true },
-      { key: 'gift', base: 0, byHand: false },
-    ]
-    const current = [
-      { line: 'rent', amount: 1_450_000, byHand: true },
-      { line: 'gift', amount: 10_000 },
-    ]
-    expect(keptTargets(lines, current)).toEqual([
-      { line: 'rent', amount: 1_450_000, byHand: true },
-      { line: 'eat', amount: 472_300 },
-    ])
-    expect(updatedTargets(current)).toEqual([{ line: 'rent', amount: 1_450_000, byHand: true }])
-    // The usual month moved for Restaurants only (rent is set by hand).
-    expect(
-      changedTargets(
-        lines,
-        new Map([
-          ['eat', 510_000],
-          ['rent', 1_600_000],
-          ['gift', 0],
-        ]),
-      ),
-    ).toBe(1)
   })
 
   it('BUD-57: how each goal’s date moved from one close to the next', () => {

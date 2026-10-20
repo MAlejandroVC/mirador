@@ -8,13 +8,13 @@ import {
   goalRecord,
   importBatchRecord,
   importProfileRecord,
+  monthBudgetRecord,
   payeeRecord,
   preferencesRecord,
   profileRecord,
   type RecordBody,
   recordId,
   recurringRecord,
-  scenarioRecord,
   tagRecord,
   transactionRecord,
   walletRecord,
@@ -88,7 +88,7 @@ export const recordSchemas: Record<string, z.ZodType> = {
   budgetPlan: budgetPlanRecord,
   goal: goalRecord,
   goalContribution: goalContributionRecord,
-  scenario: scenarioRecord,
+  monthBudget: monthBudgetRecord,
   budgetSnapshot: budgetSnapshotRecord,
 }
 

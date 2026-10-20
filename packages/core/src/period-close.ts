@@ -72,58 +72,6 @@ export function missedInARow(months: readonly (readonly ClosedLine[])[], count =
   return missed.sort((a, b) => b.eased - b.target - (a.eased - a.target))
 }
 
-/** A plan target as the plan record keeps it. */
-export interface KeptTarget {
-  line: string
-  amount: number
-  byHand?: boolean
-}
-
-/**
- * BUD-55, Q8: keeping a month's targets writes each line's target (before
- * adjustments and carry-over) into the plan, so next month starts from the same
- * numbers; targets set by hand stay as they are.
- */
-export function keptTargets(
-  lines: readonly { key: string; base: number; byHand: boolean }[],
-  current: readonly KeptTarget[],
-): KeptTarget[] {
-  const byLine = new Map(current.map((target) => [target.line, target]))
-  for (const line of lines) {
-    const existing = byLine.get(line.key)
-    if (existing?.byHand === true || line.byHand) continue
-    if (line.base <= 0) {
-      byLine.delete(line.key)
-      continue
-    }
-    byLine.set(line.key, { line: line.key, amount: line.base })
-  }
-  return [...byLine.values()]
-}
-
-/** BUD-55: updating to the usual month keeps only the targets set by hand. */
-export function updatedTargets(current: readonly KeptTarget[]): KeptTarget[] {
-  return current.filter((target) => target.byHand === true)
-}
-
-/**
- * BUD-55: how many lines' usual month moved away from the month's target by more than
- * `threshold` (5%), not counting targets set by hand.
- */
-export function changedTargets(
-  lines: readonly { key: string; base: number; byHand: boolean }[],
-  usual: ReadonlyMap<string, number>,
-  threshold = 0.05,
-): number {
-  let count = 0
-  for (const line of lines) {
-    if (line.byHand) continue
-    const next = usual.get(line.key) ?? 0
-    if (Math.abs(next - line.base) > Math.max(1, line.base * threshold)) count += 1
-  }
-  return count
-}
-
 /** BUD-52: what each chosen line carries into the next month: what was left, or minus what went over. */
 export function carryOver(
   lines: readonly ClosedLine[],

@@ -1,17 +1,15 @@
 import type { BudgetSnapshotRecord } from '@repo/api'
 import {
+  budgeted,
   carryOver,
   type ClosedLine,
-  changedTargets,
   contributedIn,
   goalProgress,
-  keptTargets,
   missedInARow,
   type Period,
   type PlanLine,
   shiftPeriod,
   surplusByOrder,
-  updatedTargets,
 } from '@repo/core'
 import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
@@ -32,14 +30,15 @@ import { AmountSheet, type AmountRequest } from './amount-sheet'
 import { type BudgetWords, useBudgetWords } from './budget-words'
 import { lineLook, lineName } from './lines'
 import { GoalTile, Over } from './parts'
-import { contributionChange, currentPlan, planChange, snapshotChange } from './records'
-import { type Budget, fundWith, planFor, useBudget } from './use-budget'
+import { contributionChange, monthChange, snapshotChange } from './records'
+import { type Budget, fundWith, monthOf, planFor, useBudget } from './use-budget'
 
 // BUD-50 to BUD-56: once a month ends, its review: the left over planned against the
 // one lived, where the extra goes (BUD-51), how each category did, what going over did
-// to the goals (BUD-53), an easier target for a Want that keeps missing (BUD-54), what
-// carries over (BUD-52, off by default) and whether next month keeps these targets
-// (BUD-55, Q8). "Start" closes the month and keeps it as it was (BUD-56).
+// to the goals (BUD-53), an easier target for a Want that keeps missing (BUD-54) and what
+// carries over (BUD-52, off by default). Next month keeps its own budget (BUD-55, Q8).
+// "Start" closes the month and keeps it as it was (BUD-56). Only a month that had a
+// budget gets a review (BUD-74).
 
 /** How many rows a long list shows before "See all" (DL-CMP-15). */
 const shownRows = 3
@@ -84,9 +83,9 @@ function Review({ budget, period }: { budget: Budget; period: Period }) {
   const month = words.monthName(period)
   const nextMonth = words.monthName(next)
 
-  // BUD-56: the month as it was when the review opened, so choices made here (an eased
-  // target, kept targets) never rewrite it.
-  const [closed] = useState(() => planFor(budget, period).month)
+  // BUD-56: the month as it was when the review opened, so choices made here, such as an
+  // eased target, never rewrite it.
+  const [closed] = useState(() => planFor(budget, period))
   const plannedLeftOver = closed.leftOver
   const actualLeftOver = closed.earned - closed.spent
   const extra = actualLeftOver - plannedLeftOver
@@ -111,15 +110,16 @@ function Review({ budget, period }: { budget: Budget; period: Period }) {
     const months: ClosedLine[][] = [-2, -1].map((step) => {
       const earlier = shiftPeriod(period.start, 'month', step, 0, budget.settings.startDay)
       const snapshot = ledger.snapshots.find((item) => item.start === earlier.start)
-      return snapshot
-        ? snapshot.lines
-        : planFor(budget, earlier).month.lines.map((line) => closedLine(line))
+      // BUD-74: a month without a budget had no targets to miss.
+      if (snapshot) return snapshot.lines
+      return budgeted(monthOf(budget, earlier.start))
+        ? planFor(budget, earlier).lines.map((line) => closedLine(line))
+        : []
     })
     return missedInARow([...months, closed.lines.map((line) => closedLine(line))])
   })
   const [eased, setEased] = useState<ReadonlySet<string>>(new Set())
   const [carried, setCarried] = useState<ReadonlySet<string>>(new Set())
-  const [targets, setTargets] = useState<'kept' | 'updated'>('kept')
   const [allLines, setAllLines] = useState(false)
   const [allCarry, setAllCarry] = useState(false)
 
@@ -127,8 +127,6 @@ function Review({ budget, period }: { budget: Budget; period: Period }) {
     (a, b) => Math.max(0, -b.left) - Math.max(0, -a.left) || Math.abs(b.left) - Math.abs(a.left),
   )
   const carryable = lines.filter((line) => line.left !== 0)
-  const usual = new Map(budget.usual.lines.map((line) => [line.key, line.baseline]))
-  const changed = changedTargets(closed.lines, usual)
 
   function start() {
     const changes: RecordChange[] = []
@@ -141,18 +139,15 @@ function Review({ budget, period }: { budget: Budget; period: Period }) {
         changes.push(contributionChange(newId(), { goalId: goal.id, amount, date: period.end }))
       return [{ goalId: goal.id, amount }]
     })
-    // BUD-55, Q8: next month starts from these targets unless the person updates them;
-    // BUD-54: an eased target is set by hand from next month on.
-    const current = currentPlan(ledger).targets
-    let nextTargets =
-      targets === 'kept' ? keptTargets(closed.lines, current) : updatedTargets(current)
-    for (const item of missed)
-      if (eased.has(item.line))
-        nextTargets = [
-          ...nextTargets.filter((target) => target.line !== item.line),
-          { line: item.line, amount: item.eased, byHand: true },
-        ]
-    changes.push(planChange(ledger, { targets: nextTargets }))
+    // BUD-54: an eased target goes into next month's budget, which the months after
+    // carry on (BUD-73); BUD-55: nothing else in it changes.
+    const easedLines = missed.filter((item) => eased.has(item.line))
+    if (easedLines.length > 0) {
+      const upcoming = planFor(budget, next, { all: true })
+      const nextTargets = new Map(upcoming.lines.map((line) => [line.key, line.base] as const))
+      for (const item of easedLines) nextTargets.set(item.line, item.eased)
+      changes.push(monthChange(ledger, next.start, nextTargets, upcoming.income))
+    }
 
     const snapshot: BudgetSnapshotRecord = {
       start: period.start,
@@ -184,7 +179,6 @@ function Review({ budget, period }: { budget: Budget; period: Period }) {
         closed.lines.map((line) => closedLine(line)),
         carried,
       ),
-      targets,
       closedAt: new Date().toISOString(),
     }
     changes.push(snapshotChange(newId(), snapshot))
@@ -350,30 +344,10 @@ function Review({ budget, period }: { budget: Budget; period: Period }) {
         </div>
       )}
 
-      {/* BUD-55, Q8: the targets stay unless the person moves them to the usual month. */}
-      <List label={t('budget.review.targetsTitle', { month: nextMonth })}>
-        <ChoiceRow
-          role="radio"
-          title={t('budget.review.keep', { month })}
-          checked={targets === 'kept'}
-          onToggle={() => {
-            setTargets('kept')
-          }}
-        />
-        <ChoiceRow
-          role="radio"
-          title={t('budget.review.update')}
-          subtitle={
-            changed > 0
-              ? t('budget.review.changed', { count: changed })
-              : t('budget.review.unchanged')
-          }
-          checked={targets === 'updated'}
-          onToggle={() => {
-            setTargets('updated')
-          }}
-        />
-      </List>
+      {/* BUD-55, Q8: next month keeps the budget it has. */}
+      <p className="px-4 text-[0.8125rem] text-text-muted">
+        {t('budget.review.keepsBudget', { month: nextMonth })}
+      </p>
 
       {save.isError && (
         <p role="alert" className="px-4 text-[0.8125rem] text-warning">

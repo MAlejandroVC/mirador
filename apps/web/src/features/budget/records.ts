@@ -12,11 +12,11 @@ import {
   type GoalRecord,
   goalRecord,
   goalRecordType,
-  type ScenarioRecord,
-  scenarioRecord,
-  scenarioRecordType,
+  type MonthBudgetRecord,
+  monthBudgetRecord,
+  monthBudgetRecordType,
 } from '@repo/api'
-import { defaultBudgetSettings } from '@repo/core'
+import { defaultBudgetSettings, monthRecord } from '@repo/core'
 import {
   type Ledger,
   newId,
@@ -36,13 +36,11 @@ function defined<T extends object>(value: T): T {
 }
 
 const emptyPlanRecord: BudgetPlanRecord = {
-  targets: [],
-  adjustments: [],
   exclusions: { periods: [], linePeriods: [], transactionIds: [] },
   tagLines: [],
 }
 
-/** The plan record with some fields changed; there is one per person (BUD-04). */
+/** The plan record with some fields changed; there is one per person (BUD-03). */
 export function planChange(ledger: Pick<Ledger, 'plan'>, patch: Patch<BudgetPlanRecord>) {
   const { id, ...current } = ledger.plan ?? { id: newId(), ...emptyPlanRecord }
   const data = budgetPlanRecord.parse(
@@ -73,9 +71,27 @@ export function contributionChange(id: string, data: GoalContributionRecord): Re
   return { id, body: recordBody(goalContributionRecordType, goalContributionRecord.parse(data)) }
 }
 
-export function scenarioChange(id: string, scenario: Patch<ScenarioRecord>): RecordChange {
-  const data = scenarioRecord.parse(defined({ ...scenario, updatedAt: new Date().toISOString() }))
-  return { id, body: recordBody(scenarioRecordType, data) }
+/**
+ * BUD-70 to BUD-72: a month's budget saved with every line's target and its income. It
+ * keeps its record when it has one, so a month never gets two; locking in stamps it.
+ * `id` names the record a screen will save more than once before the first save is
+ * back, so those saves land on one record too.
+ */
+export function monthChange(
+  ledger: Pick<Ledger, 'months'>,
+  start: string,
+  targets: ReadonlyMap<string, number>,
+  income: number,
+  lock: 'keep' | 'lock' = 'keep',
+  id?: string,
+): RecordChange {
+  const existing = ledger.months.find((month) => month.start === start)
+  const lockedAt = existing?.lockedAt ?? (lock === 'lock' ? new Date().toISOString() : undefined)
+  const data: MonthBudgetRecord = monthBudgetRecord.parse({
+    ...monthRecord(start, targets, income, lockedAt),
+    updatedAt: new Date().toISOString(),
+  })
+  return { id: existing?.id ?? id ?? newId(), body: recordBody(monthBudgetRecordType, data) }
 }
 
 export function snapshotChange(id: string, data: BudgetSnapshotRecord): RecordChange {

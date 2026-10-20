@@ -13,10 +13,10 @@ import { useBudgetWords } from './budget-words'
 import { budgetSettingsChange, currentPlan, planChange } from './records'
 import { type Budget, useBudget } from './use-budget'
 
-// SYS-02, SYS-09: Settings › Budget: the day months start, how far the usual month looks
-// back, the deepest cut a what-if suggests and when a category counts as at risk, plus
-// whole months left out of the usual month (BUD-03). Each choice saves at once, as in
-// Settings › Currency.
+// SYS-02, SYS-09: Settings › Budget: the day months start, how far the starting amounts
+// look back, the deepest cut Find money suggests and when a category counts as at risk,
+// plus whole months left out of the starting amounts (BUD-03) and the one-offs (BUD-76).
+// Each choice saves at once, as in Settings › Currency.
 export function BudgetSettingsScreen() {
   const budget = useBudget()
   const back = useBack()
@@ -62,7 +62,7 @@ function Choices({ budget }: { budget: Budget }) {
         <FieldNote>{t('budget.settings.startDayHint')}</FieldNote>
       </div>
 
-      {/* BUD-01: how many months the usual month is the middle of. */}
+      {/* BUD-01: how many months the starting amounts are the average of. */}
       <div className="flex flex-col gap-1.5">
         <List label={t('budget.settings.lookback')}>
           <li className="p-2.5">
@@ -109,7 +109,7 @@ function Choices({ budget }: { budget: Budget }) {
         </div>
       )}
 
-      {/* BUD-35: the deepest cut a what-if suggests for one category, at each step. */}
+      {/* BUD-35: the deepest cut Find money suggests for one category. */}
       <div className="flex flex-col gap-1.5">
         <List label={t('budget.settings.maxCut')}>
           <li className="p-2.5">
@@ -143,10 +143,18 @@ function Choices({ budget }: { budget: Budget }) {
         <FieldNote>{t('budget.settings.atRiskHint')}</FieldNote>
       </div>
 
-      {/* BUD-06: the rough amounts entered before there was a month of history. */}
-      {(plan.estimates?.length ?? 0) > 0 && (
+      {/* BUD-76: the one-offs the starting amounts leave out. */}
+      {budget.usual.oneOffs.length > 0 && (
         <List>
-          <ListLinkRow to="/budget/usual" title={t('budget.settings.rough')} />
+          <ListLinkRow
+            to="/budget/one-offs"
+            title={t('budget.make.oneOffs')}
+            trailing={
+              <span className="text-[0.9375rem] text-text-muted tabular-nums">
+                {budget.usual.oneOffs.filter((item) => !item.counted).length}
+              </span>
+            }
+          />
         </List>
       )}
 

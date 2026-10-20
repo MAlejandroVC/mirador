@@ -1,5 +1,4 @@
 import {
-  type BudgetPlanRecord,
   type BudgetSnapshotRecord,
   budgetSnapshotRecordType,
   type CategoryRecord,
@@ -7,6 +6,8 @@ import {
   categoryRecordType,
   type GoalContributionRecord,
   goalRecordType,
+  type MonthBudgetRecord,
+  monthBudgetRecordType,
   type RecordBody,
   type TransactionRecord,
   type WalletRecord,
@@ -108,6 +109,22 @@ function history(cash: SyncedRecord, set: ReturnType<typeof categories>): Synced
   ]
 }
 
+/**
+ * BUD-71, BUD-73: December's budget, locked in, which January, February and March carry
+ * on: groceries at $1,000 and eating out at $250.
+ */
+function december(set: ReturnType<typeof categories>): SyncedRecord {
+  return record(monthBudgetRecordType, {
+    start: '2025-12-01',
+    targets: [
+      { line: set.groceries.id, amount: 100_000 },
+      { line: set.eatingOut.id, amount: 25_000 },
+    ].sort((a, b) => a.line.localeCompare(b.line)),
+    income: 400_000,
+    lockedAt: '2025-11-28T18:00:00.000Z',
+  } satisfies MonthBudgetRecord)
+}
+
 /** A bonus in February, so the month ends with more left over than planned. */
 function bonus(cash: SyncedRecord, set: ReturnType<typeof categories>) {
   return transaction({
@@ -130,6 +147,14 @@ const trip = () =>
     start: '2026-01-01',
     order: 0,
   })
+
+/** A list on screen once it shows, by its section label. */
+async function section2(label: string) {
+  const heading = await screen.findByRole('heading', { name: label })
+  const list = heading.closest('section')
+  if (!list) throw new Error(`No list labeled ${label}`)
+  return list
+}
 
 /** A list on screen, by its section label. */
 function section(label: string) {
@@ -167,7 +192,7 @@ describe('closing a month', () => {
     const set = categories()
     const server: FakeServer = {
       signedIn: 'ana',
-      records: [cash, ...set.records, ...history(cash, set), trip()],
+      records: [cash, ...set.records, ...history(cash, set), december(set), trip()],
     }
     stubServer(server)
     renderApp('/budget/review', unlockedVault(server))
@@ -175,7 +200,7 @@ describe('closing a month', () => {
     expect(await screen.findByRole('heading', { name: 'February review', level: 1 })).toBeVisible()
     expect(screen.getByText('Planned left over')).toBeVisible()
     expect(screen.getByText(/less than planned\.$/)).toBeVisible()
-    // Eating out went over its usual month; groceries landed on it.
+    // Eating out went over its target; groceries landed on it.
     const results = within(section('How each category did'))
     const eatingOut = results.getByText('Eating out').closest('li')
     expect(within(eatingOut as HTMLElement).getByText(/over$/)).toBeVisible()
@@ -185,8 +210,7 @@ describe('closing a month', () => {
     expect(screen.getByRole('button', { name: 'Start March' })).toBeVisible()
   })
 
-  it('BUD-52, BUD-55, BUD-56: starting March keeps February as it was, its targets and what carries', async () => {
-    const user = userEvent.setup()
+  it('BUD-50, BUD-74: a month without a budget gets no review', async () => {
     const cash = wallet('Cash')
     const set = categories()
     const server: FakeServer = {
@@ -196,13 +220,28 @@ describe('closing a month', () => {
     stubServer(server)
     renderApp('/budget/review', unlockedVault(server))
 
+    expect(await screen.findByText('Nothing to review yet')).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Start March' })).toBeNull()
+  })
+
+  it('BUD-52, BUD-55, BUD-56: starting March keeps February as it was, and what carries', async () => {
+    const user = userEvent.setup()
+    const cash = wallet('Cash')
+    const set = categories()
+    const server: FakeServer = {
+      signedIn: 'ana',
+      records: [cash, ...set.records, ...history(cash, set), december(set)],
+    }
+    stubServer(server)
+    renderApp('/budget/review', unlockedVault(server))
+
     const carry = await screen.findByRole('switch', { name: /Eating out/ })
     // BUD-52: nothing carries unless switched on.
     expect(carry).toHaveAttribute('aria-checked', 'false')
-    expect(screen.getByRole('radio', { name: /Keep February's/ })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    )
+    // BUD-55: March keeps the budget it carries on.
+    expect(
+      screen.getByText('March’s budget stays as it is. You can edit it any time.'),
+    ).toBeVisible()
     await user.click(carry)
     await user.click(screen.getByRole('button', { name: 'Start March' }))
 
@@ -210,22 +249,19 @@ describe('closing a month', () => {
       expect(saved<BudgetSnapshotRecord>(server, budgetSnapshotRecordType)).toHaveLength(1)
     })
     const [snapshot] = saved<BudgetSnapshotRecord>(server, budgetSnapshotRecordType)
-    expect(snapshot).toMatchObject({ start: '2026-02-01', end: '2026-02-28', targets: 'kept' })
+    expect(snapshot).toMatchObject({ start: '2026-02-01', end: '2026-02-28' })
     expect(snapshot?.lines.map((line) => line.line)).toEqual(
       expect.arrayContaining([set.groceries.id, set.eatingOut.id]),
     )
     const eatingOut = snapshot?.lines.find((line) => line.line === set.eatingOut.id)
-    expect(eatingOut?.spent).toBe(30_000)
-    expect(snapshot?.carry).toEqual([
-      { line: set.eatingOut.id, amount: (eatingOut?.target ?? 0) - 30_000 },
-    ])
+    expect(eatingOut).toMatchObject({ target: 25_000, spent: 30_000 })
+    expect(snapshot?.carry).toEqual([{ line: set.eatingOut.id, amount: -5_000 }])
     expect(snapshot?.leftOver.actual).toBe(400_000 - 100_000 - 30_000)
-    // BUD-55, Q8: next month starts from February's targets.
-    const [plan] = saved<BudgetPlanRecord>(server, 'budgetPlan')
-    expect(plan?.targets).toContainEqual({ line: set.eatingOut.id, amount: eatingOut?.target })
+    // BUD-55, Q8: no month's budget changed.
+    expect(saved<MonthBudgetRecord>(server, monthBudgetRecordType)).toHaveLength(1)
     // The review is done, so Budget opens again without it.
-    expect(await screen.findByRole('link', { name: /Past months/ })).toBeVisible()
-    expect(screen.queryByRole('link', { name: /February review/ })).toBeNull()
+    expect(await screen.findByText('Left in March')).toBeVisible()
+    expect(screen.queryByRole('link', { name: /February has ended/ })).toBeNull()
   })
 
   it('BUD-51: the extra fills the goals in order, and a goal without a wallet gets it as money added', async () => {
@@ -235,7 +271,7 @@ describe('closing a month', () => {
     const goal = trip()
     const server: FakeServer = {
       signedIn: 'ana',
-      records: [cash, ...set.records, ...history(cash, set), bonus(cash, set), goal],
+      records: [cash, ...set.records, ...history(cash, set), december(set), bonus(cash, set), goal],
     }
     stubServer(server)
     renderApp('/budget/review', unlockedVault(server))
@@ -268,13 +304,13 @@ describe('closing a month', () => {
     ])
   })
 
-  it('BUD-54: a Want over its target three months running gets an easier target from next month', async () => {
+  it('BUD-54: a Want over its target three months running gets an easier target in next month’s budget', async () => {
     const user = userEvent.setup()
     const cash = wallet('Cash')
     const set = categories()
     const server: FakeServer = {
       signedIn: 'ana',
-      records: [cash, ...set.records, ...history(cash, set), trip()],
+      records: [cash, ...set.records, ...history(cash, set), december(set), trip()],
     }
     stubServer(server)
     renderApp('/budget/review', unlockedVault(server))
@@ -287,13 +323,20 @@ describe('closing a month', () => {
     await user.click(screen.getByRole('button', { name: 'Start March' }))
 
     await waitFor(() => {
-      expect(saved<BudgetPlanRecord>(server, 'budgetPlan')).toHaveLength(1)
+      expect(
+        saved<MonthBudgetRecord>(server, monthBudgetRecordType).find(
+          (item) => item.start === '2026-03-01',
+        ),
+      ).toBeDefined()
     })
-    const [plan] = saved<BudgetPlanRecord>(server, 'budgetPlan')
-    expect(plan?.targets).toContainEqual({ line: set.eatingOut.id, amount: 28_000, byHand: true })
+    const march = saved<MonthBudgetRecord>(server, monthBudgetRecordType).find(
+      (item) => item.start === '2026-03-01',
+    )
+    expect(march?.targets).toContainEqual({ line: set.eatingOut.id, amount: 28_000 })
+    expect(march?.targets).toContainEqual({ line: set.groceries.id, amount: 100_000 })
   })
 
-  it('BUD-57, BUD-56: past months list each close, newest first, and open one as it was', async () => {
+  it('BUD-57: a past month opens from the month bar, and a goal shows its date at each close', async () => {
     const user = userEvent.setup()
     const cash = wallet('Cash')
     const set = categories()
@@ -304,10 +347,10 @@ describe('closing a month', () => {
         end,
         lines: [
           { line: set.groceries.id, flexibility: 'fixed', target: 100_000, spent: 100_000 },
-          { line: set.eatingOut.id, flexibility: 'flexible', target: 24_000, spent: 30_000 },
+          { line: set.eatingOut.id, flexibility: 'flexible', target: 25_000, spent: 30_000 },
         ],
         income: { planned: 400_000, actual: 400_000 },
-        leftOver: { planned: 276_000, actual },
+        leftOver: { planned: 275_000, actual },
         goals: [
           {
             goalId: goal.id,
@@ -321,7 +364,6 @@ describe('closing a month', () => {
         ],
         surplus: [],
         carry: [],
-        targets: 'kept',
         closedAt: `${end}T18:00:00.000Z`,
       } satisfies BudgetSnapshotRecord)
     const server: FakeServer = {
@@ -330,37 +372,42 @@ describe('closing a month', () => {
         cash,
         ...set.records,
         ...history(cash, set),
+        december(set),
         goal,
         snapshot('2026-01-01', '2026-01-31', 272_000, '2026-11-30'),
         snapshot('2026-02-01', '2026-02-28', 270_000, '2026-12-31'),
       ],
     }
     stubServer(server)
-    renderApp('/budget/history', unlockedVault(server))
+    renderApp('/budget', unlockedVault(server))
 
-    expect(await screen.findByRole('heading', { name: 'Past months', level: 1 })).toBeVisible()
-    const rows = await screen.findAllByRole('link', { name: /2026/ })
-    expect(rows.map((row) => row.textContent)).toEqual([
-      expect.stringMatching(/^February 2026/),
-      expect.stringMatching(/^January 2026/),
-    ])
-    // BUD-57: the trip's date moved a month later from one close to the next.
-    expect(screen.getByText('Nov 2026 → Dec 2026')).toBeVisible()
-
-    const latest = rows[0]
-    if (!latest) throw new Error('No closed month')
-    await user.click(latest)
-    expect(await screen.findByRole('heading', { name: 'February 2026', level: 1 })).toBeVisible()
+    expect(await screen.findByText('Left in March')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Previous month' }))
+    expect(await screen.findByText('Over in February')).toBeVisible()
     const eatingOut = screen.getByText('Eating out').closest('li')
-    expect(within(eatingOut as HTMLElement).getByText('$60.00 over')).toBeVisible()
-    expect(screen.getByText('$500.00 of $12,000.00 · expected Dec 2026')).toBeVisible()
+    expect(within(eatingOut as HTMLElement).getByText('$50.00 over')).toBeVisible()
+    expect(screen.queryByRole('textbox')).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Next month' }))
+    await user.click(await screen.findByRole('link', { name: /Trip to Oaxaca/ }))
+    const dates = within(await section2('Expected date at each close'))
+    expect(dates.getByText('January')).toBeVisible()
+    expect(dates.getByText('Nov 2026')).toBeVisible()
+    expect(dates.getByText('Dec 2026')).toBeVisible()
   })
 
   it('SEC-01: closing a month stores it through the vault and calls only the app’s server', async () => {
     const user = userEvent.setup()
     const cash = wallet('Cash')
     const set = categories()
-    const records = [cash, ...set.records, ...history(cash, set), bonus(cash, set), trip()]
+    const records = [
+      cash,
+      ...set.records,
+      ...history(cash, set),
+      december(set),
+      bonus(cash, set),
+      trip(),
+    ]
     const server: FakeServer = { signedIn: 'ana', records: [...records] }
     stubServer(server)
     const fetches = vi.mocked(globalThis.fetch)
