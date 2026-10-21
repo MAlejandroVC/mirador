@@ -40,8 +40,46 @@ export interface ColumnSettings {
 // Header words, compared as nameKey(). The first field whose words match wins.
 const headerWords: [ColumnField, string[]][] = [
   ['date', ['date', 'fecha', 'day', 'dia', 'posted', 'transaction date', 'fecha operacion']],
-  ['inflow', ['inflow', 'credit', 'deposit', 'deposito', 'abono', 'ingreso', 'entrada', 'in']],
-  ['outflow', ['outflow', 'debit', 'withdrawal', 'retiro', 'cargo', 'egreso', 'salida', 'out']],
+  // Statements name them in the plural (IMP-04).
+  [
+    'inflow',
+    [
+      'inflow',
+      'credit',
+      'credits',
+      'deposit',
+      'deposits',
+      'deposito',
+      'depositos',
+      'abono',
+      'abonos',
+      'ingreso',
+      'ingresos',
+      'entrada',
+      'in',
+      'payments',
+      'pagos',
+    ],
+  ],
+  [
+    'outflow',
+    [
+      'outflow',
+      'debit',
+      'debits',
+      'withdrawal',
+      'withdrawals',
+      'retiro',
+      'retiros',
+      'cargo',
+      'cargos',
+      'egreso',
+      'egresos',
+      'salida',
+      'out',
+      'charges',
+    ],
+  ],
   ['amount', ['amount', 'monto', 'importe', 'cantidad', 'value', 'valor', 'total', 'sum']],
   ['type', ['type', 'tipo', 'kind', 'transaction type', 'direction']],
   [

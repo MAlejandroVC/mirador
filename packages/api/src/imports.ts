@@ -11,8 +11,11 @@ export const importBatchRecordType = 'importBatch'
 export const rowProblems = ['date', 'amount', 'zero', 'currency'] as const
 
 export const importBatchRecord = z.object({
-  /** `csv` for a file, `sample` for the made-up data that shows the app off. */
-  source: z.enum(['csv', 'sample']),
+  /**
+   * `csv` for a file, `statement` for PDFs and pictures read as a statement (IMP-04,
+   * IMP-05), `sample` for the made-up data that shows the app off.
+   */
+  source: z.enum(['csv', 'statement', 'sample']),
   fileName: z.string().max(255),
   // IMP-36: the file's SHA-256, so the same file imported twice can be caught.
   fingerprint: z

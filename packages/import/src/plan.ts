@@ -191,6 +191,8 @@ export type RowStatus =
   | { kind: 'transfer'; pairLine: number; outgoing: boolean; likely: boolean }
   /** IMP-31: no category from the file, a rule or history. */
   | { kind: 'noCategory' }
+  /** IMP-10: read from a picture or scan, with a date or amount to check first. */
+  | { kind: 'check'; fields: NonNullable<ImportRow['unsure']> }
 
 export interface PlannedRow {
   row: ImportRow
@@ -228,9 +230,16 @@ export function planRows(
         (payee && payeeMemory(ledger.transactions, payee.id)?.categoryId) ?? null
     }
     const base = { row, walletKey, categoryKey, suggestedCategoryId }
-    if (row.problem) return { ...base, status: { kind: 'unreadable', problem: row.problem } }
+    // IMP-10: a date or amount the picture made unreadable is for the person to fill in.
+    const unsureProblem =
+      (row.problem === 'date' || row.problem === 'amount') && row.unsure?.includes(row.problem)
+    if (row.problem && !unsureProblem)
+      return { ...base, status: { kind: 'unreadable', problem: row.problem } }
     if (link && row.currency !== walletCurrency(link))
       return { ...base, status: { kind: 'unreadable', problem: 'currency' } }
+    // Matching on an amount or date that may be misread could skip a real row.
+    if (row.unsure && row.unsure.length > 0)
+      return { ...base, status: { kind: 'check', fields: row.unsure } }
     // IMP-20, IMP-21: the closest unmatched transaction in the same wallet with the
     // same amount, within three days.
     if (link?.target.kind === 'existing') {

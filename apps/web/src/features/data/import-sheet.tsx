@@ -22,7 +22,13 @@ import { Button } from '../../components/ui/button'
 import { ChoiceRow } from '../../components/ui/choice-row'
 import { MoneyRow } from '../../components/ui/field-row'
 import { IconTile } from '../../components/ui/icon-tile'
-import { ArrowRightIcon, CheckIcon, FileTextIcon } from '../../components/ui/icons'
+import {
+  ArrowRightIcon,
+  CheckIcon,
+  FilePdfIcon,
+  FileTextIcon,
+  ImageIcon,
+} from '../../components/ui/icons'
 import { List, ListButtonRow, ListRow } from '../../components/ui/list'
 import { Sheet } from '../../components/ui/sheet'
 import { roundButton, SheetActionSlot } from '../../components/ui/sheet-action'
@@ -35,12 +41,16 @@ import {
   buildChanges,
   currencyOf,
   fallbackWallet,
+  type Fixes,
   type ImportFile,
+  isStatement,
   links,
   owes,
   plan,
   startingSettings,
 } from './import-model'
+import { ReadingStep } from './reading-step'
+import { BalanceCheck, CheckSection } from './review-check'
 
 // IMP-01 to IMP-34, DAT-12: importing a CSV in three steps in one sheet: what each
 // column holds, where its wallets and categories go, then a review that asks only about
@@ -60,12 +70,17 @@ export interface ImportDone {
 
 export function ImportSheet({
   file,
+  reading = null,
   ledger,
+  onRead,
   onClose,
   onUndo,
 }: {
   file: ImportFile | null
+  /** IMP-04, IMP-05: PDFs and pictures to read first. */
+  reading?: { files: File[]; fingerprint: string } | null
   ledger: Ledger
+  onRead?: (file: ImportFile) => void
   onClose: () => void
   onUndo: (batchId: string) => void
 }) {
@@ -74,12 +89,15 @@ export function ImportSheet({
   const [back, setBack] = useState<(() => void) | null>(null)
   return (
     <Sheet
-      open={file !== null}
-      title={t(`data.steps.${step}`)}
+      open={file !== null || reading !== null}
+      title={t(`data.steps.${file === null && reading ? 'reading' : step}`)}
       cancelLabel={t('nav.cancel')}
       {...(back ? { back: { label: t('nav.back'), onClick: back } } : {})}
       onClose={onClose}
     >
+      {file === null && reading && onRead && (
+        <ReadingStep files={reading.files} fingerprint={reading.fingerprint} onRead={onRead} />
+      )}
       {file && (
         <ImportFlow
           key={file.fingerprint}
@@ -141,13 +159,14 @@ function ImportFlow({
     start.profileId ? links(file, start.settings, ledger, walletId) : null,
   )
   const [decisions, setDecisions] = useState<Decisions | null>(null)
+  const [fixes, setFixes] = useState<Fixes>(new Map())
   const [missing, setMissing] = useState<string[]>([])
   const [done, setDone] = useState<ImportDone | null>(null)
   const save = useSaveRecords()
 
   const planned = useMemo(
-    () => (linked ? plan(file, settings, ledger, linked.wallets) : []),
-    [file, settings, ledger, linked],
+    () => (linked ? plan(file, settings, ledger, linked.wallets, fixes) : []),
+    [file, settings, ledger, linked, fixes],
   )
 
   const toMatch = () => {
@@ -158,7 +177,7 @@ function ImportFlow({
     setStep('match')
   }
   const toReview = () => {
-    setDecisions(defaultDecisions(plan(file, settings, ledger, linked?.wallets ?? [])))
+    setDecisions(defaultDecisions(plan(file, settings, ledger, linked?.wallets ?? [], fixes)))
     setStep('review')
   }
   const commit = () => {
@@ -169,7 +188,11 @@ function ImportFlow({
       categories: linked.categories,
       decisions,
       ledger,
-      file: { name: file.name, fingerprint: file.fingerprint, source: 'csv' },
+      file: {
+        name: file.name,
+        fingerprint: file.fingerprint,
+        source: isStatement(file) ? 'statement' : 'csv',
+      },
       names: { wallet: t('data.match.importedName'), group: t('data.match.importedName') },
       ...(remember
         ? {
@@ -237,7 +260,12 @@ function ImportFlow({
       {step === 'review' && linked && decisions && (
         <ReviewStep
           ledger={ledger}
+          file={file}
+          settings={settings}
           planned={planned}
+          onFix={(line, fix) => {
+            setFixes(new Map([...fixes, [line, fix]]))
+          }}
           wallets={linked.wallets}
           decisions={decisions}
           saving={save.isPending}
@@ -323,12 +351,15 @@ function ColumnsStep({
     file.table.rows.find((row) => (row[index] ?? '').trim() !== '')?.[index]?.trim() ?? ''
   const hasAmount = settings.columns.includes('amount')
   const rows = file.table.rows.length
+  // A statement's dates are already read into calendar dates, so there is no order to choose.
+  const statement = isStatement(file)
+  const icon = !statement ? FileTextIcon : /\.pdf\b/i.test(file.name) ? FilePdfIcon : ImageIcon
 
   return (
     <>
       <List inset>
         <ListRow
-          leading={<IconTile icon={FileTextIcon} />}
+          leading={<IconTile icon={icon} />}
           title={file.name}
           subtitle={t('data.rows', { count: rows })}
         />
@@ -359,34 +390,38 @@ function ColumnsStep({
           )
         })}
       </List>
-      <List inset label={t('data.columns.howToRead')}>
-        <ListButtonRow
-          tone="text"
-          title={t('data.columns.dates')}
-          trailing={
-            <span className="text-[0.9375rem] text-brand">
-              {t(`data.dateOrders.${settings.dateOrder}`)}
-            </span>
-          }
-          onClick={() => {
-            setChoosing('dates')
-          }}
-        />
-        {hasAmount && (
-          <ListButtonRow
-            tone="text"
-            title={t('data.columns.amounts')}
-            trailing={
-              <span className="text-[0.9375rem] text-brand">
-                {t(`data.signs.${settings.amountSign}`)}
-              </span>
-            }
-            onClick={() => {
-              setChoosing('amounts')
-            }}
-          />
-        )}
-      </List>
+      {(!statement || hasAmount) && (
+        <List inset label={t('data.columns.howToRead')}>
+          {!statement && (
+            <ListButtonRow
+              tone="text"
+              title={t('data.columns.dates')}
+              trailing={
+                <span className="text-[0.9375rem] text-brand">
+                  {t(`data.dateOrders.${settings.dateOrder}`)}
+                </span>
+              }
+              onClick={() => {
+                setChoosing('dates')
+              }}
+            />
+          )}
+          {hasAmount && (
+            <ListButtonRow
+              tone="text"
+              title={t('data.columns.amounts')}
+              trailing={
+                <span className="text-[0.9375rem] text-brand">
+                  {t(`data.signs.${settings.amountSign}`)}
+                </span>
+              }
+              onClick={() => {
+                setChoosing('amounts')
+              }}
+            />
+          )}
+        </List>
+      )}
       <p className="-mt-1.5 px-4 text-[0.8125rem] text-text-muted">{t('data.columns.guessed')}</p>
       <List inset>
         <ChoiceRow
@@ -770,16 +805,22 @@ const shownRows = 4
 
 function ReviewStep({
   ledger,
+  file,
+  settings,
   planned,
   wallets,
   decisions,
   saving,
   failed,
+  onFix,
   onDecisions,
   onImport,
 }: {
   ledger: Ledger
+  file: ImportFile
+  settings: ColumnSettings
   planned: readonly PlannedRow[]
+  onFix: (line: number, fix: { date: string; amount: number }) => void
   wallets: readonly WalletLink[]
   decisions: Decisions
   saving: boolean
@@ -816,12 +857,14 @@ function ReviewStep({
     t('data.review.row', { line: item.row.line })
 
   const groups = {
+    check: planned.filter((p) => p.status.kind === 'check'),
     duplicate: planned.filter((p) => p.status.kind === 'duplicate'),
     transfer: planned.filter((p) => p.status.kind === 'transfer' && p.status.outgoing),
     noCategory: planned.filter((p) => p.status.kind === 'noCategory'),
     unreadable: planned.filter((p) => p.status.kind === 'unreadable'),
   }
   const flagged =
+    groups.check.length +
     groups.duplicate.length +
     groups.transfer.length +
     groups.noCategory.length +
@@ -829,6 +872,9 @@ function ReviewStep({
   // What the button brings in: the confident rows plus the flagged ones as decided.
   const count =
     summary.ready +
+    // IMP-10: rows to check come in as read unless the person fixes them first; one
+    // with no date or amount at all comes in only once it has them.
+    groups.check.filter((p) => p.row.date !== null && p.row.amount !== null).length +
     groups.noCategory.length +
     groups.duplicate.filter((p) => decisions.keep.has(p.row.line)).length +
     groups.transfer.reduce((sum, p) => sum + (decisions.apart.has(p.row.line) ? 2 : 1), 0)
@@ -900,11 +946,22 @@ function ReviewStep({
         )}
       </section>
 
+      {isStatement(file) && (
+        <BalanceCheck file={file} settings={settings} planned={planned} currency={currency} />
+      )}
+
       {flagged > 0 && (
         <h2 className="-mb-1 px-4 pt-2 text-[1.0625rem] font-semibold text-text">
           {t('data.review.toLookAt', { count: flagged })}
         </h2>
       )}
+      <CheckSection
+        file={file}
+        items={groups.check}
+        currency={currency}
+        label={label}
+        onFix={onFix}
+      />
       {section(
         'duplicate',
         t('data.review.duplicates'),

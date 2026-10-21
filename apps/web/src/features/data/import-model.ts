@@ -12,6 +12,7 @@ import {
   type PlannedRow,
   planRows,
   readRows,
+  type StatementTable,
   type Table,
   type WalletLink,
 } from '@repo/import'
@@ -25,8 +26,24 @@ import { presetLooks } from '../wallets/wallet-look'
 export interface ImportFile {
   name: string
   fingerprint: string
-  table: Table
+  table: Table | StatementTable
+  /** IMP-04, IMP-05: the pictures of a statement's pages, by page, where there are some. */
+  pages?: readonly (PagePicture | null)[]
 }
+
+export interface PagePicture {
+  url: string
+  width: number
+  height: number
+}
+
+/** A statement read from PDFs or pictures rather than a CSV. */
+export function isStatement(file: ImportFile): file is ImportFile & { table: StatementTable } {
+  return 'sources' in file.table
+}
+
+/** IMP-10: what the person put right on a row that was hard to read, by line. */
+export type Fixes = ReadonlyMap<number, { date: string; amount: number }>
 
 /** IMP-03: the saved settings for these columns, or a fresh guess. */
 export function startingSettings(file: ImportFile, ledger: Ledger) {
@@ -62,8 +79,20 @@ export function fallbackWallet(ledger: Ledger, remembered: string | null) {
   )
 }
 
-export function readFileRows(file: ImportFile, settings: ColumnSettings, ledger: Ledger) {
-  return readRows(file.table, settings, ledger.defaultCurrency)
+export function readFileRows(
+  file: ImportFile,
+  settings: ColumnSettings,
+  ledger: Ledger,
+  fixes: Fixes = new Map(),
+) {
+  return readRows(file.table, settings, ledger.defaultCurrency).map((row) => {
+    const fix = fixes.get(row.line)
+    if (!fix) return row
+    // Checked by the person: no longer unsure, and read again for matching.
+    const fixed = { ...row, date: fix.date, amount: fix.amount, problem: null }
+    delete fixed.unsure
+    return fixed
+  })
 }
 
 export function links(
@@ -90,8 +119,9 @@ export function plan(
   settings: ColumnSettings,
   ledger: Ledger,
   wallets: readonly WalletLink[],
+  fixes?: Fixes,
 ) {
-  return planRows(readFileRows(file, settings, ledger), ledger, wallets, (link) =>
+  return planRows(readFileRows(file, settings, ledger, fixes), ledger, wallets, (link) =>
     currencyOf(link, ledger),
   )
 }
@@ -102,7 +132,7 @@ export interface BuildArgs {
   categories: readonly CategoryLink[]
   decisions: Decisions
   ledger: Ledger
-  file: { name: string; fingerprint?: string; source: 'csv' | 'sample' }
+  file: { name: string; fingerprint?: string; source: 'csv' | 'statement' | 'sample' }
   names: { wallet: string; group: string }
   /** IMP-02: remember the columns for files like this one. */
   profile?: {

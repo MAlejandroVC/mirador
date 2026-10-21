@@ -29,3 +29,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Text recognition models, copied from node_modules (pnpm --filter @repo/server models)
+apps/server/models/*.onnx

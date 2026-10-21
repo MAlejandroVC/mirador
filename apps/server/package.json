@@ -6,19 +6,23 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts",
-    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node24 --outfile=dist/index.js",
-    "start": "node dist/index.js",
+    "build": "esbuild src/index.ts src/ocr/ocr-worker.ts --bundle --platform=node --format=esm --target=node24 --outdir=dist --entry-names=[name] --out-extension:.js=.mjs --external:ppu-paddle-ocr --external:onnxruntime-node --external:@napi-rs/canvas",
+    "start": "node dist/index.mjs",
     "typecheck": "tsc",
     "test": "vitest run",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "models": "node scripts/copy-models.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",
+    "@napi-rs/canvas": "^1.0.11",
     "@repo/api": "workspace:*",
     "@simplewebauthn/server": "^14.0.3",
     "drizzle-orm": "^0.45.4",
     "hono": "^4.13.13",
+    "onnxruntime-node": "^1.30.0",
     "postgres": "^3.4.9",
+    "ppu-paddle-ocr": "^6.6.1",
     "zod": "catalog:"
   },
   "devDependencies": {
@@ -27,6 +31,7 @@
     "@types/node": "catalog:",
     "drizzle-kit": "^0.31.11",
     "esbuild": "^0.28.2",
+    "paddle-ocr-onnx-models": "0.2.0",
     "tsx": "^4.23.15",
     "typescript": "catalog:",
     "vitest": "catalog:"

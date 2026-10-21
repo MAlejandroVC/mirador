@@ -204,9 +204,9 @@ Parsing, matching and categorization run in the browser in packages/import. Only
 
 OCR on the server (IMP-11, SEC-05):
 
-- The browser sends the file over HTTPS. The server keeps it in memory, runs OCR in a worker thread and returns text boxes with confidence. Nothing is written to disk, to the database or to logs, and the buffer is cleared after the response.
-- ppu-paddle-ocr runs PaddleOCR models through ONNX Runtime for Node. Its PP-OCRv6 model covers Latin scripts including Spanish. Model files ship in the Docker image.
-- HEIC photos are converted and downscaled on the server with libheif (LGPL) before OCR.
+- The browser sends one picture at a time over HTTPS (`POST /api/ocr`). The server keeps it in memory, runs OCR in a worker thread and returns words with their boxes and confidence. Nothing is written to disk, to the database or to logs, and the bytes are cleared before the response.
+- ppu-paddle-ocr runs PaddleOCR models through ONNX Runtime for Node. The model files ship in the Docker image and are listed in MODELS.md; the image is Debian-based because ONNX Runtime's native library needs glibc.
+- The browser turns everything into JPEG first: HEIC photos (which the iPhone's browser decodes), big photos (scaled down) and the pages of a scanned PDF (drawn with pdf.js). The server only ever decodes JPEG, PNG and WebP.
 - One OCR at a time by default, so a small server stays responsive. If the server restarts mid-OCR, the browser retries.
 
 After OCR, everything happens in the browser:
