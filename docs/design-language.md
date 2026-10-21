@@ -350,7 +350,7 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 |---|---|
 | Under 768 px (phones) | Everything above. |
 | 768 to 1023 px (tablets) | Same tab bar. Content in one centered column, at most 640 px wide. Sheets become centered dialogs, at most 540 px wide. |
-| 1024 px and up (large tablets, computers) | A sidebar on the left replaces the tab bar, with the same places in the same order and the quick-add button at its top as a filled "New" button. Content is at most 720 px wide; Home may place its cards in two columns. |
+| 1024 px and up (large tablets, computers) | A sidebar on the left replaces the tab bar, with the same places in the same order and the quick-add button at its top as a filled "New" button. Content is at most 720 px wide. Home places its cards in two columns, up to 1040 px wide, filled down the first and then the second, so the person's order still reads top to bottom. |
 
 *Why:* this is how iPadOS and macOS apps adapt: the same places, presented as a sidebar when there is room.
 
@@ -370,7 +370,7 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 | Quick-add button | Circle |
 | Bars | Fully rounded |
 
-**DL-SHP-03** Cards and lists have no shadow and no border. They stand apart from the `background` by their `surface` color alone. Only floating elements are lifted: the tab bar (a hairline outline), the quick-add button and sheets (a soft shadow).
+**DL-SHP-03** Cards and lists have no shadow and no border. They stand apart from the `background` by their `surface` color alone. Only floating elements are lifted: the tab bar (a hairline outline), the quick-add button and sheets (a soft shadow), and chart callouts (both, DL-VIZ-05).
 
 **DL-SHP-04** Rows in a list are divided by hairline separators that start where the text starts, not under the icon.
 
@@ -458,6 +458,8 @@ A day's or a period's net follows the same rule: money in shows its plus in Moss
 
 **DL-VIZ-04** Bars and lines are flat. The only gradient allowed is an area fill under a line, fading to transparent (DL-COL-02).
 
+**DL-VIZ-05** Every chart can be read point by point in a callout: a small floating card just above the chart with the date or name, then each series' amount beside its legend mark, kept within the chart's width. A thin `text-faint` rule and a dot on each line mark the point; on columns and bar parts, the one being read turns full color (a stacked bar fades the other parts). On a computer the callout follows the mouse. On a phone the person touches and holds the chart, then drags along it, and lifting the finger hides it, as in Apple's Stocks. A tap keeps doing what it did, such as opening a month, and a swipe still scrolls the page. Keyboard focus on a column or a day shows its callout too. A tile's small line has no callout: the tile opens its own screen. *Why:* the sentence with the chart says what matters (DL-PRI-07); the callout is for a closer look, so it never costs a tap or gets in the way of scrolling.
+
 ## Voice and tone
 
 **DL-VOC-01 Plain and warm.** Mirador talks like a calm friend who is good with money: short sentences, everyday words, the facts first. "You're $18 over on Eating out." Never "Warning: budget exceeded."
@@ -513,7 +515,7 @@ A day's or a period's net follows the same rule: money in shows its plus in Moss
 
 Full-width buttons are 50 px tall; any button is at least 44 px. A destructive button uses `danger` text, plain or tinted, never filled. The label is a verb (DL-VOC-05).
 
-**DL-CMP-06** **Navigation bar.** Each tab opens with a large title. The tab's actions share the title's row on the right, as in the App Store: on every tab that is the profile picture, 40 px, which opens Settings. No row is spent on buttons alone. Once the page scrolls, the title shrinks into the bar, centered. Screens form a stack, as in iOS. Opening a screen from another, such as a Settings page, a category from Budget or Transactions from a link, pushes it, and it has a round back button at the top left: a 44 px `surface` circle with a chevron only, as in iOS Settings (its accessible name is "Back"). Back pops the stack: it returns to wherever the person was, never to a fixed parent. A tab, or a place in the sidebar, starts a new stack, since it is a change of place rather than a step deeper, so its screen has no back button; neither has a screen opened from outside the app. A tab's own screen keeps its large title, with the back button in the title's row when it was pushed. Any other screen opens with a header card instead of the large title: a `surface` card holding a 56 px icon tile (or, for Account, the profile picture), the screen's title in 24 px bold and one short line in `text-muted` on what you can do there. At most two plain actions sit at the top right.
+**DL-CMP-06** **Navigation bar.** Each tab opens with a large title. The tab's actions share the title's row on the right, as in the App Store: on every tab that is the profile picture, 40 px, which opens Settings. No row is spent on buttons alone. Once the page scrolls, the title shrinks into the bar, centered. Screens form a stack, as in iOS. Opening a screen from another, such as a Settings page, a category from Budget or Transactions from a link, pushes it, and it has a round back button at the top left: a 44 px `surface` circle with a chevron only, as in iOS Settings (its accessible name is "Back"). Back pops the stack: it returns to wherever the person was, never to a fixed parent. A tab, or a place in the sidebar, starts a new stack, since it is a change of place rather than a step deeper, so its screen has no back button; neither has a screen opened from outside the app. A tab's own screen keeps its large title, with the back button in the title's row when it was pushed. Home shows today's date over its title, in the section label's style, as Apple's Fitness and News do. Any other screen opens with a header card instead of the large title: a `surface` card holding a 56 px icon tile (or, for Account, the profile picture), the screen's title in 24 px bold and one short line in `text-muted` on what you can do there. At most two plain actions sit at the top right.
 
 **DL-CMP-07** **List rows.** Rows sit in inset lists (a `surface` card with 16 px corners), at least 52 px tall: icon tile, title, an optional second line in `text-muted`, and a value or amount on the right. A chevron appears only when the row opens another screen. Tapping a row opens it, which is also where it is edited. A transaction row never says its type: its amount does (DL-NUM-03). Its title is the payee, else the note, else the category; the second line holds the category when the title is something else, then the wallet. Swiping a row to the left is only for deleting, as in iOS. A short swipe slides the row aside and leaves a small red Delete pill showing; tapping the pill deletes the row. A long swipe deletes it straight away. Tapping anywhere else closes the pill. Delete can also be reached from the row's own screen (DL-A11Y-07).
 
@@ -536,6 +538,8 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 **DL-CMP-14** **Empty state.** A large icon tile, a short title, one sentence on what will appear here, and the filled button that fills it ("Add a wallet"). This is a place for a touch of whimsy (DL-VOC-02).
 
 **DL-CMP-15** **Show more.** A long list of options that are mostly off, such as a wallet's features, shows only the ones that are on, then a last row in `brand` with a chevron pointing down: "Show all features". Opened, it shows every option and the row reads "Show fewer". An option turned off stays in view until the list is folded again, so a row never vanishes under the finger. A long list of choices, such as currencies, shows the common ones and the chosen one, then "Show all currencies". A list of items, such as transactions, shows the latest few (5 on a phone, 10 from 768 px) and a "See more" row that opens the full list on its own screen.
+
+**DL-CMP-16** **Date tile.** A day to come, such as a row in Home's Coming up, shows as a 34 px tile like Calendar's icon: the month short and uppercase in `brand` over the day in `text`, on the `brand` tint (DL-COL-08, DL-COL-13). The row's text says what happens that day, so screen readers skip the tile.
 
 ## Patterns
 

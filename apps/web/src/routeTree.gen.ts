@@ -20,12 +20,15 @@ import { Route as AppBudgetIndexRouteImport } from './routes/_app/budget/index'
 import { Route as AppBudgetChangesRouteImport } from './routes/_app/budget/changes'
 import { Route as AppBudgetComingRouteImport } from './routes/_app/budget/coming'
 import { Route as AppBudgetCutRouteImport } from './routes/_app/budget/cut'
+import { Route as AppBudgetOneOffsRouteImport } from './routes/_app/budget/one-offs'
+import { Route as AppBudgetReviewRouteImport } from './routes/_app/budget/review'
 import { Route as AppBudgetTrendsRouteImport } from './routes/_app/budget/trends'
 import { Route as AppBudgetWhenRouteImport } from './routes/_app/budget/when'
 import { Route as AppBudgetWhereRouteImport } from './routes/_app/budget/where'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
 import { Route as AppSettingsAccountRouteImport } from './routes/_app/settings/account'
 import { Route as AppSettingsAppearanceRouteImport } from './routes/_app/settings/appearance'
+import { Route as AppSettingsBudgetRouteImport } from './routes/_app/settings/budget'
 import { Route as AppSettingsCategoriesRouteImport } from './routes/_app/settings/categories'
 import { Route as AppSettingsCurrencyRouteImport } from './routes/_app/settings/currency'
 import { Route as AppSettingsDataRouteImport } from './routes/_app/settings/data'
@@ -38,6 +41,8 @@ import { Route as AppTransactionsIndexRouteImport } from './routes/_app/transact
 import { Route as AppTransactionsRecurringRouteImport } from './routes/_app/transactions/recurring'
 import { Route as AppWalletsIndexRouteImport } from './routes/_app/wallets/index'
 import { Route as AppBudgetByIdRouteImport } from './routes/_app/budget/$by/$id'
+import { Route as AppBudgetGoalGoalIdRouteImport } from './routes/_app/budget/goal/$goalId'
+import { Route as AppBudgetLineLineRouteImport } from './routes/_app/budget/line/$line'
 import { Route as AppWalletsWalletIdIndexRouteImport } from './routes/_app/wallets/$walletId/index'
 import { Route as AppWalletsWalletIdTransactionsRouteImport } from './routes/_app/wallets/$walletId/transactions'
 
@@ -95,6 +100,16 @@ const AppBudgetCutRoute = AppBudgetCutRouteImport.update({
   path: '/budget/cut',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBudgetOneOffsRoute = AppBudgetOneOffsRouteImport.update({
+  id: '/budget/one-offs',
+  path: '/budget/one-offs',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBudgetReviewRoute = AppBudgetReviewRouteImport.update({
+  id: '/budget/review',
+  path: '/budget/review',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBudgetTrendsRoute = AppBudgetTrendsRouteImport.update({
   id: '/budget/trends',
   path: '/budget/trends',
@@ -123,6 +138,11 @@ const AppSettingsAccountRoute = AppSettingsAccountRouteImport.update({
 const AppSettingsAppearanceRoute = AppSettingsAppearanceRouteImport.update({
   id: '/settings/appearance',
   path: '/settings/appearance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsBudgetRoute = AppSettingsBudgetRouteImport.update({
+  id: '/settings/budget',
+  path: '/settings/budget',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsCategoriesRoute = AppSettingsCategoriesRouteImport.update({
@@ -187,6 +207,16 @@ const AppBudgetByIdRoute = AppBudgetByIdRouteImport.update({
   path: '/budget/$by/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBudgetGoalGoalIdRoute = AppBudgetGoalGoalIdRouteImport.update({
+  id: '/budget/goal/$goalId',
+  path: '/budget/goal/$goalId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBudgetLineLineRoute = AppBudgetLineLineRouteImport.update({
+  id: '/budget/line/$line',
+  path: '/budget/line/$line',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppWalletsWalletIdIndexRoute = AppWalletsWalletIdIndexRouteImport.update({
   id: '/wallets/$walletId/',
   path: '/wallets/$walletId/',
@@ -209,11 +239,14 @@ export interface FileRoutesByFullPath {
   '/budget/changes': typeof AppBudgetChangesRoute
   '/budget/coming': typeof AppBudgetComingRoute
   '/budget/cut': typeof AppBudgetCutRoute
+  '/budget/one-offs': typeof AppBudgetOneOffsRoute
+  '/budget/review': typeof AppBudgetReviewRoute
   '/budget/trends': typeof AppBudgetTrendsRoute
   '/budget/when': typeof AppBudgetWhenRoute
   '/budget/where': typeof AppBudgetWhereRoute
   '/settings/account': typeof AppSettingsAccountRoute
   '/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/settings/budget': typeof AppSettingsBudgetRoute
   '/settings/categories': typeof AppSettingsCategoriesRoute
   '/settings/currency': typeof AppSettingsCurrencyRoute
   '/settings/data': typeof AppSettingsDataRoute
@@ -228,6 +261,8 @@ export interface FileRoutesByFullPath {
   '/transactions/': typeof AppTransactionsIndexRoute
   '/wallets/': typeof AppWalletsIndexRoute
   '/budget/$by/$id': typeof AppBudgetByIdRoute
+  '/budget/goal/$goalId': typeof AppBudgetGoalGoalIdRoute
+  '/budget/line/$line': typeof AppBudgetLineLineRoute
   '/wallets/$walletId/transactions': typeof AppWalletsWalletIdTransactionsRoute
   '/wallets/$walletId/': typeof AppWalletsWalletIdIndexRoute
 }
@@ -241,11 +276,14 @@ export interface FileRoutesByTo {
   '/budget/changes': typeof AppBudgetChangesRoute
   '/budget/coming': typeof AppBudgetComingRoute
   '/budget/cut': typeof AppBudgetCutRoute
+  '/budget/one-offs': typeof AppBudgetOneOffsRoute
+  '/budget/review': typeof AppBudgetReviewRoute
   '/budget/trends': typeof AppBudgetTrendsRoute
   '/budget/when': typeof AppBudgetWhenRoute
   '/budget/where': typeof AppBudgetWhereRoute
   '/settings/account': typeof AppSettingsAccountRoute
   '/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/settings/budget': typeof AppSettingsBudgetRoute
   '/settings/categories': typeof AppSettingsCategoriesRoute
   '/settings/currency': typeof AppSettingsCurrencyRoute
   '/settings/data': typeof AppSettingsDataRoute
@@ -260,6 +298,8 @@ export interface FileRoutesByTo {
   '/transactions': typeof AppTransactionsIndexRoute
   '/wallets': typeof AppWalletsIndexRoute
   '/budget/$by/$id': typeof AppBudgetByIdRoute
+  '/budget/goal/$goalId': typeof AppBudgetGoalGoalIdRoute
+  '/budget/line/$line': typeof AppBudgetLineLineRoute
   '/wallets/$walletId/transactions': typeof AppWalletsWalletIdTransactionsRoute
   '/wallets/$walletId': typeof AppWalletsWalletIdIndexRoute
 }
@@ -275,11 +315,14 @@ export interface FileRoutesById {
   '/_app/budget/changes': typeof AppBudgetChangesRoute
   '/_app/budget/coming': typeof AppBudgetComingRoute
   '/_app/budget/cut': typeof AppBudgetCutRoute
+  '/_app/budget/one-offs': typeof AppBudgetOneOffsRoute
+  '/_app/budget/review': typeof AppBudgetReviewRoute
   '/_app/budget/trends': typeof AppBudgetTrendsRoute
   '/_app/budget/when': typeof AppBudgetWhenRoute
   '/_app/budget/where': typeof AppBudgetWhereRoute
   '/_app/settings/account': typeof AppSettingsAccountRoute
   '/_app/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/_app/settings/budget': typeof AppSettingsBudgetRoute
   '/_app/settings/categories': typeof AppSettingsCategoriesRoute
   '/_app/settings/currency': typeof AppSettingsCurrencyRoute
   '/_app/settings/data': typeof AppSettingsDataRoute
@@ -294,6 +337,8 @@ export interface FileRoutesById {
   '/_app/transactions/': typeof AppTransactionsIndexRoute
   '/_app/wallets/': typeof AppWalletsIndexRoute
   '/_app/budget/$by/$id': typeof AppBudgetByIdRoute
+  '/_app/budget/goal/$goalId': typeof AppBudgetGoalGoalIdRoute
+  '/_app/budget/line/$line': typeof AppBudgetLineLineRoute
   '/_app/wallets/$walletId/transactions': typeof AppWalletsWalletIdTransactionsRoute
   '/_app/wallets/$walletId/': typeof AppWalletsWalletIdIndexRoute
 }
@@ -309,11 +354,14 @@ export interface FileRouteTypes {
     | '/budget/changes'
     | '/budget/coming'
     | '/budget/cut'
+    | '/budget/one-offs'
+    | '/budget/review'
     | '/budget/trends'
     | '/budget/when'
     | '/budget/where'
     | '/settings/account'
     | '/settings/appearance'
+    | '/settings/budget'
     | '/settings/categories'
     | '/settings/currency'
     | '/settings/data'
@@ -328,6 +376,8 @@ export interface FileRouteTypes {
     | '/transactions/'
     | '/wallets/'
     | '/budget/$by/$id'
+    | '/budget/goal/$goalId'
+    | '/budget/line/$line'
     | '/wallets/$walletId/transactions'
     | '/wallets/$walletId/'
   fileRoutesByTo: FileRoutesByTo
@@ -341,11 +391,14 @@ export interface FileRouteTypes {
     | '/budget/changes'
     | '/budget/coming'
     | '/budget/cut'
+    | '/budget/one-offs'
+    | '/budget/review'
     | '/budget/trends'
     | '/budget/when'
     | '/budget/where'
     | '/settings/account'
     | '/settings/appearance'
+    | '/settings/budget'
     | '/settings/categories'
     | '/settings/currency'
     | '/settings/data'
@@ -360,6 +413,8 @@ export interface FileRouteTypes {
     | '/transactions'
     | '/wallets'
     | '/budget/$by/$id'
+    | '/budget/goal/$goalId'
+    | '/budget/line/$line'
     | '/wallets/$walletId/transactions'
     | '/wallets/$walletId'
   id:
@@ -374,11 +429,14 @@ export interface FileRouteTypes {
     | '/_app/budget/changes'
     | '/_app/budget/coming'
     | '/_app/budget/cut'
+    | '/_app/budget/one-offs'
+    | '/_app/budget/review'
     | '/_app/budget/trends'
     | '/_app/budget/when'
     | '/_app/budget/where'
     | '/_app/settings/account'
     | '/_app/settings/appearance'
+    | '/_app/settings/budget'
     | '/_app/settings/categories'
     | '/_app/settings/currency'
     | '/_app/settings/data'
@@ -393,6 +451,8 @@ export interface FileRouteTypes {
     | '/_app/transactions/'
     | '/_app/wallets/'
     | '/_app/budget/$by/$id'
+    | '/_app/budget/goal/$goalId'
+    | '/_app/budget/line/$line'
     | '/_app/wallets/$walletId/transactions'
     | '/_app/wallets/$walletId/'
   fileRoutesById: FileRoutesById
@@ -485,6 +545,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBudgetCutRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/budget/one-offs': {
+      id: '/_app/budget/one-offs'
+      path: '/budget/one-offs'
+      fullPath: '/budget/one-offs'
+      preLoaderRoute: typeof AppBudgetOneOffsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/budget/review': {
+      id: '/_app/budget/review'
+      path: '/budget/review'
+      fullPath: '/budget/review'
+      preLoaderRoute: typeof AppBudgetReviewRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/budget/trends': {
       id: '/_app/budget/trends'
       path: '/budget/trends'
@@ -525,6 +599,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/appearance'
       fullPath: '/settings/appearance'
       preLoaderRoute: typeof AppSettingsAppearanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings/budget': {
+      id: '/_app/settings/budget'
+      path: '/settings/budget'
+      fullPath: '/settings/budget'
+      preLoaderRoute: typeof AppSettingsBudgetRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings/categories': {
@@ -611,6 +692,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBudgetByIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/budget/goal/$goalId': {
+      id: '/_app/budget/goal/$goalId'
+      path: '/budget/goal/$goalId'
+      fullPath: '/budget/goal/$goalId'
+      preLoaderRoute: typeof AppBudgetGoalGoalIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/budget/line/$line': {
+      id: '/_app/budget/line/$line'
+      path: '/budget/line/$line'
+      fullPath: '/budget/line/$line'
+      preLoaderRoute: typeof AppBudgetLineLineRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/wallets/$walletId/': {
       id: '/_app/wallets/$walletId/'
       path: '/wallets/$walletId'
@@ -633,11 +728,14 @@ interface AppRouteChildren {
   AppBudgetChangesRoute: typeof AppBudgetChangesRoute
   AppBudgetComingRoute: typeof AppBudgetComingRoute
   AppBudgetCutRoute: typeof AppBudgetCutRoute
+  AppBudgetOneOffsRoute: typeof AppBudgetOneOffsRoute
+  AppBudgetReviewRoute: typeof AppBudgetReviewRoute
   AppBudgetTrendsRoute: typeof AppBudgetTrendsRoute
   AppBudgetWhenRoute: typeof AppBudgetWhenRoute
   AppBudgetWhereRoute: typeof AppBudgetWhereRoute
   AppSettingsAccountRoute: typeof AppSettingsAccountRoute
   AppSettingsAppearanceRoute: typeof AppSettingsAppearanceRoute
+  AppSettingsBudgetRoute: typeof AppSettingsBudgetRoute
   AppSettingsCategoriesRoute: typeof AppSettingsCategoriesRoute
   AppSettingsCurrencyRoute: typeof AppSettingsCurrencyRoute
   AppSettingsDataRoute: typeof AppSettingsDataRoute
@@ -652,6 +750,8 @@ interface AppRouteChildren {
   AppTransactionsIndexRoute: typeof AppTransactionsIndexRoute
   AppWalletsIndexRoute: typeof AppWalletsIndexRoute
   AppBudgetByIdRoute: typeof AppBudgetByIdRoute
+  AppBudgetGoalGoalIdRoute: typeof AppBudgetGoalGoalIdRoute
+  AppBudgetLineLineRoute: typeof AppBudgetLineLineRoute
   AppWalletsWalletIdTransactionsRoute: typeof AppWalletsWalletIdTransactionsRoute
   AppWalletsWalletIdIndexRoute: typeof AppWalletsWalletIdIndexRoute
 }
@@ -661,11 +761,14 @@ const AppRouteChildren: AppRouteChildren = {
   AppBudgetChangesRoute: AppBudgetChangesRoute,
   AppBudgetComingRoute: AppBudgetComingRoute,
   AppBudgetCutRoute: AppBudgetCutRoute,
+  AppBudgetOneOffsRoute: AppBudgetOneOffsRoute,
+  AppBudgetReviewRoute: AppBudgetReviewRoute,
   AppBudgetTrendsRoute: AppBudgetTrendsRoute,
   AppBudgetWhenRoute: AppBudgetWhenRoute,
   AppBudgetWhereRoute: AppBudgetWhereRoute,
   AppSettingsAccountRoute: AppSettingsAccountRoute,
   AppSettingsAppearanceRoute: AppSettingsAppearanceRoute,
+  AppSettingsBudgetRoute: AppSettingsBudgetRoute,
   AppSettingsCategoriesRoute: AppSettingsCategoriesRoute,
   AppSettingsCurrencyRoute: AppSettingsCurrencyRoute,
   AppSettingsDataRoute: AppSettingsDataRoute,
@@ -680,6 +783,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppTransactionsIndexRoute: AppTransactionsIndexRoute,
   AppWalletsIndexRoute: AppWalletsIndexRoute,
   AppBudgetByIdRoute: AppBudgetByIdRoute,
+  AppBudgetGoalGoalIdRoute: AppBudgetGoalGoalIdRoute,
+  AppBudgetLineLineRoute: AppBudgetLineLineRoute,
   AppWalletsWalletIdTransactionsRoute: AppWalletsWalletIdTransactionsRoute,
   AppWalletsWalletIdIndexRoute: AppWalletsWalletIdIndexRoute,
 }

@@ -1,5 +1,5 @@
 // Epic 5: spending analysis (ANA), the Spending side of the Budget tab.
-export { BudgetScreen } from './budget-screen'
+export { BudgetScreen, type BudgetSearch } from './budget-screen'
 export { ComingScreen } from './coming-screen'
 export { ChangesScreen } from './changes-screen'
 export { CutScreen } from './cut-screen'

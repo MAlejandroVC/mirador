@@ -120,6 +120,13 @@ export function formatPeriod(
     case 'quarter':
       return quarter(Math.floor(start.getUTCMonth() / 3) + 1, year)
     case 'month': {
+      // SYS-02: a month that starts on another day than the 1st shows its days.
+      if (start.getUTCDate() !== 1)
+        return new Intl.DateTimeFormat(locale, {
+          month: 'short',
+          day: 'numeric',
+          timeZone: 'UTC',
+        }).formatRange(start, day(period.end))
       const text = new Intl.DateTimeFormat(locale, {
         month: 'long',
         year: 'numeric',

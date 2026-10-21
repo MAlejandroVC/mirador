@@ -5,6 +5,7 @@ import { CaretRightIcon, ChartPieSliceIcon } from '../../components/ui/icons'
 import { rowClass } from '../../components/ui/row'
 import { SegmentedControl } from '../../components/ui/segmented-control'
 import { topParts } from './chart-colors'
+import { amountTip } from './chart-pointer'
 import { StackedBar } from './charts'
 import { DetailPage } from './detail-page'
 import { Card, FigureRow, SectionLabel, SliceLink, Versus } from './parts'
@@ -85,6 +86,12 @@ function Where({ analysis, by }: { analysis: Analysis; by: SliceBy }) {
                   color: look(by, slice.key).color,
                 })),
               )}
+              tip={(part, share) =>
+                amountTip(
+                  part.key === 'other' ? t('analysis.other') : look(by, part.key).name,
+                  `${words.text(part.value)} · ${words.share(share)}`,
+                )
+              }
             />
           </div>
           <ul>

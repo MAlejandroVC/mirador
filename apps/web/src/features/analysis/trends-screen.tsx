@@ -7,6 +7,7 @@ import {
   projection,
   spendingSeries,
   addMonths,
+  shiftPeriod,
 } from '@repo/core'
 import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
@@ -14,6 +15,8 @@ import { useTranslation } from 'react-i18next'
 import { FieldNote, MoneyRow } from '../../components/ui/field-row'
 import { ChartLineUpIcon } from '../../components/ui/icons'
 import { CategoryTile } from '../categories/category-tile'
+import { amountTip } from './chart-pointer'
+import { TipMark } from './chart-tip'
 import { ColumnChart, LineChart } from './charts'
 import { DetailPage } from './detail-page'
 import { Card, FigureRow, SectionLabel } from './parts'
@@ -93,6 +96,13 @@ function Trends({ analysis }: { analysis: Analysis }) {
               search: drillDown({ start: column.key, end: column.key }, 'month'),
             })
           }}
+          tip={(column) => {
+            const point = series.find((each) => each.period.start === column.key)
+            return amountTip(
+              point ? words.period(point.period, 'month') : column.label,
+              words.text(column.value),
+            )
+          }}
         />
         {average !== null && (
           <p className="text-[0.9375rem] text-text-muted">
@@ -110,6 +120,27 @@ function Trends({ analysis }: { analysis: Analysis }) {
             { values: flows.points.map((point) => point.income), style: 'muted' },
             { values: flows.points.map((point) => point.spent), style: 'solid' },
           ]}
+          tip={(index) => {
+            const point = flows.points[index]
+            if (!point) return null
+            return {
+              title: words.period(point.period, 'month'),
+              rows: [
+                {
+                  key: 'spent',
+                  label: t('analysis.totals.spent'),
+                  value: words.text(point.spent),
+                  mark: <TipMark kind="line" />,
+                },
+                {
+                  key: 'income',
+                  label: t('analysis.totals.income'),
+                  value: words.text(point.income),
+                  mark: <TipMark kind="dashedMuted" />,
+                },
+              ],
+            }
+          }}
         />
         <div aria-hidden className="flex gap-4 text-[0.75rem] text-text-muted">
           <span className="flex items-center gap-1.5">
@@ -154,6 +185,27 @@ function Trends({ analysis }: { analysis: Analysis }) {
                 ]
               : []),
           ]}
+          tip={(index) => {
+            // Past months show what net worth was; the months ahead, where it heads.
+            const point = history[index]
+            if (point)
+              return amountTip(words.period(point.period, 'month'), words.text(point.netWorth))
+            const step = index - (history.length - 1)
+            const last = history.at(-1)
+            const value = ahead?.points[step]
+            if (!last || value === undefined) return null
+            return {
+              title: words.period(shiftPeriod(last.period.start, 'month', step), 'month'),
+              rows: [
+                {
+                  key: 'projected',
+                  label: t('analysis.trends.projected'),
+                  value: words.text(value),
+                  mark: <TipMark kind="projection" />,
+                },
+              ],
+            }
+          }}
         />
         <p className="text-[0.9375rem] text-text-muted">
           {ahead && leftOver !== null

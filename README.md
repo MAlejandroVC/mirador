@@ -8,7 +8,7 @@
 
 A *mirador* is a lookout: the spot on a trail where you stop and see the whole picture. Mirador does that for your money. It starts from how you actually spend, not from an ideal budget, and suggests changes you have already shown you can live with.
 
-> **Status: early, in active development.** Version 0.3.0 works for wallets and transactions; import, analysis, the budget and the dashboard come next. The work is tracked as issues on the [project board](https://github.com/users/MAlejandroVC/projects). Contributions are welcome; start with [CONTRIBUTING.md](CONTRIBUTING.md).
+> **Status: early, in active development.** Mirador works for wallets, transactions, import, spending analysis and the budget plan; the dashboard comes next. The work is tracked as issues on the [project board](https://github.com/users/MAlejandroVC/projects). Contributions are welcome; start with [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## What it does today
 

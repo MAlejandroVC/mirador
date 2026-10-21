@@ -4,6 +4,7 @@ import {
   analysisEntries,
   type AnalysisView,
   breakdown,
+  budgetPace,
   compareSpending,
   filterEntries,
   flexibilitySplit,
@@ -230,6 +231,11 @@ describe('periods', () => {
     expect(result.current).toEqual([0, 50, 50])
     expect(result.usual.slice(0, 4)).toEqual([100, 100, 300, 300])
     expect(result.usual.at(-1)).toBe(300)
+  })
+
+  it('BUD-78: the budget pace spends the same every day and ends on the target', () => {
+    expect(budgetPace(1000, 4)).toEqual([250, 500, 750, 1000])
+    expect(budgetPace(1000, 3)).toEqual([333, 667, 1000])
   })
 
   it('ANA-11: a series per period over the last 12, oldest first', () => {

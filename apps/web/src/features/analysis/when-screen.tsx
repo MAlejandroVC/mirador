@@ -12,6 +12,7 @@ import {
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { CalendarDotsIcon } from '../../components/ui/icons'
+import { amountTip } from './chart-pointer'
 import { ColumnChart, Heatmap } from './charts'
 import { DetailPage } from './detail-page'
 import { Card, FigureRow, SectionLabel, SliceLink } from './parts'
@@ -89,6 +90,7 @@ function When({ analysis }: { analysis: Analysis }) {
               // ANA-04: the week around that day, in the transaction list.
               void navigate({ to: '/transactions', search: { date, scope: 'week' } })
             }}
+            tip={(date, spent) => amountTip(words.date(date), words.text(spent))}
           />
         </Card>
       )}
@@ -107,6 +109,12 @@ function When({ analysis }: { analysis: Analysis }) {
             }),
             highlight: day === busiest && value > 0,
           }))}
+          tip={(column) =>
+            amountTip(
+              words.weekdays('long')[Number(column.key)] ?? column.label,
+              words.text(column.value),
+            )
+          }
         />
         {Math.max(...days) > 0 && (
           <p className="text-[0.9375rem] text-text-muted">
@@ -131,6 +139,7 @@ function When({ analysis }: { analysis: Analysis }) {
               amount: words.text(value),
             }),
           }))}
+          tip={(column) => amountTip(column.label, words.text(column.value))}
         />
         {payday.paydays > 0 && (
           <p className="text-[0.9375rem] text-text-muted">

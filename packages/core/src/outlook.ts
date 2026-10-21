@@ -29,6 +29,7 @@ export interface CommittedItem {
   /** The purchase for an installment, the recurring transaction otherwise. */
   id: string
   categoryId: string | null
+  tagIds: readonly string[]
   payeeId: string | null
   note: string | null
 }
@@ -86,6 +87,7 @@ export function committed(
       source: 'installment',
       id: part.part?.purchaseId ?? part.id,
       categoryId: part.categoryId ?? null,
+      tagIds: part.tagIds ?? [],
       payeeId: part.payeeId ?? null,
       note: part.note ?? null,
     })
@@ -103,6 +105,7 @@ export function committed(
         source: 'recurring',
         id: recurring.id,
         categoryId: recurring.categoryId ?? null,
+        tagIds: recurring.tagIds ?? [],
         payeeId: recurring.payeeId ?? null,
         note: recurring.note ?? null,
       })
@@ -315,7 +318,8 @@ export function incomeAndSpending(
   view: AnalysisView,
   count = 12,
 ): { points: FlowPoint[]; spentChange: number | null; incomeChange: number | null } {
-  const at = (step: number) => shiftPeriod(view.period.start, view.scope, -step, view.firstDay)
+  const at = (step: number) =>
+    shiftPeriod(view.period.start, view.scope, -step, view.firstDay, view.monthStart)
   const totals = (from: number, to: number) => {
     let income = 0
     let spent = 0

@@ -33,10 +33,14 @@ export function PeriodHeader({ analysis, subtitle }: { analysis: Analysis; subti
         previousLabel={t('transactions.period.previous')}
         nextLabel={t('transactions.period.next')}
         onPrevious={() => {
-          setAnalysisState({ anchor: shiftPeriod(state.anchor, state.scope, -1).start })
+          setAnalysisState({
+            anchor: shiftPeriod(state.anchor, state.scope, -1, 0, view.monthStart).start,
+          })
         }}
         onNext={() => {
-          setAnalysisState({ anchor: shiftPeriod(state.anchor, state.scope, 1).start })
+          setAnalysisState({
+            anchor: shiftPeriod(state.anchor, state.scope, 1, 0, view.monthStart).start,
+          })
         }}
         // Analysis looks back: the period after this one hasn't happened yet.
         nextDisabled={view.period.end >= today}

@@ -162,7 +162,9 @@ export function TransactionsScreen({ search = {} }: { search?: TransactionsSearc
       </Page>
     )
 
-  const period = periodOf(anchor, scope)
+  // SYS-02: a month runs from the day budget months start on.
+  const monthStart = ledger.preferences?.budget?.startDay ?? 1
+  const period = periodOf(anchor, scope, 0, monthStart)
   const periodName = formatPeriod(period, scope, money.locale, (number, year) =>
     t('transactions.period.quarter', { number, year }),
   )
@@ -265,7 +267,7 @@ export function TransactionsScreen({ search = {} }: { search?: TransactionsSearc
           type="button"
           aria-label={t('transactions.period.previous')}
           onClick={() => {
-            setAnchor(shiftPeriod(anchor, scope, -1).start)
+            setAnchor(shiftPeriod(anchor, scope, -1, 0, monthStart).start)
             setLimit(page)
           }}
           className="grid size-11 shrink-0 place-items-center rounded-xl text-brand focus-visible:outline-2 focus-visible:outline-brand"
@@ -296,7 +298,7 @@ export function TransactionsScreen({ search = {} }: { search?: TransactionsSearc
           type="button"
           aria-label={t('transactions.period.next')}
           onClick={() => {
-            setAnchor(shiftPeriod(anchor, scope, 1).start)
+            setAnchor(shiftPeriod(anchor, scope, 1, 0, monthStart).start)
             setLimit(page)
           }}
           className="grid size-11 shrink-0 place-items-center rounded-xl text-brand focus-visible:outline-2 focus-visible:outline-brand"

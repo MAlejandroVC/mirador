@@ -1,6 +1,6 @@
 import { categoryRecord, categoryRecordType } from '@repo/api'
-import { type Category, type Flexibility } from '@repo/core'
-import { type ReactNode, useState } from 'react'
+import { type Category, type Flexibility, toCalendarDate } from '@repo/core'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useBack } from '../../components/shell/back'
 import { ActionSheet } from '../../components/ui/action-sheet'
@@ -8,7 +8,7 @@ import { IconTile } from '../../components/ui/icon-tile'
 import { SlidersHorizontalIcon } from '../../components/ui/icons'
 import { List, ListButtonRow, ListRow } from '../../components/ui/list'
 import { Page } from '../../components/ui/page'
-import { recordBody, useLedger, useSaveRecords } from '../wallets/use-ledger'
+import { preferencesChange, recordBody, useLedger, useSaveRecords } from '../wallets/use-ledger'
 import { CategoryTile } from './category-tile'
 
 const kinds: readonly Flexibility[] = ['locked', 'fixed', 'flexible']
@@ -25,6 +25,15 @@ export function NeedsAndWantsScreen() {
   const [picked, setPicked] = useState<Category | null>(null)
   // Kept while the sheet slides away, so it leaves showing what it showed.
   const [last, setLast] = useState<Category | null>(null)
+
+  // DSH-09: having looked at this screen once finishes Get started's "Review your
+  // categories" step, whether or not anything was moved.
+  const reviewed = useRef(false)
+  useEffect(() => {
+    if (!ledger || reviewed.current || ledger.preferences?.categoriesReviewedOn) return
+    reviewed.current = true
+    save.mutate([preferencesChange(ledger, { categoriesReviewedOn: toCalendarDate(new Date()) })])
+  }, [ledger, save])
 
   const page = (children: ReactNode) => (
     <Page
