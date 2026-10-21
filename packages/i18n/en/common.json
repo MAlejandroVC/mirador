@@ -18,14 +18,120 @@
   "quickAdd": {
     "title": "New transaction"
   },
-  "placeholder": {
-    "home": {
-      "title": "Your money at a glance",
-      "body": "How this period is going, your goals and anything that needs a look will show up here."
+  "home": {
+    "month": {
+      "perDay": "about {{amount}} a day",
+      "spent": "Spent in {{month}}",
+      "income": "Income",
+      "spentShort": "Spent",
+      "leftOver": "Left over",
+      "today": "Today",
+      "of": "{{spent}} of {{target}} budgeted.",
+      "under": "On track to finish {{amount}} under.",
+      "pace": "At this pace, {{amount}} by {{date}}."
     },
-    "budget": {
-      "title": "Your budget is on its way",
-      "body": "It will grow from your own spending habits, one small step at a time."
+    "attention": {
+      "title": "Needs attention",
+      "none": "You're all caught up",
+      "noneBody": "Nothing needs you right now.",
+      "showAll_one": "Show all {{count}}",
+      "showAll_other": "Show all {{count}}",
+      "showFewer": "Show fewer",
+      "pay": "Pay {{name}}",
+      "due": "Due {{date}}",
+      "dueToday": "Due today",
+      "over": "{{name}} is over",
+      "atRisk": "{{name}} is heading over",
+      "pace": "At this pace, {{amount}} by {{date}}",
+      "confirmOne": "Confirm {{name}}",
+      "confirm_one": "Confirm {{count}} recurring transaction",
+      "confirm_other": "Confirm {{count}} recurring transactions",
+      "make": "Make {{month}}'s budget",
+      "makeBody": "Start from your usual month, then lock it in.",
+      "lock": "Lock in {{month}}'s budget",
+      "categorize_one": "Categorize {{count}} transaction",
+      "categorize_other": "Categorize {{count}} transactions",
+      "categorizeBody": "Still uncategorized this year",
+      "imports_one": "Review {{count}} imported row",
+      "imports_other": "Review {{count}} imported rows",
+      "importsBody": "Left for later in an import",
+      "check": "Check {{name}}'s balance",
+      "checked": "Last checked {{date}}",
+      "checkMany_one": "Check {{count}} balance",
+      "checkMany_other": "Check {{count}} balances"
+    },
+    "coming": {
+      "title": "Coming up",
+      "none": "Nothing coming up in the next two weeks.",
+      "totals": "In the next two weeks, {{out}} goes out and {{in}} comes in.",
+      "totalsOut": "In the next two weeks, {{out}} goes out.",
+      "totalsIn": "In the next two weeks, {{in}} comes in.",
+      "seeAll": "See everything coming up",
+      "part": "Installment {{number}} of {{of}}"
+    },
+    "goals": {
+      "seeAll_one": "See all {{count}} goals",
+      "seeAll_other": "See all {{count}} goals"
+    },
+    "worth": {
+      "title": "Net worth",
+      "up": "Up {{amount}} since {{month}}",
+      "down": "Down {{amount}} since {{month}}",
+      "same": "Same as in {{month}}",
+      "across_one": "Across {{count}} wallet",
+      "across_other": "Across {{count}} wallets",
+      "owe": "You owe",
+      "oweLess": "{{amount}} less than in {{month}}",
+      "oweMore": "{{amount}} more than in {{month}}"
+    },
+    "highlights": {
+      "title": "Highlights",
+      "more": "You've spent {{percent}} more on {{name}} than usual by {{date}}.",
+      "less": "You've spent {{percent}} less on {{name}} than usual by {{date}}.",
+      "usual": "Usual"
+    },
+    "latest": {
+      "title": "Latest transactions"
+    },
+    "setup": {
+      "title": "Get started",
+      "count": "{{done}} of {{count}} done",
+      "done": "Done",
+      "wallets": {
+        "title": "Add your wallets",
+        "body": "Your bank, cards and cash",
+        "done_one": "{{count}} wallet added",
+        "done_other": "{{count}} wallets added"
+      },
+      "history": {
+        "title": "Bring in your history",
+        "body": "From a spreadsheet or your bank"
+      },
+      "categories": {
+        "title": "Review your categories",
+        "body": "Mark what you need and want"
+      },
+      "budget": {
+        "title": "Make your first budget",
+        "body": "It starts from your usual month"
+      },
+      "goal": {
+        "title": "Set your first goal",
+        "body": "Save for something or pay off a debt"
+      }
+    },
+    "edit": {
+      "title": "Edit Home",
+      "intro": "This month always comes first. Drag the other cards to change their order, and turn off the ones you don't need.",
+      "show": "Show {{name}}"
+    },
+    "cards": {
+      "attention": "Needs attention",
+      "coming": "Coming up",
+      "goals": "Goals",
+      "netWorth": "Net worth",
+      "highlights": "Highlights",
+      "latest": "Latest transactions"
     }
   },
   "settings": {
