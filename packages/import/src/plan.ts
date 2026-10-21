@@ -230,7 +230,11 @@ export function planRows(
         (payee && payeeMemory(ledger.transactions, payee.id)?.categoryId) ?? null
     }
     const base = { row, walletKey, categoryKey, suggestedCategoryId }
-    if (row.problem) return { ...base, status: { kind: 'unreadable', problem: row.problem } }
+    // IMP-10: a date or amount the picture made unreadable is for the person to fill in.
+    const unsureProblem =
+      (row.problem === 'date' || row.problem === 'amount') && row.unsure?.includes(row.problem)
+    if (row.problem && !unsureProblem)
+      return { ...base, status: { kind: 'unreadable', problem: row.problem } }
     if (link && row.currency !== walletCurrency(link))
       return { ...base, status: { kind: 'unreadable', problem: 'currency' } }
     // Matching on an amount or date that may be misread could skip a real row.

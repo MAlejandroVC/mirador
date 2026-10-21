@@ -52,25 +52,66 @@ export interface Line {
   bottom: number
 }
 
-/** Words on one line, left to right; runs a PDF item joined with wide gaps are split. */
+/**
+ * Words on one line, left to right; runs a PDF item joined with wide gaps are split.
+ * A photo is rarely straight, so lines are found along the page's slant; a line's top
+ * and bottom are measured along it too, while its words keep their places on the page.
+ */
 export function linesOf(page: TextPage, index: number): Line[] {
   const words = page.words
     .flatMap((word) => splitWords(word))
     .filter((word) => word.text.trim() !== '')
-    .sort((a, b) => a.y + a.height / 2 - (b.y + b.height / 2))
+  const slope = slantOf(words)
+  const middle = page.width / 2
+  const placed = words
+    .map((word) => ({ word, top: word.y - slope * (word.x + word.width / 2 - middle) }))
+    .sort((a, b) => a.top + a.word.height / 2 - (b.top + b.word.height / 2))
   const lines: Line[] = []
-  for (const word of words) {
-    const middle = word.y + word.height / 2
+  for (const { word, top } of placed) {
+    const center = top + word.height / 2
     const line = lines.at(-1)
     const lineMiddle = line ? (line.top + line.bottom) / 2 : 0
-    if (line && Math.abs(middle - lineMiddle) < Math.min(word.height, line.bottom - line.top) / 2) {
+    if (line && Math.abs(center - lineMiddle) < Math.min(word.height, line.bottom - line.top) / 2) {
       line.words.push(word)
-      line.top = Math.min(line.top, word.y)
-      line.bottom = Math.max(line.bottom, word.y + word.height)
-    } else lines.push({ page: index, words: [word], top: word.y, bottom: word.y + word.height })
+      line.top = Math.min(line.top, top)
+      line.bottom = Math.max(line.bottom, top + word.height)
+    } else lines.push({ page: index, words: [word], top, bottom: top + word.height })
   }
   for (const line of lines) line.words.sort((a, b) => a.x - b.x)
   return lines
+}
+
+/**
+ * How much the text climbs or falls per pixel across. Each slope is tried in turn, and
+ * the one that lines up the most pairs of words at the same height wins: on a straight
+ * reading, words of one line sit level with each other.
+ */
+function slantOf(words: readonly TextWord[]): number {
+  if (words.length < 3) return 0
+  const level = (slope: number) => {
+    const middles = words.map(
+      (word) => word.y + word.height / 2 - slope * (word.x + word.width / 2),
+    )
+    let pairs = 0
+    for (let a = 0; a < words.length; a += 1)
+      for (let b = a + 1; b < words.length; b += 1) {
+        const height = Math.min(words[a]?.height ?? 0, words[b]?.height ?? 0)
+        if (Math.abs((middles[a] ?? 0) - (middles[b] ?? 0)) < height * 0.2) pairs += 1
+      }
+    return pairs
+  }
+  // Up to about six degrees either way, from straight outwards, so a tie stays straight.
+  let best = 0
+  let bestPairs = level(0)
+  for (let step = 1; step <= 40; step += 1)
+    for (const slope of [step * 0.0025, -step * 0.0025]) {
+      const pairs = level(slope)
+      if (pairs > bestPairs) {
+        best = slope
+        bestPairs = pairs
+      }
+    }
+  return best
 }
 
 /**
@@ -133,7 +174,9 @@ export function dateAtStart(
 }
 
 /** "14/10/2026", "14/10", "2026-10-14", "14 OCT", "14/OCT/26", "Oct 14, 2026". */
-export function readDateText(text: string, year: number): string | null {
+export function readDateText(written: string, year: number): string | null {
+  // Text recognition reads the O of a month as a zero now and then: "09/0CT".
+  const text = written.replace(/0(?=[A-Za-z]{2})|(?<=[A-Za-z])0(?=[A-Za-z])/g, 'O')
   const numeric = /^(\d{1,4})[-/.](\d{1,2})(?:[-/.](\d{2,4}))?$/.exec(text)
   if (numeric) {
     const [, a = '', b = '', c] = numeric
@@ -145,7 +188,7 @@ export function readDateText(text: string, year: number): string | null {
   const dayFirst = /^(\d{1,2})[\s/.-]*([A-Za-zÁÉÍÓÚáéíóú]{3,10})\.?(?:[\s/.,-]+(\d{2,4}))?$/.exec(
     text,
   )
-  const monthFirst = /^([A-Za-zÁÉÍÓÚáéíóú]{3,10})\.?\s+(\d{1,2}),?(?:\s+(\d{4}))?$/.exec(text)
+  const monthFirst = /^([A-Za-zÁÉÍÓÚáéíóú]{3,10})\.?\s*(\d{1,2}),?(?:\s+(\d{4}))?$/.exec(text)
   const parts = dayFirst
     ? { day: dayFirst[1], month: dayFirst[2], year: dayFirst[3] }
     : monthFirst
@@ -222,6 +265,7 @@ export function readStatement(
 
   for (const { page, lines } of all) {
     let previous: Found | null = null
+    let undated: Found[] = []
     for (const line of lines) {
       const text = nameKey(line.words.map((word) => word.text).join(' '))
       const lastAmount = line.words.findLast((word) => isAmount(word.text))?.text ?? null
@@ -240,9 +284,39 @@ export function readStatement(
           description: rest.filter((word) => !isAmount(word.text)),
           amounts,
         }
+        // IMP-10: rows since the last one whose date couldn't be read sit between two
+        // dated rows, so they are rows too; they go to the person to check.
+        for (const waiting of undated) found.push(waiting)
+        undated = []
         found.push(row)
         previous = row
         continue
+      }
+      const last = found.at(-1)
+      const dateColumn = last?.dateWords[0]?.x
+      const descriptionColumn = last?.description[0]?.x
+      const near = (x: number | undefined, column: number | undefined) =>
+        x !== undefined && column !== undefined && Math.abs(x - column) < page.width * 0.02
+      if (
+        !date &&
+        amounts.length > 0 &&
+        last?.line.page === line.page &&
+        descriptionColumn !== undefined &&
+        (near(line.words[0]?.x, dateColumn) || near(line.words[0]?.x, descriptionColumn)) &&
+        !openingWords.test(text) &&
+        !closingWords.test(text)
+      ) {
+        // The unreadable date is whatever sits before the description column, if anything.
+        const start = descriptionColumn - page.width * 0.02
+        const dateWords = line.words.filter((word) => word.x < start)
+        const description = line.words.filter((word) => word.x >= start && !isAmount(word.text))
+        // A total has no description of its own, so it is never taken for a row.
+        if (description.length > 0 && !dateWords.some((word) => isAmount(word.text))) {
+          const row: Found = { line, date: '', dateWords, description, amounts }
+          undated.push(row)
+          previous = row
+          continue
+        }
       }
       // A description that wraps onto the next line, right under its row.
       const height = line.bottom - line.top
@@ -310,18 +384,29 @@ export function readStatement(
     const page = pages[row.line.page]
     const width = page?.width ?? 1
     const height = page?.height ?? 1
-    const left = Math.min(...row.line.words.map((word) => word.x))
-    const right = Math.max(...row.line.words.map((word) => word.x + word.width))
+    // The whole width of the table, so a row shows the date or amount it is missing.
+    const onPage = found.filter((other) => other.line.page === row.line.page)
+    const left = Math.min(...onPage.flatMap((other) => other.line.words.map((word) => word.x)))
+    const right = Math.max(
+      ...onPage.flatMap((other) => other.line.words.map((word) => word.x + word.width)),
+    )
     const unsure: UnsureField[] = []
-    if (Math.min(...row.dateWords.map((word) => word.confidence)) < threshold) unsure.push('date')
+    if (row.date === '' || Math.min(...row.dateWords.map((word) => word.confidence)) < threshold)
+      unsure.push('date')
     if (amountConfidence < threshold) unsure.push('amount')
+    // On a slanted photo the row covers more height than one line of text.
+    const top = Math.min(...row.line.words.map((word) => word.y))
+    const bottom = Math.max(
+      ...row.line.words.map((word) => word.y + word.height),
+      top + row.line.bottom - row.line.top,
+    )
     sources.push({
       page: row.line.page,
       box: {
         x: left / width,
-        y: row.line.top / height,
+        y: top / height,
         width: (right - left) / width,
-        height: (row.line.bottom - row.line.top) / height,
+        height: (bottom - top) / height,
       },
       unsure,
     })
@@ -384,5 +469,32 @@ function headerNames(
         ? description.text
         : fallback.description,
     amounts,
+  }
+}
+
+/**
+ * IMP-01: several files read as one import, such as screenshots of the same app's
+ * list. Each file is read on its own, since layouts differ from file to file; they join
+ * only when they have the same columns, so the wizard can read every row the same way.
+ */
+export function joinStatements(
+  files: readonly { table: StatementTable; pages: number }[],
+): StatementTable | null {
+  const [first] = files
+  if (!first) return null
+  if (files.some((file) => file.table.header.length !== first.table.header.length)) return null
+  let offset = 0
+  const sources: RowSource[] = []
+  for (const file of files) {
+    for (const source of file.table.sources) sources.push({ ...source, page: source.page + offset })
+    offset += file.pages
+  }
+  return {
+    delimiter: '',
+    header: first.table.header,
+    rows: files.flatMap((file) => file.table.rows),
+    sources,
+    opening: files.length === 1 ? first.table.opening : null,
+    closing: files.length === 1 ? first.table.closing : null,
   }
 }

@@ -18,8 +18,9 @@ const service = new PaddleOcrService({
 })
 const ready = service.initialize()
 
-// Big photos are scaled down first: text stays readable and memory stays small.
-const maxSide = 2400
+// Very big photos are scaled down first. The limit stays high: the recognition model
+// loses the spaces between words when letters are only a few pixels tall.
+const maxSide = 4096
 
 parentPort?.on('message', (message: { id: number; image: ArrayBuffer }) => {
   void read(message)

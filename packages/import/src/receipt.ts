@@ -96,13 +96,13 @@ export function readReceipt(
     for (let start = 0; start < line.words.length; start += 1)
       for (let used = Math.min(3, line.words.length - start); used >= 1; used -= 1) {
         const words = line.words.slice(start, start + used)
-        const cell = readDateText(
-          words
-            .map((word) => word.text)
-            .join(' ')
-            .replace(/[,;]$/, ''),
-          year,
-        )
+        const text = words
+          .map((word) => word.text)
+          .join(' ')
+          .replace(/[,;]$/, '')
+        // A ticket often runs the time into the date: "20/10/202619:42".
+        const embedded = /^(\d{1,2}[/.-]\d{1,2}[/.-](?:\d{4}|\d{2}(?!\d)))/.exec(text)?.[1]
+        const cell = readDateText(text, year) ?? (embedded ? readDateText(embedded, year) : null)
         const iso = cell && (/^\d{4}-/.test(cell) ? readDate(cell, 'ymd') : readDate(cell, 'dmy'))
         if (iso) {
           date = iso
@@ -135,8 +135,16 @@ export function readReceipt(
 
 /** "OXXO SUC 1234" stays as written but loses a trailing store number. */
 function tidyName(name: string) {
-  return name
-    .replace(/\s+(suc(ursal)?|store|tienda)\.?\s*#?\s*\d+.*$/i, '')
-    .replace(/\s+#?\d{3,}$/, '')
-    .trim()
+  return (
+    name
+      .split(' ')
+      // Text recognition reads an O as a zero now and then: "0XX0" in a word of letters.
+      .map((word) =>
+        /^[A-Za-z0]+$/.test(word) && /[A-Za-z]/.test(word) ? word.replace(/0/g, 'O') : word,
+      )
+      .join(' ')
+      .replace(/\s+(suc(ursal)?|store|tienda)\.?\s*#?\s*\d+.*$/i, '')
+      .replace(/\s+#?\d{3,}$/, '')
+      .trim()
+  )
 }

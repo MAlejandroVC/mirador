@@ -16,7 +16,22 @@
     "done": "Done"
   },
   "quickAdd": {
-    "title": "New transaction"
+    "title": "New transaction",
+    "takePicture": "Take a picture",
+    "choosePicture": "Choose a picture",
+    "reading": "Reading the picture…",
+    "private": "Your server reads it and forgets it right away.",
+    "filledIn": "Filled in from your picture",
+    "check": {
+      "amount": "Hard to read. Check the amount.",
+      "date": "Hard to read. Check the date.",
+      "payee": "Hard to read. Check the payee."
+    },
+    "failed": {
+      "unreadable": "Mirador couldn’t read this picture. Enter it by hand or try another one.",
+      "unavailable": "Reading pictures isn’t set up on this server yet. Enter it by hand.",
+      "offline": "Mirador couldn’t reach your server. Enter it by hand or try again."
+    }
   },
   "home": {
     "month": {
@@ -1397,12 +1412,12 @@
     "notEncrypted": "These files aren’t encrypted. Keep them somewhere private.",
     "bringIn": "Bring data in",
     "importFile": "Import a file",
-    "importFileHint": "A Mirador backup, or a CSV from your bank, another app or a spreadsheet",
+    "importFileHint": "A statement PDF, photos or screenshots, a CSV, or a Mirador backup",
     "sample": "Add sample data",
     "sampleHint": "14 months of made-up wallets and spending to try things out",
     "sampleName": "Sample data",
     "working": "Working…",
-    "unreadableFile": "Mirador couldn’t read this file. Choose a CSV file or a Mirador backup.",
+    "unreadableFile": "Mirador couldn’t read this file. Choose a statement PDF, a picture, a CSV file or a Mirador backup.",
     "imports": "Imports",
     "importsNote": "Undoing an import removes exactly what it added, and nothing else.",
     "batchSubtitle_one": "{{count}} transaction · {{date}}",
@@ -1425,7 +1440,8 @@
       "review": "Review",
       "done": "Imported",
       "count": "Step {{step}} of 3",
-      "next": "Next"
+      "next": "Next",
+      "reading": "Reading"
     },
     "columns": {
       "what": "What each column holds",
@@ -1508,7 +1524,27 @@
       "import_other": "Import {{count}} transactions",
       "saving": "Importing…",
       "nothing": "There’s nothing new to import in this file.",
-      "failed": "The import didn’t finish. Check your connection and try again; anything it saved can be undone under Imports."
+      "failed": "The import didn’t finish. Check your connection and try again; anything it saved can be undone under Imports.",
+      "check": "Hard to read",
+      "checkNote": "Tap a row to check it against your statement. Rows you leave come in as read.",
+      "checkFields": {
+        "amount": "Check the amount.",
+        "date": "Check the date.",
+        "date-amount": "Check the date and the amount."
+      },
+      "checkMissing": {
+        "date": "Add the date to bring this row in.",
+        "amount": "Add the amount to bring this row in."
+      },
+      "fixTitle": "Check this row",
+      "fixHint": "As your statement shows it.",
+      "fixSave": "Save",
+      "fixMissing": {
+        "date": "Choose the date.",
+        "amount": "Enter the amount."
+      },
+      "balanceMatches": "Adds up to the statement’s ending balance of {{amount}}.",
+      "balanceDiffers": "Doesn’t add up to the statement’s ending balance of {{amount}}: {{difference}} is missing or misread."
     },
     "problems": {
       "date": "The date is missing or isn’t a real date",
@@ -1588,6 +1624,23 @@
       "label": "Type “{{username}}” to confirm",
       "done": "Everything was erased.",
       "failed": "Not everything was erased. Check your connection and try again."
+    },
+    "mixedFiles": "Choose one CSV or backup, or any number of PDFs and pictures.",
+    "reading": {
+      "files": "Files",
+      "pages_one": "{{count}} page",
+      "pages_other": "{{count}} pages",
+      "waiting": "Waiting",
+      "reading": "Reading",
+      "read": "Read",
+      "private": "Pictures and scans are read by your server, which keeps nothing.",
+      "failed": {
+        "unreadable": "Mirador couldn’t read one of these files. Try a clearer picture, or the PDF your bank sends.",
+        "unavailable": "Reading PDFs and pictures isn’t set up on this server yet.",
+        "offline": "Mirador couldn’t reach your server. Check your connection and try again.",
+        "nothing": "Mirador didn’t find any transactions in these files.",
+        "different": "These files are laid out differently. Import them one at a time."
+      }
     }
   },
   "analysis": {

@@ -33,6 +33,7 @@ import { EntrySheet } from '../transactions/entry-sheet'
 import { newId, useLedger, useSaveRecords } from '../wallets/use-ledger'
 import { BatchSheet, EraseSheet, RestoreSheet, type WaitingRow } from './data-sheets'
 import { buildChanges, currencyOf, type ImportFile } from './import-model'
+import { isPdf, isPicture } from './reading'
 import { DoneStep, type ImportDone, ImportSheet } from './import-sheet'
 import { downloadSpreadsheet, useDownloadBackup, useUndoImport } from './use-data'
 
@@ -50,38 +51,66 @@ export function DataScreen() {
   const save = useSaveRecords()
   const input = useRef<HTMLInputElement>(null)
   const [csv, setCsv] = useState<ImportFile | null>(null)
-  const [again, setAgain] = useState<{ file: ImportFile; date: string } | null>(null)
+  // IMP-04, IMP-05: PDFs and pictures, read in the import sheet before its steps.
+  const [reading, setReading] = useState<{ files: File[]; fingerprint: string } | null>(null)
+  const [again, setAgain] = useState<{ go: () => void; date: string } | null>(null)
   const [archive, setArchive] = useState<{ name: string; result: ArchiveResult } | null>(null)
   const [batchId, setBatchId] = useState<string | null>(null)
   // IMP-33: a row an import left for later, opened in the transaction form.
   const [fixing, setFixing] = useState<{ batchId: string; row: WaitingRow } | null>(null)
   const [erasing, setErasing] = useState(false)
-  const [unreadable, setUnreadable] = useState(false)
+  const [unreadable, setUnreadable] = useState<'file' | 'mixed' | null>(null)
   const [sampleDone, setSampleDone] = useState<ImportDone | null>(null)
   const [undone, setUndone] = useState<number | null>(null)
   const today = new Date().toISOString().slice(0, 10)
 
+  // IMP-36: the same file again is worth a word before it is read.
+  const unlessSeen = (fingerprint: string, go: () => void) => {
+    const before = ledger?.batches.find((batch) => batch.fingerprint === fingerprint)
+    if (before)
+      setAgain({ go, date: formatShortDate(before.importedAt.slice(0, 10), today, locale) })
+    else go()
+  }
+
+  // PDFs and pictures are statements, any number at once (IMP-01, IMP-04, IMP-05);
   // Mirador backups are JSON; anything else is read as a CSV (IMP-02).
-  const open = async (picked: File) => {
-    setUnreadable(false)
+  const open = async (picked: File[]) => {
+    setUnreadable(null)
     setUndone(null)
-    const bytes = await picked.arrayBuffer()
+    const [first] = picked
+    if (!first) return
+    if (picked.every((file) => isPdf(file) || isPicture(file))) {
+      const hashes = await Promise.all(
+        picked.map(async (file) => fileFingerprint(await file.arrayBuffer())),
+      )
+      const fingerprint =
+        hashes.length === 1 && hashes[0]
+          ? hashes[0]
+          : await fileFingerprint(new TextEncoder().encode(hashes.join(',')))
+      unlessSeen(fingerprint, () => {
+        setReading({ files: picked, fingerprint })
+      })
+      return
+    }
+    if (picked.length > 1) {
+      setUnreadable('mixed')
+      return
+    }
+    const bytes = await first.arrayBuffer()
     const text = new TextDecoder().decode(bytes)
     if (/^\s*\{/.test(text)) {
-      setArchive({ name: picked.name, result: readArchive(text) })
+      setArchive({ name: first.name, result: readArchive(text) })
       return
     }
     const table = parseCsv(text)
     if (table.header.length < 2 || table.rows.length === 0) {
-      setUnreadable(true)
+      setUnreadable('file')
       return
     }
-    const file = { name: picked.name, fingerprint: await fileFingerprint(bytes), table }
-    // IMP-36: the same file again is worth a word before it is read.
-    const before = ledger?.batches.find((batch) => batch.fingerprint === file.fingerprint)
-    if (before)
-      setAgain({ file, date: formatShortDate(before.importedAt.slice(0, 10), today, locale) })
-    else setCsv(file)
+    const file = { name: first.name, fingerprint: await fileFingerprint(bytes), table }
+    unlessSeen(file.fingerprint, () => {
+      setCsv(file)
+    })
   }
 
   const addSample = () => {
@@ -170,7 +199,9 @@ export function DataScreen() {
     >
       {ledger && (
         <>
-          {unreadable && <Alert>{t('data.unreadableFile')}</Alert>}
+          {unreadable && (
+            <Alert>{t(unreadable === 'mixed' ? 'data.mixedFiles' : 'data.unreadableFile')}</Alert>
+          )}
           {undone !== null && <Alert tone="success">{t('data.undone', { count: undone })}</Alert>}
           <List label={t('data.takeOut')}>
             <ListButtonRow
@@ -220,12 +251,13 @@ export function DataScreen() {
           <input
             ref={input}
             type="file"
-            accept=".csv,.tsv,.txt,.json,text/csv,application/json,text/plain"
+            accept=".csv,.tsv,.txt,.json,.pdf,text/csv,application/json,text/plain,application/pdf,image/*"
+            multiple
             className="hidden"
             onChange={(event) => {
-              const picked = event.target.files?.[0]
+              const picked = [...(event.target.files ?? [])]
               event.target.value = ''
-              if (picked) void open(picked)
+              void open(picked)
             }}
           />
 
@@ -270,9 +302,15 @@ export function DataScreen() {
 
           <ImportSheet
             file={csv}
+            reading={reading}
             ledger={ledger}
+            onRead={(file) => {
+              setReading(null)
+              setCsv(file)
+            }}
             onClose={() => {
               setCsv(null)
+              setReading(null)
             }}
             onUndo={undoBatch}
           />
@@ -305,7 +343,7 @@ export function DataScreen() {
               {
                 label: t('data.again.go'),
                 onSelect: () => {
-                  if (again) setCsv(again.file)
+                  again?.go()
                   setAgain(null)
                 },
               },

@@ -16,7 +16,22 @@
     "done": "Listo"
   },
   "quickAdd": {
-    "title": "Nuevo movimiento"
+    "title": "Nuevo movimiento",
+    "takePicture": "Tomar foto",
+    "choosePicture": "Elegir foto",
+    "reading": "Leyendo la foto…",
+    "private": "Tu servidor la lee y la olvida enseguida.",
+    "filledIn": "Lleno con tu foto",
+    "check": {
+      "amount": "Difícil de leer. Revisa el monto.",
+      "date": "Difícil de leer. Revisa la fecha.",
+      "payee": "Difícil de leer. Revisa el comercio."
+    },
+    "failed": {
+      "unreadable": "Mirador no pudo leer esta foto. Captúralo a mano o prueba con otra.",
+      "unavailable": "Este servidor todavía no está listo para leer fotos. Captúralo a mano.",
+      "offline": "Mirador no pudo conectarse con tu servidor. Captúralo a mano o inténtalo otra vez."
+    }
   },
   "home": {
     "month": {
@@ -1397,12 +1412,12 @@
     "notEncrypted": "Estos archivos no están cifrados. Guárdalos en un lugar privado.",
     "bringIn": "Traer datos",
     "importFile": "Importar un archivo",
-    "importFileHint": "Un respaldo de Mirador, o un CSV de tu banco, de otra app o de una hoja de cálculo",
+    "importFileHint": "Un estado de cuenta en PDF, fotos o capturas de pantalla, un CSV o un respaldo de Mirador",
     "sample": "Agregar datos de ejemplo",
     "sampleHint": "14 meses de carteras y gastos inventados para probar la app",
     "sampleName": "Datos de ejemplo",
     "working": "Trabajando…",
-    "unreadableFile": "Mirador no pudo leer este archivo. Elige un archivo CSV o un respaldo de Mirador.",
+    "unreadableFile": "Mirador no pudo leer este archivo. Elige un estado de cuenta en PDF, una imagen, un archivo CSV o un respaldo de Mirador.",
     "imports": "Importaciones",
     "importsNote": "Deshacer una importación quita exactamente lo que agregó, y nada más.",
     "batchSubtitle_one": "{{count}} movimiento · {{date}}",
@@ -1425,7 +1440,8 @@
       "review": "Revisión",
       "done": "Importado",
       "count": "Paso {{step}} de 3",
-      "next": "Siguiente"
+      "next": "Siguiente",
+      "reading": "Leyendo"
     },
     "columns": {
       "what": "Qué tiene cada columna",
@@ -1508,7 +1524,27 @@
       "import_other": "Importar {{count}} movimientos",
       "saving": "Importando…",
       "nothing": "No hay nada nuevo que importar en este archivo.",
-      "failed": "La importación no terminó. Revisa tu conexión e inténtalo otra vez; lo que alcanzó a guardar se puede deshacer en Importaciones."
+      "failed": "La importación no terminó. Revisa tu conexión e inténtalo otra vez; lo que alcanzó a guardar se puede deshacer en Importaciones.",
+      "check": "Difíciles de leer",
+      "checkNote": "Toca un movimiento para revisarlo contra tu estado de cuenta. Los que no revises entran como se leyeron.",
+      "checkFields": {
+        "amount": "Revisa el monto.",
+        "date": "Revisa la fecha.",
+        "date-amount": "Revisa la fecha y el monto."
+      },
+      "checkMissing": {
+        "date": "Agrega la fecha para incluir este movimiento.",
+        "amount": "Agrega el monto para incluir este movimiento."
+      },
+      "fixTitle": "Revisar movimiento",
+      "fixHint": "Como aparece en tu estado de cuenta.",
+      "fixSave": "Guardar",
+      "fixMissing": {
+        "date": "Elige la fecha.",
+        "amount": "Escribe el monto."
+      },
+      "balanceMatches": "Cuadra con el saldo final del estado de cuenta: {{amount}}.",
+      "balanceDiffers": "No cuadra con el saldo final del estado de cuenta ({{amount}}): faltan o se leyeron mal {{difference}}."
     },
     "problems": {
       "date": "Falta la fecha o no es una fecha real",
@@ -1588,6 +1624,23 @@
       "label": "Escribe “{{username}}” para confirmar",
       "done": "Se borró todo.",
       "failed": "No se borró todo. Revisa tu conexión e inténtalo otra vez."
+    },
+    "mixedFiles": "Elige un CSV o un respaldo, o los PDF y fotos que quieras.",
+    "reading": {
+      "files": "Archivos",
+      "pages_one": "{{count}} página",
+      "pages_other": "{{count}} páginas",
+      "waiting": "En espera",
+      "reading": "Leyendo",
+      "read": "Leído",
+      "private": "Tu servidor lee las fotos y los escaneos, y no guarda nada.",
+      "failed": {
+        "unreadable": "Mirador no pudo leer uno de estos archivos. Prueba con una foto más clara o con el PDF que te manda tu banco.",
+        "unavailable": "Este servidor todavía no está listo para leer PDF ni fotos.",
+        "offline": "Mirador no pudo conectarse con tu servidor. Revisa tu conexión e inténtalo otra vez.",
+        "nothing": "Mirador no encontró movimientos en estos archivos.",
+        "different": "Estos archivos tienen formatos distintos. Impórtalos uno por uno."
+      }
     }
   },
   "analysis": {

@@ -3,15 +3,29 @@ import { guessColumns } from './columns.ts'
 import { linkWallets, planRows } from './plan.ts'
 import { readReceipt } from './receipt.ts'
 import { readRows } from './rows.ts'
-import { isAmount, readDateText, readStatement, type TextPage, type TextWord } from './statement.ts'
+import {
+  isAmount,
+  joinStatements,
+  readDateText,
+  readStatement,
+  type TextPage,
+  type TextWord,
+} from './statement.ts'
 
 // A page drawn the way pdf.js or the OCR reports it: each line is [left, text] pairs at
 // one height; words are 7 px a character, so right edges line up when the text does.
-function page(lines: (readonly [number, string, number?])[][], width = 600): TextPage {
+function page(lines: (readonly [number, string, number?])[][], width = 600, slant = 0): TextPage {
   const words: TextWord[] = []
   lines.forEach((line, row) => {
     for (const [x, text, confidence = 1] of line)
-      words.push({ text, x, y: 40 + row * 20, width: text.length * 7, height: 12, confidence })
+      words.push({
+        text,
+        x,
+        y: 40 + row * 20 + x * slant,
+        width: text.length * 7,
+        height: 12,
+        confidence,
+      })
   })
   return { width, height: 800, words }
 }
@@ -116,6 +130,34 @@ describe('readStatement', () => {
   })
 })
 
+describe('photos', () => {
+  it('IMP-05: reads the rows of a statement photographed at a slant', () => {
+    const lines = [
+      [[20, '02/OCT'], [90, 'OXXO 1234 GDL'], right(420, '85.00'), right(580, '10,165.00')],
+      [[20, '03/OCT'], [90, 'NOMINA EMPRESA'], right(500, '15,000.00'), right(580, '25,165.00')],
+      [[20, '05/OCT'], [90, 'SPEI ENVIADO'], right(420, '1,200.00'), right(580, '23,965.00')],
+    ] as const
+    // About two and a half degrees: the right edge sits a line and a half lower.
+    const table = readStatement(
+      [
+        page(
+          lines.map((line) => [...line]),
+          600,
+          0.045,
+        ),
+      ],
+      {
+        year: 2026,
+      },
+    )
+    expect(table.rows).toEqual([
+      ['2026-10-02', 'OXXO 1234 GDL', '85.00', '', '10,165.00'],
+      ['2026-10-03', 'NOMINA EMPRESA', '', '15,000.00', '25,165.00'],
+      ['2026-10-05', 'SPEI ENVIADO', '1,200.00', '', '23,965.00'],
+    ])
+  })
+})
+
 describe('reading dates and amounts', () => {
   it('IMP-08: reads the ways statements write dates', () => {
     expect(readDateText('14/10/2026', 2026)).toBe('14/10/2026')
@@ -126,6 +168,9 @@ describe('reading dates and amounts', () => {
     expect(readDateText('14-dic-2025', 2026)).toBe('2025-12-14')
     expect(readDateText('Oct 14, 2026', 2020)).toBe('2026-10-14')
     expect(readDateText('Enero 3', 2026)).toBe('2026-01-03')
+    // Text recognition sometimes drops the space.
+    expect(readDateText('Oct27', 2026)).toBe('2026-10-27')
+    expect(readDateText('09/0CT', 2026)).toBe('2026-10-09')
     expect(readDateText('OXXO', 2026)).toBeNull()
     expect(readDateText('Total 3', 2026)).toBeNull()
   })
@@ -181,6 +226,22 @@ describe('readReceipt', () => {
     })
   })
 
+  it('IMP-07: reads a ticket whose date runs into the time and whose O reads as a zero', () => {
+    const ticket = page([
+      [[200, '0XX0', 0.5]],
+      [[160, 'SUC 1234 GUADALAJARA']],
+      [[170, '20/10/202619:42']],
+      [[100, 'AGUA 1L'], right(400, '18.00')],
+      [[100, 'TOTAL'], right(400, '$18.00')],
+    ])
+    expect(readReceipt([ticket], { currency: 'MXN', today: '2026-10-21' })).toEqual({
+      amount: 1800,
+      date: '2026-10-20',
+      payee: 'OXXO',
+      unsure: ['payee'],
+    })
+  })
+
   it('IMP-07: reads a bank notification in one sentence', () => {
     const notice = page(
       [
@@ -214,6 +275,33 @@ describe('readReceipt', () => {
 })
 
 describe('planning rows read from a picture', () => {
+  it("IMP-10: keeps a row whose date couldn't be read, for the person to fill in", () => {
+    const shot = page(
+      [
+        [[16, 'Oct 26'], [90, 'Cine Estrella'], right(380, '-$180.00')],
+        [[16, '0c7 2?'], [90, 'Panaderia Sol'], right(380, '-$64.50')],
+        [[16, 'Oct 28'], [90, 'Uber Trip'], right(380, '-$96.40')],
+        [[90, 'Mercado Local'], right(380, '-$412.30')],
+        [[16, 'Oct 29'], [90, 'Cafe Azul'], right(380, '-$45.00')],
+        [[16, 'Total'], right(380, '-$798.20')],
+      ],
+      390,
+    )
+    const table = readStatement([shot], { year: 2026 })
+    expect(table.rows.map((row) => row[1])).toEqual([
+      'Cine Estrella',
+      'Panaderia Sol',
+      'Uber Trip',
+      'Mercado Local',
+      'Cafe Azul',
+    ])
+    expect(table.sources.map((source) => source.unsure)).toEqual([[], ['date'], [], ['date'], []])
+    const rows = readRows(table, guessColumns(table.header, table.rows), 'USD')
+    const ledger = { wallets: [], groups: [], categories: [], payees: [], transactions: [] }
+    const planned = planRows(rows, ledger, linkWallets(rows, ledger, null, 'USD'), () => 'USD')
+    expect(planned[1]?.status).toEqual({ kind: 'check', fields: ['date'] })
+  })
+
   it('IMP-10, IMP-31: puts a row with a field to check in front of the person', () => {
     const scan = page([
       [[20, 'Date'], [90, 'Description'], right(420, 'Amount')],
@@ -233,5 +321,21 @@ describe('planning rows read from a picture', () => {
       { kind: 'check', fields: ['amount'] },
       { kind: 'noCategory' },
     ])
+  })
+})
+
+describe('several files', () => {
+  it('IMP-01: joins files with the same columns and turns away ones that differ', () => {
+    const one = page([[[16, 'Oct 26'], [90, 'Cine Estrella'], right(380, '-$180.00')]], 390)
+    const two = page([[[16, 'Oct 28'], [90, 'Uber Trip'], right(380, '-$96.40')]], 390)
+    const shots = [one, two].map((shot) => ({
+      table: readStatement([shot], { year: 2026 }),
+      pages: 1,
+    }))
+    const joined = joinStatements(shots)
+    expect(joined?.rows.map((row) => row[1])).toEqual(['Cine Estrella', 'Uber Trip'])
+    expect(joined?.sources.map((source) => source.page)).toEqual([0, 1])
+    const statement = { table: readStatement([october, octoberTwo], { year: 2026 }), pages: 2 }
+    expect(joinStatements([shots[0]!, statement])).toBeNull()
   })
 })
