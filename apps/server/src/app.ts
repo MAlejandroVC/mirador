@@ -1,12 +1,14 @@
-import { type HealthResponse } from '@repo/api'
+import { type HealthResponse, maxOcrBytes, type OcrError } from '@repo/api'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 import { attemptLimits, sameOrigin } from './auth/guard.ts'
+import type { OcrEngine } from './ocr/engine.ts'
 import { sessionStore } from './auth/sessions.ts'
 import { accountRoutes } from './routes/accounts.ts'
 import { credentialRoutes } from './routes/credentials.ts'
 import { inviteRoutes } from './routes/invites.ts'
+import { ocrRoutes } from './routes/ocr.ts'
 import { passkeyRoutes } from './routes/passkeys.ts'
 import { peopleRoutes } from './routes/people.ts'
 import { recordRoutes } from './routes/records.ts'
@@ -29,6 +31,8 @@ export interface AppOptions {
   // Folder holding the built web app. The release image serves it from the same origin
   // as the API, so the browser only ever talks to its own server (NFR-05).
   webRoot?: string
+  // Reads pictures in memory for imports and quick add (SEC-05); off without models.
+  ocr?: OcrEngine | null
 }
 
 // The server stores and syncs ciphertext and handles sign-in; it never reads user
@@ -41,6 +45,7 @@ export function createApp({
   openSignUp = false,
   trustProxy = false,
   webRoot,
+  ocr = null,
 }: AppOptions) {
   const sessions = sessionStore(db)
   const limits = attemptLimits(trustProxy)
@@ -50,7 +55,18 @@ export function createApp({
   // records can be a few MiB (at most 500 records), everything else a few hundred bytes.
   const smallBodies = bodyLimit({ maxSize: 64 * 1024 })
   const recordBatches = bodyLimit({ maxSize: 16 * 1024 * 1024 })
-  api.use((c, next) => (c.req.path === '/api/records' ? recordBatches : smallBodies)(c, next))
+  // A picture to read (SEC-05): refused unread when too big.
+  const pictures = bodyLimit({
+    maxSize: maxOcrBytes,
+    onError: (c) => c.json({ error: 'too-large' } satisfies OcrError, 413),
+  })
+  api.use((c, next) =>
+    (c.req.path === '/api/records'
+      ? recordBatches
+      : c.req.path === '/api/ocr'
+        ? pictures
+        : smallBodies)(c, next),
+  )
   api.use(sameOrigin)
 
   api.get('/health', (c) => c.json({ status: 'ok' } satisfies HealthResponse))
@@ -66,6 +82,7 @@ export function createApp({
   api.route('/', inviteRoutes({ db, sessions }))
   api.route('/', peopleRoutes({ db, sessions }))
   api.route('/', passkeyRoutes({ db, sessions, limits }))
+  api.route('/', ocrRoutes({ sessions, engine: ocr }))
 
   const app = new Hono()
   app.route('/api', api)

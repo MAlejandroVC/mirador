@@ -5,6 +5,8 @@ packages:
 # Dependencies allowed to run install scripts. Add one only with a reason in the pull request.
 allowBuilds:
   esbuild: true
+  # Its script only fetches GPU libraries; the CPU runtime ships in the package (OCR, IMP-11).
+  onnxruntime-node: false
 
 # One version of each shared dev tool for every package.
 catalog:

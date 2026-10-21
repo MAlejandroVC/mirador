@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
 import { createApp } from './app.ts'
+import { modelFiles, paddleEngine } from './ocr/engine.ts'
 import { deleteRemovedAccounts } from './routes/people.ts'
 import { loadSecret, newCode } from './settings.ts'
 import { migrationsFolder, schema } from './store/db.ts'
@@ -24,6 +25,13 @@ function announceSetupCode() {
 const [users] = await db.select({ count: count() }).from(schema.users)
 if (!users?.count) announceSetupCode()
 
+// SEC-05: pictures are read on this server, in memory. Without the model files (a
+// development checkout before `pnpm --filter @repo/server models`) it is simply off.
+const models = modelFiles(
+  process.env.OCR_MODELS_DIR ?? new URL('../models/', import.meta.url).pathname,
+)
+if (!models) console.log('Text recognition models not found: reading pictures is off')
+
 const app = createApp({
   db,
   secret,
@@ -32,6 +40,7 @@ const app = createApp({
   openSignUp: process.env.MIRADOR_OPEN_SIGNUP === 'true',
   trustProxy: process.env.MIRADOR_TRUST_PROXY === 'true',
   ...(process.env.WEB_ROOT ? { webRoot: process.env.WEB_ROOT } : {}),
+  ocr: models ? paddleEngine(models) : null,
 })
 
 // SYS-23: removed accounts are deleted once their window ends: checked at start and

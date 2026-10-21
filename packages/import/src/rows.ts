@@ -1,6 +1,7 @@
 import type { ColumnSettings } from './columns.ts'
 import { typeOf } from './columns.ts'
 import type { Table } from './csv.ts'
+import type { UnsureField } from './statement.ts'
 import { readAmount, readDate, readTags } from './values.ts'
 
 // IMP-08, IMP-10: each line of the file read with the column settings. A line that
@@ -26,9 +27,15 @@ export interface ImportRow {
   problem: RowProblem | null
   /** The line as written, to show a row that couldn't be read (IMP-33). */
   text: string
+  /** IMP-10: fields a picture or scan made hard to read, for the person to check. */
+  unsure?: UnsureField[]
 }
 
-export function readRows(table: Table, settings: ColumnSettings, defaultCurrency: string) {
+export function readRows(
+  table: Table & { sources?: readonly { unsure: readonly UnsureField[] }[] },
+  settings: ColumnSettings,
+  defaultCurrency: string,
+) {
   const index = (field: ColumnSettings['columns'][number]) => settings.columns.indexOf(field)
   const at = {
     date: index('date'),
@@ -48,6 +55,7 @@ export function readRows(table: Table, settings: ColumnSettings, defaultCurrency
     column < 0 ? '' : (row[column] ?? '').trim()
 
   return table.rows.map((row, position): ImportRow => {
+    const unsure = table.sources?.[position]?.unsure
     const currencyText = cell(row, at.currency).toUpperCase()
     const currency = currencyText === '' ? defaultCurrency : currencyText
     const validCurrency = /^[A-Z]{3}$/.test(currency)
@@ -98,6 +106,7 @@ export function readRows(table: Table, settings: ColumnSettings, defaultCurrency
         .filter((value) => value !== '')
         .join(' · ')
         .slice(0, 300),
+      ...(unsure && unsure.length > 0 ? { unsure: [...unsure] } : {}),
     }
   })
 }
