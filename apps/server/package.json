@@ -22,7 +22,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "~0.5.10",
+    "@electric-sql/pglite": "~0.5.11",
     "@repo/config": "workspace:*",
     "@types/node": "catalog:",
     "drizzle-kit": "^0.31.11",
