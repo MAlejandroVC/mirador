@@ -1448,6 +1448,7 @@
       "inflow": "Money in",
       "outflow": "Money out",
       "type": "Type",
+      "transferId": "Transfer ID",
       "payee": "Payee",
       "note": "Note",
       "wallet": "Wallet",

@@ -1448,6 +1448,7 @@
       "inflow": "Entrada",
       "outflow": "Salida",
       "type": "Tipo",
+      "transferId": "ID de transferencia",
       "payee": "Comercio o persona",
       "note": "Nota",
       "wallet": "Cartera",

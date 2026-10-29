@@ -267,37 +267,70 @@ export function planRows(
   })
 
   // IMP-22: money out of one wallet in the file and the same amount into another
-  // within three days is probably one transfer. It is offered as a transfer by default
-  // when the file says so (a type column or a transfer-like category).
+  // within three days is probably one transfer. What the file says comes first, so an
+  // expense the same day as a transfer leg can't take that leg's place: rows that
+  // share a transfer id are one transfer, then rows marked as transfers (by a type
+  // column or a transfer-like category) pair with each other. Unmarked rows are
+  // matched last, offered apart by default, and only in files that mark nothing: a
+  // file that marks its transfers has said which rows aren't, and a row its type
+  // column calls an expense or income is never a transfer.
   const open = planned.filter(
-    (item) => item.status.kind === 'ready' || item.status.kind === 'noCategory',
+    (item) =>
+      (item.status.kind === 'ready' || item.status.kind === 'noCategory') &&
+      item.row.kind !== 'expense' &&
+      item.row.kind !== 'income',
   )
+  const marked = (item: PlannedRow) =>
+    item.row.transfer || transferWords.test(nameKey(item.row.category))
   const taken = new Set<number>()
-  for (const out of open) {
-    const amount = out.row.amount ?? 0
-    if (amount >= 0 || taken.has(out.row.line)) continue
-    let best: PlannedRow | null = null
-    let bestGap = Number.MAX_SAFE_INTEGER
-    for (const into of open) {
-      if (taken.has(into.row.line) || into.walletKey === out.walletKey) continue
-      if (into.row.amount !== -amount || into.row.currency !== out.row.currency) continue
-      const gap = Math.abs(daysBetween(out.row.date ?? '', into.row.date ?? ''))
-      if (gap <= matchDays && gap < bestGap) {
-        best = into
-        bestGap = gap
-      }
-    }
-    if (!best) continue
+  const pair = (out: PlannedRow, into: PlannedRow, likely: boolean) => {
     taken.add(out.row.line)
-    taken.add(best.row.line)
-    const likely =
-      out.row.transfer ||
-      best.row.transfer ||
-      transferWords.test(nameKey(out.row.category)) ||
-      transferWords.test(nameKey(best.row.category))
-    out.status = { kind: 'transfer', pairLine: best.row.line, outgoing: true, likely }
-    best.status = { kind: 'transfer', pairLine: out.row.line, outgoing: false, likely }
+    taken.add(into.row.line)
+    out.status = { kind: 'transfer', pairLine: into.row.line, outgoing: true, likely }
+    into.status = { kind: 'transfer', pairLine: out.row.line, outgoing: false, likely }
   }
+
+  // An id on one or two rows names exactly one transfer: one side out, one in, in two
+  // wallets. Those rows pair only by their id. An id on more rows (a column that only
+  // says "yes") just marks them.
+  const byId = new Map<string, PlannedRow[]>()
+  for (const item of open) {
+    if (item.row.transferId === '') continue
+    const sides = byId.get(item.row.transferId) ?? []
+    sides.push(item)
+    byId.set(item.row.transferId, sides)
+  }
+  for (const sides of byId.values()) {
+    if (sides.length > 2) continue
+    for (const item of sides) taken.add(item.row.line)
+    const [a, b] = sides
+    if (!a || !b) continue
+    const [out, into] = (a.row.amount ?? 0) < 0 ? [a, b] : [b, a]
+    if ((out.row.amount ?? 0) < 0 && (into.row.amount ?? 0) > 0 && out.walletKey !== into.walletKey)
+      pair(out, into, true)
+  }
+
+  const match = (candidates: readonly PlannedRow[]) => {
+    for (const out of candidates) {
+      const amount = out.row.amount ?? 0
+      if (amount >= 0 || taken.has(out.row.line)) continue
+      let best: PlannedRow | null = null
+      let bestGap = Number.MAX_SAFE_INTEGER
+      for (const into of candidates) {
+        if (taken.has(into.row.line) || into.walletKey === out.walletKey) continue
+        if (into.row.amount !== -amount || into.row.currency !== out.row.currency) continue
+        const gap = Math.abs(daysBetween(out.row.date ?? '', into.row.date ?? ''))
+        if (gap <= matchDays && gap < bestGap) {
+          best = into
+          bestGap = gap
+        }
+      }
+      if (best) pair(out, best, marked(out) || marked(best))
+    }
+  }
+  match(open.filter(marked))
+  if (!rows.some((row) => row.kind !== null || row.transferId !== '')) match(open)
+
   // A row the file calls a transfer with no other side is put to the person.
   for (const item of planned)
     if (item.status.kind === 'ready' && item.row.transfer && item.categoryKey === null)

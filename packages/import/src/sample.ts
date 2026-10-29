@@ -47,6 +47,9 @@ export function sampleRows(today: string, names: SampleNames, currency: string):
       date,
       amount: Math.round(amount * scale),
       currency,
+      // Every sample row says what it is, so transfers pair exactly (IMP-22).
+      kind: amount < 0 ? 'expense' : 'income',
+      transferId: '',
       transfer: false,
       payee,
       note: '',
@@ -65,8 +68,9 @@ export function sampleRows(today: string, names: SampleNames, currency: string):
     to: keyof typeof sampleBalances,
     amount: number,
   ) => {
-    add(date, from, -amount, '', '', '', { transfer: true })
-    add(date, to, amount, '', '', '', { transfer: true })
+    const sides = { kind: 'transfer', transferId: `${date} ${from} ${to}`, transfer: true } as const
+    add(date, from, -amount, '', '', '', sides)
+    add(date, to, amount, '', '', '', sides)
   }
   const day = (month: string, n: number) =>
     `${month.slice(0, 8)}${String(Math.min(n, daysInMonth(Number(month.slice(0, 4)), Number(month.slice(5, 7))))).padStart(2, '0')}`
