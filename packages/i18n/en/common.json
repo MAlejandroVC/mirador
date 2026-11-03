@@ -20,7 +20,7 @@
     "takePicture": "Take a picture",
     "choosePicture": "Choose a picture",
     "reading": "Reading the picture…",
-    "private": "Your server reads it and forgets it right away.",
+    "private": "Read on this device. The picture never leaves it.",
     "filledIn": "Filled in from your picture",
     "check": {
       "amount": "Hard to read. Check the amount.",
@@ -29,8 +29,7 @@
     },
     "failed": {
       "unreadable": "Mirador couldn’t read this picture. Enter it by hand or try another one.",
-      "unavailable": "Reading pictures isn’t set up on this server yet. Enter it by hand.",
-      "offline": "Mirador couldn’t reach your server. Enter it by hand or try again."
+      "unavailable": "Mirador couldn’t load its text reader. Check your connection, or enter it by hand."
     }
   },
   "home": {
@@ -1633,11 +1632,10 @@
       "waiting": "Waiting",
       "reading": "Reading",
       "read": "Read",
-      "private": "Pictures and scans are read by your server, which keeps nothing.",
+      "private": "Everything is read on this device. Your files never leave it.",
       "failed": {
         "unreadable": "Mirador couldn’t read one of these files. Try a clearer picture, or the PDF your bank sends.",
-        "unavailable": "Reading PDFs and pictures isn’t set up on this server yet.",
-        "offline": "Mirador couldn’t reach your server. Check your connection and try again.",
+        "unavailable": "Mirador couldn’t load its text reader. Check your connection and try again.",
         "nothing": "Mirador didn’t find any transactions in these files.",
         "different": "These files are laid out differently. Import them one at a time."
       }

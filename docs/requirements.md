@@ -308,7 +308,7 @@ The pipeline runs in a fixed order: upload, extract, normalize, match duplicates
 | IMP-08 | The app shall extract, per row: date, description, amount, direction, and running balance when present, with a confidence score per field. | Must |
 | IMP-09 | Where the wallet has a credit limit, the app shall treat charges as expenses and payments as transfers into the wallet. | Must |
 | IMP-10 | If extraction fails or a field's confidence is below the threshold, then the app shall flag that row instead of guessing silently. | Must |
-| IMP-11 | The app shall run all extraction on the user's own server; no file is sent to any third-party or remote AI service. | Must |
+| IMP-11 | The app shall run all extraction on the user's device; no file or picture is sent to the server, a third party or a remote AI service. | Must |
 | ~~IMP-12~~ | Dropped: extraction never uses a third-party or remote service. | Won't |
 
 **Matching and categorization**
@@ -721,7 +721,7 @@ Every user's financial data is end-to-end encrypted. The client encrypts it befo
 | SEC-02 | The app shall derive the user's encryption key on the client from their password, and shall never send the password or the key to the server. | Must |
 | SEC-03 | The app shall sign users in without the server learning their password. | Must |
 | SEC-04 | Anyone with full access to the server, its database or its backups shall see only ciphertext plus the metadata listed in SEC-10. | Must |
-| SEC-05 | When the user sends a picture, screenshot or statement for extraction, the server shall read it only in memory, return the extracted rows to the client over HTTPS, and keep nothing readable afterwards, on disk or in logs. | Must |
+| ~~SEC-05~~ | Dropped: extraction runs on the user's device (IMP-11), so the server never receives a picture, screenshot or statement. | Won't |
 | SEC-06 | Where the user chooses to keep original files (IMP epic), the app shall encrypt them on the client before they are stored. | Must |
 | SEC-07 | When an account is created, the app shall generate a recovery key on the client, show it once and ask the user to save it. If the user forgets their password, the app shall let them regain access with that recovery key and set a new password, without the server ever being able to decrypt their data. If the user loses both the password and the recovery key, the data cannot be recovered by anyone, and the app shall say so when the key is shown. | Must |
 | SEC-08 | The app shall let the user change their password, replace their recovery key and sign out other devices without losing data. | Must |

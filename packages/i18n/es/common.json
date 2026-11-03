@@ -20,7 +20,7 @@
     "takePicture": "Tomar foto",
     "choosePicture": "Elegir foto",
     "reading": "Leyendo la foto…",
-    "private": "Tu servidor la lee y la olvida enseguida.",
+    "private": "Se lee en este dispositivo. La foto nunca sale de él.",
     "filledIn": "Lleno con tu foto",
     "check": {
       "amount": "Difícil de leer. Revisa el monto.",
@@ -29,8 +29,7 @@
     },
     "failed": {
       "unreadable": "Mirador no pudo leer esta foto. Captúralo a mano o prueba con otra.",
-      "unavailable": "Este servidor todavía no está listo para leer fotos. Captúralo a mano.",
-      "offline": "Mirador no pudo conectarse con tu servidor. Captúralo a mano o inténtalo otra vez."
+      "unavailable": "Mirador no pudo cargar su lector de texto. Revisa tu conexión o captúralo a mano."
     }
   },
   "home": {
@@ -1633,11 +1632,10 @@
       "waiting": "En espera",
       "reading": "Leyendo",
       "read": "Leído",
-      "private": "Tu servidor lee las fotos y los escaneos, y no guarda nada.",
+      "private": "Todo se lee en este dispositivo. Tus archivos nunca salen de él.",
       "failed": {
         "unreadable": "Mirador no pudo leer uno de estos archivos. Prueba con una foto más clara o con el PDF que te manda tu banco.",
-        "unavailable": "Este servidor todavía no está listo para leer PDF ni fotos.",
-        "offline": "Mirador no pudo conectarse con tu servidor. Revisa tu conexión e inténtalo otra vez.",
+        "unavailable": "Mirador no pudo cargar su lector de texto. Revisa tu conexión e inténtalo de nuevo.",
         "nothing": "Mirador no encontró movimientos en estos archivos.",
         "different": "Estos archivos tienen formatos distintos. Impórtalos uno por uno."
       }

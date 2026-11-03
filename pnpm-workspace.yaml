@@ -5,8 +5,9 @@ packages:
 # Dependencies allowed to run install scripts. Add one only with a reason in the pull request.
 allowBuilds:
   esbuild: true
-  # Its script only fetches GPU libraries; the CPU runtime ships in the package (OCR, IMP-11).
-  onnxruntime-node: false
+  # Comes with onnxruntime-web (text recognition, IMP-11); its script only checks the
+  # versions of its command-line tools, which Mirador doesn't use.
+  protobufjs: false
 
 # One version of each shared dev tool for every package.
 catalog:

@@ -31,7 +31,7 @@ describe('PictureBar', () => {
 
   it('SEC-05: says the picture is read privately while it is read', () => {
     render(<PictureBar picture={state({ phase: 'reading' })} />)
-    expect(screen.getByRole('status').textContent).toContain('forgets it right away')
+    expect(screen.getByRole('status').textContent).toContain('never leaves it')
   })
 
   it('IMP-10: asks to check an amount that was hard to read', () => {

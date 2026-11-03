@@ -1,18 +1,19 @@
-import { type OcrError, ocrResponse } from '@repo/api'
 import type { TextPage } from '@repo/import'
+import { transfer, wrap } from 'comlink'
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+import type { TextReader } from './ocr/ocr.worker'
 
-// IMP-04, IMP-05, IMP-07, IMP-11, SEC-05: turning PDFs and pictures into words with
-// their places, for packages/import to read. A text PDF is read here on the device;
-// a picture or a scanned page is made into a JPEG here and read by the person's own
-// server, in memory. Nothing goes anywhere else.
+// IMP-04, IMP-05, IMP-07, IMP-11: turning PDFs and pictures into words with their
+// places, for packages/import to read. Everything happens here on the device: a text
+// PDF's words come straight from the file, and pictures and scanned pages are read by
+// the text recognition worker. No file or picture is sent anywhere.
 
 GlobalWorkerOptions.workerSrc = pdfWorker
 
 /** Why a file couldn't be read, for the message the person sees. */
 export class ReadingError extends Error {
-  constructor(readonly reason: 'unreadable' | 'unavailable' | 'offline') {
+  constructor(readonly reason: 'unreadable' | 'unavailable') {
     super(reason)
   }
 }
@@ -30,24 +31,40 @@ export function isPicture(file: File) {
   return file.type.startsWith('image/') || /\.(jpe?g|png|webp|heic|heif)$/i.test(file.name)
 }
 
-// Big enough to read small print, small enough to send quickly from a phone.
-const maxSide = 4096
+let reader: TextReader | null = null
+
+/** The text recognition worker, started the first time a picture is read. */
+function textReader() {
+  reader ??= wrap<TextReader>(
+    new Worker(new URL('./ocr/ocr.worker.ts', import.meta.url), { type: 'module' }),
+  )
+  return reader
+}
+
+/** The words on a picture, read on this device. */
+async function readText(picture: ImageBitmap): Promise<TextPage> {
+  let page: TextPage | null
+  try {
+    page = await textReader().read(transfer(picture, [picture]))
+  } catch {
+    throw new ReadingError('unreadable')
+  }
+  // The models couldn't load, which needs a connection the first time.
+  if (!page) throw new ReadingError('unavailable')
+  return page
+}
 
 /**
- * The picture as a JPEG at most `maxSide` wide or tall. The browser decodes it, so a
- * HEIC photo works wherever the browser shows HEIC (Safari); the server never sees one.
+ * A photo, a screenshot or a scan: one page. The browser decodes it, so a HEIC photo
+ * works wherever the browser shows HEIC (Safari), and the picture shown next to a row
+ * to check is the file itself.
  */
-export async function preparePicture(blob: Blob): Promise<Blob> {
-  const bitmap = await createImageBitmap(blob).catch(() => {
+export async function readPicture(file: Blob): Promise<ReadPage> {
+  const picture = await createImageBitmap(file).catch(() => {
     throw new ReadingError('unreadable')
   })
-  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height))
-  const canvas = document.createElement('canvas')
-  canvas.width = Math.max(1, Math.round(bitmap.width * scale))
-  canvas.height = Math.max(1, Math.round(bitmap.height * scale))
-  canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
-  bitmap.close()
-  return toJpeg(canvas)
+  const page = await readText(picture)
+  return { ...page, image: URL.createObjectURL(file) }
 }
 
 function toJpeg(canvas: HTMLCanvasElement) {
@@ -61,43 +78,6 @@ function toJpeg(canvas: HTMLCanvasElement) {
       0.9,
     )
   })
-}
-
-const wait = (ms: number) =>
-  new Promise((resolve) => {
-    setTimeout(resolve, ms)
-  })
-
-/** SEC-05: the server reads the JPEG in memory and answers with its words. */
-export async function readOnServer(jpeg: Blob, fetchFn: typeof fetch = fetch): Promise<TextPage> {
-  // The server reads one picture at a time and asks the rest to come back shortly.
-  for (let attempt = 0; ; attempt += 1) {
-    let response: Response
-    try {
-      response = await fetchFn('/api/ocr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'image/jpeg' },
-        body: jpeg,
-        credentials: 'same-origin',
-      })
-    } catch {
-      throw new ReadingError('offline')
-    }
-    if (response.ok) return ocrResponse.parse(await response.json())
-    const body = (await response.json().catch(() => null)) as OcrError | null
-    if (body?.error === 'busy' && attempt < 15) {
-      await wait(2000)
-      continue
-    }
-    throw new ReadingError(body?.error === 'ocr-unavailable' ? 'unavailable' : 'unreadable')
-  }
-}
-
-/** A photo, a screenshot or a scan: one page. */
-export async function readPicture(file: Blob): Promise<ReadPage> {
-  const jpeg = await preparePicture(file)
-  const page = await readOnServer(jpeg)
-  return { ...page, image: URL.createObjectURL(jpeg) }
 }
 
 /**
@@ -135,6 +115,7 @@ export async function readPdf(file: Blob, onPage?: (done: number, total: number)
         if (!context) throw new ReadingError('unreadable')
         await page.render({ canvas, canvasContext: context, viewport: scaled }).promise
         pages.push(await readPicture(await toJpeg(canvas)))
+        canvas.width = 0
       }
       onPage?.(number, pdf.numPages)
     }

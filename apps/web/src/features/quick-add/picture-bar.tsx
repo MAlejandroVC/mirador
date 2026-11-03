@@ -7,7 +7,7 @@ import { CameraIcon, CircleNotchIcon, ImageIcon } from '../../components/ui/icon
 /** WID-02, IMP-07: where quick add's picture stands, kept by the quick-add sheet. */
 export interface PictureState {
   phase: 'idle' | 'reading' | 'filled' | 'failed'
-  failure?: 'unreadable' | 'unavailable' | 'offline'
+  failure?: 'unreadable' | 'unavailable'
   /** IMP-10: what was hard to read, for the person to check. */
   unsure: ReceiptField[]
   /** The picture, small, while it is read and once it filled the form in. */
