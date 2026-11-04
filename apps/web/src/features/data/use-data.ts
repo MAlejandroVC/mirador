@@ -55,18 +55,33 @@ export function useUndoImport() {
   const queryClient = useQueryClient()
   const save = useSaveRecords()
   return useMutation({
-    mutationFn: async ({ batchId, ledger }: { batchId: string; ledger: Ledger }) => {
+    mutationFn: async ({
+      batchId,
+      ledger,
+      keepSettings = false,
+    }: {
+      batchId: string
+      ledger: Ledger
+      /** IMP-42: undo only the transactions, keeping what it changed on the wallet. */
+      keepSettings?: boolean
+    }) => {
       const batch = ledger.batches.find((item) => item.id === batchId)
       if (!batch) return 0
       const types = new Map(
         (await vault.listRecords()).map((record) => [record.id, record.body.type]),
       )
-      const { changes, removed } = undoImport(batchId, batch, {
-        transactions: ledger.transactions,
-        categories: ledger.categories,
-        recurring: ledger.recurring,
-        typeOf: (id) => types.get(id),
-      })
+      const { changes, removed } = undoImport(
+        batchId,
+        batch,
+        {
+          transactions: ledger.transactions,
+          categories: ledger.categories,
+          recurring: ledger.recurring,
+          typeOf: (id) => types.get(id),
+          records: { wallets: ledger.wallets, recurring: ledger.recurring },
+        },
+        { keepSettings },
+      )
       await save.mutateAsync(changes)
       return removed
     },

@@ -352,6 +352,8 @@ The 12 colors people can choose for wallets, category groups and tags, in the or
 | 768 to 1023 px (tablets) | Same tab bar. Content in one centered column, at most 640 px wide. Sheets become centered dialogs, at most 540 px wide. |
 | 1024 px and up (large tablets, computers) | A sidebar on the left replaces the tab bar, with the same places in the same order and the quick-add button at its top as a filled "New" button. Content is at most 720 px wide. Home places its cards in two columns, up to 1040 px wide, filled down the first and then the second, so the person's order still reads top to bottom. |
 
+One sheet is wider: reviewing a statement (DL-PAT-09). From 1024 px it fills most of the window, up to 1152 px wide, with the list on the left and the statement's pages on the right, so a row and the place it was read are seen together.
+
 *Why:* this is how iPadOS and macOS apps adapt: the same places, presented as a sidebar when there is room.
 
 ## Shape and depth
@@ -541,6 +543,8 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 
 **DL-CMP-16** **Date tile.** A day to come, such as a row in Home's Coming up, shows as a 34 px tile like Calendar's icon: the month short and uppercase in `brand` over the day in `text`, on the `brand` tint (DL-COL-08, DL-COL-13). The row's text says what happens that day, so screen readers skip the tile.
 
+**DL-CMP-17** **Page boxes.** A part of a statement page, shown as the picture itself, with rounded 3 px boxes drawn over what was read. A box is `brand` at 10% with a 1.5 px `brand` border; one that needs a look is `warning`; one that is only context, such as a row already in Mirador, is a thin `text-muted` outline; an installment mark is dashed, as it is part of the row's text. A box may carry a small tag ("Date", "Amount", "In Mirador") in its color with `on-brand` text, sitting on its top edge, at its left or, on the right half of the page, at its right, so it never leaves the page. Boxes on lines closer together than a tag is tall, such as the wallet's dates and limit, take their tags just after them instead, stacked in order so none covers another. The one being looked at gets a 2 px border and a soft ring. Boxes never use category colors (DL-COL-13). *Why:* pointing at the page is quicker to check than a list of column names, and the person sees what Mirador saw.
+
 ## Patterns
 
 **DL-PAT-01** **Navigation.** The tabs are Home, Transactions, Budget and Wallets. Opening an item pushes a screen in from the right, and swiping from the left edge goes back. Creating or editing opens a sheet (DL-CMP-08). Tapping the current tab returns to its top. Settings is not a place, so it is not a tab: it opens from the profile picture beside each tab's title, or from the bottom of the sidebar (DL-LAY-06). It lists Account, then Appearance, Language, Currency, Categories, Tags, Password and security, and Invites for the person who runs the server, then Add to Home Screen until Mirador runs from there, then Lock and Sign out; more areas join as they are built.
@@ -549,7 +553,7 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 
 **DL-PAT-03** **Empty states.** Every list and screen that can be empty has an empty state (DL-CMP-14). It is never a blank screen.
 
-**DL-PAT-04** **Loading.** Data comes from the device, so screens appear at once with their content. Only waits on the server (sign-in, sync, reading a receipt) show progress: a small spinner in place, appearing only after 300 ms, never a full-screen block.
+**DL-PAT-04** **Loading.** Data comes from the device, so screens appear at once with their content. Only real waits (sign-in and sync on the server, reading a statement or a picture on the device) show progress: a small spinner in place, appearing only after 300 ms, never a full-screen block.
 
 **DL-PAT-05** **Errors.** An error says what happened and what to do next, in plain words, where it happened: under the field, on the row, or in a banner for the whole app. It uses `warning`, never `danger`. No error codes, no "Oops", no blame. Example: "That date is in the future. Pick today or earlier."
 
@@ -558,6 +562,8 @@ Full-width buttons are 50 px tall; any button is at least 44 px. A destructive b
 **DL-PAT-07** **Offline.** A slim banner under the navigation bar says "You're offline. Changes will sync when you're back." Quick-add keeps working. Anything that needs the server is disabled with a one-line reason, never hidden.
 
 **DL-PAT-08** **Saved.** A normal save shows only the brief save animation (DL-MOT-02). No "Saved!" message.
+
+**DL-PAT-09** **Reviewing an import.** A statement is checked by example, not cell by cell: one row is boxed on its page (DL-CMP-17) with "10 rows, all read like this one" and a plain "Fix how it's read". Below it, the balance check in one line, then the rows in three groups: To look at, Already in Mirador, Ready. On a phone, a segmented control switches between the List and the Statement; on a computer they sit side by side (DL-LAY-06). Tapping a row, in the list or on the page, opens Check this row with its part of the page above its fields. Facts the statement gives about the wallet are offered in one "Update" row, as switches that start on. After the import, the wallet opens with the new rows highlighted (DL-MOT-02) and the undo banner (DL-CMP-13); undoing an import that also changed settings asks which to undo, with an action sheet. *Why:* most statements read correctly, so the screen asks for a glance and spends the person's attention only on the rows that need it.
 
 ## Accessibility
 

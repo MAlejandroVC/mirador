@@ -2,7 +2,7 @@
 
 ## Summary
 
-Mirador is a phone-first, responsive React web app with a self-hosted TypeScript server and PostgreSQL. All user data is end-to-end encrypted. The browser holds the keys, keeps a local copy of the data and runs every calculation. The server stores and syncs ciphertext, handles sign-in and reads images for OCR in memory only. Everything ships as one Docker image, and every part is free and open source.
+Mirador is a phone-first, responsive React web app with a self-hosted TypeScript server and PostgreSQL. All user data is end-to-end encrypted. The browser holds the keys, keeps a local copy of the data and runs every calculation. The server stores and syncs ciphertext, and handles sign-in; it never sees a statement or a picture, because text recognition runs in the browser too. Everything ships as one Docker image, and every part is free and open source.
 
 | Layer | Choice | License |
 |---|---|---|
@@ -21,7 +21,7 @@ Mirador is a phone-first, responsive React web app with a self-hosted TypeScript
 | Server database | PostgreSQL with Drizzle ORM and drizzle-kit migrations | PostgreSQL License, Apache-2.0 |
 | Accounts | Own sign-in module: username and password-derived login secret, cookie sessions; passkeys through @simplewebauthn/server | MIT |
 | Import parsing | Papa Parse (CSV), own OFX parser, pdf.js (text PDFs), all in the browser | MIT, Apache-2.0 |
-| OCR | PaddleOCR models through ONNX Runtime for Node (ppu-paddle-ocr), on the server, in memory | Apache-2.0, MIT |
+| OCR | PaddleOCR models through ONNX Runtime Web (ppu-paddle-ocr), in the browser | Apache-2.0, MIT |
 | Money and dates | Integer minor units, decimal.js, date-fns | MIT |
 | Push | Web Push with the web-push library | MPL-2.0 |
 | Scheduled tasks | Croner, in the server process | MIT |
@@ -47,7 +47,7 @@ Requirement IDs refer to the [Functional Requirements Specification](requirement
 |---|---|
 | SEC-01 to SEC-04, SEC-09: end-to-end encryption, per-user keys | Keys made and kept in the browser. The server stores opaque records, so every query, total and search runs on the client |
 | SEC-03: sign-in without the server learning the password | The browser derives a separate login secret from the password; the server only ever sees that |
-| SEC-05: images read only in memory on the server | OCR in a request-scoped worker; uploads are never written to disk, a queue or logs |
+| IMP-11: extraction on the device | OCR runs in a Web Worker in the browser; no picture or statement is ever sent to the server |
 | SEC-06, TXN-14, IMP-38: kept files encrypted | Files encrypted in the browser with their own key before upload |
 | SEC-07, SEC-08: recovery key, password change | The data key is wrapped twice (password, recovery key); changing either re-wraps the key, never the data |
 | SEC-11, SEC-12: encrypted offline queue, auto-lock | Nothing plaintext on the device's disk; keys and decrypted data live only in memory and are dropped on lock |
@@ -67,7 +67,7 @@ Requirement IDs refer to the [Functional Requirements Specification](requirement
 
 ## Architecture
 
-The browser is the app. It holds the keys, the local database and all business logic. The server is an encrypted store with sign-in, sync, push and OCR. Screens never hold rules: they call packages/core, which reads packages/db, the local SQLite database.
+The browser is the app. It holds the keys, the local database and all business logic. The server is an encrypted store with sign-in, sync and push. Screens never hold rules: they call packages/core, which reads packages/db, the local SQLite database.
 
 Data is readable only in the browser; the server stores ciphertext.
 
@@ -83,14 +83,14 @@ flowchart TB
     crypto["packages/crypto<br/>Argon2id, AES-GCM, keys, recovery key"]
     sync["packages/sync<br/>pushes and pulls encrypted records; encrypted cache in IndexedDB"]
   end
-  server["apps/server: Node.js, Hono, own sign-in<br/>sign-in, sync store, OCR in memory, generic push, backups; holds no keys"]
+  server["apps/server: Node.js, Hono, own sign-in<br/>sign-in, sync store, generic push, backups; holds no keys"]
   storage["PostgreSQL and file volume<br/>ciphertext and wrapped keys only"]
   phone --> web
   laptop --> web
   web --> core & import & db & crypto
   db --> sync
   crypto --> sync
-  sync -- "HTTPS: encrypted records, login secret, images for OCR" --> server
+  sync -- "HTTPS: encrypted records, login secret" --> server
   server --> storage
 ```
 
@@ -101,7 +101,7 @@ Arrows point from a part to what it uses. Plaintext exists only inside the dashe
 | Key derivation, encryption, decryption, auto-lock | Sign-in, sessions, invites (own module) |
 | Local SQLite database and encrypted cache | Encrypted records and files, per user |
 | Ledger, budgets, analysis, goals, search, filters | Sync: hands out changes since a cursor |
-| Import parsing, matching, categorization, rules | OCR of images and scanned PDFs, in memory |
+| Import parsing, OCR, matching, categorization, rules | Static files: the app, OCR models |
 | Recurring entries, posted on the next unlock | Generic push reminders at times the client sets |
 | Archive export and import | Scheduled ciphertext backups |
 
@@ -178,7 +178,7 @@ The server is Node.js 24 LTS with Hono and PostgreSQL through Drizzle. It has no
 | Sign-ups | The first account is the admin. Sign-ups are off by default; the admin sends invites (SYS-13) |
 | Isolation | Every query is scoped to the session's user in one place; requests for another user's records are refused (SEC-09) |
 | Tables | Accounts (username only), sessions (token hashes), key material (salt, Argon2 parameters, wrapped keys, recovery secret hash), records, files, push subscriptions, invites |
-| Scheduled tasks | Croner in the server process: backups, purges, push sends. No job queue, since OCR never stores its input |
+| Scheduled tasks | Croner in the server process: backups, purges, push sends. No job queue |
 | Backups (DAT-09) | Scheduled pg_dump plus the file volume, to a folder the admin chooses, keeping the last 14. Backups hold ciphertext only |
 | Migrations | Generated by drizzle-kit, committed, run at start after an automatic backup (DAT-10) |
 
@@ -192,24 +192,23 @@ The server is Node.js 24 LTS with Hono and PostgreSQL through Drizzle. It has no
 
 ## Import and extraction
 
-Parsing, matching and categorization run in the browser in packages/import. Only images and scanned PDFs go to the server, for OCR. No generative model is used, so every field has a confidence score and the same file always gives the same result (IMP-08, NFR-11).
+Everything runs in the browser: OCR in a Web Worker, then parsing, matching and categorization in packages/import. No file or picture is sent to the server (IMP-11). No generative model is used, so every field has a confidence score and the same file always gives the same result (IMP-08, NFR-11).
 
 | Input | Read text with | Where |
 |---|---|---|
 | CSV (IMP-02, IMP-03, DAT-12) | Papa Parse, with a saved column mapping per bank and wallet | Browser |
 | OFX, QFX (IMP-06) | Own parser for OFX 1.x and 2.x | Browser |
 | Text PDF statements (IMP-04) | pdf.js, text with positions | Browser |
-| Images, scanned PDFs, screenshots (IMP-05) | PaddleOCR | Server, in memory |
-| Receipt or bank notification photo (IMP-07, quick add) | PaddleOCR | Server, in memory |
+| Images, scanned PDFs, screenshots (IMP-05) | PaddleOCR | Browser, Web Worker |
+| Receipt or bank notification photo (IMP-07, quick add) | PaddleOCR | Browser, Web Worker |
 
-OCR on the server (IMP-11, SEC-05):
+OCR in the browser (IMP-11):
 
-- The browser sends the file over HTTPS. The server keeps it in memory, runs OCR in a worker thread and returns text boxes with confidence. Nothing is written to disk, to the database or to logs, and the buffer is cleared after the response.
-- ppu-paddle-ocr runs PaddleOCR models through ONNX Runtime for Node. Its PP-OCRv6 model covers Latin scripts including Spanish. Model files ship in the Docker image.
-- HEIC photos are converted and downscaled on the server with libheif (LGPL) before OCR.
-- One OCR at a time by default, so a small server stays responsive. If the server restarts mid-OCR, the browser retries.
+- ppu-paddle-ocr runs PaddleOCR models through ONNX Runtime Web (WebAssembly, one thread) in a Web Worker, so the screen stays responsive. No picture or statement ever leaves the device.
+- The models and ONNX Runtime's WebAssembly are part of the built app (MODELS.md), served by the user's own server and never from a CDN. The browser downloads them, about 27 MB, the first time it reads a picture, and caches them like the rest of the app.
+- The browser decodes every picture itself: HEIC photos where the browser shows HEIC (Safari), big photos scaled down to 4096 pixels, and the pages of a scanned PDF drawn with pdf.js.
 
-After OCR, everything happens in the browser:
+After OCR:
 
 1. Parse: layout parser finds the transaction table from text positions; the receipt parser finds the total, date and merchant.
 1. Normalize: amounts to minor units, dates to calendar dates, descriptors cleaned with the user's mappings (IMP-27).
@@ -257,7 +256,7 @@ Security:
 - The served code is the trust anchor: whoever controls the server could ship a changed app that captures passwords. Mitigations are a strict CSP, Subresource Integrity on every asset, reproducible builds and published hashes per release, so a user can check what they run.
 - No plaintext in logs: request bodies are never logged, and a test searches logs for known test strings.
 - Crypto code is limited to packages/crypto, covered by published test vectors, and gets an outside review before 1.0.
-- Uploaded files are checked by type and size before OCR.
+- Kept files are checked by type and size before upload.
 - Supply chain: committed lockfile, Dependabot, secret scanning, CodeQL, signed images, SECURITY.md with private reporting.
 
 ## Testing, CI and deployment
@@ -269,7 +268,7 @@ Every Must requirement gets an automated test whose name starts with its ID (NFR
 | Logic | Vitest | packages/core, import, archive, sync: ledger, periods, baseline, month budgets, matching, parsers, conflict rules |
 | Crypto | Vitest | Known-answer vectors, wrap and unwrap, recovery, password change, tampered or swapped records rejected |
 | Server | Vitest with Testcontainers (real PostgreSQL) | API, isolation between users, sync revisions, migrations |
-| Zero knowledge | Vitest and Playwright | Seed data with marker strings, then scan the database, file volume, backups and logs for them: none may appear (SEC-04, SEC-05) |
+| Zero knowledge | Vitest and Playwright | Seed data with marker strings, then scan the database, file volume, backups and logs for them: none may appear (SEC-04) |
 | Components | Vitest with React Testing Library | Screens, forms, quick-add sheet |
 | End to end | Playwright on iPhone and Android sizes plus desktop, in WebKit, Chromium and Firefox, with axe-core | Main flows, lock and unlock, recovery, offline queue, WCAG 2.2 AA (NFR-07) |
 | Extraction accuracy | Vitest over the corpus | IMP targets |
@@ -280,14 +279,14 @@ Each release is also checked by hand in Safari on an iPhone and Chrome on an And
 
 Deployment:
 
-- One Docker image per release on GitHub Container Registry: server, built web app and OCR models, for 64-bit Intel and ARM.
+- One Docker image per release on GitHub Container Registry: server and built web app with its OCR models, for 64-bit Intel and ARM.
 - Docker Compose with three services: the app, PostgreSQL and Caddy. Start with `docker compose up -d`.
 - Upgrades pull the new image; the server backs up, then migrates at start (DAT-10). Client-side data migrations run in the browser after unlock.
 - SemVer releases with release-please. Details in the developer guide.
 
 ## Hosting
 
-Whoever runs the app chooses the host. It needs Linux with Docker, a persistent disk, HTTPS, and about 1 GB of memory, mostly for OCR (to be measured). Budget and analysis work runs on the phone, so the server stays light.
+Whoever runs the app chooses the host. It needs Linux with Docker, a persistent disk, HTTPS, and little memory, since it no longer runs OCR (to be measured). Budget, analysis and OCR run on the phone, so the server stays light.
 
 | Option | Fits | Watch out for |
 |---|---|---|
@@ -317,12 +316,11 @@ CI checks every installed package's license; model files list theirs in MODELS.m
 | libsodium instead of WebCrypto | Fine choice, but WebCrypto is built in, fast and keeps keys non-extractable; only Argon2 needs a library |
 | SQLite persisted on the device (OPFS) | Would put plaintext on disk; encrypted SQLite builds (SQLCipher in WebAssembly) are less standard |
 | Sync products (PowerSync, ElectricSQL, CRDTs like Automerge) | Built around a server that reads the data, or more machinery than one user per account needs |
-| OCR in the browser | Best privacy, but slow on phones and a large model download; possible later since ppu-paddle-ocr runs on the web too |
+| OCR on the server | Faster on old phones, but the server would see every statement and picture while reading it, so a compromised server or its operator could read them (SEC-05 dropped) |
 | Expo (React Native) | Adds a native toolchain with no App Store release planned; an option for native apps later |
 | Native apps plus web from the start | Two builds to test, and Apple's paid account to distribute |
 | Next.js or Remix | Server rendering can't help when the server can't read the data |
 | MongoDB or another document database | The data is relational and the screens are aggregations |
-| Python service for OCR | A second runtime in the image; ONNX Runtime in Node runs the same models |
 | A local or hosted LLM for extraction | Large, slow, and no per-field confidence |
 | Better Auth | Needs an email and a name, and recovery, password change and passkey unlock all re-wrap keys outside it; a small own module is less code to trust (ADR 0002) |
 
@@ -336,7 +334,7 @@ CI checks every installed package's license; model files list theirs in MODELS.m
 | Slow unlock or memory pressure on older phones with 100,000 transactions | Long waits, browser kills the tab | Encrypted snapshot for one-step unlock; measure early; Argon2 parameters tuned per device class |
 | Cheap hosts sleep, wipe disks or change terms | Lost data on the server | Persistent volume required; off-host backups; the devices' encrypted caches can re-seed a new server |
 | Phone browser quirks, mainly Safari | Broken screens | Playwright WebKit at phone sizes in CI, manual iPhone check per release |
-| OCR slow or inaccurate on a small server | Slow imports, many fixes | One OCR at a time, progress shown; corpus with CI accuracy gates; unsure fields flagged |
+| OCR slow or inaccurate on older phones | Slow imports, many fixes | One picture at a time in a Web Worker, progress shown; corpus with CI accuracy gates; unsure fields flagged |
 | Metadata reveals usage patterns | Partial privacy loss | Documented in full (SEC-10); record types and sizes kept inside ciphertext where possible |
 
 ## Open questions

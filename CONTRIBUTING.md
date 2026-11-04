@@ -102,10 +102,9 @@ mirador/
 │   │       └── lib/              API client, i18n setup, helpers
 │   └── server/                   Hono API server: stores ciphertext, never decrypts
 │       └── src/
-│           ├── routes/           auth, keys, sync, files, ocr, push, admin
+│           ├── routes/           auth, keys, sync, files, push, admin
 │           ├── auth/             Sign-in, sessions, attempt limits, invites, recovery
 │           ├── store/            Drizzle schema and migrations for PostgreSQL
-│           ├── ocr/              In-memory OCR worker; model files (Git LFS)
 │           └── tasks/            Scheduled backups, purges, push sends (Croner)
 ├── packages/
 │   ├── core/                     Pure logic: money, periods, ledger, analysis, budget
@@ -150,7 +149,7 @@ TypeScript runs in strict mode, Prettier decides formatting, and ESLint enforces
 
 - **Follow the design language.** [docs/design-language.md](docs/design-language.md) decides how every screen looks, moves and reads. Colors come only from its tokens in `apps/web/src/index.css` (`bg-surface`, `text-text-muted`, `text-warning`), never from Tailwind's built-in palette or a hex value, so every screen works in all eight palettes. Check a new screen in Sage Grove and one other palette ([design-language-palettes.html](docs/design-language-palettes.html)), in light and dark. Before asking for review, look at every screen your change touches, at phone width and on a computer, and check it against the design language rule by rule. Changing a rule or a color means changing the doc and the tokens in the same pull request; a test fails if they disagree.
 - **Phone first.** Build and check every screen at 375 pixels wide before the desktop layout. Touch targets at least 44 by 44 pixels, nothing that only works on hover, and forms that open the right phone keyboard (`inputmode="decimal"` for amounts).
-- **Nothing readable leaves the browser.** Every record and file is encrypted through `@repo/crypto` before it is stored or sent. The only plaintext the server ever receives is an image or scanned PDF sent for OCR, which it keeps in memory only (SEC-01, SEC-05).
+- **Nothing readable leaves the browser.** Every record and file is encrypted through `@repo/crypto` before it is stored or sent. The server never receives plaintext, not even a statement or a picture: text recognition runs in the browser (SEC-01, IMP-11).
 - **All cryptography goes through `@repo/crypto`.** No other package calls WebCrypto or hash-wasm, no custom algorithms, no keys in localStorage, IndexedDB or logs. Keys stay non-extractable in the worker (SEC-13). The one exception is the server's sign-in: hashing and session tokens in `apps/server/src/auth/secrets.ts`, and passkey checks (`@simplewebauthn/server`) in `apps/server/src/auth/webauthn.ts`; the server holds no keys.
 - **Plaintext never touches the device's disk.** Decrypted data lives in the worker's in-memory SQLite; IndexedDB holds only ciphertext. Locking clears both keys and data (SEC-11, SEC-12).
 - **The server stays dumb.** It stores, syncs and authenticates; it never parses a record, adds business rules or needs a key. If a feature seems to need the server to read data, open a decision issue.

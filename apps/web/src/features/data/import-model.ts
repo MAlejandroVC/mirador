@@ -5,15 +5,23 @@ import {
   type CategoryLink,
   type ColumnSettings,
   type Decisions,
+  applyUpdates,
   guessColumns,
+  guessStatementColumns,
   headerKey,
+  type InstallmentMark,
   linkCategories,
   linkWallets,
   type PlannedRow,
   planRows,
   readRows,
+  type StatementTable,
   type Table,
+  type Box,
+  type TextWord,
+  walletUpdates,
   type WalletLink,
+  type WalletUpdate,
 } from '@repo/import'
 import type { Ledger, RecordChange } from '../wallets/use-ledger'
 import { recordBody } from '../wallets/use-ledger'
@@ -25,8 +33,35 @@ import { presetLooks } from '../wallets/wallet-look'
 export interface ImportFile {
   name: string
   fingerprint: string
-  table: Table
+  table: Table | StatementTable
+  /** IMP-04, IMP-05: the pictures of a statement's pages, by page, where there are some. */
+  pages?: readonly (PagePicture | null)[]
+  /** IMP-01: the wallet chosen for a statement before it was read. */
+  walletId?: string
 }
+
+export interface PagePicture {
+  url: string
+  width: number
+  height: number
+  /** IMP-40: the words read on it, in the page's units, for a box drawn around a row. */
+  words: readonly TextWord[]
+}
+
+/** A statement read from PDFs or pictures rather than a CSV. */
+export function isStatement(file: ImportFile): file is ImportFile & { table: StatementTable } {
+  return 'sources' in file.table
+}
+
+/** IMP-10, IMP-40: what the person put right on a row, by line. */
+export interface Fix {
+  date: string
+  amount: number
+  payee?: string
+  /** TXN-30: null when it isn't a month of a plan after all. */
+  installment?: InstallmentMark | null
+}
+export type Fixes = ReadonlyMap<number, Fix>
 
 /** IMP-03: the saved settings for these columns, or a fresh guess. */
 export function startingSettings(file: ImportFile, ledger: Ledger) {
@@ -41,12 +76,16 @@ export function startingSettings(file: ImportFile, ledger: Ledger) {
         dateOrder: profile.dateOrder,
         decimalMark: profile.decimalMark,
         amountSign: profile.amountSign,
+        ...(profile.installments !== undefined ? { installments: profile.installments } : {}),
       } satisfies ColumnSettings,
       walletId: profile.walletId ?? null,
     }
   return {
     profileId: null,
-    settings: guessColumns(file.table.header, file.table.rows),
+    // IMP-13: a statement's columns come from the column model.
+    settings: isStatement(file)
+      ? guessStatementColumns(file.table)
+      : guessColumns(file.table.header, file.table.rows),
     walletId: null,
   }
 }
@@ -62,8 +101,28 @@ export function fallbackWallet(ledger: Ledger, remembered: string | null) {
   )
 }
 
-export function readFileRows(file: ImportFile, settings: ColumnSettings, ledger: Ledger) {
-  return readRows(file.table, settings, ledger.defaultCurrency)
+export function readFileRows(
+  file: ImportFile,
+  settings: ColumnSettings,
+  ledger: Ledger,
+  fixes: Fixes = new Map(),
+) {
+  return readRows(file.table, settings, ledger.defaultCurrency).map((row) => {
+    const fix = fixes.get(row.line)
+    if (!fix) return row
+    // Checked by the person: no longer unsure, and read again for matching.
+    const fixed = {
+      ...row,
+      date: fix.date,
+      amount: fix.amount,
+      problem: null,
+      ...(fix.payee !== undefined ? { payee: fix.payee } : {}),
+    }
+    delete fixed.unsure
+    if (fix.installment === null) delete fixed.installment
+    else if (fix.installment) fixed.installment = fix.installment
+    return fixed
+  })
 }
 
 export function links(
@@ -90,8 +149,9 @@ export function plan(
   settings: ColumnSettings,
   ledger: Ledger,
   wallets: readonly WalletLink[],
+  fixes?: Fixes,
 ) {
-  return planRows(readFileRows(file, settings, ledger), ledger, wallets, (link) =>
+  return planRows(readFileRows(file, settings, ledger, fixes), ledger, wallets, (link) =>
     currencyOf(link, ledger),
   )
 }
@@ -102,7 +162,9 @@ export interface BuildArgs {
   categories: readonly CategoryLink[]
   decisions: Decisions
   ledger: Ledger
-  file: { name: string; fingerprint?: string; source: 'csv' | 'sample' }
+  file: { name: string; fingerprint?: string; source: 'csv' | 'statement' | 'sample' }
+  /** IMP-29, IMP-39: the wallet changes the person kept on, made with the import. */
+  updates?: { list: readonly WalletUpdate[]; walletId: string }
   names: { wallet: string; group: string }
   /** IMP-02: remember the columns for files like this one. */
   profile?: {
@@ -121,6 +183,13 @@ export function buildChanges(args: BuildArgs): {
 } {
   const uncategorized = args.ledger.categories.find((c) => c.systemKey === 'uncategorized')
   if (!uncategorized) throw new Error('The starter categories are not there yet')
+  const wallet = args.updates
+    ? args.ledger.wallets.find((item) => item.id === args.updates?.walletId)
+    : undefined
+  const applied =
+    wallet && args.updates
+      ? applyUpdates(args.updates.list, wallet, args.ledger.recurring)
+      : { changes: [], settings: undefined }
   const result = buildImport({
     planned: args.planned,
     wallets: args.wallets,
@@ -137,8 +206,9 @@ export function buildChanges(args: BuildArgs): {
     names: args.names,
     newId: args.newId,
     now: new Date(),
+    ...(applied.settings ? { settings: applied.settings } : {}),
   })
-  const changes = [...result.changes]
+  const changes = [...result.changes, ...applied.changes]
   if (args.profile) {
     const { settings, header, walletId } = args.profile
     changes.push({
@@ -159,4 +229,55 @@ export function buildChanges(args: BuildArgs): {
 /** WAL-05: whether a preset's balance is usually money owed, like a card's. */
 export function owes(preset: keyof typeof presetDefaults) {
   return presetDefaults[preset].owed
+}
+
+/**
+ * IMP-40: a row the person drew a box around, added to the statement so it is read,
+ * matched and imported like the others. Its cells are as read; the person's values
+ * come in as a fix on its line.
+ */
+export function addRow(
+  file: ImportFile & { table: StatementTable },
+  page: number,
+  box: Box,
+  cells: { date: string; payee: string; amount: string },
+): { file: ImportFile; line: number } {
+  const width = file.table.header.length
+  const row = [
+    cells.date,
+    cells.payee,
+    cells.amount,
+    ...new Array<string>(Math.max(0, width - 3)).fill(''),
+  ]
+  return {
+    file: {
+      ...file,
+      table: {
+        ...file.table,
+        rows: [...file.table.rows, row.slice(0, width)],
+        sources: [...file.table.sources, { page, box, unsure: [], fields: {} }],
+      },
+    },
+    line: file.table.rows.length + 2,
+  }
+}
+
+/** IMP-29, IMP-39: what the statement shows differently about its wallet. */
+export function updatesFor(
+  file: ImportFile,
+  ledger: Ledger,
+  walletId: string | null,
+  planned: readonly PlannedRow[],
+  settings: ColumnSettings,
+): WalletUpdate[] {
+  const wallet = ledger.wallets.find((item) => item.id === walletId)
+  if (!wallet || !isStatement(file)) return []
+  return walletUpdates({
+    wallet,
+    facts: file.table.facts,
+    planned,
+    recurring: ledger.recurring,
+    payees: ledger.payees,
+    decimalMark: settings.decimalMark,
+  })
 }
