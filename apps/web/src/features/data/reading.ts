@@ -1,9 +1,6 @@
 import type { TextPage } from '@repo/import'
 import { transfer, wrap } from 'comlink'
-// The legacy build carries polyfills (such as Math.sumPrecise) that phone browsers
-// a year or two old still need to draw a page.
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs'
-import pdfWorker from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'
+import type { PDFPageProxy } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import type { TextReader } from './ocr/ocr.worker'
 
 // IMP-04, IMP-05, IMP-07, IMP-11: turning PDFs and pictures into words with their
@@ -11,7 +8,19 @@ import type { TextReader } from './ocr/ocr.worker'
 // PDF's words come straight from the file, and pictures and scanned pages are read by
 // the text recognition worker. No file or picture is sent anywhere.
 
-GlobalWorkerOptions.workerSrc = pdfWorker
+/**
+ * pdf.js is large, so it loads the first time a PDF is read rather than with the app.
+ * The legacy build carries polyfills (such as Math.sumPrecise) that phone browsers a
+ * year or two old still need to draw a page.
+ */
+async function loadPdfJs() {
+  const [pdfjs, worker] = await Promise.all([
+    import('pdfjs-dist/legacy/build/pdf.mjs'),
+    import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'),
+  ])
+  pdfjs.GlobalWorkerOptions.workerSrc = worker.default
+  return pdfjs
+}
 
 /** Why a file couldn't be read, for the message the person sees. */
 export class ReadingError extends Error {
@@ -69,7 +78,7 @@ export async function readPicture(file: Blob): Promise<ReadPage> {
   return { ...page, image: URL.createObjectURL(file) }
 }
 
-type PdfPage = Awaited<ReturnType<Awaited<ReturnType<typeof getDocument>['promise']>['getPage']>>
+type PdfPage = PDFPageProxy
 
 /** A page of a PDF as a JPEG, drawn here on the device. */
 async function drawPage(page: PdfPage, scale: number) {
@@ -104,6 +113,7 @@ function toJpeg(canvas: HTMLCanvasElement) {
  */
 export async function readPdf(file: Blob, onPage?: (done: number, total: number) => void) {
   const data = new Uint8Array(await file.arrayBuffer())
+  const { getDocument } = await loadPdfJs()
   const task = getDocument({ data })
   const pdf = await task.promise.catch(() => {
     throw new ReadingError('unreadable')
