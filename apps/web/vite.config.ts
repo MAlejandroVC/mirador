@@ -10,11 +10,6 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  resolve: {
-    // Text recognition runs on the CPU through WebAssembly only (IMP-11); the default
-    // build would also carry WebGPU and double the download.
-    alias: [{ find: /^onnxruntime-web$/, replacement: 'onnxruntime-web/wasm' }],
-  },
   server: {
     // The browser talks only to its own server (NFR-05); in development that is the API on :3000.
     proxy: { '/api': 'http://localhost:3000' },

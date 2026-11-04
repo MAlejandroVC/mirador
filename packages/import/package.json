@@ -8,9 +8,8 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc && tsc -p scripts",
-    "test": "vitest run --passWithNoTests",
-    "train": "node --experimental-strip-types scripts/train-classifier.ts"
+    "typecheck": "tsc",
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@repo/api": "workspace:*",
@@ -18,7 +17,6 @@
   },
   "devDependencies": {
     "@repo/config": "workspace:*",
-    "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

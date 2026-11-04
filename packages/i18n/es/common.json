@@ -16,21 +16,7 @@
     "done": "Listo"
   },
   "quickAdd": {
-    "title": "Nuevo movimiento",
-    "takePicture": "Tomar foto",
-    "choosePicture": "Elegir foto",
-    "reading": "Leyendo la foto…",
-    "private": "Se lee en este dispositivo. La foto nunca sale de él.",
-    "filledIn": "Lleno con tu foto",
-    "check": {
-      "amount": "Difícil de leer. Revisa el monto.",
-      "date": "Difícil de leer. Revisa la fecha.",
-      "payee": "Difícil de leer. Revisa el comercio."
-    },
-    "failed": {
-      "unreadable": "Mirador no pudo leer esta foto. Captúralo a mano o prueba con otra.",
-      "unavailable": "Mirador no pudo cargar su lector de texto. Revisa tu conexión o captúralo a mano."
-    }
+    "title": "Nuevo movimiento"
   },
   "home": {
     "month": {
@@ -1411,12 +1397,12 @@
     "notEncrypted": "Estos archivos no están cifrados. Guárdalos en un lugar privado.",
     "bringIn": "Traer datos",
     "importFile": "Importar un archivo",
-    "importFileHint": "Un estado de cuenta en PDF, fotos o capturas de pantalla, un CSV o un respaldo de Mirador",
+    "importFileHint": "Un respaldo de Mirador, o un CSV de tu banco, de otra app o de una hoja de cálculo",
     "sample": "Agregar datos de ejemplo",
     "sampleHint": "14 meses de carteras y gastos inventados para probar la app",
     "sampleName": "Datos de ejemplo",
     "working": "Trabajando…",
-    "unreadableFile": "Mirador no pudo leer este archivo. Elige un estado de cuenta en PDF, una imagen, un archivo CSV o un respaldo de Mirador.",
+    "unreadableFile": "Mirador no pudo leer este archivo. Elige un archivo CSV o un respaldo de Mirador.",
     "imports": "Importaciones",
     "importsNote": "Deshacer una importación quita exactamente lo que agregó, y nada más.",
     "batchSubtitle_one": "{{count}} movimiento · {{date}}",
@@ -1439,10 +1425,7 @@
       "review": "Revisión",
       "done": "Importado",
       "count": "Paso {{step}} de 3",
-      "next": "Siguiente",
-      "reading": "Leyendo",
-      "statementCount": "Paso {{step}} de 2",
-      "statement": "Importar un estado de cuenta"
+      "next": "Siguiente"
     },
     "columns": {
       "what": "Qué tiene cada columna",
@@ -1525,27 +1508,7 @@
       "import_other": "Importar {{count}} movimientos",
       "saving": "Importando…",
       "nothing": "No hay nada nuevo que importar en este archivo.",
-      "failed": "La importación no terminó. Revisa tu conexión e inténtalo otra vez; lo que alcanzó a guardar se puede deshacer en Importaciones.",
-      "check": "Difíciles de leer",
-      "checkNote": "Toca un movimiento para revisarlo contra tu estado de cuenta. Los que no revises entran como se leyeron.",
-      "checkFields": {
-        "amount": "Revisa el monto.",
-        "date": "Revisa la fecha.",
-        "date-amount": "Revisa la fecha y el monto."
-      },
-      "checkMissing": {
-        "date": "Agrega la fecha para incluir este movimiento.",
-        "amount": "Agrega el monto para incluir este movimiento."
-      },
-      "fixTitle": "Revisar movimiento",
-      "fixHint": "Como aparece en tu estado de cuenta.",
-      "fixSave": "Guardar",
-      "fixMissing": {
-        "date": "Elige la fecha.",
-        "amount": "Escribe el monto."
-      },
-      "balanceMatches": "Cuadra con el saldo final del estado de cuenta: {{amount}}.",
-      "balanceDiffers": "No cuadra con el saldo final del estado de cuenta ({{amount}}): faltan o se leyeron mal {{difference}}."
+      "failed": "La importación no terminó. Revisa tu conexión e inténtalo otra vez; lo que alcanzó a guardar se puede deshacer en Importaciones."
     },
     "problems": {
       "date": "Falta la fecha o no es una fecha real",
@@ -1625,219 +1588,6 @@
       "label": "Escribe “{{username}}” para confirmar",
       "done": "Se borró todo.",
       "failed": "No se borró todo. Revisa tu conexión e inténtalo otra vez."
-    },
-    "mixedFiles": "Elige un CSV o un respaldo, o los PDF y fotos que quieras.",
-    "reading": {
-      "files": "Archivos",
-      "pages_one": "{{count}} página",
-      "pages_other": "{{count}} páginas",
-      "waiting": "En espera",
-      "reading": "Leyendo",
-      "read": "Leído",
-      "private": "Todo se lee en este dispositivo. Tus archivos nunca salen de él.",
-      "failed": {
-        "unreadable": "Mirador no pudo leer uno de estos archivos. Prueba con una foto más clara o con el PDF que te manda tu banco.",
-        "unavailable": "Mirador no pudo cargar su lector de texto. Revisa tu conexión e inténtalo de nuevo.",
-        "nothing": "Mirador no encontró movimientos en estos archivos.",
-        "different": "Estos archivos tienen formatos distintos. Impórtalos uno por uno."
-      }
-    },
-    "statement": {
-      "wallet": "Cartera",
-      "chooseWallet": "Elegir",
-      "statement": "Estado de cuenta",
-      "receipt": "Ticket",
-      "addIt": "Agregarlo",
-      "added": "Agregado",
-      "receiptNote_one": "Esta imagen es un ticket, no parte del estado de cuenta. Agregarlo lo abre como un gasto nuevo, como en el registro rápido.",
-      "receiptNote_other": "Estas imágenes son tickets, no parte del estado de cuenta. Agregarlo abre cada uno como un gasto nuevo, como en el registro rápido.",
-      "review": "Revisar el estado de cuenta",
-      "show": "Mostrar",
-      "list": "Lista",
-      "allLikeThis_one": "{{count}} fila, leída como esta.",
-      "allLikeThis_other": "{{count}} filas, todas leídas como esta.",
-      "readLikeLast": "Leído como tu último estado de cuenta de {{wallet}}.",
-      "marksNote": "Las mensualidades se leen de marcas como “MSI 01/06”.",
-      "fixLayout": "Corregir cómo se lee",
-      "find": "Búscalo en el estado de cuenta",
-      "findWide": "Haz clic en la fila que faltó en el estado de cuenta o dibuja un recuadro alrededor.",
-      "update": "Actualizar {{wallet}}",
-      "differ_one": "1 dato difiere de tu estado de cuenta",
-      "differ_other": "{{count}} datos difieren de tu estado de cuenta",
-      "toLookAt": "Para revisar",
-      "already": "Ya en Mirador",
-      "ready": "Listos",
-      "leftOut": "Se omite",
-      "hard": {
-        "amount": "Difícil de leer. Revisa el monto.",
-        "date": "Difícil de leer. Revisa la fecha.",
-        "date-amount": "Difícil de leer. Revisa la fecha y el monto."
-      },
-      "newPlan": "Plan nuevo · mes {{month}} de {{months}}",
-      "notPlan": "Un solo cargo, no un plan",
-      "needsCategory": "Necesita una categoría",
-      "planMonth": "Mes {{month}} de {{months}} de tu plan de {{name}}",
-      "recurringNamed": "Tu recurrente de {{name}}",
-      "recurring": "Uno de tus movimientos recurrentes",
-      "sameAs": "Igual a uno del {{date}}",
-      "logged": "Coincide con lo que registraste el {{date}}",
-      "transfer": "Parece una transferencia a otra cartera",
-      "fields": {
-        "date": "Fecha",
-        "payee": "Beneficiario",
-        "amount": "Monto",
-        "installment": "Mensualidad"
-      },
-      "facts": {
-        "balance": "Saldo",
-        "due": "Pagar antes de",
-        "minimum": "Mínimo",
-        "limit": "Límite",
-        "closing": "Corte"
-      },
-      "tags": {
-        "in": "En Mirador",
-        "hard": "Difícil de leer",
-        "plan": "Plan nuevo {{month}}/{{months}}",
-        "left": "Se omite"
-      },
-      "draw": "Dibujar un recuadro",
-      "drawing": "Dibujando",
-      "drawHint": "Arrastra alrededor de la fila que Mirador no leyó: su fecha, beneficiario y monto.",
-      "noPicture": "No hay una imagen de este estado de cuenta para mostrar.",
-      "which": "Campo",
-      "segments": {
-        "date": "Fecha",
-        "payee": "Benef.",
-        "amount": "Monto",
-        "installment": "Plan",
-        "ignore": "Omitir"
-      },
-      "whichHint": "Toca un campo o su recuadro para ver dónde se leyó.",
-      "ignore": "Omitir esta fila",
-      "ignoreHint": "Para una línea que no es un movimiento, como un subtotal.",
-      "checkHint": "Difícil de leer. Compáralo con tu estado de cuenta.",
-      "missing": {
-        "date": "Elige la fecha.",
-        "amount": "Escribe el monto.",
-        "installment": "Escribe qué mes de cuántos, como 3 de 12."
-      },
-      "inInstallments": "Compra a meses",
-      "planHint": "Entra como una sola compra, pagada en sus meses, con la fecha en que se hizo.",
-      "month": "Este es el mes",
-      "of": "De",
-      "monthsSuffix": "meses",
-      "addRow": "Agregar esta fila",
-      "addRowSave": "Agregar",
-      "fromBox": "Leído del recuadro que dibujaste. Compáralo con tu estado de cuenta.",
-      "moneyIn": "Entrada de dinero",
-      "layout": "Cómo se lee",
-      "columns": "Columnas",
-      "columnsHint": "Toca una columna para cambiar lo que contiene. Todas las filas la siguen.",
-      "roles": {
-        "date": "Fecha",
-        "payee": "Beneficiario",
-        "amount": "Monto",
-        "charges": "Cargos",
-        "outflow": "Salidas",
-        "inflow": "Entradas",
-        "note": "Nota",
-        "skip": "Omitir"
-      },
-      "rolesHint": {
-        "amount": "Las salidas son negativas, como en una cuenta de banco",
-        "charges": "Los cargos son positivos, como en un estado de cuenta de tarjeta"
-      },
-      "readMarks": "Mensualidades",
-      "readMarksHint": "Lee marcas como “03/12” como el mes 3 de 12",
-      "fromNowOn": "Cada estado de cuenta de {{wallet}} se leerá así de ahora en adelante.",
-      "fromNowOnAny": "Los estados de cuenta como este se leerán así de ahora en adelante.",
-      "forget": "Olvidar cómo se lee {{wallet}}",
-      "forgetAny": "Olvidar cómo se lee este estado de cuenta",
-      "updateIntro": "Tu estado de cuenta muestra estos datos. Apaga los que prefieras dejar como están.",
-      "card": "Tarjeta",
-      "changes": {
-        "closingDay": "El corte es el día {{day}}",
-        "dueDay": "El pago vence el día {{day}}",
-        "limit": "Límite de crédito {{amount}}"
-      },
-      "notSet": "Sin definir",
-      "nowDay": "Ahora el día {{day}}",
-      "nowAmount": "Ahora {{amount}}",
-      "recurringLabel": "Recurrentes",
-      "thisOne": "este",
-      "turnOn": "Volver a activar {{name}}",
-      "stillCharged": "Terminó en {{date}}, pero se sigue cobrando {{amount}}",
-      "homeUses": "Inicio los usa para mostrar lo que vence y lo que viene.",
-      "imported_one": "Se importó {{count}} movimiento",
-      "imported_other": "Se importaron {{count}} movimientos"
-    },
-    "importsHint": "Revisa lo que trajiste o deshazlo",
-    "importsPage": {
-      "description": "Revisa todo lo que trajiste o deshazlo.",
-      "show": "Mostrar",
-      "filters": {
-        "all": "Todo",
-        "statement": "Estados",
-        "receipt": "Tickets",
-        "file": "Archivos"
-      },
-      "sections": {
-        "statement": "Estados de cuenta",
-        "receipt": "Tickets",
-        "file": "Archivos"
-      },
-      "none": {
-        "all": "Aún no has importado nada.",
-        "statement": "Aún no has importado estados de cuenta.",
-        "receipt": "Aún no hay tickets. Las fotos que agregas con el registro rápido aparecen aquí.",
-        "file": "Aún no has importado archivos."
-      },
-      "waiting_one": "1 fila te espera",
-      "waiting_other": "{{count}} filas te esperan",
-      "receiptSubtitle": "{{date}} · de una foto",
-      "kinds": {
-        "statement": "Estado de cuenta",
-        "file": "Archivo",
-        "receipt": "Ticket"
-      },
-      "imported": "importado el {{date}}",
-      "receiptAdded": "Ticket · agregado el {{date}} de una foto",
-      "added": "Agregados",
-      "alreadyIn": "Ya en Mirador",
-      "transactions_one": "{{count}} movimiento",
-      "transactions_other": "{{count}} movimientos",
-      "skipped_one": "{{count}} omitido",
-      "skipped_other": "{{count}} omitidos",
-      "walletChanges": "Cambios en la cartera",
-      "changes": {
-        "closingDay": "Fecha de corte",
-        "dueDay": "Fecha de pago",
-        "limit": "Límite de crédito"
-      },
-      "day": "Día {{day}}",
-      "dayChange": "Día {{before}} → {{after}}",
-      "recurring": "Recurrente de {{name}}",
-      "turnedOn": "Reactivado",
-      "months_one": "{{count}} mes",
-      "months_other": "{{count}} meses",
-      "reviewAgain": "Revisar de nuevo",
-      "reviewAgainHint": "Elige el estado de cuenta otra vez para compararlo con lo que hay en Mirador. Lo que ya está aquí se omite.",
-      "undo": "Deshacer esta importación",
-      "undoEverything": "Deshacer todo",
-      "undoTransactions": "Deshacer los movimientos, conservar los cambios en la cartera",
-      "settingsCount_one": "{{count}} ajuste",
-      "settingsCount_other": "{{count}} ajustes",
-      "undoMessage_one": "Este estado de cuenta agregó {{count}} movimiento y cambió {{settings}} en {{wallet}}. Nada más cambia.",
-      "undoMessage_other": "Este estado de cuenta agregó {{count}} movimientos y cambió {{settings}} en {{wallet}}. Nada más cambia.",
-      "expense": "Gasto",
-      "onStatement": "En un estado de cuenta",
-      "notYet": "Todavía no",
-      "foundOnStatement": "Cuando llegó el estado de cuenta, encontró este gasto y conservó tu categoría y nota.",
-      "willMerge": "Cuando llegue su estado de cuenta, Mirador encontrará este gasto y conservará tu categoría y nota.",
-      "remove": "Eliminar este gasto",
-      "removeTitle": "¿Eliminar este gasto?",
-      "removeMessage": "Se elimina el gasto que se leyó de este ticket."
     }
   },
   "analysis": {

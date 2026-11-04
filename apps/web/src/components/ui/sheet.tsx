@@ -19,11 +19,6 @@ export function Sheet(props: {
   doneLabel?: string
   /** A step past the first of a sheet in steps: a round back chevron replaces the X. */
   back?: { label: string; onClick: () => void }
-  /**
-   * DL-LAY-06: on a wide screen, a sheet that shows a list beside a page (the
-   * statement review, IMP-40) takes the window's width rather than 540 px.
-   */
-  wide?: boolean
   onClose: () => void
   children: ReactNode
 }) {
@@ -52,7 +47,7 @@ export function Sheet(props: {
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
-      className={`sheet m-0 mt-auto max-h-[92dvh] w-full max-w-none rounded-t-[1.375rem] bg-surface p-0 text-text shadow-[0_-8px_32px_rgb(0_0_0/18%)] md:m-auto md:max-w-[33.75rem] md:rounded-[1.375rem] ${props.wide ? 'lg:h-[92dvh] lg:max-w-[min(72rem,calc(100vw-4rem))]' : ''}`}
+      className="sheet m-0 mt-auto max-h-[92dvh] w-full max-w-none rounded-t-[1.375rem] bg-surface p-0 text-text shadow-[0_-8px_32px_rgb(0_0_0/18%)] md:m-auto md:max-w-[33.75rem] md:rounded-[1.375rem]"
     >
       <div className="flex flex-col pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {/* The bar stays put while a long form scrolls, and a swipe down can start on
