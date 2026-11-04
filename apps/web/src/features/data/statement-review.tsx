@@ -4,14 +4,17 @@ import {
   type CategoryLink,
   type ColumnSettings,
   type Decisions,
+  type FactKey,
+  factKeys,
   fieldsOf,
   type PlannedRow,
+  type StatementFact,
   type StatementTable,
   summarize,
   type WalletLink,
   type WalletUpdate,
 } from '@repo/import'
-import { type PointerEvent as ReactPointerEvent, type ReactNode, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert } from '../../components/ui/alert'
 import { Amount } from '../../components/ui/amount'
@@ -27,7 +30,7 @@ import type { Ledger } from '../wallets/use-ledger'
 import { walletIconComponents } from '../wallets/wallet-look'
 import type { Fix, ImportFile } from './import-model'
 import { type PageBox, PagePart } from './page-part'
-import { balanceOff, importCount, rowRegion, sourceOf } from './statement-model'
+import { importCount, rowRegion, sourceOf, statementChecks } from './statement-model'
 import { AddRowSheet, CheckRowSheet, LayoutSheet, UpdateSheet } from './statement-sheets'
 
 // IMP-40: reviewing a statement. The list leads: one example row shows, boxed on the
@@ -59,6 +62,8 @@ export interface ReviewProps {
   onDecisions: (decisions: Decisions) => void
   onFix: (line: number, fix: Fix, categoryId: string | null) => void
   onAddRow: (page: number, box: Box, fix: Fix, categoryId: string | null) => void
+  /** IMP-37: a total or date shown by a box, and the words beside it, to look for next time. */
+  onFact: (key: FactKey, fact: StatementFact, label: string) => void
   onSettings: (settings: ColumnSettings) => void
   onForget: () => void
   onChosen: (chosen: ReadonlySet<number>) => void
@@ -172,6 +177,7 @@ function useRowWords(props: Pick<ReviewProps, 'ledger' | 'categories' | 'decisio
   const today = toCalendarDate(new Date())
   const names = new Map(props.ledger.categories.map((category) => [category.id, category.name]))
   const linked = new Map(props.categories.map((link) => [link.key, link]))
+  const walletNames = new Map(props.ledger.wallets.map((wallet) => [wallet.id, wallet.name]))
   return {
     money,
     today,
@@ -181,6 +187,9 @@ function useRowWords(props: Pick<ReviewProps, 'ledger' | 'categories' | 'decisio
     amount: (item: PlannedRow) => {
       const minor = item.row.amount ?? 0
       const value = { minor: Math.abs(minor), currency: item.row.currency }
+      // DL-NUM-03: money moved between the person's own wallets is muted, unsigned.
+      if (item.transfer)
+        return <Amount tone="muted" parts={money.parts(value)} label={money.text(value)} />
       return minor > 0 ? (
         <Amount
           tone="moss"
@@ -192,7 +201,17 @@ function useRowWords(props: Pick<ReviewProps, 'ledger' | 'categories' | 'decisio
       )
     },
     date: (value: string | null) => (value ? formatShortDate(value, today, money.locale) : ''),
+    /** IMP-09: where a transfer's money came from or went. */
+    transfer: (item: PlannedRow) => {
+      if (!item.transfer) return ''
+      const wallet = walletNames.get(item.transfer.walletId) ?? ''
+      if (item.transfer.guessed) return t('data.statement.paymentFrom', { wallet })
+      return (item.row.amount ?? 0) > 0
+        ? t('data.statement.transferFrom', { wallet })
+        : t('data.statement.transferTo', { wallet })
+    },
     category: (item: PlannedRow) => {
+      if (item.transfer) return ''
       const chosen = props.decisions.categories.get(item.row.line)
       const link = item.categoryKey ? linked.get(item.categoryKey) : undefined
       const id =
@@ -222,13 +241,18 @@ function ListView(
   const payees = new Map(ledger.payees.map((payee) => [payee.id, payee.name]))
   const wallet = ledger.wallets.find((item) => item.id === props.walletId)
 
-  const toLookAt = planned.filter(({ status }) =>
-    ['check', 'plan', 'noCategory', 'unreadable', 'transfer'].includes(status.kind),
+  // IMP-09: a payment taken for a transfer is a guess, so it is shown to look at.
+  const toLookAt = planned.filter(
+    ({ status, transfer }) =>
+      ['check', 'plan', 'noCategory', 'unreadable', 'transfer'].includes(status.kind) ||
+      (status.kind === 'ready' && transfer?.guessed),
   )
   const already = planned.filter(({ status }) =>
     ['duplicate', 'installment', 'merge'].includes(status.kind),
   )
-  const ready = planned.filter(({ status }) => status.kind === 'ready')
+  const ready = planned.filter(
+    ({ status, transfer }) => status.kind === 'ready' && !transfer?.guessed,
+  )
   const summary = summarize(planned)
   const lookAtRows = toLookAt.filter(
     (item) => !(item.status.kind === 'transfer' && !item.status.outgoing),
@@ -248,6 +272,7 @@ function ListView(
   const reason = (item: PlannedRow): ReactNode => {
     const { status, row } = item
     if (decisions.ignore?.has(row.line)) return t('data.statement.leftOut')
+    if (item.transfer && status.kind === 'ready') return words.transfer(item)
     switch (status.kind) {
       case 'check':
         // DL-COL-05: a gentle caution in `warning`, words only.
@@ -265,7 +290,8 @@ function ListView(
           ? t('data.statement.notPlan')
           : t('data.statement.newPlan', { month: status.month, months: status.months })
       case 'noCategory':
-        return t('data.statement.needsCategory')
+        // IMP-31: once picked, the row says where it goes.
+        return words.category(item) || t('data.statement.needsCategory')
       case 'unreadable':
         return (
           <span className="text-warning">
@@ -296,7 +322,7 @@ function ListView(
   return (
     <>
       <Example {...props} onFixLayout={props.onFixLayout} />
-      {!wide && <Balance {...props} onFind={props.onFind} />}
+      {!wide && <Checks {...props} onFind={props.onFind} />}
       {props.updates.length > 0 && wallet && (
         <List inset>
           <ListButtonRow
@@ -308,7 +334,7 @@ function ListView(
           />
         </List>
       )}
-      {wide && <Balance {...props} onFind={props.onFind} />}
+      {wide && <Checks {...props} onFind={props.onFind} />}
 
       {lookAtRows.length > 0 && (
         <List inset label={`${t('data.statement.toLookAt')} · ${String(lookAtRows.length)}`}>
@@ -395,7 +421,7 @@ function ListView(
               subtitle={[
                 decisions.ignore?.has(item.row.line) ? t('data.statement.leftOut') : '',
                 words.date(item.row.date),
-                words.category(item),
+                words.transfer(item) || words.category(item),
               ]
                 .filter(Boolean)
                 .join(' · ')}
@@ -485,48 +511,75 @@ function Example(props: ReviewProps & { onFixLayout: () => void }) {
   )
 }
 
-function Balance(props: ReviewProps & { onFind: () => void }) {
+/**
+ * IMP-37: whether the rows add up to what the statement says: its total charges, its
+ * total payments and deposits, and its ending balance. What matches is said once; what
+ * doesn't is said in `warning` (DL-COL-05), with a way to find the row on the page.
+ */
+function Checks(props: ReviewProps & { onFind: () => void }) {
   const { t } = useTranslation()
   const wide = useMediaQuery('(min-width: 1024px)')
   const currency = props.planned[0]?.row.currency ?? props.ledger.defaultCurrency
   const money = useMoney(currency)
-  const result = balanceOff(
+  const checks = statementChecks(
     props.file,
     props.settings,
     props.planned,
     currency,
     props.decisions.ignore,
   )
-  if (!result) return null
-  const ending = money.text({ minor: Math.abs(result.end), currency })
+  const find = (label: string) =>
+    wide ? (
+      <span>{t('data.statement.findWide')}</span>
+    ) : (
+      <button
+        type="button"
+        onClick={props.onFind}
+        className="inline-flex min-h-11 items-center text-brand focus-visible:outline-2 focus-visible:outline-brand"
+      >
+        {label}
+      </button>
+    )
+  // Nothing to check against yet: the totals can be shown by drawing a box.
+  if (checks.length === 0)
+    return (
+      <p className="px-4 text-[0.8125rem] text-text-muted">
+        {t('data.review.checks.none')} {!wide && find(t('data.review.checks.showTotals'))}
+      </p>
+    )
+  const amount = (minor: number) => money.text({ minor, currency })
+  const matched = checks.filter((check) => check.off === 0)
+  const differ = checks.filter((check) => check.off !== 0)
+  const list = new Intl.ListFormat(money.locale, { type: 'conjunction' })
   return (
-    <div className="flex items-start gap-2 px-4 text-[0.8125rem] text-text-muted">
-      {result.off === 0 ? (
-        <>
+    <div className="flex flex-col gap-1.5 px-4 text-[0.8125rem] text-text-muted">
+      {matched.length > 0 && (
+        <div className="flex items-start gap-2">
           <span className="mt-px grid size-[1.125rem] shrink-0 place-items-center rounded-full bg-brand text-on-brand">
             <CheckIcon aria-hidden weight="bold" className="size-[0.6875rem]" />
           </span>
-          <p>{t('data.review.balanceMatches', { amount: ending })}</p>
-        </>
-      ) : (
-        <p>
-          <span className="text-warning">
-            {t('data.review.balanceDiffers', {
-              amount: ending,
-              difference: money.text({ minor: result.off, currency }),
+          <p>
+            {t('data.review.checks.match', {
+              list: list.format(
+                matched.map((check) =>
+                  t(`data.review.checks.item.${check.kind}`, { amount: amount(check.expected) }),
+                ),
+              ),
             })}
-          </span>{' '}
-          {wide ? (
-            t('data.statement.findWide')
-          ) : (
-            <button
-              type="button"
-              onClick={props.onFind}
-              className="inline-flex min-h-11 items-center text-brand focus-visible:outline-2 focus-visible:outline-brand"
-            >
-              {t('data.statement.find')}
-            </button>
-          )}
+          </p>
+        </div>
+      )}
+      {differ.length > 0 && (
+        <p>
+          {differ.map((check) => (
+            <span key={check.kind} className="block text-warning">
+              {t(`data.review.checks.differ.${check.kind}`, {
+                amount: amount(check.expected),
+                difference: amount(check.off),
+              })}
+            </span>
+          ))}
+          {find(t('data.statement.find'))}
         </p>
       )}
     </div>
@@ -545,33 +598,28 @@ function StatementView(
 ) {
   const { t } = useTranslation()
   const [drawing, setDrawing] = useState(false)
+  const touch = useMediaQuery('(pointer: coarse)')
   const { file, planned, decisions } = props
   const pages = file.pages ?? []
   const facts = file.table.facts
   const factBoxes = (page: number): PageBox[] =>
     facts
-      ? (
-          [
-            ['balance', facts.balance],
-            ['due', facts.due],
-            ['minimum', facts.minimum],
-            ['limit', facts.limit],
-            ['closing', facts.closing],
-          ] as const
-        ).flatMap(([key, fact]) =>
-          fact?.page === page
-            ? [
-                {
-                  key,
-                  box: fact.box,
-                  tone: 'muted' as const,
-                  tag: t(`data.statement.facts.${key}`),
-                  // The facts sit on lines close together, so each tag goes after its box.
-                  tagAt: 'end' as const,
-                },
-              ]
-            : [],
-        )
+      ? factKeys
+          .map((key) => [key, facts[key]] as const)
+          .flatMap(([key, fact]) =>
+            fact?.page === page
+              ? [
+                  {
+                    key,
+                    box: fact.box,
+                    tone: 'muted' as const,
+                    tag: t(`data.statement.facts.${key}`),
+                    // The facts sit on lines close together, so each tag goes after its box.
+                    tagAt: 'end' as const,
+                  },
+                ]
+              : [],
+          )
       : []
   const rowBoxes = (page: number): PageBox[] =>
     planned.flatMap((item) => {
@@ -616,23 +664,26 @@ function StatementView(
 
   return (
     <>
-      {/* "Fix how it's read" sits with the example beside it, on both sizes. */}
-      <div className="flex items-center justify-end gap-2">
+      {/* "Fix how it's read" sits with the example beside it, on both sizes. Drawing
+          stays a tap away however far down the statement is scrolled. */}
+      <div className="sticky top-[var(--sheet-bar-height,0px)] z-10 -mx-1 flex items-center justify-end gap-3 bg-surface/95 px-1 py-1.5 lg:top-0 lg:-mx-3 lg:-mt-3 lg:bg-inset/95 lg:px-3 lg:pt-3">
+        {drawing && (
+          <p className="min-w-0 flex-1 text-[0.8125rem] text-text-muted">
+            {touch ? t('data.statement.drawHint') : t('data.statement.drawHintMouse')}
+          </p>
+        )}
         <button
           type="button"
           aria-pressed={drawing}
           onClick={() => {
             setDrawing(!drawing)
           }}
-          className={`flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-[0.9375rem] font-semibold focus-visible:outline-2 focus-visible:outline-brand ${drawing ? 'bg-brand text-on-brand' : 'bg-[color-mix(in_srgb,var(--color-brand)_14%,var(--color-surface))] text-brand'}`}
+          className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl px-3 text-[0.9375rem] font-semibold focus-visible:outline-2 focus-visible:outline-brand ${drawing ? 'bg-brand text-on-brand' : 'bg-[color-mix(in_srgb,var(--color-brand)_14%,var(--color-surface))] text-brand'}`}
         >
           <SelectionPlusIcon aria-hidden className="size-5" />
           {drawing ? t('data.statement.drawing') : t('data.statement.draw')}
         </button>
       </div>
-      {drawing && (
-        <p className="px-1 text-[0.8125rem] text-text-muted">{t('data.statement.drawHint')}</p>
-      )}
       {pages.length === 0 || pages.every((page) => page === null) ? (
         <p className="px-1 text-[0.8125rem] text-text-muted">{t('data.statement.noPicture')}</p>
       ) : (
@@ -659,7 +710,16 @@ function StatementView(
   )
 }
 
-/** While drawing, a drag over the page makes a box, in fractions of the page. */
+// How long a finger rests before a drag draws instead of scrolling, and how far it may
+// wander meanwhile (DL-VIZ-05 uses the same touch and hold on charts).
+const holdMs = 350
+const slopPx = 8
+
+/**
+ * IMP-40: while drawing, a box made over the page, in fractions of it. With a mouse a
+ * drag draws. With a finger a drag still scrolls, so the whole statement stays in
+ * reach; touching and holding, then dragging, draws.
+ */
 function DrawablePage({
   drawing,
   onDrawn,
@@ -670,9 +730,27 @@ function DrawablePage({
   children: ReactNode
 }) {
   const ref = useRef<HTMLDivElement>(null)
-  const [start, setStart] = useState<{ x: number; y: number } | null>(null)
   const [box, setBox] = useState<Box | null>(null)
-  const at = (event: ReactPointerEvent) => {
+  const gesture = useRef<{
+    start: { x: number; y: number }
+    client: { x: number; y: number }
+    timer: number | undefined
+    active: boolean
+  } | null>(null)
+  // Once a box is being drawn the page must not scroll under the finger. Only a
+  // listener that isn't passive can stop it, so React's onTouchMove won't do.
+  useEffect(() => {
+    const element = ref.current
+    if (!element || !drawing) return
+    const hold = (event: TouchEvent) => {
+      if (gesture.current?.active) event.preventDefault()
+    }
+    element.addEventListener('touchmove', hold, { passive: false })
+    return () => {
+      element.removeEventListener('touchmove', hold)
+    }
+  }, [drawing])
+  const at = (event: { clientX: number; clientY: number }) => {
     const rect = ref.current?.getBoundingClientRect()
     if (!rect) return { x: 0, y: 0 }
     return {
@@ -686,29 +764,64 @@ function DrawablePage({
     width: Math.abs(a.x - b.x),
     height: Math.abs(a.y - b.y),
   })
+  const stop = () => {
+    window.clearTimeout(gesture.current?.timer)
+    gesture.current = null
+    setBox(null)
+  }
   return (
     <div ref={ref} className="relative">
       {children}
       {drawing && (
         <div
-          className="absolute inset-0 cursor-crosshair touch-none"
+          className="absolute inset-0 cursor-crosshair touch-pan-y select-none [-webkit-touch-callout:none]"
+          onContextMenu={(event) => {
+            event.preventDefault()
+          }}
           onPointerDown={(event) => {
-            event.currentTarget.setPointerCapture(event.pointerId)
-            const point = at(event)
-            setStart(point)
-            setBox({ ...point, width: 0, height: 0 })
+            const start = at(event)
+            const mouse = event.pointerType === 'mouse'
+            if (mouse) event.currentTarget.setPointerCapture(event.pointerId)
+            const current = {
+              start,
+              client: { x: event.clientX, y: event.clientY },
+              timer: undefined as number | undefined,
+              active: mouse,
+            }
+            if (!mouse)
+              current.timer = window.setTimeout(() => {
+                current.active = true
+                setBox({ ...start, width: 0, height: 0 })
+              }, holdMs)
+            gesture.current = current
+            if (mouse) setBox({ ...start, width: 0, height: 0 })
           }}
           onPointerMove={(event) => {
-            if (start) setBox(between(start, at(event)))
+            const current = gesture.current
+            if (!current) return
+            if (current.active) {
+              setBox(between(current.start, at(event)))
+              return
+            }
+            // Moved before the hold: it's a scroll.
+            const moved = Math.hypot(
+              event.clientX - current.client.x,
+              event.clientY - current.client.y,
+            )
+            if (moved > slopPx) stop()
           }}
           onPointerUp={(event) => {
-            if (!start) return
-            const drawn = between(start, at(event))
-            setStart(null)
-            setBox(null)
+            const current = gesture.current
+            if (!current?.active) {
+              stop()
+              return
+            }
+            const drawn = between(current.start, at(event))
+            stop()
             // A tap rather than a drag draws nothing.
             if (drawn.width > 0.02 && drawn.height > 0.005) onDrawn(drawn)
           }}
+          onPointerCancel={stop}
         >
           {box && (
             <span

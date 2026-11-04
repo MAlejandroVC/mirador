@@ -4,8 +4,10 @@ import {
   type ColumnSettings,
   type Decisions,
   type PlannedRow,
+  payeeWords,
   readAmount,
   type RowSource,
+  type StatementFact,
 } from '@repo/import'
 import type { StatementFile } from './statement-review'
 
@@ -43,25 +45,77 @@ export function sourceOf(file: StatementFile, line: number) {
   return source && image ? { source, image } : null
 }
 
-/** IMP-37: whether the rows add up to the balance the statement shows. */
-export function balanceOff(
+/** An amount the statement gives, in minor units, as the person entered or as read. */
+export function factMinor(
+  fact: StatementFact | null | undefined,
+  settings: ColumnSettings,
+  currency: string,
+) {
+  if (!fact) return null
+  if (fact.minor !== undefined) return fact.minor
+  return readAmount(fact.value, settings.decimalMark, currency)
+}
+
+export interface Check {
+  kind: 'balance' | 'charges' | 'credits'
+  /** What the statement says, as a positive amount. */
+  expected: number
+  /** How far the rows are from it. */
+  off: number
+}
+
+/**
+ * IMP-37: whether the rows add up to what the statement says: its charges and its
+ * payments and deposits each to their total, and all of them from the opening balance
+ * to the closing one. Rows left out don't count; rows already in Mirador do, as they
+ * are on the statement all the same.
+ */
+export function statementChecks(
   file: StatementFile,
   settings: ColumnSettings,
   planned: readonly PlannedRow[],
   currency: string,
   ignore?: ReadonlySet<number>,
-) {
-  const { opening, closing } = file.table
-  if (opening === null || closing === null) return null
-  const start = readAmount(opening, settings.decimalMark, currency)
-  const end = readAmount(closing, settings.decimalMark, currency)
-  if (start === null || end === null) return null
-  const sum = planned.reduce(
-    (total, item) => total + (ignore?.has(item.row.line) ? 0 : (item.row.amount ?? 0)),
-    0,
-  )
-  // A card counts the other way (charges add to what is owed): either way counts.
-  return { off: Math.min(Math.abs(start + sum - end), Math.abs(start - sum - end)), end }
+): Check[] {
+  const facts = file.table.facts
+  const counted = planned.filter((item) => !ignore?.has(item.row.line))
+  const out = counted.reduce((sum, item) => sum + Math.min(0, item.row.amount ?? 0), 0)
+  const into = counted.reduce((sum, item) => sum + Math.max(0, item.row.amount ?? 0), 0)
+  const checks: Check[] = []
+  const charges = factMinor(facts?.charges, settings, currency)
+  if (charges !== null)
+    checks.push({
+      kind: 'charges',
+      expected: Math.abs(charges),
+      off: Math.abs(Math.abs(charges) + out),
+    })
+  const credits = factMinor(facts?.credits, settings, currency)
+  if (credits !== null)
+    checks.push({
+      kind: 'credits',
+      expected: Math.abs(credits),
+      off: Math.abs(Math.abs(credits) - into),
+    })
+  const start =
+    factMinor(facts?.opening, settings, currency) ??
+    (file.table.opening === null
+      ? null
+      : readAmount(file.table.opening, settings.decimalMark, currency))
+  const end =
+    factMinor(facts?.balance, settings, currency) ??
+    (file.table.closing === null
+      ? null
+      : readAmount(file.table.closing, settings.decimalMark, currency))
+  if (start !== null && end !== null) {
+    const sum = out + into
+    // A card counts the other way (charges add to what is owed): either way counts.
+    checks.push({
+      kind: 'balance',
+      expected: Math.abs(end),
+      off: Math.min(Math.abs(start + sum - end), Math.abs(start - sum - end)),
+    })
+  }
+  return checks
 }
 
 /** A region of the page, a little wider than `box` so it reads in context. */
@@ -103,5 +157,52 @@ export function waitingSeed(row: WaitingRow) {
     ...(row.walletId ? { walletId: row.walletId } : {}),
     ...(row.categoryId ? { categoryId: row.categoryId } : {}),
     ...(row.note ? { note: row.note } : {}),
+  }
+}
+
+/**
+ * IMP-23: the other rows a category picked for one row also fits: the same payee,
+ * however the statement writes it, going the same way, with no category yet.
+ */
+export function samePayeeLines(
+  planned: readonly PlannedRow[],
+  line: number,
+  decided: ReadonlyMap<number, string>,
+): number[] {
+  const item = planned.find((entry) => entry.row.line === line)
+  if (!item) return []
+  const [first] = payeeWords(item.row.payee)
+  if (!first) return []
+  const out = (item.row.amount ?? 0) < 0
+  return planned.flatMap((other) =>
+    other.row.line !== line &&
+    !other.transfer &&
+    other.categoryKey === null &&
+    other.suggestedCategoryId === null &&
+    !decided.has(other.row.line) &&
+    (other.row.amount ?? 0) < 0 === out &&
+    payeeWords(other.row.payee)[0] === first
+      ? [other.row.line]
+      : [],
+  )
+}
+
+// IMP-09, IMP-40: what a statement row is, set the way quick add sets it (TXN-01).
+export type RowKind = 'expense' | 'income' | 'transfer'
+
+export interface KindState {
+  kind: RowKind
+  /** The other wallet of a transfer. */
+  other: string | null
+  /** Whether the money came into the statement's wallet. */
+  into: boolean
+}
+
+/** The signed amount and transfer a row's kind gives its size, for a Fix. */
+export function kindFix(state: KindState, size: number) {
+  const into = state.kind === 'income' || (state.kind === 'transfer' && state.into)
+  return {
+    amount: into ? Math.abs(size) : -Math.abs(size),
+    transferWith: state.kind === 'transfer' ? state.other : null,
   }
 }

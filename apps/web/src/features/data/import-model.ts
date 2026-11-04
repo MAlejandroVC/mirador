@@ -18,6 +18,10 @@ import {
   type StatementTable,
   type Table,
   type Box,
+  type DateOrder,
+  type FactKey,
+  findLabeled,
+  type StatementFact,
   type TextWord,
   walletUpdates,
   type WalletLink,
@@ -60,7 +64,12 @@ export interface Fix {
   payee?: string
   /** TXN-30: null when it isn't a month of a plan after all. */
   installment?: InstallmentMark | null
+  /** IMP-09, IMP-40: the other wallet of a transfer; null when it isn't one. */
+  transferWith?: string | null
 }
+
+/** IMP-14, IMP-37: the labels of a statement's totals and dates, by fact. */
+export type FactLabels = Partial<Record<FactKey, string>>
 export type Fixes = ReadonlyMap<number, Fix>
 
 /** IMP-03: the saved settings for these columns, or a fresh guess. */
@@ -79,8 +88,10 @@ export function startingSettings(file: ImportFile, ledger: Ledger) {
         ...(profile.installments !== undefined ? { installments: profile.installments } : {}),
       } satisfies ColumnSettings,
       walletId: profile.walletId ?? null,
+      factLabels: (profile.facts ?? {}) as FactLabels,
     }
   return {
+    factLabels: {} as FactLabels,
     profileId: null,
     // IMP-13: a statement's columns come from the column model.
     settings: isStatement(file)
@@ -119,6 +130,7 @@ export function readFileRows(
       ...(fix.payee !== undefined ? { payee: fix.payee } : {}),
     }
     delete fixed.unsure
+    if (fix.transferWith !== undefined) fixed.transferWith = fix.transferWith
     if (fix.installment === null) delete fixed.installment
     else if (fix.installment) fixed.installment = fix.installment
     return fixed
@@ -172,6 +184,8 @@ export interface BuildArgs {
     header: readonly string[]
     settings: ColumnSettings
     walletId: string | null
+    /** IMP-14, IMP-37: labels for the statement's totals and dates. */
+    facts?: FactLabels
   }
   newId: () => string
 }
@@ -210,7 +224,7 @@ export function buildChanges(args: BuildArgs): {
   })
   const changes = [...result.changes, ...applied.changes]
   if (args.profile) {
-    const { settings, header, walletId } = args.profile
+    const { settings, header, walletId, facts } = args.profile
     changes.push({
       id: args.profile.id ?? args.newId(),
       body: recordBody(
@@ -218,6 +232,7 @@ export function buildChanges(args: BuildArgs): {
         importProfileRecord.parse({
           headerKey: headerKey(header),
           ...settings,
+          ...(facts && Object.keys(facts).length > 0 ? { facts } : {}),
           ...(walletId && !settings.columns.includes('wallet') ? { walletId } : {}),
         }),
       ),
@@ -280,4 +295,44 @@ export function updatesFor(
     payees: ledger.payees,
     decimalMark: settings.decimalMark,
   })
+}
+
+/**
+ * IMP-37, IMP-40: a total or date the person showed by drawing a box around it, kept
+ * with the statement so its checks and the wallet's updates (IMP-39) use it.
+ */
+export function withFact(
+  file: ImportFile & { table: StatementTable },
+  key: FactKey,
+  fact: StatementFact,
+): ImportFile & { table: StatementTable } {
+  const facts = { ...file.table.facts, [key]: fact } as StatementTable['facts']
+  return { ...file, table: { ...file.table, ...(facts ? { facts } : {}) } }
+}
+
+/**
+ * IMP-14: the totals and dates the reader missed, found by the labels the person
+ * showed on an earlier statement with the same layout.
+ */
+export function learnedFacts(
+  file: ImportFile & { table: StatementTable },
+  labels: FactLabels,
+  options: { year: number; order: DateOrder },
+): ImportFile & { table: StatementTable } {
+  const pages = (file.pages ?? []).map((page) =>
+    page ? { width: page.width, height: page.height, words: [...page.words] } : null,
+  )
+  let next = file
+  for (const [key, label] of Object.entries(labels) as [FactKey, string][]) {
+    if (next.table.facts?.[key] || !label) continue
+    // Pages without a picture keep their place, so a fact's page stays right.
+    const found = findLabeled(
+      pages.map((page) => page ?? { width: 1, height: 1, words: [] }),
+      key,
+      label,
+      options,
+    )
+    if (found) next = withFact(next, key, found)
+  }
+  return next
 }

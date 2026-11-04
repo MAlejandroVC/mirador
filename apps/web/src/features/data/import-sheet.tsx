@@ -43,18 +43,22 @@ import {
   addRow,
   buildChanges,
   currencyOf,
+  type FactLabels,
   fallbackWallet,
   type Fixes,
   type ImportFile,
   isStatement,
+  learnedFacts,
   links,
   owes,
   plan,
   startingSettings,
   updatesFor,
+  withFact,
 } from './import-model'
 import { ReadingStep } from './reading-step'
 import { BalanceCheck, CheckSection } from './review-check'
+import { samePayeeLines } from './statement-model'
 import { StatementReview } from './statement-review'
 
 // IMP-01 to IMP-34, DAT-12: importing a CSV in three steps in one sheet: what each
@@ -178,11 +182,20 @@ function ImportFlow({
   onImported?: (done: StatementDone) => void
 }) {
   const { t } = useTranslation()
-  // IMP-40: rows drawn on the statement join the file as it is reviewed.
-  const [file, setFile] = useState(opened)
-  const statement = isStatement(file)
   // The ledger changes while saving; the flow keeps the settings it started with.
   const [start] = useState(() => startingSettings(opened, ledger))
+  // IMP-40: rows drawn on the statement join the file as it is reviewed. IMP-14: the
+  // totals and dates the person showed on an earlier statement are found again.
+  const [file, setFile] = useState(() =>
+    isStatement(opened)
+      ? learnedFacts(opened, start.factLabels, {
+          year: new Date().getFullYear(),
+          order: start.settings.dateOrder,
+        })
+      : opened,
+  )
+  const [factLabels, setFactLabels] = useState<FactLabels>(start.factLabels)
+  const statement = isStatement(file)
   const [settings, setSettings] = useState<ColumnSettings>(start.settings)
   const [remember, setRemember] = useState(true)
   const [remembered, setRemembered] = useState(start.profileId !== null)
@@ -276,6 +289,7 @@ function ImportFlow({
               header: file.table.header,
               settings,
               walletId: existing?.kind === 'existing' ? existing.id : null,
+              facts: factLabels,
             },
           }
         : {}),
@@ -316,11 +330,17 @@ function ImportFlow({
       },
     })
   }
+  // IMP-23: a category picked for a row goes to the same payee's other rows too.
+  // Updates go through the latest decisions, as a sheet may set several at once.
   const setCategory = (line: number, categoryId: string | null) => {
-    if (!decisions || !categoryId) return
-    setDecisions({
-      ...decisions,
-      categories: new Map([...decisions.categories, [line, categoryId]]),
+    if (!categoryId) return
+    setDecisions((current) => {
+      if (!current) return current
+      const categories = new Map(current.categories)
+      for (const other of samePayeeLines(planned, line, categories))
+        categories.set(other, categoryId)
+      categories.set(line, categoryId)
+      return { ...current, categories }
     })
   }
 
@@ -387,6 +407,13 @@ function ImportFlow({
             setFile(added.file)
             setFixes(new Map([...fixes, [added.line, fix]]))
             setCategory(added.line, categoryId)
+          }}
+          onFact={(key, fact, label) => {
+            if (!isStatement(file)) return
+            setFile(withFact(file, key, fact))
+            // IMP-14: the words beside the value, to find it on the next statement.
+            const words = label.trim()
+            if (/[a-zA-Z]{3}/.test(words)) setFactLabels({ ...factLabels, [key]: words })
           }}
           onSettings={setSettings}
           onForget={() => {

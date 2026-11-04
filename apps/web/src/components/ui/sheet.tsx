@@ -52,11 +52,12 @@ export function Sheet(props: {
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
-      className={`sheet m-0 mt-auto max-h-[92dvh] w-full max-w-none rounded-t-[1.375rem] bg-surface p-0 text-text shadow-[0_-8px_32px_rgb(0_0_0/18%)] md:m-auto md:max-w-[33.75rem] md:rounded-[1.375rem] ${props.wide ? 'lg:h-[92dvh] lg:max-w-[min(72rem,calc(100vw-4rem))]' : ''}`}
+      className={`sheet m-0 mt-auto max-h-[92dvh] [--sheet-bar-height:4.0625rem] md:[--sheet-bar-height:3.75rem] w-full max-w-none rounded-t-[1.375rem] bg-surface p-0 text-text shadow-[0_-8px_32px_rgb(0_0_0/18%)] md:m-auto md:max-w-[33.75rem] md:rounded-[1.375rem] ${props.wide ? 'lg:h-[92dvh] lg:max-w-[min(72rem,calc(100vw-4rem))]' : ''}`}
     >
       <div className="flex flex-col pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {/* The bar stays put while a long form scrolls, and a swipe down can start on
-            it however far the form has scrolled. */}
+            it however far the form has scrolled. --sheet-bar-height is its height, for
+            anything else that stays put under it. */}
         <div data-sheet-bar className="sticky top-0 z-10 flex flex-col bg-surface">
           <span aria-hidden className="mx-auto mt-1.5 h-[5px] w-9 rounded-full bg-fill md:hidden" />
           <header className="grid grid-cols-[2.75rem_1fr_2.75rem] items-center gap-2 px-3 pt-1.5 pb-1 md:pt-3">

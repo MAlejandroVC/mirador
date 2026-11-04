@@ -288,6 +288,30 @@ export function buildImport(input: BuildInput): BuildResult {
         continue
       }
     }
+    // IMP-09, IMP-40: a transfer with another of the person's wallets. Money in came
+    // from it; money out went to it. Each side is in its own wallet's currency, so a
+    // wallet in another currency is never offered.
+    const other = item.transfer
+      ? ledger.wallets.find((w) => w.id === item.transfer?.walletId)
+      : undefined
+    if (other && other.id !== walletId) {
+      const size = Math.abs(row.amount)
+      const into = row.amount > 0
+      transactions.push({
+        id: newId(),
+        data: transactionRecord.parse({
+          ...shared,
+          // A transfer has no payee, so what the statement called it stays as its note.
+          ...(row.note || row.payee ? { note: (row.note || row.payee).slice(0, 500) } : {}),
+          kind: 'transfer',
+          walletId: into ? other.id : walletId,
+          amount: -size,
+          toWalletId: into ? walletId : other.id,
+          toAmount: size,
+        }),
+      })
+      continue
+    }
     const categoryId =
       (item.categoryKey !== null ? categoryIds.get(item.categoryKey) : undefined) ??
       decisions.categories.get(row.line) ??

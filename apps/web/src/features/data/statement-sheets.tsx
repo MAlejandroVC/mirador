@@ -2,6 +2,10 @@ import { amountText, fractionDigits, parseAmount, toCalendarDate } from '@repo/c
 import {
   type Box,
   type ColumnField,
+  dateFacts,
+  type FactKey,
+  factKeys,
+  factNamed,
   type ColumnSettings,
   fieldsOf,
   type PlannedRow,
@@ -22,7 +26,8 @@ import { useSubmit } from '../../components/ui/use-submit'
 import { useMoney } from '../../lib/format'
 import { CategoryPicker } from '../categories/category-picker'
 import { type PageBox, PagePart } from './page-part'
-import { around, rowRegion } from './statement-model'
+import { KindControl, TransferPicker, TransferRows } from './row-kind'
+import { around, type KindState, kindFix, rowRegion } from './statement-model'
 import type { ReviewProps } from './statement-review'
 import { sourceOf } from './statement-model'
 
@@ -68,11 +73,18 @@ function CheckRowForm(props: ReviewProps & { item: PlannedRow; onClose: () => vo
   const [month, setMonth] = useState(String(row.installment?.month ?? 1))
   const [months, setMonths] = useState(String(row.installment?.months ?? 6))
   const [ignore, setIgnore] = useState(decisions.ignore?.has(row.line) ?? false)
+  const form = useSubmit()
   const [categoryId, setCategoryId] = useState<string | null>(
     decisions.categories.get(row.line) ?? item.suggestedCategoryId,
   )
+  const [kind, setKind] = useState<KindState>({
+    kind: item.transfer ? 'transfer' : (row.amount ?? -1) > 0 ? 'income' : 'expense',
+    other: item.transfer?.walletId ?? null,
+    into: (row.amount ?? -1) > 0,
+  })
+  const [side, setSide] = useState<'from' | 'to' | null>(null)
+  const transferError = form.tried && kind.kind === 'transfer' && !kind.other
   const [picking, setPicking] = useState(false)
-  const form = useSubmit()
   const amount = parseAmount(text, currency, money.locale)
   const mark = { month: Number(month), months: Number(months) }
   const badPlan =
@@ -91,9 +103,11 @@ function CheckRowForm(props: ReviewProps & { item: PlannedRow; onClose: () => vo
       ? 'date'
       : amount === null || amount === 0
         ? 'amount'
-        : badPlan
-          ? 'installment'
-          : null
+        : kind.kind === 'transfer' && !kind.other
+          ? 'wallet'
+          : plan && kind.kind === 'expense' && badPlan
+            ? 'installment'
+            : null
   const category = ledger.categories.find((item) => item.id === categoryId)
   const unsure = item.status.kind === 'check' ? item.status.fields : []
 
@@ -156,6 +170,7 @@ function CheckRowForm(props: ReviewProps & { item: PlannedRow; onClose: () => vo
           />
         </List>
       )}
+      {!ignore && <KindControl value={kind} onChange={setKind} />}
       {!ignore && (
         <FieldRows
           note={
@@ -189,17 +204,27 @@ function CheckRowForm(props: ReviewProps & { item: PlannedRow; onClose: () => vo
             placeholder="0"
             error={form.tried && missing === 'amount'}
           />
-          <PickerRow
-            label={t('transactions.category')}
-            value={category?.name ?? t('data.review.uncategorized')}
-            error={false}
-            onClick={() => {
-              setPicking(true)
-            }}
-          />
+          {kind.kind === 'transfer' ? (
+            <TransferRows
+              ledger={ledger}
+              walletId={props.walletId}
+              value={kind}
+              error={transferError}
+              onPick={setSide}
+            />
+          ) : (
+            <PickerRow
+              label={t('transactions.category')}
+              value={category?.name ?? t('data.review.uncategorized')}
+              error={false}
+              onClick={() => {
+                setPicking(true)
+              }}
+            />
+          )}
         </FieldRows>
       )}
-      {!ignore && (row.amount ?? -1) < 0 && (
+      {!ignore && kind.kind === 'expense' && (
         <FieldRows note={<FieldNote>{t('data.statement.planHint')}</FieldNote>}>
           <ChoiceRow
             role="switch"
@@ -249,12 +274,11 @@ function CheckRowForm(props: ReviewProps & { item: PlannedRow; onClose: () => vo
                 row.line,
                 {
                   date,
-                  // The direction stays as the statement had it.
-                  amount: (row.amount ?? -1) < 0 ? -amount : amount,
+                  ...kindFix(kind, amount),
                   payee: payee.trim(),
-                  installment: plan ? mark : null,
+                  installment: plan && kind.kind === 'expense' ? mark : null,
                 },
-                categoryId,
+                kind.kind === 'transfer' ? null : categoryId,
               )
             form.finish(props.onClose)
           })
@@ -262,10 +286,20 @@ function CheckRowForm(props: ReviewProps & { item: PlannedRow; onClose: () => vo
       >
         {t('data.review.fixSave')}
       </SubmitButton>
+      <TransferPicker
+        ledger={ledger}
+        walletId={props.walletId}
+        value={kind}
+        side={side}
+        onChange={setKind}
+        onClose={() => {
+          setSide(null)
+        }}
+      />
       <CategoryPicker
         open={picking}
         ledger={ledger}
-        type={(row.amount ?? -1) < 0 ? 'expense' : 'income'}
+        type={kind.kind === 'income' ? 'income' : 'expense'}
         value={categoryId}
         onChoose={(chosen) => {
           setCategoryId(chosen.id)
@@ -287,7 +321,7 @@ export function AddRowSheet(
   return (
     <Sheet
       open={props.drawn !== null}
-      title={t('data.statement.addRow')}
+      title={t('data.statement.addFromBox')}
       cancelLabel={t('nav.cancel')}
       onClose={props.onClose}
     >
@@ -310,6 +344,8 @@ function AddRowForm(
   const currency = props.planned[0]?.row.currency ?? ledger.defaultCurrency
   const money = useMoney(currency)
   const image = file.pages?.[drawn.page] ?? null
+  const wallet = ledger.wallets.find((item) => item.id === props.walletId)
+  const card = wallet?.features.includes('creditLimit') ?? false
   const year = Number(
     (props.planned.find((item) => item.row.date)?.row.date ?? toCalendarDate(new Date())).slice(
       0,
@@ -324,20 +360,47 @@ function AddRowForm(
         })
       : { date: null, payee: '', amount: null, installment: null },
   )
+  // IMP-37: words in the box that name a total or a date, such as "Total cargos".
+  const named = factNamed(read.payee)
+  const offered = factKeys.filter((key) => card || !['due', 'minimum', 'limit'].includes(key))
   const readMinor = read.amount
     ? parseAmount(read.amount.replace(/[^\d.,]/g, ''), currency, money.locale)
     : null
+  const [what, setWhat] = useState<'row' | 'fact'>(named && !read.date ? 'fact' : 'row')
+  const [fact, setFact] = useState<FactKey>(named && offered.includes(named) ? named : 'charges')
   const [date, setDate] = useState(read.date ?? '')
   const [payee, setPayee] = useState(read.payee)
   const [text, setText] = useState(
     readMinor !== null ? amountText(Math.abs(readMinor), currency, money.locale) : '',
   )
-  const [income, setIncome] = useState(false)
+  const form = useSubmit()
+  const [kind, setKind] = useState<KindState>({
+    kind: 'expense',
+    other: null,
+    into: false,
+  })
+  const [side, setSide] = useState<'from' | 'to' | null>(null)
+  const transferError = form.tried && kind.kind === 'transfer' && !kind.other
   const [categoryId, setCategoryId] = useState<string | null>(null)
   const [picking, setPicking] = useState(false)
-  const form = useSubmit()
   const amount = parseAmount(text, currency, money.locale)
-  const missing = !date ? 'date' : amount === null || amount === 0 ? 'amount' : null
+  const isDate = dateFacts.includes(fact)
+  const missing =
+    what === 'fact'
+      ? isDate
+        ? !date
+          ? 'date'
+          : null
+        : amount === null
+          ? 'amount'
+          : null
+      : !date
+        ? 'date'
+        : amount === null || amount === 0
+          ? 'amount'
+          : kind.kind === 'transfer' && !kind.other
+            ? 'wallet'
+            : null
   const category = ledger.categories.find((item) => item.id === categoryId)
   return (
     <>
@@ -348,74 +411,150 @@ function AddRowForm(
           boxes={[{ key: 'drawn', box: drawn.box, tone: 'brand', strong: true }]}
         />
       )}
-      <FieldRows
-        note={
-          form.tried && missing ? (
-            <FieldNote error>{t(`data.statement.missing.${missing}`)}</FieldNote>
-          ) : (
-            <FieldNote>{t('data.statement.fromBox')}</FieldNote>
-          )
-        }
-      >
-        <DateRow
-          label={t('transactions.date')}
-          value={date}
-          onChange={setDate}
-          error={form.tried && missing === 'date'}
-        />
-        <FieldRow
-          label={t('data.statement.fields.payee')}
-          value={payee}
-          maxLength={80}
-          onChange={(event) => {
-            setPayee(event.target.value)
-          }}
-        />
-        <MoneyRow
-          label={t('transactions.amount')}
-          value={text}
-          onChange={setText}
-          locale={money.locale}
-          decimals={fractionDigits(currency)}
-          placeholder="0"
-          error={form.tried && missing === 'amount'}
-        />
-        <PickerRow
-          label={t('transactions.category')}
-          value={category?.name ?? t('data.review.uncategorized')}
-          error={false}
-          onClick={() => {
-            setPicking(true)
-          }}
-        />
-      </FieldRows>
-      <List inset>
-        <ChoiceRow
-          role="switch"
-          title={t('data.statement.moneyIn')}
-          checked={income}
-          onToggle={() => {
-            setIncome(!income)
-          }}
-        />
-      </List>
+      <SegmentedControl<'row' | 'fact'>
+        label={t('data.statement.whatIsIt')}
+        options={[
+          { value: 'row', label: t('data.statement.aTransaction') },
+          { value: 'fact', label: t('data.statement.aTotal') },
+        ]}
+        value={what}
+        onChange={setWhat}
+      />
+      {what === 'row' ? (
+        <>
+          <KindControl value={kind} onChange={setKind} />
+          <FieldRows
+            note={
+              form.tried && missing ? (
+                <FieldNote error>{t(`data.statement.missing.${missing}`)}</FieldNote>
+              ) : (
+                <FieldNote>{t('data.statement.fromBox')}</FieldNote>
+              )
+            }
+          >
+            <DateRow
+              label={t('transactions.date')}
+              value={date}
+              onChange={setDate}
+              error={form.tried && missing === 'date'}
+            />
+            <FieldRow
+              label={t('data.statement.fields.payee')}
+              value={payee}
+              maxLength={80}
+              onChange={(event) => {
+                setPayee(event.target.value)
+              }}
+            />
+            <MoneyRow
+              label={t('transactions.amount')}
+              value={text}
+              onChange={setText}
+              locale={money.locale}
+              decimals={fractionDigits(currency)}
+              placeholder="0"
+              error={form.tried && missing === 'amount'}
+            />
+            {kind.kind === 'transfer' ? (
+              <TransferRows
+                ledger={ledger}
+                walletId={props.walletId}
+                value={kind}
+                error={transferError}
+                onPick={setSide}
+              />
+            ) : (
+              <PickerRow
+                label={t('transactions.category')}
+                value={category?.name ?? t('data.review.uncategorized')}
+                error={false}
+                onClick={() => {
+                  setPicking(true)
+                }}
+              />
+            )}
+          </FieldRows>
+        </>
+      ) : (
+        <>
+          <List inset>
+            {offered.map((key) => (
+              <ChoiceRow
+                key={key}
+                role="radio"
+                title={t(`data.statement.factNames.${key}`)}
+                checked={fact === key}
+                onToggle={() => {
+                  setFact(key)
+                }}
+              />
+            ))}
+          </List>
+          <FieldRows
+            note={
+              form.tried && missing ? (
+                <FieldNote error>{t(`data.statement.missing.${missing}`)}</FieldNote>
+              ) : (
+                <FieldNote>
+                  {wallet
+                    ? t('data.statement.factRemembered', { wallet: wallet.name })
+                    : t('data.statement.factRememberedAny')}
+                </FieldNote>
+              )
+            }
+          >
+            {isDate ? (
+              <DateRow
+                label={t(`data.statement.factNames.${fact}`)}
+                value={date}
+                onChange={setDate}
+                error={form.tried && missing === 'date'}
+              />
+            ) : (
+              <MoneyRow
+                label={t(`data.statement.factNames.${fact}`)}
+                value={text}
+                onChange={setText}
+                locale={money.locale}
+                decimals={fractionDigits(currency)}
+                placeholder="0"
+                error={form.tried && missing === 'amount'}
+              />
+            )}
+          </FieldRows>
+        </>
+      )}
       <SubmitButton
         button={form.button}
         done={form.done}
         pending={false}
         onClick={() => {
           form.submit(missing === null, () => {
+            if (what === 'fact') {
+              props.onFact(
+                fact,
+                {
+                  page: drawn.page,
+                  box: drawn.box,
+                  value: isDate ? date : String((amount ?? 0) / 100),
+                  ...(isDate || amount === null ? {} : { minor: Math.abs(amount) }),
+                },
+                read.payee,
+              )
+              form.finish(props.onClose)
+              return
+            }
             if (amount === null) return
             props.onAddRow(
               drawn.page,
               drawn.box,
               {
                 date,
-                amount: income ? Math.abs(amount) : -Math.abs(amount),
+                ...kindFix(kind, amount),
                 payee: payee.trim(),
-                installment: read.installment,
+                installment: kind.kind === 'expense' ? read.installment : null,
               },
-              categoryId,
+              kind.kind === 'transfer' ? null : categoryId,
             )
             form.finish(props.onClose)
           })
@@ -423,10 +562,20 @@ function AddRowForm(
       >
         {t('data.statement.addRowSave')}
       </SubmitButton>
+      <TransferPicker
+        ledger={ledger}
+        walletId={props.walletId}
+        value={kind}
+        side={side}
+        onChange={setKind}
+        onClose={() => {
+          setSide(null)
+        }}
+      />
       <CategoryPicker
         open={picking}
         ledger={ledger}
-        type={income ? 'income' : 'expense'}
+        type={kind.kind === 'income' ? 'income' : 'expense'}
         value={categoryId}
         onChoose={(chosen) => {
           setCategoryId(chosen.id)

@@ -1545,7 +1545,22 @@
         "amount": "Escribe el monto."
       },
       "balanceMatches": "Cuadra con el saldo final del estado de cuenta: {{amount}}.",
-      "balanceDiffers": "No cuadra con el saldo final del estado de cuenta ({{amount}}): faltan o se leyeron mal {{difference}}."
+      "balanceDiffers": "No cuadra con el saldo final del estado de cuenta ({{amount}}): faltan o se leyeron mal {{difference}}.",
+      "checks": {
+        "none": "Para revisar que estén todos los movimientos, dibuja un recuadro alrededor de los totales del estado de cuenta.",
+        "showTotals": "Ir al estado de cuenta",
+        "match": "Cuadra con {{list}} del estado de cuenta.",
+        "item": {
+          "charges": "los cargos de {{amount}}",
+          "credits": "los pagos y depósitos de {{amount}}",
+          "balance": "el saldo final de {{amount}}"
+        },
+        "differ": {
+          "charges": "Los cargos no suman los {{amount}} del estado de cuenta: faltan o se leyeron mal {{difference}}.",
+          "credits": "Los pagos y depósitos no suman los {{amount}} del estado de cuenta: faltan o se leyeron mal {{difference}}.",
+          "balance": "No cuadra con el saldo final del estado de cuenta ({{amount}}): faltan o se leyeron mal {{difference}}."
+        }
+      }
     },
     "problems": {
       "date": "Falta la fecha o no es una fecha real",
@@ -1693,7 +1708,10 @@
         "due": "Pagar antes de",
         "minimum": "Mínimo",
         "limit": "Límite",
-        "closing": "Corte"
+        "closing": "Corte",
+        "charges": "Cargos",
+        "credits": "Pagos",
+        "opening": "Inicial"
       },
       "tags": {
         "in": "En Mirador",
@@ -1703,7 +1721,7 @@
       },
       "draw": "Dibujar un recuadro",
       "drawing": "Dibujando",
-      "drawHint": "Arrastra alrededor de la fila que Mirador no leyó: su fecha, beneficiario y monto.",
+      "drawHint": "Mantén presionado y arrastra alrededor de lo que Mirador no leyó: un movimiento, un total o una fecha.",
       "noPicture": "No hay una imagen de este estado de cuenta para mostrar.",
       "which": "Campo",
       "segments": {
@@ -1718,9 +1736,7 @@
       "ignoreHint": "Para una línea que no es un movimiento, como un subtotal.",
       "checkHint": "Difícil de leer. Compáralo con tu estado de cuenta.",
       "missing": {
-        "date": "Elige la fecha.",
-        "amount": "Escribe el monto.",
-        "installment": "Escribe qué mes de cuántos, como 3 de 12."
+        "wallet": "Elige la otra cartera."
       },
       "inInstallments": "Compra a meses",
       "planHint": "Entra como una sola compra, pagada en sus meses, con la fecha en que se hizo.",
@@ -1770,7 +1786,32 @@
       "stillCharged": "Terminó en {{date}}, pero se sigue cobrando {{amount}}",
       "homeUses": "Inicio los usa para mostrar lo que vence y lo que viene.",
       "imported_one": "Se importó {{count}} movimiento",
-      "imported_other": "Se importaron {{count}} movimientos"
+      "imported_other": "Se importaron {{count}} movimientos",
+      "paymentFrom": "Pago desde {{wallet}}",
+      "transferFrom": "Desde {{wallet}}",
+      "transferTo": "A {{wallet}}",
+      "drawHintMouse": "Arrastra alrededor de lo que Mirador no leyó: un movimiento, un total o una fecha.",
+      "addFromBox": "De tu estado de cuenta",
+      "whatIsIt": "Qué hay en el recuadro",
+      "aTransaction": "Movimiento",
+      "aTotal": "Total o fecha",
+      "factNames": {
+        "charges": "Total de cargos",
+        "credits": "Total de pagos y depósitos",
+        "opening": "Saldo inicial",
+        "balance": "Saldo final",
+        "closing": "Fecha de corte",
+        "due": "Fecha límite de pago",
+        "minimum": "Pago mínimo",
+        "limit": "Límite de crédito"
+      },
+      "factRemembered": "Mirador lo buscará igual en tu próximo estado de cuenta de {{wallet}}.",
+      "factRememberedAny": "Mirador lo buscará igual en estados de cuenta como este.",
+      "_facts": {
+        "charges": "Cargos",
+        "credits": "Pagos",
+        "opening": "Inicial"
+      }
     },
     "importsHint": "Revisa lo que trajiste o deshazlo",
     "importsPage": {

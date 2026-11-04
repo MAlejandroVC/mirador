@@ -33,10 +33,22 @@ export interface ImportRow {
   unsure?: RowSource['unsure']
   /** TXN-30: month N of an M-month plan, from the statement's mark. */
   installment?: InstallmentMark
+  /** IMP-09: the statement says it is a payment received. */
+  payment?: boolean
+  /**
+   * IMP-09, IMP-40: the other wallet of a transfer the person chose for this row; null
+   * when they said it is not a transfer.
+   */
+  transferWith?: string | null
 }
 
 export function readRows(
-  table: Table & { sources?: readonly Pick<RowSource, 'unsure' | 'installment' | 'reference'>[] },
+  table: Table & {
+    sources?: readonly Pick<
+      RowSource,
+      'unsure' | 'installment' | 'reference' | 'paid' | 'section'
+    >[]
+  },
   settings: ColumnSettings,
   defaultCurrency: string,
 ) {
@@ -84,12 +96,21 @@ export function readRows(
         if (type === 'income') amount = Math.abs(value)
         else if (type === 'expense' || type === 'transfer') amount = -Math.abs(value)
         else amount = settings.amountSign === 'negativeIsExpense' ? value : -value
+        // IMP-09: a payment received is money in, whichever way its column counts. An
+        // amount written without a sign takes the direction of the heading above it.
+        const signed = /[-−(+]|CR/i.test(cell(row, at.amount))
+        if (type === null) {
+          if (source?.paid) amount = Math.abs(amount)
+          else if (!signed && source?.section === 'in') amount = Math.abs(amount)
+          else if (!signed && source?.section === 'out') amount = -Math.abs(amount)
+        }
       }
     }
     if (amount === null && (at.inflow >= 0 || at.outflow >= 0)) {
       const inflow = cell(row, at.inflow) === '' ? 0 : read(at.inflow)
       const outflow = cell(row, at.outflow) === '' ? 0 : read(at.outflow)
       if (inflow !== null && outflow !== null) amount = Math.abs(inflow) - Math.abs(outflow)
+      if (source?.paid && amount !== null) amount = Math.abs(amount)
     }
     const date = readDate(cell(row, at.date), settings.dateOrder)
     const problem: RowProblem | null = !validCurrency
@@ -120,6 +141,7 @@ export function readRows(
         .join(' · ')
         .slice(0, 300),
       ...(unsure && unsure.length > 0 ? { unsure: [...unsure] } : {}),
+      ...(source?.paid ? { payment: true } : {}),
       ...(source?.installment && settings.installments !== false
         ? { installment: source.installment }
         : {}),

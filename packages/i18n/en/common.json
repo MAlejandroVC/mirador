@@ -1545,7 +1545,22 @@
         "amount": "Enter the amount."
       },
       "balanceMatches": "Adds up to the statement’s ending balance of {{amount}}.",
-      "balanceDiffers": "Doesn’t add up to the statement’s ending balance of {{amount}}: {{difference}} is missing or misread."
+      "balanceDiffers": "Doesn’t add up to the statement’s ending balance of {{amount}}: {{difference}} is missing or misread.",
+      "checks": {
+        "none": "To check that every row is here, draw a box around the statement’s totals.",
+        "showTotals": "Go to the statement",
+        "match": "Adds up to the statement’s {{list}}.",
+        "item": {
+          "charges": "charges of {{amount}}",
+          "credits": "payments and deposits of {{amount}}",
+          "balance": "ending balance of {{amount}}"
+        },
+        "differ": {
+          "charges": "Charges don’t add up to the statement’s {{amount}}: {{difference}} is missing or misread.",
+          "credits": "Payments and deposits don’t add up to the statement’s {{amount}}: {{difference}} is missing or misread.",
+          "balance": "Doesn’t add up to the statement’s ending balance of {{amount}}: {{difference}} is missing or misread."
+        }
+      }
     },
     "problems": {
       "date": "The date is missing or isn’t a real date",
@@ -1693,7 +1708,10 @@
         "due": "Pay by",
         "minimum": "Minimum",
         "limit": "Limit",
-        "closing": "Closes"
+        "closing": "Closes",
+        "charges": "Charges",
+        "credits": "Payments",
+        "opening": "Starting"
       },
       "tags": {
         "in": "In Mirador",
@@ -1703,7 +1721,7 @@
       },
       "draw": "Draw a box",
       "drawing": "Drawing",
-      "drawHint": "Drag around the row Mirador missed: its date, payee and amount.",
+      "drawHint": "Touch and hold, then drag around what Mirador missed: a row, a total or a date.",
       "noPicture": "There’s no picture of this statement to show.",
       "which": "Field",
       "segments": {
@@ -1718,9 +1736,7 @@
       "ignoreHint": "For a line that isn’t a transaction, like a subtotal.",
       "checkHint": "Hard to read. Check it against your statement.",
       "missing": {
-        "date": "Choose the date.",
-        "amount": "Enter the amount.",
-        "installment": "Enter which month of how many, like 3 of 12."
+        "wallet": "Choose the other wallet."
       },
       "inInstallments": "Bought in installments",
       "planHint": "Comes in as one purchase, paid over its months, dated when it was bought.",
@@ -1770,7 +1786,32 @@
       "stillCharged": "Ended in {{date}}, but still charged {{amount}}",
       "homeUses": "Home uses these to show what’s due and coming up.",
       "imported_one": "Imported {{count}} transaction",
-      "imported_other": "Imported {{count}} transactions"
+      "imported_other": "Imported {{count}} transactions",
+      "paymentFrom": "Payment from {{wallet}}",
+      "transferFrom": "From {{wallet}}",
+      "transferTo": "To {{wallet}}",
+      "drawHintMouse": "Drag around what Mirador missed: a row, a total or a date.",
+      "addFromBox": "From your statement",
+      "whatIsIt": "What’s in the box",
+      "aTransaction": "Transaction",
+      "aTotal": "Total or date",
+      "factNames": {
+        "charges": "Total charges",
+        "credits": "Total payments and deposits",
+        "opening": "Starting balance",
+        "balance": "Ending balance",
+        "closing": "Closing date",
+        "due": "Payment due date",
+        "minimum": "Minimum payment",
+        "limit": "Credit limit"
+      },
+      "factRemembered": "Mirador looks for it the same way on your next {{wallet}} statement.",
+      "factRememberedAny": "Mirador looks for it the same way on statements like this one.",
+      "_facts": {
+        "charges": "Charges",
+        "credits": "Payments",
+        "opening": "Starting"
+      }
     },
     "importsHint": "Look back at what you brought in, or undo it",
     "importsPage": {

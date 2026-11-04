@@ -84,6 +84,8 @@ export type ImportBatchRecord = z.infer<typeof importBatchRecord>
 
 export const importProfileRecordType = 'importProfile'
 
+const label = z.string().max(200).optional()
+
 /** IMP-02, IMP-03: how to read files with the same columns, remembered. */
 export const importProfileRecord = z.object({
   headerKey: z.string().max(5000),
@@ -113,5 +115,19 @@ export const importProfileRecord = z.object({
   walletId: recordId.optional(),
   // TXN-30: whether marks such as "MSI 03/12" are read as installments (default yes).
   installments: z.boolean().optional(),
+  // IMP-14, IMP-37: labels the person showed for the statement's totals and dates,
+  // such as "total cargos del periodo", to find them on the next statement too.
+  facts: z
+    .object({
+      charges: label,
+      credits: label,
+      opening: label,
+      balance: label,
+      closing: label,
+      due: label,
+      minimum: label,
+      limit: label,
+    })
+    .optional(),
 })
 export type ImportProfileRecord = z.infer<typeof importProfileRecord>

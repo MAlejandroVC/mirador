@@ -70,15 +70,27 @@ export function PagePart({
     }
   }, [])
   const tagHeight = 18
+  // Tags after their boxes are placed in the order given, most important first, each
+  // as close to its line as the ones already placed allow. One that would land more
+  // than a tag away from its line is left off, so no tag points at the wrong line.
   const endTags = new Map<string, number>()
-  let below = -Infinity
-  for (const item of [...boxes]
-    .filter((box) => box.tag && fitsAfter(box))
-    .sort((a, b) => a.box.y - b.box.y)) {
-    const middle = ((item.box.y + item.box.height / 2 - y) / height) * drawn
-    const top = Math.max(middle - tagHeight / 2, below + 2)
-    endTags.set(item.key, top)
-    below = top + tagHeight
+  const dropped = new Set<string>()
+  const taken: number[] = []
+  const free = (top: number) => taken.every((other) => Math.abs(other - top) >= tagHeight + 2)
+  for (const item of boxes.filter((box) => box.tag && fitsAfter(box))) {
+    const ideal = ((item.box.y + item.box.height / 2 - y) / height) * drawn - tagHeight / 2
+    const tries = [
+      ideal,
+      ...taken.flatMap((other) => [other + tagHeight + 2, other - tagHeight - 2]),
+    ]
+      .filter((top) => Math.abs(top - ideal) <= tagHeight && free(top))
+      .sort((a, b) => Math.abs(a - ideal) - Math.abs(b - ideal))
+    const [top] = tries
+    if (top === undefined) dropped.add(item.key)
+    else {
+      endTags.set(item.key, top)
+      taken.push(top)
+    }
   }
   function fitsAfter(item: PageBox) {
     return item.tagAt === 'end' && item.box.x + item.box.width < x + width * 0.7
@@ -106,7 +118,7 @@ export function PagePart({
         const look = `absolute rounded-[3px] border-[1.5px] ${tones[item.tone]} ${item.strong ? 'border-2 shadow-[0_0_0_3px_color-mix(in_srgb,var(--tag)_22%,transparent)]' : ''}`
         // A box on the right half takes its tag on its right edge, so it stays on the page.
         const right = item.box.x + item.box.width / 2 > x + width * 0.6
-        const tag = item.tag && !endTags.has(item.key) && (
+        const tag = item.tag && !endTags.has(item.key) && !dropped.has(item.key) && (
           <span
             className={`pointer-events-none absolute -top-[1.15rem] bg-(--tag) px-1 text-[0.625rem] leading-[1.125rem] font-semibold whitespace-nowrap text-on-brand ${
               right
