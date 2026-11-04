@@ -16,6 +16,7 @@ export const columnFields = [
   'inflow',
   'outflow',
   'type',
+  'transferId',
   'payee',
   'note',
   'wallet',
@@ -44,6 +45,10 @@ const headerWords: [ColumnField, string[]][] = [
   ['outflow', ['outflow', 'debit', 'withdrawal', 'retiro', 'cargo', 'egreso', 'salida', 'out']],
   ['amount', ['amount', 'monto', 'importe', 'cantidad', 'value', 'valor', 'total', 'sum']],
   ['type', ['type', 'tipo', 'kind', 'transaction type', 'direction']],
+  [
+    'transferId',
+    ['transfer id', 'transfer pair', 'pair id', 'id transferencia', 'id de transferencia'],
+  ],
   [
     'payee',
     [
