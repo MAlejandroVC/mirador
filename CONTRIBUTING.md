@@ -189,12 +189,12 @@ Stories are sub-issues of their epic, so the epic shows progress. A story's body
 ### Labels
 
 - `area:wal`, `area:txn`, `area:imp`, `area:cat`, `area:ana`, `area:bud`, `area:dsh`, `area:wid`, `area:dat`, `area:sys`, `area:nfr`, plus `area:tooling` and `area:hosting`
-- `priority:must`, `priority:should`, `priority:could` (the spec's MoSCoW)
+- `priority:must`, `priority:should`, `priority:could` (the spec's MoSCoW), and `priority:later` for what is planned after v1.0
 - `layer:web`, `layer:server` when an issue touches only one side
 - `type:epic`, `type:story`, `type:decision`, `type:bug`, `type:chore`
 - `good first issue`, `help wanted`, `blocked`, `needs-translation`
 
-**Milestones:** *MVP* holds every Must; *v1.0* holds the Shoulds; Coulds stay without a milestone until picked.
+**Milestones:** *MVP* holds every Must; *v1.0* holds the Shoulds; Coulds and Laters stay without a milestone until picked.
 
 ### Board columns
 
