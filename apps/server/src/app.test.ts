@@ -90,6 +90,7 @@ describe('serving the built web app', () => {
       expect(policy).toContain("default-src 'none'")
       expect(policy).toContain("script-src 'self' 'wasm-unsafe-eval'")
       expect(policy).toContain("frame-ancestors 'none'")
+      expect(policy).toContain("img-src 'self' blob:")
       expect(policy).not.toContain('unsafe-inline')
       expect(policy).not.toMatch(/'unsafe-eval'/)
       expect(headers.get('x-frame-options')).toBe('DENY')

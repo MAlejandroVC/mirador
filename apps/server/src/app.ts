@@ -111,7 +111,9 @@ const appHeaders = secureHeaders({
     defaultSrc: ["'none'"],
     scriptSrc: ["'self'", "'wasm-unsafe-eval'"],
     styleSrc: ["'self'"],
-    imgSrc: ["'self'"],
+    // blob: shows pictures made on the device (a receipt photo, a statement page);
+    // an image can't run code, and blob: URLs come only from this page.
+    imgSrc: ["'self'", 'blob:'],
     connectSrc: ["'self'"],
     manifestSrc: ["'self'"],
     workerSrc: ["'self'"],
