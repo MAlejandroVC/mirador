@@ -1,4 +1,4 @@
-import type { TextPage } from '@repo/import'
+import type { TextPage, TextWord } from '@repo/import'
 import { transfer, wrap } from 'comlink'
 import type { PDFPageProxy } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import type { TextReader } from './ocr/ocr.worker'
@@ -108,8 +108,9 @@ function toJpeg(canvas: HTMLCanvasElement) {
 }
 
 /**
- * IMP-04: a text PDF's words straight from the file; a page without text (a scan) is
- * drawn and read like a picture (IMP-05).
+ * IMP-04: a text PDF's words straight from the file. Only a scan, where no page has
+ * text, is drawn and read like a picture (IMP-05): a bank's PDF often has a page that
+ * is mostly a logo or a chart, and that page needs no text recognition.
  */
 export async function readPdf(file: Blob, onPage?: (done: number, total: number) => void) {
   const data = new Uint8Array(await file.arrayBuffer())
@@ -118,8 +119,8 @@ export async function readPdf(file: Blob, onPage?: (done: number, total: number)
   const pdf = await task.promise.catch(() => {
     throw new ReadingError('unreadable')
   })
-  const pages: ReadPage[] = []
   try {
+    const read: { page: PdfPage; width: number; height: number; words: TextWord[] }[] = []
     for (let number = 1; number <= pdf.numPages; number += 1) {
       const page = await pdf.getPage(number)
       const viewport = page.getViewport({ scale: 1 })
@@ -131,23 +132,23 @@ export async function readPdf(file: Blob, onPage?: (done: number, total: number)
         const height = item.height || 10
         return [{ text: item.str, x, y: y - height, width: item.width, height, confidence: 1 }]
       })
-      if (words.length >= 5) {
+      read.push({ page, width: viewport.width, height: viewport.height, words })
+    }
+    const scanned = read.every(({ words }) => words.length < 5)
+    const pages: ReadPage[] = []
+    for (const [index, { page, width, height, words }] of read.entries()) {
+      if (scanned) {
+        // Drawn at twice its size so small print stays readable.
+        pages.push(await readPicture(await drawPage(page, 2)))
+      } else {
         // IMP-40: drawn too, so the review can box each row on the page itself.
         const picture = await drawPage(page, 1.5)
-        pages.push({
-          width: viewport.width,
-          height: viewport.height,
-          words,
-          image: URL.createObjectURL(picture),
-        })
-      } else {
-        // A scanned page: drawn at twice its size so small print stays readable.
-        pages.push(await readPicture(await drawPage(page, 2)))
+        pages.push({ width, height, words, image: URL.createObjectURL(picture) })
       }
-      onPage?.(number, pdf.numPages)
+      onPage?.(index + 1, read.length)
     }
+    return pages
   } finally {
     void task.destroy()
   }
-  return pages
 }
