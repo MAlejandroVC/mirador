@@ -2,7 +2,7 @@ import { toCalendarDate } from '@repo/core'
 import {
   joinStatements,
   type ReceiptReading,
-  readReceipt,
+  receiptAside,
   readStatement,
   type StatementTable,
 } from '@repo/import'
@@ -97,16 +97,13 @@ export function ReadingStep({
           if (run.stopped) return
           const table = readStatement(pagesOfFile, { year: new Date().getFullYear() })
           // IMP-41: a picture with no statement rows but a total is a receipt.
-          if (isPicture(file) && table.rows.length <= 1) {
-            const reading = readReceipt(pagesOfFile, {
-              currency: ledger.defaultCurrency,
-              today,
-            })
-            if (reading.amount !== null) {
-              aside.push({ file, reading })
-              set(index, { state: 'done', pages: pagesOfFile.length })
-              continue
-            }
+          const reading = isPicture(file)
+            ? receiptAside(pagesOfFile, table, { currency: ledger.defaultCurrency, today })
+            : null
+          if (reading) {
+            aside.push({ file, reading })
+            set(index, { state: 'done', pages: pagesOfFile.length })
+            continue
           }
           pages.push(...pagesOfFile)
           tables.push({ table, pages: pagesOfFile.length })

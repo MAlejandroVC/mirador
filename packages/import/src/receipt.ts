@@ -148,3 +148,17 @@ function tidyName(name: string) {
       .trim()
   )
 }
+
+/**
+ * IMP-41: a picture among a statement's files that has no statement rows but a total is
+ * a receipt, set aside to add with quick add; anything else is part of the statement.
+ */
+export function receiptAside(
+  pages: readonly TextPage[],
+  table: { rows: readonly unknown[] },
+  options: { currency: string; today: string },
+): ReceiptReading | null {
+  if (table.rows.length > 1) return null
+  const reading = readReceipt(pages, options)
+  return reading.amount === null ? null : reading
+}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { guessColumns } from './columns.ts'
 import { linkWallets, planRows } from './plan.ts'
-import { readReceipt } from './receipt.ts'
+import { readReceipt, receiptAside } from './receipt.ts'
 import { readRows } from './rows.ts'
 import {
   fieldsOf,
@@ -236,6 +236,14 @@ describe('readReceipt', () => {
       // The date was hard to read, so the sheet asks to check it (IMP-10).
       unsure: ['date'],
     })
+  })
+
+  it("IMP-41: sets a ticket among a statement's pictures aside, but not a statement page", () => {
+    const options = { currency: 'MXN', today: '2026-10-21' }
+    const asTicket = receiptAside([ticket], readStatement([ticket], { year: 2026 }), options)
+    expect(asTicket).toMatchObject({ amount: 24_850, payee: 'OXXO' })
+    const asPage = receiptAside([october], readStatement([october], { year: 2026 }), options)
+    expect(asPage).toBeNull()
   })
 
   it('IMP-07: reads a ticket whose date runs into the time and whose O reads as a zero', () => {
