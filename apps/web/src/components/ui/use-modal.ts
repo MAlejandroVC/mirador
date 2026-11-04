@@ -21,7 +21,9 @@ export function useModal<Content>(open: boolean, content: Content) {
       dialog.showModal()
       // showModal focuses the first control, such as Cancel; the field meant to be
       // typed in first takes it instead (React's autoFocus runs before the dialog opens).
-      dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus()
+      // Without scrolling: the sheet is still below the screen as it slides up, and iOS
+      // Safari would slide the whole page up to reach it (#305).
+      dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus({ preventScroll: true })
     }
     if (!open && dialog.open) {
       leave(dialog)

@@ -65,4 +65,23 @@ describe('text field', () => {
     await user.type(field, '1')
     expect(screen.queryByText('A number')).not.toBeInTheDocument()
   })
+
+  it('SYS-06: the eye button shows the password on a new input and hides it again (#304)', async () => {
+    const user = userEvent.setup()
+    render(<Password />)
+    const masked = screen.getByLabelText('Password')
+    await user.type(masked, 'abc1')
+    expect(masked).toHaveAttribute('type', 'password')
+
+    await user.click(screen.getByRole('button', { name: 'Show password' }))
+    const shown = screen.getByLabelText('Password')
+    expect(shown).toHaveAttribute('type', 'text')
+    expect(shown).toHaveValue('abc1')
+    // Safari keeps a password it filled masked on the same input, so it is a new one.
+    expect(shown).not.toBe(masked)
+
+    await user.click(screen.getByRole('button', { name: 'Hide password' }))
+    expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'password')
+    expect(screen.getByLabelText('Password')).toHaveValue('abc1')
+  })
 })
