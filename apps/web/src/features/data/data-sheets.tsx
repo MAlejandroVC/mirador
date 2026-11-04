@@ -9,7 +9,7 @@ import { Button } from '../../components/ui/button'
 import { ChoiceRow } from '../../components/ui/choice-row'
 import { IconTile } from '../../components/ui/icon-tile'
 import { FileTextIcon } from '../../components/ui/icons'
-import { List, ListRow } from '../../components/ui/list'
+import { List, ListButtonRow, ListRow } from '../../components/ui/list'
 import { Sheet } from '../../components/ui/sheet'
 import { TextField } from '../../components/ui/text-field'
 import { formatShortDate, useLocale } from '../../lib/format'
@@ -216,6 +216,106 @@ export function RestoreSheet({
 
 export type WaitingRow = ImportBatchRecord['waiting'][number]
 
+/**
+ * IMP-34, IMP-35: one import, what it did, and its undo. IMP-33: the rows it left for
+ * later, each opening the transaction form filled in with what could be read.
+ */
+export function BatchSheet({
+  batch,
+  pending,
+  onUndo,
+  onFix,
+  onClose,
+}: {
+  batch: (ImportBatchRecord & { id: string }) | null
+  pending: boolean
+  onUndo: (batchId: string) => void
+  onFix: (row: WaitingRow) => void
+  onClose: () => void
+}) {
+  const { t } = useTranslation()
+  const locale = useLocale()
+  const [confirming, setConfirming] = useState(false)
+  const today = new Date().toISOString().slice(0, 10)
+  const number = (value: number) => new Intl.NumberFormat(locale).format(value)
+  const value = (text: string) => (
+    <span className="text-[0.9375rem] text-text-muted tabular-nums">{text}</span>
+  )
+  return (
+    <Sheet
+      open={batch !== null}
+      title={batch ? (batch.source === 'sample' ? t('data.sampleName') : batch.fileName) : ''}
+      cancelLabel={t('nav.cancel')}
+      onClose={onClose}
+    >
+      {batch && (
+        <>
+          <List inset>
+            <ListRow
+              title={t('data.batch.when')}
+              trailing={value(formatShortDate(batch.importedAt.slice(0, 10), today, locale))}
+            />
+            <ListRow title={t('data.batch.imported')} trailing={value(number(batch.imported))} />
+            <ListRow title={t('data.batch.skipped')} trailing={value(number(batch.skipped))} />
+          </List>
+          {batch.waiting.length > 0 && (
+            <>
+              <List inset label={t('data.batch.waiting')}>
+                {batch.waiting.slice(0, 50).map((row) => (
+                  <ListButtonRow
+                    key={row.line}
+                    tone="text"
+                    title={t('data.review.row', { line: number(row.line) })}
+                    subtitle={`${t(`data.problems.${row.problem}`)}${row.text ? ` · ${row.text}` : ''}`}
+                    trailing={
+                      <span className="text-[0.9375rem] text-brand">{t('data.batch.fix')}</span>
+                    }
+                    onClick={() => {
+                      onFix(row)
+                    }}
+                  />
+                ))}
+              </List>
+              <p className="-mt-1.5 px-4 text-[0.8125rem] text-text-muted">
+                {t('data.batch.waitingNote')}
+              </p>
+            </>
+          )}
+          <Button
+            variant="danger"
+            className="mt-2 w-full"
+            disabled={pending}
+            onClick={() => {
+              setConfirming(true)
+            }}
+          >
+            {pending ? t('data.working') : t('data.done.undo')}
+          </Button>
+          <ActionSheet
+            open={confirming}
+            title={t('data.batch.confirmTitle')}
+            message={t('data.batch.confirmMessage', { count: batch.imported })}
+            cancelLabel={t('nav.cancel')}
+            actions={[
+              {
+                label: t('data.done.undo'),
+                tone: 'danger',
+                onSelect: () => {
+                  setConfirming(false)
+                  onUndo(batch.id)
+                },
+              },
+            ]}
+            onClose={() => {
+              setConfirming(false)
+            }}
+          />
+        </>
+      )}
+    </Sheet>
+  )
+}
+
 /** DAT-11: erasing everything takes the account's username, typed. */
 export function EraseSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation()
@@ -268,5 +368,3 @@ export function EraseSheet({ open, onClose }: { open: boolean; onClose: () => vo
     </Sheet>
   )
 }
-
-//END

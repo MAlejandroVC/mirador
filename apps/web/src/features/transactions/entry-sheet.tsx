@@ -81,8 +81,6 @@ import {
 import { InstallmentsFields } from './installments-fields'
 import { chosenMonths, initialInstallments, type InstallmentState } from './installments-state'
 import { WalletPicker } from './wallet-picker'
-import { PictureBar, type PictureState } from '../quick-add/picture-bar'
-import { nameKey } from '@repo/import'
 
 /**
  * What the sheet is for: a new transaction, which may start filled in or repeating;
@@ -97,8 +95,6 @@ export type EntryMode =
       repeat?: Repeat
       /** IMP-33: a row an import left for later, added by hand into that import. */
       fromImport?: { batchId: string; line: number }
-      /** WID-02: quick add's picture options, and what a picture filled in. */
-      picture?: PictureState
     }
   | { kind: 'edit'; transaction: Transaction & { kind: EntryType } }
   | { kind: 'series'; recurring: Recurring }
@@ -176,8 +172,7 @@ export function EntrySheet({
           empty
         ) : (
           <EntryForm
-            // A picture that fills the form in starts it again from what it read.
-            key={`${String(round)}-${String(mode.kind === 'new' ? (mode.picture?.version ?? 0) : 0)}`}
+            key={round}
             ledger={ledger}
             mode={mode}
             type={type}
@@ -277,23 +272,11 @@ function EntryForm({
   const [rateText, setRateText] = useState(
     initial.rate === undefined ? '' : decimalInput(initial.rate, rateDecimals, locale),
   )
-  // IMP-07: the shop a picture named is the payee of that name, or a new one.
-  const picture = mode.kind === 'new' ? mode.picture : undefined
-  const [pictured] = useState(() => {
-    const name = picture?.phase === 'filled' ? picture.payeeName?.trim() : undefined
-    if (!name || initial.payeeId) return null
-    const known = ledger.payees.find((item) => nameKey(item.name) === nameKey(name))
-    return known ? { payee: known, made: false } : { payee: { id: newId(), name }, made: true }
-  })
   // CAT-20, TXN-15, TXN fields: the category, tags and payee. Tags and payees made here
   // are saved with the transaction, so cancelling leaves nothing behind (CAT-21).
   // CAT-05: one saved before categories existed opens as Uncategorized.
   const [categoryId, setCategoryId] = useState<string | null>(
     initial.categoryId ??
-      // IMP-23: what this shop's transactions went under before.
-      (pictured && !pictured.made
-        ? payeeMemory(ledger.transactions, pictured.payee.id)?.categoryId
-        : undefined) ??
       (mode.kind === 'edit'
         ? (ledger.categories.find((item) => item.systemKey === 'uncategorized')?.id ?? null)
         : null),
@@ -302,11 +285,9 @@ function EntryForm({
   // category of what was refunded, but an expense's category never carries into one.
   const [categoryFor, setCategoryFor] = useState<EntryType>(initial.type)
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds ?? [])
-  const [payeeId, setPayeeId] = useState<string | null>(
-    initial.payeeId ?? pictured?.payee.id ?? null,
-  )
+  const [payeeId, setPayeeId] = useState<string | null>(initial.payeeId ?? null)
   const [newTags, setNewTags] = useState<Tag[]>([])
-  const [newPayees, setNewPayees] = useState<Payee[]>(pictured?.made ? [pictured.payee] : [])
+  const [newPayees, setNewPayees] = useState<Payee[]>([])
   const [walletTouched, setWalletTouched] = useState(mode.kind === 'edit')
   const [choosing, setChoosing] = useState<
     'from' | 'to' | 'category' | 'tags' | 'payee' | 'repeat' | 'ends' | null
@@ -641,40 +622,12 @@ function EntryForm({
             : entryFields(entry, mode.kind === 'new' ? mode.source : 'manual', now)
         const fromImport = mode.kind === 'new' ? mode.fromImport : undefined
         const batch = fromImport && ledger.batches.find((item) => item.id === fromImport.batchId)
-        // IMP-42: an expense read from a picture is listed under Imports as a receipt.
-        // Its batch adds nothing but this transaction, so undoing it removes just that.
-        const receipt =
-          mode.kind === 'new' && !batch && picture?.phase === 'filled' && picture.fileName
-            ? { id: newId(), fileName: picture.fileName }
-            : null
-        const batchId = batch?.id ?? receipt?.id
         changes = [
           ...extras(fields),
-          ...(receipt
-            ? [
-                {
-                  id: receipt.id,
-                  body: recordBody(
-                    importBatchRecordType,
-                    importBatchRecord.parse({
-                      source: 'receipt',
-                      fileName: receipt.fileName.slice(0, 255),
-                      importedAt: now,
-                      rows: 1,
-                      imported: 1,
-                      skipped: 0,
-                      created: [],
-                      merged: [],
-                      waiting: [],
-                    }),
-                  ),
-                },
-              ]
-            : []),
           {
             id,
             body: transactionBody(
-              transactionRecord.parse(batchId ? { ...fields, importBatchId: batchId } : fields),
+              transactionRecord.parse(batch ? { ...fields, importBatchId: batch.id } : fields),
             ),
           },
           // IMP-33, IMP-35: the row is no longer waiting, and undoing the import
@@ -782,10 +735,8 @@ function EntryForm({
         prefix={parts.prefix.trim()}
         suffix={parts.suffix.trim()}
         error={form.tried ? amountError : null}
-        // Filled in from a picture, the form shows what was read instead of the keypad.
-        autoFocus={mode.kind === 'new' && picture?.phase !== 'filled'}
+        autoFocus={mode.kind === 'new'}
       />
-      {picture && <PictureBar picture={picture} />}
 
       {/* Folds that are closed take no room, so the gaps live inside them. */}
       <div className="flex flex-col">
@@ -797,9 +748,6 @@ function EntryForm({
               </FieldNote>
             ) : series ? (
               <FieldNote>{t('recurring.editHint')}</FieldNote>
-            ) : picture?.phase === 'filled' && picture.unsure.includes('date') ? (
-              // IMP-10, DL-COL-05: a gentle caution, in words, under the date.
-              <FieldNote error>{t('quickAdd.check.date')}</FieldNote>
             ) : null
           }
         >
@@ -997,13 +945,7 @@ function EntryForm({
         {/* TXN fields: the payee and tags, optional, for expenses and income. */}
         <Fold open={!transfer}>
           <div className="pt-3">
-            <FieldRows
-              note={
-                picture?.phase === 'filled' && picture.unsure.includes('payee') ? (
-                  <FieldNote error>{t('quickAdd.check.payee')}</FieldNote>
-                ) : null
-              }
-            >
+            <FieldRows>
               <PickerRow
                 label={t('transactions.payee')}
                 value={payee?.name ?? t('pickers.none')}

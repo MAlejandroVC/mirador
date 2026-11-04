@@ -9,7 +9,6 @@ import {
   payeeRecord,
   payeeRecordType,
   type RecordBody,
-  type RecurringRecord,
   tagRecord,
   tagRecordType,
   type TransactionRecord,
@@ -19,16 +18,8 @@ import {
   walletRecord,
   walletRecordType,
 } from '@repo/api'
-import {
-  addMonths,
-  changeTo,
-  type Category,
-  nextTagColor,
-  type Tag,
-  type Transaction,
-} from '@repo/core'
+import { changeTo, type Category, nextTagColor, type Tag, type Transaction } from '@repo/core'
 import type { CategoryLink, PlanLedger, PlannedRow, WalletLink, WalletTarget } from './plan.ts'
-import { undoSettings } from './updates.ts'
 import { nameKey } from './values.ts'
 
 // IMP-34: turning the reviewed rows into records, all tied to one import batch so the
@@ -47,10 +38,6 @@ export interface Decisions {
   apart: ReadonlySet<number>
   /** IMP-31: categories picked for rows without one, by line. */
   categories: ReadonlyMap<number, string>
-  /** IMP-40: rows the person said aren't transactions, by line. */
-  ignore?: ReadonlySet<number>
-  /** IMP-28: new installment purchases the person said are plain charges, by line. */
-  single?: ReadonlySet<number>
 }
 
 /** The defaults: probable duplicates skipped, likely transfers paired. */
@@ -58,7 +45,7 @@ export function defaultDecisions(planned: readonly PlannedRow[]): Decisions {
   const apart = new Set<number>()
   for (const { row, status } of planned)
     if (status.kind === 'transfer' && status.outgoing && !status.likely) apart.add(row.line)
-  return { keep: new Set(), apart, categories: new Map(), ignore: new Set(), single: new Set() }
+  return { keep: new Set(), apart, categories: new Map() }
 }
 
 export interface BuildInput {
@@ -76,8 +63,6 @@ export interface BuildInput {
   names: { wallet: string; group: string }
   newId: () => string
   now: Date
-  /** IMP-39, IMP-29: the wallet changes made with the import, to undo them with it. */
-  settings?: ImportBatchRecord['settings']
 }
 
 export interface BuildResult {
@@ -233,11 +218,7 @@ export function buildImport(input: BuildInput): BuildResult {
       skipped += 1
       continue
     }
-    if (
-      (status.kind === 'duplicate' && !decisions.keep.has(row.line)) ||
-      status.kind === 'installment' ||
-      decisions.ignore?.has(row.line)
-    ) {
+    if (status.kind === 'duplicate' && !decisions.keep.has(row.line)) {
       skipped += 1
       continue
     }
@@ -294,23 +275,15 @@ export function buildImport(input: BuildInput): BuildResult {
       item.suggestedCategoryId ??
       input.uncategorizedId
     const payeeId = payeeOf(row.payee)
-    // IMP-28, TXN-30: month N of M is a purchase of M times that, made N-1 months ago.
-    const plan = status.kind === 'plan' && !decisions.single?.has(row.line) ? status : null
     transactions.push({
       id: newId(),
       data: transactionRecord.parse({
         ...shared,
         kind: row.amount < 0 ? 'expense' : 'income',
         walletId,
-        amount: plan ? row.amount * plan.months : row.amount,
+        amount: row.amount,
         categoryId,
         ...(payeeId ? { payeeId } : {}),
-        ...(plan
-          ? {
-              date: addMonths(row.date, -(plan.month - 1)),
-              installments: { months: plan.months },
-            }
-          : {}),
       }),
     })
   }
@@ -354,7 +327,6 @@ export function buildImport(input: BuildInput): BuildResult {
     created: created.map((change) => change.id),
     merged,
     waiting: waiting.slice(0, 2000),
-    ...(input.settings ? { settings: input.settings } : {}),
   } satisfies ImportBatchRecord)
 
   // The batch goes first: if saving stops halfway, undo still finds what was saved.
@@ -383,11 +355,6 @@ export interface UndoLedger {
   }[]
   /** Every record's type, by id, so deletions say what they delete (SEC-04). */
   typeOf: (id: string) => string | undefined
-  /** The wallets and recurring transactions as saved, to put settings back (IMP-42). */
-  records?: {
-    wallets: readonly (WalletRecord & { id: string })[]
-    recurring: readonly (RecurringRecord & { id: string })[]
-  }
 }
 
 /**
@@ -395,12 +362,7 @@ export interface UndoLedger {
  * wallets, groups, categories, tags and payees it created that nothing else came to
  * use since. Transactions it merged get their own date back.
  */
-export function undoImport(
-  batchId: string,
-  batch: ImportBatchRecord,
-  ledger: UndoLedger,
-  options: { keepSettings?: boolean } = {},
-) {
+export function undoImport(batchId: string, batch: ImportBatchRecord, ledger: UndoLedger) {
   const deleted = (id: string, type: string): RecordChange => ({
     id,
     body: { deleted: true, type },
@@ -436,15 +398,6 @@ export function undoImport(
       body: body(transactionRecordType, transactionRecord.parse({ ...fields, date })),
     })
   }
-  // IMP-42: "Undo everything" also puts back what it changed on the wallet.
-  if (batch.settings && !options.keepSettings && ledger.records)
-    changes.push(
-      ...undoSettings(
-        batch.settings,
-        ledger.records.wallets.find((wallet) => wallet.id === batch.settings?.walletId),
-        ledger.records.recurring,
-      ),
-    )
   // The batch itself goes last, so an undo that stops halfway can simply be retried.
   changes.push(deleted(batchId, importBatchRecordType))
   return { changes, removed: removed.length, kept: [...createdIds].filter((id) => inUse.has(id)) }
