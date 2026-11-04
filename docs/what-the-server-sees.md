@@ -141,7 +141,6 @@ The nightly backup (`docker/host/backup.sh`) is a copy of the whole database, so
 These come with later features, and this page will change with them:
 
 - **Notifications (SEC-14):** the server will know when it sends each one. Their content is generic, never your data.
-- **Reading receipts and statements (IMP-11, SEC-05):** the server will see each image while it reads it, in memory only, and never store it.
 - **Encrypted files (SEC-06):** the server will see each file's size and when it was added.
 
 ## What someone who controls the server could do

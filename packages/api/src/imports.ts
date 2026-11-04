@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { recordId } from './records.ts'
-import { calendarDate } from './wallets.ts'
+import { calendarDate, creditSettings, walletFeatures } from './wallets.ts'
 
 // Epics 3 and 9 (IMP, DAT): what an import leaves behind. Both are encrypted records
 // (SEC-01): the server never learns a file's name, its columns or what came in.
@@ -11,8 +11,12 @@ export const importBatchRecordType = 'importBatch'
 export const rowProblems = ['date', 'amount', 'zero', 'currency'] as const
 
 export const importBatchRecord = z.object({
-  /** `csv` for a file, `sample` for the made-up data that shows the app off. */
-  source: z.enum(['csv', 'sample']),
+  /**
+   * `csv` for a file, `statement` for PDFs and pictures read as a statement (IMP-04,
+   * IMP-05), `receipt` for one expense quick add read from a picture (IMP-07, WID-02),
+   * `sample` for the made-up data that shows the app off.
+   */
+  source: z.enum(['csv', 'statement', 'receipt', 'sample']),
   fileName: z.string().max(255),
   // IMP-36: the file's SHA-256, so the same file imported twice can be caught.
   fingerprint: z
@@ -47,6 +51,34 @@ export const importBatchRecord = z.object({
       }),
     )
     .max(2000),
+  // IMP-29, IMP-39, IMP-42: what a statement changed on its wallet and recurring transactions, with
+  // what they were before, so "Undo everything" can put them back and "Undo
+  // transactions" can leave them.
+  settings: z
+    .object({
+      walletId: recordId,
+      credit: creditSettings.optional(),
+      features: z.array(z.enum(walletFeatures)),
+      changed: z
+        .array(
+          z.object({
+            kind: z.enum(['closingDay', 'dueDay', 'limit']),
+            before: z.int().positive().optional(),
+            after: z.int().positive(),
+          }),
+        )
+        .max(3),
+      recurring: z
+        .array(
+          z.object({
+            id: recordId,
+            until: calendarDate,
+            handled: calendarDate.optional(),
+          }),
+        )
+        .max(50),
+    })
+    .optional(),
 })
 export type ImportBatchRecord = z.infer<typeof importBatchRecord>
 
@@ -79,5 +111,7 @@ export const importProfileRecord = z.object({
   amountSign: z.enum(['negativeIsExpense', 'positiveIsExpense']),
   // IMP-01: the wallet a file without a wallet column went into last time.
   walletId: recordId.optional(),
+  // TXN-30: whether marks such as "MSI 03/12" are read as installments (default yes).
+  installments: z.boolean().optional(),
 })
 export type ImportProfileRecord = z.infer<typeof importProfileRecord>

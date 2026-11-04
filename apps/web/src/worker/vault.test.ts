@@ -43,6 +43,17 @@ import {
 } from '../features/wallets/use-ledger'
 import { newWalletRecord } from '../features/wallets/wallet-look'
 
+/**
+ * What was sent, less the record ids and ciphertext the server is meant to see. Both
+ * are random, so a short number such as 98700 can turn up in them by chance, while
+ * plaintext would show anywhere else.
+ */
+const plaintextOf = (sent: readonly string[]) =>
+  sent
+    .join('\n')
+    .replace(/"id":"[^"]*"/g, '')
+    .replace(/"ciphertext":"[^"]*"/g, '')
+
 const password = 'a sunny day in Monterrey'
 
 // A stand-in for the server that keeps what it is sent and records every request, so
@@ -299,7 +310,7 @@ describe('vault', () => {
     await vault.signOut()
     await new Vault(server.api).signIn('ana', password)
 
-    const everything = server.sent.join('\n')
+    const everything = plaintextOf(server.sent)
     expect(everything).toContain('ana')
     expect(everything).not.toContain(password)
     expect(everything).not.toContain(recoveryKey)
@@ -318,7 +329,7 @@ describe('vault', () => {
       },
     ])
 
-    const everything = server.sent.join('\n')
+    const everything = plaintextOf(server.sent)
     expect(everything).not.toContain('butterfly')
     expect(everything).not.toContain('profile')
   })
@@ -344,7 +355,7 @@ describe('vault', () => {
       },
     ])
 
-    const everything = server.sent.join('\n')
+    const everything = plaintextOf(server.sent)
     for (const plaintext of ['Banorte', 'MXN', 'checking', 'liquid', '4827391', 'openingBalance'])
       expect(everything).not.toContain(plaintext)
     // Not even which kind of record each one is (SEC-04).
@@ -397,7 +408,7 @@ describe('vault', () => {
       },
     ])
 
-    const everything = server.sent.join('\n')
+    const everything = plaintextOf(server.sent)
     for (const plaintext of [
       'Tacos',
       '73919',
@@ -459,7 +470,7 @@ describe('vault', () => {
       },
     ])
 
-    const everything = server.sent.join('\n')
+    const everything = plaintextOf(server.sent)
     for (const plaintext of [
       'Antojitos',
       'Elotes',
@@ -522,7 +533,7 @@ describe('vault', () => {
       },
     ])
 
-    const everything = server.sent.join('\n')
+    const everything = plaintextOf(server.sent)
     for (const plaintext of [
       'Netflix',
       'Liverpool',
@@ -571,7 +582,7 @@ describe('vault', () => {
       },
     ])
 
-    const everything = server.sent.join('\n')
+    const everything = plaintextOf(server.sent)
     for (const plaintext of [
       'Tarjeta',
       'Anualidad',
@@ -674,7 +685,7 @@ describe('vault', () => {
       },
     ])
 
-    const everything = server.sent.join('\n')
+    const everything = plaintextOf(server.sent)
     for (const plaintext of [
       'Oaxaca',
       'antojos',
@@ -903,7 +914,7 @@ describe('vault', () => {
     await laptop.openWithPasskey(faceId.used())
     expect((await laptop.listRecords()).map((record) => record.id)).toEqual([id])
     // SEC-02: the server got the wrapped key, never the passkey's secret or the password.
-    const everything = server.sent.join('\n')
+    const everything = plaintextOf(server.sent)
     expect(everything).toContain('/api/passkeys')
     expect(everything).not.toContain(faceId.secret)
     expect(everything).not.toContain(password)
@@ -1070,7 +1081,7 @@ describe('vault', () => {
       },
     ])
 
-    const everything = server.sent.join('\n')
+    const everything = plaintextOf(server.sent)
     for (const plaintext of [
       'banorte',
       fingerprint,
