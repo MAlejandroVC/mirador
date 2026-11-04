@@ -1,6 +1,20 @@
 // @vitest-environment node
 import {
   addPasskeyRequest,
+  budgetPlanRecord,
+  budgetPlanRecordType,
+  budgetSnapshotRecord,
+  budgetSnapshotRecordType,
+  goalContributionRecord,
+  goalContributionRecordType,
+  goalRecord,
+  goalRecordType,
+  importBatchRecord,
+  importBatchRecordType,
+  importProfileRecord,
+  importProfileRecordType,
+  monthBudgetRecord,
+  monthBudgetRecordType,
   changePasswordRequest,
   changeUsernameRequest,
   deleteAccountRequest,
@@ -574,6 +588,118 @@ describe('vault', () => {
       expect(everything).not.toContain(plaintext)
   })
 
+  it('BUD-03, BUD-20, BUD-26, BUD-56, BUD-71, BUD-76, SYS-09: the plan, goals, money added, month budgets and closed months reach the server only encrypted', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    await phone.signUp({ username: 'ana', password })
+    const categoryId = newRecordId()
+    const goalId = newRecordId()
+    const oneOffId = newRecordId()
+
+    await phone.saveRecords([
+      {
+        id: newRecordId(),
+        body: recordBody(
+          budgetPlanRecordType,
+          budgetPlanRecord.parse({
+            exclusions: {
+              periods: ['2026-07-01'],
+              linePeriods: [],
+              transactionIds: [],
+              counted: [oneOffId],
+            },
+            tagLines: [],
+            estimates: [{ line: categoryId, amount: 765_400 }],
+          }),
+        ),
+      },
+      {
+        id: goalId,
+        body: recordBody(
+          goalRecordType,
+          goalRecord.parse({
+            name: 'Viaje a Oaxaca',
+            kind: 'save',
+            target: 1_234_500,
+            by: '2027-04-30',
+            saved: 0,
+            walletIds: [],
+            start: '2026-10-01',
+            order: 0,
+          }),
+        ),
+      },
+      {
+        id: newRecordId(),
+        body: recordBody(
+          goalContributionRecordType,
+          goalContributionRecord.parse({ goalId, amount: 98_700, date: '2026-10-19' }),
+        ),
+      },
+      {
+        id: newRecordId(),
+        body: recordBody(
+          monthBudgetRecordType,
+          monthBudgetRecord.parse({
+            start: '2026-11-01',
+            targets: [{ line: categoryId, amount: 432_100 }],
+            income: 6_543_200,
+            lockedAt: '2026-10-20T17:00:00.000Z',
+          }),
+        ),
+      },
+      {
+        id: newRecordId(),
+        body: recordBody(
+          budgetSnapshotRecordType,
+          budgetSnapshotRecord.parse({
+            start: '2026-09-01',
+            end: '2026-09-30',
+            lines: [{ line: categoryId, flexibility: 'flexible', target: 432_100, spent: 456_700 }],
+            income: { planned: 6_543_200, actual: 6_600_000 },
+            leftOver: { planned: 111_100, actual: 222_200 },
+            goals: [],
+            surplus: [],
+            carry: [],
+            closedAt: '2026-10-01T12:00:00.000Z',
+          }),
+        ),
+      },
+      {
+        id: newRecordId(),
+        body: recordBody('preferences', {
+          defaultCurrency: 'MXN',
+          budget: { startDay: 17, lookback: 12, maxCut: 0.15, atRisk: 0.1 },
+        }),
+      },
+    ])
+
+    const everything = server.sent.join('\n')
+    for (const plaintext of [
+      'Oaxaca',
+      'antojos',
+      'budgetPlan',
+      'goalContribution',
+      'budgetSnapshot',
+      'monthBudget',
+      'lockedAt',
+      '2026-11-01',
+      'estimates',
+      'startDay',
+      '432100',
+      '6543200',
+      '765400',
+      '1234500',
+      '98700',
+      '2027-04-30',
+      '2026-07-01',
+      categoryId,
+      oneOffId,
+      'walletIds',
+    ])
+      expect(everything).not.toContain(plaintext)
+  })
+
   it('SEC-01: records are encrypted before they leave, and only the owner reads them', async () => {
     const server = fakeServer()
     const phone = new Vault(server.api)
@@ -889,5 +1015,77 @@ describe('vault', () => {
     expect(await failure(limited.signIn('ana', password))).toBe('too-many-attempts')
     const offline = new Vault(createApi(() => Promise.reject(new TypeError('Failed to fetch'))))
     expect(await failure(offline.signIn('ana', password))).toBe('network')
+  })
+
+  it('IMP-34, IMP-02, IMP-36: an import batch and the columns it remembers reach the server only encrypted', async () => {
+    const server = fakeServer()
+    const phone = new Vault(server.api)
+    await phone.signUp({ username: 'ana', password })
+    const [batchId, walletId] = [newRecordId(), newRecordId()]
+    const fingerprint = 'ab'.repeat(32)
+
+    await phone.saveRecords([
+      {
+        id: batchId,
+        body: recordBody(
+          importBatchRecordType,
+          importBatchRecord.parse({
+            source: 'csv',
+            fileName: 'banorte-octubre.csv',
+            fingerprint,
+            importedAt: '2026-10-19T12:00:00.000Z',
+            rows: 3,
+            imported: 2,
+            skipped: 1,
+            created: [walletId],
+            merged: [],
+            waiting: [{ line: 4, problem: 'amount', text: 'Farmacia Guadalajara;abc' }],
+          }),
+        ),
+      },
+      {
+        id: newRecordId(),
+        body: recordBody(
+          importProfileRecordType,
+          importProfileRecord.parse({
+            headerKey: 'fecha|concepto|importe',
+            columns: ['date', 'note', 'amount'],
+            dateOrder: 'dmy',
+            decimalMark: ',',
+            amountSign: 'negativeIsExpense',
+            walletId,
+          }),
+        ),
+      },
+      {
+        id: newRecordId(),
+        body: transactionBody({
+          ...entryFields(
+            { type: 'expense', amount: 4_520, walletId, date: '2026-10-12', note: 'Oxxo' },
+            'import',
+            '2026-10-19T12:00:00.000Z',
+          ),
+          importBatchId: batchId,
+        }),
+      },
+    ])
+
+    const everything = server.sent.join('\n')
+    for (const plaintext of [
+      'banorte',
+      fingerprint,
+      'Farmacia',
+      'fecha',
+      'concepto',
+      'negativeIsExpense',
+      'importBatch',
+      'importProfile',
+      'Oxxo',
+      '4520',
+      // The batch's own id is a record id, which the server sees; the wallet's is only
+      // referenced inside records.
+      walletId,
+    ])
+      expect(everything).not.toContain(plaintext)
   })
 })

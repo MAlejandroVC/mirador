@@ -82,13 +82,19 @@ export function ListRow(props: RowContent) {
 export function ListLinkRow({
   to,
   params,
+  search,
   id,
   ...props
-}: RowContent & { to: LinkProps['to']; params?: LinkProps['params']; id?: string }) {
+}: RowContent & {
+  to: LinkProps['to']
+  params?: LinkProps['params']
+  search?: LinkProps['search']
+  id?: string
+}) {
   const className = useRowClass(id)
   return (
     <li className={className}>
-      <Link to={to} params={params} className={rowClass}>
+      <Link to={to} params={params} search={search} className={rowClass}>
         <RowBody {...props} chevron />
       </Link>
     </li>

@@ -112,10 +112,26 @@ export function addDays(date: string, days: number): string {
 export type PeriodScope = 'week' | 'month' | 'quarter' | 'year'
 
 /**
- * The week, month, quarter or year that holds `date`. A week starts on `firstDay`
- * (0 is Sunday, SYS-03).
+ * SYS-02: the budget month that holds `date` when months start on `startDay` (1 to 31;
+ * a short month starts on its last day instead). With day 1 it is the calendar month.
  */
-export function periodOf(date: string, scope: PeriodScope, firstDay = 0): Period {
+export function budgetMonthOf(date: string, startDay = 1): Period {
+  if (startDay <= 1) return monthOf(date)
+  const [year, month, day] = parts(date)
+  const thisStart = format(year, month, Math.min(startDay, daysInMonth(year, month)))
+  const start =
+    day >= Math.min(startDay, daysInMonth(year, month))
+      ? thisStart
+      : addMonths(thisStart, -1, startDay)
+  return { start, end: addDays(addMonths(start, 1, startDay), -1) }
+}
+
+/**
+ * The week, month, quarter or year that holds `date`. A week starts on `firstDay`
+ * (0 is Sunday, SYS-03); a month on `monthStart` (SYS-02), quarters and years stay
+ * calendar ones.
+ */
+export function periodOf(date: string, scope: PeriodScope, firstDay = 0, monthStart = 1): Period {
   const [year, month] = parts(date)
   switch (scope) {
     case 'week': {
@@ -123,7 +139,7 @@ export function periodOf(date: string, scope: PeriodScope, firstDay = 0): Period
       return { start, end: addDays(start, 6) }
     }
     case 'month':
-      return monthOf(date)
+      return budgetMonthOf(date, monthStart)
     case 'quarter': {
       const first = month - ((month - 1) % 3)
       return {
@@ -137,13 +153,21 @@ export function periodOf(date: string, scope: PeriodScope, firstDay = 0): Period
 }
 
 /** The period `steps` before (negative) or after the one that holds `date`. */
-export function shiftPeriod(date: string, scope: PeriodScope, steps: number, firstDay = 0): Period {
-  const { start } = periodOf(date, scope, firstDay)
+export function shiftPeriod(
+  date: string,
+  scope: PeriodScope,
+  steps: number,
+  firstDay = 0,
+  monthStart = 1,
+): Period {
+  const { start } = periodOf(date, scope, firstDay, monthStart)
   const moved =
     scope === 'week'
       ? addDays(start, steps * 7)
-      : addMonths(start, steps * (scope === 'month' ? 1 : scope === 'quarter' ? 3 : 12), 1)
-  return periodOf(moved, scope, firstDay)
+      : scope === 'month'
+        ? addMonths(start, steps, monthStart)
+        : addMonths(start, steps * (scope === 'quarter' ? 3 : 12), 1)
+  return periodOf(moved, scope, firstDay, monthStart)
 }
 
 /** Whether `date` falls in `period`, both ends included. */

@@ -1,7 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { createRouter, type RouterHistory } from '@tanstack/react-router'
-import { trackHistory } from './components/shell/back'
-import { navDirection } from './lib/navigation'
+import { stackDirection, trackHistory } from './components/shell/back'
 import type { VaultClient } from './lib/vault'
 import { routeTree } from './routeTree.gen'
 
@@ -14,11 +13,12 @@ export function createAppRouter(
     routeTree,
     context: { queryClient, vault },
     ...(history ? { history } : {}),
-    // DL-MOT-06: screens slide like iOS, through the browser's view transitions. Where
-    // those are missing, the screen just changes.
+    // DL-MOT-06: screens slide like iOS, through the browser's view transitions: a
+    // screen pushed onto the stack slides in, back slides it out, and a tab doesn't
+    // move. Where view transitions are missing, the screen just changes.
     defaultViewTransition: {
       types: ({ fromLocation, toLocation }) => {
-        const direction = navDirection(fromLocation?.pathname, toLocation.pathname)
+        const direction = stackDirection(fromLocation, toLocation)
         return direction === 'none' ? false : [direction]
       },
     },
@@ -26,7 +26,7 @@ export function createAppRouter(
   // The same direction for the stylesheet, which can't read the transition's types in
   // every browser that runs view transitions.
   router.subscribe('onBeforeNavigate', ({ fromLocation, toLocation }) => {
-    document.documentElement.dataset.nav = navDirection(fromLocation?.pathname, toLocation.pathname)
+    document.documentElement.dataset.nav = stackDirection(fromLocation, toLocation)
   })
   trackHistory(router)
   return router

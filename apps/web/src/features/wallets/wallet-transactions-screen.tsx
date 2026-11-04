@@ -17,10 +17,7 @@ export function WalletTransactionsScreen({ walletId }: { walletId: string }) {
   const defaultCurrency = ledger?.defaultCurrency ?? 'USD'
   const wallet = ledger?.wallets.find((candidate) => candidate.id === walletId)
   const editor = useTransactionEditor()
-  const back = useBack(
-    wallet?.name ?? t('nav.wallets'),
-    wallet ? { to: '/wallets/$walletId', params: { walletId: wallet.id } } : { to: '/wallets' },
-  )
+  const back = useBack()
 
   if (!ledger) return null
   if (!wallet)

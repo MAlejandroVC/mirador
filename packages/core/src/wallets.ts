@@ -30,6 +30,8 @@ export interface WalletFields {
   fees?: Fee[]
   credit?: CreditSettings
   loan?: LoanSettings
+  /** WAL-07, DSH-05: the last day the person checked its balance, even when it matched. */
+  checkedOn?: string
 }
 
 export interface Wallet extends WalletFields {

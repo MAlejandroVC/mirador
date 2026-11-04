@@ -58,6 +58,52 @@ describe('categories', () => {
     expect(bodies(server, tagRecordType)).toHaveLength(7)
   })
 
+  it('CAT-26, BUD-10: Needs and wants sorts every expense category and moves one in two taps', async () => {
+    const user = userEvent.setup()
+    const group = record(categoryGroupRecordType, {
+      name: 'Home',
+      color: 'lake',
+    } satisfies CategoryGroupRecord)
+    const category = (name: string, flexibility: CategoryRecord['flexibility']) =>
+      record(categoryRecordType, {
+        name,
+        groupId: group.id,
+        kind: 'expense',
+        icon: 'basket',
+        flexibility,
+      } satisfies CategoryRecord)
+    const rent = category('Rent', 'locked')
+    const groceries = category('Groceries', 'fixed')
+    const server: FakeServer = { signedIn: 'ana', records: [group, rent, groceries] }
+    stubServer(server)
+    renderApp('/settings/categories', unlockedVault(server))
+
+    await user.click(await screen.findByRole('link', { name: 'Needs and wants' }))
+    expect(await screen.findByRole('heading', { name: 'Commitments' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Needs' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Wants' })).toBeVisible()
+    // Pushed from Categories, so back pops to it (DL-CMP-06).
+    expect(screen.getByRole('button', { name: 'Back' })).toBeVisible()
+
+    await user.click(screen.getByRole('button', { name: /Groceries/ }))
+    const sheet = await screen.findByRole('dialog', { name: 'Groceries' })
+    expect(within(sheet).getByText('It counts as a need.')).toBeVisible()
+    expect(within(sheet).queryByRole('button', { name: 'Move to Needs' })).toBeNull()
+    await user.click(within(sheet).getByRole('button', { name: 'Move to Wants' }))
+
+    await waitFor(() => {
+      const saved = (bodies(server, categoryRecordType) as CategoryRecord[]).find(
+        (item) => item.name === 'Groceries',
+      )
+      expect(saved?.flexibility).toBe('flexible')
+    })
+    // Everything else about it stays as it was.
+    const saved = (bodies(server, categoryRecordType) as CategoryRecord[]).find(
+      (item) => item.name === 'Groceries',
+    )
+    expect(saved).toMatchObject({ groupId: group.id, kind: 'expense', icon: 'basket' })
+  })
+
   it('CAT-01, CAT-03: a new category needs a name not used in its category group', async () => {
     const user = userEvent.setup()
     const group = record(categoryGroupRecordType, {

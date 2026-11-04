@@ -7,7 +7,7 @@ import { Alert } from '../../../components/ui/alert'
 import { IconTile } from '../../../components/ui/icon-tile'
 import { ShieldCheckIcon } from '../../../components/ui/icons'
 import { Page } from '../../../components/ui/page'
-import { useSettingsBack } from '../../../components/shell/settings-back'
+import { useBack } from '../../../components/shell/back'
 import { Button } from '../../../components/ui/button'
 import { TextField } from '../../../components/ui/text-field'
 import { api } from '../../../lib/api'
@@ -32,7 +32,7 @@ export function SecurityScreen() {
   const username = session?.user.username ?? ''
   const [newRecoveryKey, setNewRecoveryKey] = useState<string | null>(null)
   const [recoveryKeySaved, setRecoveryKeySaved] = useState(false)
-  const settingsBack = useSettingsBack()
+  const settingsBack = useBack()
 
   // Shown once, like at sign-up; the old key already stopped working.
   if (newRecoveryKey) {

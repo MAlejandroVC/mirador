@@ -1,41 +1,16 @@
-import type { RecordBody } from '@repo/api'
-
 // SYS-23: everything a removed account entered, as one file made on this device from
-// the decrypted records. The server never sees what is in it. It keeps each record
-// as the app stores it (type, schema version and data), so the full archive
-// (DAT-01, DAT-04) can read it back later.
-export const exportFormat = 'mirador-records'
-export const exportVersion = 1
-
-export function exportFile(
-  records: { id: string; body: RecordBody }[],
-  username: string,
-  exportedAt: Date,
-) {
-  const kept = records.flatMap(({ id, body }) =>
-    body.deleted ? [] : [{ id, type: body.type, schema: body.schema, data: body.data }],
-  )
-  kept.sort((a, b) => a.type.localeCompare(b.type) || a.id.localeCompare(b.id))
-  return JSON.stringify(
-    {
-      format: exportFormat,
-      version: exportVersion,
-      exportedAt: exportedAt.toISOString(),
-      username,
-      records: kept,
-    },
-    null,
-    2,
-  )
-}
-
-export function exportFileName(username: string, date: string) {
-  return `mirador-${username}-${date}.json`
-}
+// the decrypted records. The server never sees what is in it. It is the Mirador backup
+// (DAT-01), so it can be restored into any Mirador (DAT-04).
+export {
+  archiveFile as exportFile,
+  archiveFileName as exportFileName,
+  archiveFormat as exportFormat,
+  archiveVersion as exportVersion,
+} from '@repo/archive'
 
 // Hands the file to the browser to save, without it leaving the device.
-export function saveFile(contents: string, name: string) {
-  const url = URL.createObjectURL(new Blob([contents], { type: 'application/json' }))
+export function saveFile(contents: string, name: string, type = 'application/json') {
+  const url = URL.createObjectURL(new Blob([contents], { type }))
   const link = document.createElement('a')
   link.href = url
   link.download = name

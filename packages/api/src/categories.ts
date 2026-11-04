@@ -130,7 +130,11 @@ export const categoryIcons = [
 ] as const
 export type CategoryIcon = (typeof categoryIcons)[number]
 
-/** CAT-02: Locked can't change, Fixed changes only by hand, Flexible can be cut. */
+/**
+ * CAT-02, BUD-10: a commitment (`locked`) is never cut, a need (`fixed`) changes only by
+ * hand, a want (`flexible`) can be cut. The stored keys keep their first names, so
+ * existing records stay valid; people only ever see Commitment, Need and Want.
+ */
 export const flexibilities = ['locked', 'fixed', 'flexible'] as const
 export type Flexibility = (typeof flexibilities)[number]
 

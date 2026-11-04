@@ -12,14 +12,20 @@ export function Amount({
 }: {
   parts: MoneyParts
   label: string
-  size?: 'body' | 'hero'
+  /** `figure` is the answer on a question tile: larger than a list, quieter than the hero. */
+  size?: 'body' | 'figure' | 'hero'
   /**
    * `hero` for an amount on the hero card, which takes `on-hero` (DL-CMP-01); `muted`
    * for money that only moved between the person's own wallets (DL-NUM-03).
    */
   tone?: 'text' | 'hero' | 'moss' | 'muted'
 }) {
-  const small = size === 'hero' ? 'text-[1.4375rem] font-medium' : 'text-[0.8125rem]'
+  const small =
+    size === 'hero'
+      ? 'text-[1.4375rem] font-medium'
+      : size === 'figure'
+        ? 'text-[0.875rem] font-medium'
+        : 'text-[0.8125rem]'
   const muted =
     tone === 'hero' ? 'text-on-hero/75' : tone === 'moss' ? 'text-moss' : 'text-text-muted'
   const main =
@@ -35,7 +41,9 @@ export function Amount({
       className={`whitespace-nowrap tabular-nums ${
         size === 'hero'
           ? 'text-[2.875rem] leading-none font-semibold tracking-[-0.03em]'
-          : 'text-[0.9375rem]'
+          : size === 'figure'
+            ? 'text-[1.375rem] leading-tight font-semibold tracking-[-0.01em]'
+            : 'text-[0.9375rem]'
       } ${main}`}
     >
       <span className="sr-only">{label}</span>

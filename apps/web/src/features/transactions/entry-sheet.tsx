@@ -1,4 +1,6 @@
 import {
+  importBatchRecord,
+  importBatchRecordType,
   payeeRecord,
   payeeRecordType,
   recurringRecord,
@@ -91,6 +93,8 @@ export type EntryMode =
       source: TransactionSource
       seed?: Partial<EntryDraft>
       repeat?: Repeat
+      /** IMP-33: a row an import left for later, added by hand into that import. */
+      fromImport?: { batchId: string; line: number }
     }
   | { kind: 'edit'; transaction: Transaction & { kind: EntryType } }
   | { kind: 'series'; recurring: Recurring }
@@ -277,6 +281,9 @@ function EntryForm({
         ? (ledger.categories.find((item) => item.systemKey === 'uncategorized')?.id ?? null)
         : null),
   )
+  // TXN-11: the type the category was picked for, so an income can take the expense
+  // category of what was refunded, but an expense's category never carries into one.
+  const [categoryFor, setCategoryFor] = useState<EntryType>(initial.type)
   const [tagIds, setTagIds] = useState<string[]>(initial.tagIds ?? [])
   const [payeeId, setPayeeId] = useState<string | null>(initial.payeeId ?? null)
   const [newTags, setNewTags] = useState<Tag[]>([])
@@ -330,9 +337,14 @@ function EntryForm({
   const chosenCategory =
     categoryId === null ? undefined : ledger.categories.find((item) => item.id === categoryId)
   const category =
-    !transfer && chosenCategory && (chosenCategory.kind === type || chosenCategory.kind === 'any')
+    !transfer &&
+    chosenCategory &&
+    (chosenCategory.kind === type ||
+      chosenCategory.kind === 'any' ||
+      (type === 'income' && categoryFor === 'income' && chosenCategory.kind === 'expense'))
       ? chosenCategory
       : undefined
+  const refund = type === 'income' && category?.kind === 'expense'
   const payee = payeeId === null ? undefined : allPayees.find((item) => item.id === payeeId)
   const chosenTags = tagIds.flatMap((id) => allTags.find((tag) => tag.id === id) ?? [])
   const exchange = transfer && from && to && from.currency !== to.currency ? { from, to } : null
@@ -602,11 +614,25 @@ function EntryForm({
                       occurrence: mode.transaction.occurrence,
                     }
                   : {}),
+                // IMP-35: still part of its import, so undoing that import removes it.
+                ...(mode.transaction.importBatchId !== undefined
+                  ? { importBatchId: mode.transaction.importBatchId }
+                  : {}),
               }
             : entryFields(entry, mode.kind === 'new' ? mode.source : 'manual', now)
+        const fromImport = mode.kind === 'new' ? mode.fromImport : undefined
+        const batch = fromImport && ledger.batches.find((item) => item.id === fromImport.batchId)
         changes = [
           ...extras(fields),
-          { id, body: transactionBody(transactionRecord.parse(fields)) },
+          {
+            id,
+            body: transactionBody(
+              transactionRecord.parse(batch ? { ...fields, importBatchId: batch.id } : fields),
+            ),
+          },
+          // IMP-33, IMP-35: the row is no longer waiting, and undoing the import
+          // removes it with the rest.
+          ...(fromImport && batch ? [fixedRow(batch, fromImport.line)] : []),
         ]
       }
       save.mutate(changes, {
@@ -735,7 +761,13 @@ function EntryForm({
             <ul>
               <PickerRow
                 label={t('transactions.category')}
-                value={category?.name ?? t('pickers.choose')}
+                value={
+                  category
+                    ? refund
+                      ? t('categories.refund.for', { name: category.name })
+                      : category.name
+                    : t('pickers.choose')
+                }
                 valueLeading={
                   category && (
                     <CategoryTile
@@ -1013,7 +1045,7 @@ function EntryForm({
             >
               {t('recurring.skip')}
             </Button>
-          ) : mode.kind === 'new' && !repeating ? (
+          ) : mode.kind === 'new' && !repeating && !mode.fromImport ? (
             // DL-CMP-05: a tinted second action beside the main one.
             <Button
               variant="secondary"
@@ -1078,6 +1110,7 @@ function EntryForm({
         value={category?.id ?? null}
         onChoose={(chosen) => {
           setCategoryId(chosen.id)
+          setCategoryFor(type)
           setChoosing(null)
         }}
         onClose={() => {
@@ -1162,4 +1195,23 @@ function EntryForm({
       />
     </>
   )
+}
+
+/** An import batch with one row it left for later now added. */
+function fixedRow(batch: Ledger['batches'][number], line: number): RecordChange {
+  const { id, ...data } = batch
+  const waiting = data.waiting.filter((row) => row.line !== line)
+  const added = data.waiting.length - waiting.length
+  return {
+    id,
+    body: recordBody(
+      importBatchRecordType,
+      importBatchRecord.parse({
+        ...data,
+        waiting,
+        imported: data.imported + added,
+        skipped: Math.max(0, data.skipped - added),
+      }),
+    ),
+  }
 }

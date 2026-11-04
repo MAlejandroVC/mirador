@@ -266,7 +266,7 @@ Every Must requirement gets an automated test whose name starts with its ID (NFR
 
 | Level | Tool | Covers |
 |---|---|---|
-| Logic | Vitest | packages/core, import, archive, sync: ledger, periods, baseline, scenarios, matching, parsers, conflict rules |
+| Logic | Vitest | packages/core, import, archive, sync: ledger, periods, baseline, month budgets, matching, parsers, conflict rules |
 | Crypto | Vitest | Known-answer vectors, wrap and unwrap, recovery, password change, tampered or swapped records rejected |
 | Server | Vitest with Testcontainers (real PostgreSQL) | API, isolation between users, sync revisions, migrations |
 | Zero knowledge | Vitest and Playwright | Seed data with marker strings, then scan the database, file volume, backups and logs for them: none may appear (SEC-04, SEC-05) |

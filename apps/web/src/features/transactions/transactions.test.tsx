@@ -374,6 +374,35 @@ describe('transactions', () => {
     })
   })
 
+  it('IMP-35: an imported transaction stays part of its import after it is changed', async () => {
+    const user = userEvent.setup()
+    const cash = wallet('Cash')
+    const { records, groceries } = categories()
+    const batchId = newRecordId()
+    const imported = transaction({
+      kind: 'expense',
+      walletId: cash.id,
+      date: '2026-03-03',
+      amount: -8_000,
+      note: 'Market',
+      categoryId: groceries.id,
+      source: 'import',
+      importBatchId: batchId,
+    })
+    const server: FakeServer = { signedIn: 'ana', records: [cash, ...records, imported] }
+    stubServer(server)
+    renderApp('/transactions', unlockedVault(server))
+
+    await user.click(await screen.findByRole('button', { name: /Market/ }))
+    const sheet = await screen.findByRole('dialog', { name: 'Edit expense' })
+    await user.click(within(sheet).getByRole('button', { name: 'Save' }))
+    await waitFor(() => {
+      expect(saved(server)).toEqual([
+        expect.objectContaining({ note: 'Market', source: 'import', importBatchId: batchId }),
+      ])
+    })
+  })
+
   it('WID-03: with no wallet yet, quick-add asks for one first', async () => {
     const user = userEvent.setup()
     const server: FakeServer = { signedIn: 'ana' }

@@ -2,3 +2,4 @@
 export * from './keys.ts'
 export * from './recovery-key.ts'
 export * from './records.ts'
+export * from './fingerprint.ts'

@@ -11,7 +11,7 @@ export function IconTile({
   weight = 'duotone',
 }: {
   icon: Icon
-  color?: TileColor
+  color?: TileColor | 'sun'
   size?: 'regular' | 'large'
   /** Regular for a tile that pictures another app's button as it looks there (DL-ICO-03). */
   weight?: 'duotone' | 'regular'

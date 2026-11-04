@@ -72,6 +72,9 @@ export const transactionRecord = z
     // two devices adding the same one count it once.
     recurringId: recordId.optional(),
     occurrence: calendarDate.optional(),
+    // IMP-34, IMP-35: the import batch that added it, so undoing that import removes
+    // exactly what it added and nothing else.
+    importBatchId: recordId.optional(),
     // The audit trail (TXN fields: Created and updated time), from the device's clock.
     createdAt: z.iso.datetime().optional(),
     updatedAt: z.iso.datetime().optional(),

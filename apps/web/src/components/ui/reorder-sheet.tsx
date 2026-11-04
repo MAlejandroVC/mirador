@@ -19,7 +19,9 @@ import { useSubmit } from './use-submit'
 export interface ReorderItem {
   id: string
   name: string
-  leading: ReactNode
+  leading?: ReactNode
+  /** Beside the grip, such as the switch that shows or hides a Home card (DSH-10). */
+  trailing?: ReactNode
 }
 
 // WAL-10, CAT-01: things in one list with a grip at the right of each row, as in iOS:
@@ -97,6 +99,9 @@ function ReorderForm({
 }) {
   const { t } = useTranslation()
   const [order, setOrder] = useState(items)
+  // The order is the sheet's own, but each row shows its item as it is now, such as a
+  // switch just turned off.
+  const latest = new Map(items.map((item) => [item.id, item]))
   const [drag, setDrag] = useState<Drag | null>(null)
   const [announcement, setAnnouncement] = useState('')
   const rows = useRef(new Map<string, HTMLLIElement>())
@@ -265,8 +270,9 @@ function ReorderForm({
                   : ''
             }`}
           >
-            {wallet.leading}
+            {(latest.get(wallet.id) ?? wallet).leading}
             <span className="flex-1 text-[0.9375rem] text-text">{wallet.name}</span>
+            {(latest.get(wallet.id) ?? wallet).trailing}
             <button
               type="button"
               aria-label={t('reorder.handle', { name: wallet.name })}

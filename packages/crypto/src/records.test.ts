@@ -61,3 +61,18 @@ describe('records', () => {
     expect(later > first).toBe(true)
   })
 })
+
+describe('file fingerprint', () => {
+  it('IMP-36: the same bytes give the same SHA-256, other bytes another', async () => {
+    const { fileFingerprint } = await import('./fingerprint.ts')
+    const a = await fileFingerprint(new TextEncoder().encode('Date;Amount\n2026-10-01;-85'))
+    expect(a).toMatch(/^[0-9a-f]{64}$/)
+    expect(await fileFingerprint(new TextEncoder().encode('Date;Amount\n2026-10-01;-85'))).toBe(a)
+    expect(await fileFingerprint(new TextEncoder().encode('Date;Amount\n2026-10-01;-86'))).not.toBe(
+      a,
+    )
+    expect(await fileFingerprint(new TextEncoder().encode('abc'))).toBe(
+      'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad',
+    )
+  })
+})

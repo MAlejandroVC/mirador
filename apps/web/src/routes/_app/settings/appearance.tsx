@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSettingsBack } from '../../../components/shell/settings-back'
+import { useBack } from '../../../components/shell/back'
 import { IconTile } from '../../../components/ui/icon-tile'
 import { CheckIcon, PaletteIcon } from '../../../components/ui/icons'
 import { List } from '../../../components/ui/list'
@@ -27,7 +27,7 @@ export const Route = createFileRoute('/_app/settings/appearance')({
 // docs/design-language-palettes.html. Both take effect at once, so there is no Save.
 function Appearance() {
   const { t } = useTranslation()
-  const back = useSettingsBack()
+  const back = useBack()
   const [appearance, setAppearance] = useState(readAppearance)
   const deviceDark = useDeviceDark()
   const shownMode =

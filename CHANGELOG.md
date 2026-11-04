@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.0](https://github.com/MAlejandroVC/mirador/compare/v0.4.0...v0.5.0) (2026-10-21)
+
+
+### Features
+
+* **analysis:** add spending analysis to Budget ([#306](https://github.com/MAlejandroVC/mirador/issues/306)) ([4a179a7](https://github.com/MAlejandroVC/mirador/commit/4a179a7cae1b0932060d9444a495648f99c4636a))
+* **budget:** add month budgets you lock in, goals and the month review ([#310](https://github.com/MAlejandroVC/mirador/issues/310)) ([bbf2450](https://github.com/MAlejandroVC/mirador/commit/bbf2450347a6d74643b26962a4b2f0c0e03a269c))
+* **data:** add backups, spreadsheet export and CSV import with undo ([#307](https://github.com/MAlejandroVC/mirador/issues/307)) ([0166e77](https://github.com/MAlejandroVC/mirador/commit/0166e77d6ba0c239edda05bcc2c5fed116cc8804))
+* **home:** add the Home dashboard ([#322](https://github.com/MAlejandroVC/mirador/issues/322)) ([6af8245](https://github.com/MAlejandroVC/mirador/commit/6af8245292447c4cd10bb5e4298063de3c6c8c7d))
+
 ## [0.4.0](https://github.com/MAlejandroVC/mirador/compare/v0.3.0...v0.4.0) (2026-10-17)
 
 

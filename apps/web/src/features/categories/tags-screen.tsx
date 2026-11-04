@@ -1,7 +1,7 @@
 import { tagUsage } from '@repo/core'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSettingsBack } from '../../components/shell/settings-back'
+import { useBack } from '../../components/shell/back'
 import { IconTile } from '../../components/ui/icon-tile'
 import { PlusIcon, TagIcon } from '../../components/ui/icons'
 import { List, ListButtonRow } from '../../components/ui/list'
@@ -13,7 +13,7 @@ import { TagSheet, type TagSheetMode } from './tag-sheet'
 // it. Archived ones follow under their own label (CAT-07 applies to tags too).
 export function TagsScreen() {
   const { t } = useTranslation()
-  const back = useSettingsBack()
+  const back = useBack()
   const { data: ledger } = useLedger()
   const [mode, setMode] = useState<TagSheetMode | null>(null)
   const [last, setLast] = useState<TagSheetMode>({ kind: 'new' })

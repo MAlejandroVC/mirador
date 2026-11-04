@@ -12,7 +12,7 @@ export function EmptyState({
   action,
 }: {
   icon: Icon
-  color?: TileColor
+  color?: TileColor | 'sun'
   title: string
   children: ReactNode
   action?: ReactNode

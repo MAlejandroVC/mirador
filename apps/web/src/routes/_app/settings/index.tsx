@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { useBack } from '../../../components/shell/back'
 import { IconTile } from '../../../components/ui/icon-tile'
 import {
+  ChartPieSliceIcon,
   CurrencyCircleDollarIcon,
+  DatabaseIcon,
   FolderSimpleIcon,
   LockSimpleIcon,
   PaletteIcon,
@@ -29,15 +31,15 @@ export const Route = createFileRoute('/_app/settings/')({
 
 // Epic 10: Settings opens with the account, then one row per area: Appearance
 // (SYS-16, SYS-17), Language (SYS-19), Currency (SYS-01), Categories and Tags (Epic 4),
-// Password and security (SEC) and, for the person who runs the server, People (SYS-13,
-// SYS-21, SYS-22).
-// Areas such as budget defaults and data join as they are built. Add to Home Screen follows until Mirador runs from there
-// (SYS-20). Lock and Sign out close the list, as in iOS.
+// Budget (SYS-02, SYS-09), Your data (Epic 9), Password and security (SEC) and, for the
+// person who runs the server, People (SYS-13, SYS-21, SYS-22). Add to Home Screen
+// follows until Mirador runs from there (SYS-20). Lock and Sign out close the list, as
+// in iOS.
 function Settings() {
   const { t } = useTranslation()
   const vault = useVault()
   const navigate = useNavigate()
-  const back = useBack(t('nav.back'), { to: '/' })
+  const back = useBack()
   const queryClient = useQueryClient()
   const { data: session } = useSuspenseQuery(sessionQuery)
   const picture = useProfilePicture()
@@ -69,8 +71,9 @@ function Settings() {
   return (
     <Page
       title={t('nav.settings')}
-      // DL-CMP-06: back to wherever Settings was opened from, or Home after a reload.
-      back={{ ...back, hideWithSidebar: true }}
+      // DL-CMP-06: back to wherever Settings was opened from. With the sidebar showing,
+      // Settings is a place of its own, so it has none.
+      back={back && { ...back, hideWithSidebar: true }}
     >
       <List>
         <ListLinkRow
@@ -110,6 +113,16 @@ function Settings() {
           to="/settings/tags"
           leading={<IconTile icon={TagIcon} />}
           title={t('tags.title')}
+        />
+        <ListLinkRow
+          to="/settings/budget"
+          leading={<IconTile icon={ChartPieSliceIcon} />}
+          title={t('budget.settings.title')}
+        />
+        <ListLinkRow
+          to="/settings/data"
+          leading={<IconTile icon={DatabaseIcon} />}
+          title={t('data.title')}
         />
         <ListLinkRow
           to="/settings/security"

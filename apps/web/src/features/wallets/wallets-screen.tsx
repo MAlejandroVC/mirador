@@ -17,6 +17,7 @@ import { WalletReorderSheet } from './reorder-sheet'
 import { balanceEntries, type LedgerWallet, useLedger } from './use-ledger'
 import { presetLooks, walletIconComponents } from './wallet-look'
 import { WalletSheet } from './wallet-sheet'
+import { useBack } from '../../components/shell/back'
 
 type View = 'wallets' | 'types'
 
@@ -25,6 +26,8 @@ type View = 'wallets' | 'types'
 // docs/design-language.html.
 export function WalletsScreen() {
   const { t } = useTranslation()
+  // DL-CMP-06: opened from another screen, a tab's page can pop back to it too.
+  const back = useBack()
   const { data: ledger } = useLedger()
   const [adding, setAdding] = useState(false)
   const [view, setView] = useState<View>('wallets')
@@ -49,11 +52,11 @@ export function WalletsScreen() {
     />
   )
 
-  if (!ledger) return <Page title={t('nav.wallets')} actions={<AccountButton />} />
+  if (!ledger) return <Page title={t('nav.wallets')} back={back} actions={<AccountButton />} />
 
   if (ledger.wallets.length === 0)
     return (
-      <Page title={t('nav.wallets')} actions={<AccountButton />}>
+      <Page title={t('nav.wallets')} back={back} actions={<AccountButton />}>
         {/* DL-CMP-14, DL-VOC-02: a touch of whimsy where nothing is there yet. */}
         <EmptyState
           icon={BinocularsIcon}
@@ -145,7 +148,7 @@ export function WalletsScreen() {
   const net = { minor: worth.netWorth, currency: defaultCurrency }
 
   return (
-    <Page title={t('nav.wallets')} actions={<AccountButton />}>
+    <Page title={t('nav.wallets')} back={back} actions={<AccountButton />}>
       <HeroCard
         label={t('wallets.netWorth')}
         amount={<Amount parts={money.parts(net)} label={money.text(net)} size="hero" tone="hero" />}
