@@ -203,6 +203,23 @@ describe('invites', () => {
     await signUp(server, newAccount('ben', { inviteCode: code }))
   })
 
+  it('SYS-13: a made-up invite never tells whether a username is taken', async () => {
+    const response = await post(
+      server,
+      '/api/accounts',
+      newAccount('ana', { inviteCode: 'NOTA-REAL-INVI-TECO-DE00' }),
+    )
+
+    expect(response.status).toBe(403)
+    expect(await response.json()).toEqual({ error: 'wrong-invite' })
+  })
+
+  it('SEC-09: an invite id that could never exist is not found, not an error', async () => {
+    const response = await end(server, 'bad%00id', operator)
+
+    expect(response.status).toBe(404)
+  })
+
   it('SYS-13: only the operator makes, lists and ends invites', async () => {
     const { invite: made, code } = await invite(server, operator)
     const ben = await signUp(server, newAccount('ben', { inviteCode: code }))

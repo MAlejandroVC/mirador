@@ -33,11 +33,11 @@ The app listens on `127.0.0.1:3000`, so only the machine itself can reach it. Se
 
 ## Create the first account
 
-A new server has no accounts, and it won't let just anyone who finds its address create the first one. At every start it prints a setup code in its log while no account exists. From the folder with `docker-compose.yml`:
+A new server has no accounts, and it won't let just anyone who finds its address create the first one. At every start it prints a setup code in its log while no account exists, and a new one if the account that runs the server is ever deleted with nobody left to take over. From the folder with `docker-compose.yml`:
 
 ```bash
 sudo docker compose logs app | grep "setup code" | tail -1
-# No accounts yet. Create the first one in the app with this setup code: 7KQ2-…
+# Nobody runs this server yet. Sign up in the app with this setup code: 7KQ2-…
 ```
 
 Every restart (an update, a reboot) prints a new code, and only the newest one works, hence `tail -1`.
@@ -65,6 +65,8 @@ mirador.example.com {
 	reverse_proxy 127.0.0.1:3000
 }
 ```
+
+The app sends its own security headers, a strict Content-Security-Policy among them, so the proxy doesn't need to add any.
 
 Passkeys and Face ID unlock belong to the address people use, such as `mirador.example.com`. If that address changes, passkeys made for the old one stop working; everyone can still sign in with their password and add a passkey again.
 

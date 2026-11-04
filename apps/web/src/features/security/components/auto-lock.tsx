@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
 import { useEffect } from 'react'
-import { sessionQuery } from '../hooks/session'
+import { forgetUnlocked } from '../hooks/session'
 import { useVault } from '../hooks/vault'
 import { readAutoLock, shouldLock } from '../lib/auto-lock'
 
@@ -25,10 +25,7 @@ export function AutoLock() {
       locking = true
       try {
         await vault.lock()
-        // Anything read while unlocked goes too; only the session stays.
-        queryClient.removeQueries({
-          predicate: (query) => query.queryKey[0] !== sessionQuery.queryKey[0],
-        })
+        forgetUnlocked(queryClient)
         await router.navigate({ to: '/unlock' })
       } finally {
         locking = false

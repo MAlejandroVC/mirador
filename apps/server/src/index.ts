@@ -1,5 +1,5 @@
 import { serve } from '@hono/node-server'
-import { count } from 'drizzle-orm'
+import { count, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
@@ -17,29 +17,35 @@ const db = drizzle(sql, { schema })
 await migrate(db, { migrationsFolder })
 
 const secret = await loadSecret(db)
-const setupCode = newCode()
+// SYS-13: a new code each time it is shown, so one that turned up in an old log
+// can't be used later.
+let setupCode = newCode()
 function announceSetupCode() {
-  console.log(`No accounts yet. Create the first one in the app with this setup code: ${setupCode}`)
+  setupCode = newCode()
+  console.log(`Nobody runs this server yet. Sign up in the app with this setup code: ${setupCode}`)
 }
-const [users] = await db.select({ count: count() }).from(schema.users)
-if (!users?.count) announceSetupCode()
+const [operators] = await db
+  .select({ count: count() })
+  .from(schema.users)
+  .where(eq(schema.users.operator, true))
+if (!operators?.count) announceSetupCode()
 
 const app = createApp({
   db,
   secret,
-  setupCode,
-  onNoAccounts: announceSetupCode,
+  setupCode: () => setupCode,
+  onNoOperator: announceSetupCode,
   openSignUp: process.env.MIRADOR_OPEN_SIGNUP === 'true',
   trustProxy: process.env.MIRADOR_TRUST_PROXY === 'true',
   ...(process.env.WEB_ROOT ? { webRoot: process.env.WEB_ROOT } : {}),
 })
 
 // SYS-23: removed accounts are deleted once their window ends: checked at start and
-// every hour after.
+// every hour after. The operator is never removed, so this never leaves the server
+// without one.
 async function cleanUp() {
   try {
-    const { deleted, remaining } = await deleteRemovedAccounts(db)
-    if (deleted > 0 && remaining === 0) announceSetupCode()
+    await deleteRemovedAccounts(db)
   } catch (error) {
     console.error('Deleting removed accounts failed', error)
   }

@@ -9,7 +9,7 @@ import { AuthLayout } from '../components/auth-layout'
 import { ErrorMessage } from '../components/error-message'
 import { OrDivider, PasskeyButton } from '../components/passkey-button'
 import { passkeysQuery } from '../hooks/passkeys'
-import { sessionQuery } from '../hooks/session'
+import { forgetAll, sessionQuery } from '../hooks/session'
 import { passkeysSupported } from '../lib/passkey'
 import { useVault } from '../hooks/vault'
 
@@ -27,7 +27,7 @@ export function UnlockScreen() {
   const withPasskey = (passkeys.data?.length ?? 0) > 0
 
   async function toSignIn() {
-    queryClient.removeQueries(sessionQuery)
+    forgetAll(queryClient)
     await navigate({ to: '/sign-in' })
   }
 

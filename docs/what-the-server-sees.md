@@ -124,13 +124,14 @@ The server's own settings. Nothing about any user.
 ## What it sees but doesn't keep
 
 - **Each request,** while it is handled: your IP address, the time, the address requested (such as `/api/records`), its size and your browser's User-Agent. Mirador doesn't write a request log, and the Caddy setup in `docker/host` doesn't either. A proxy or hosting provider in front of the server may log these on its own.
-- **Attempt limits** count sign-in attempts per IP address and per username, in memory only, for 1 to 15 minutes. A restart forgets them.
+- **Attempt limits** count sign-in attempts per IP address, per username from one address, and per account, in memory only, for 1 to 60 minutes. A restart forgets them.
+- **The device cookie** a browser gets when it signs in holds a random id and the server's signature of it with your account id. The server keeps nothing about it; it only uses it to count wrong passwords from your own browsers apart from everyone else's.
 - **Passkey challenges** are kept in memory for up to 5 minutes, until they are used.
 - **Login and recovery secrets** arrive with each sign-in, recovery or password change, are checked against their hash, and are never written anywhere. They are derived from your password or recovery key and can't be turned back into either.
 
 ## Logs
 
-The server prints only two things when it starts: the setup code while the server has no accounts yet, and the port it listens on. It prints the setup code again if the last account is deleted.
+The server prints only two things when it starts: the setup code while nobody runs the server yet, and the port it listens on. It prints a new setup code if the account running the server is deleted with nobody left to take over. When a request fails, it prints the request's method and route and the kind of error, never the values in it.
 
 ## Backups
 
