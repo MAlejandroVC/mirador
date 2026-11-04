@@ -15,7 +15,11 @@ export interface ImportRow {
   /** Signed minor units: negative takes money out of the wallet (WAL-06). */
   amount: number | null
   currency: string
-  /** From a type column: a transfer is paired with its other side (IMP-22). */
+  /** What a type column says the row is; null when the file doesn't say. */
+  kind: 'expense' | 'income' | 'transfer' | null
+  /** IMP-22: the rows of one transfer share this id; '' without one. */
+  transferId: string
+  /** The file marks it as a transfer, by its type or a transfer id (IMP-22). */
   transfer: boolean
   payee: string
   note: string
@@ -36,6 +40,7 @@ export function readRows(table: Table, settings: ColumnSettings, defaultCurrency
     inflow: index('inflow'),
     outflow: index('outflow'),
     type: index('type'),
+    transferId: index('transferId'),
     payee: index('payee'),
     note: index('note'),
     wallet: index('wallet'),
@@ -59,9 +64,10 @@ export function readRows(table: Table, settings: ColumnSettings, defaultCurrency
     if (at.amount >= 0) {
       const value = read(at.amount)
       if (value !== null) {
-        // A type column decides the direction whatever the sign says.
+        // A type column decides the direction whatever the sign says. A transfer goes
+        // both ways, so each of its rows keeps the sign it has.
         if (type === 'income') amount = Math.abs(value)
-        else if (type === 'expense' || type === 'transfer') amount = -Math.abs(value)
+        else if (type === 'expense') amount = -Math.abs(value)
         else amount = settings.amountSign === 'negativeIsExpense' ? value : -value
       }
     }
@@ -80,12 +86,15 @@ export function readRows(table: Table, settings: ColumnSettings, defaultCurrency
           : amount === 0
             ? 'zero'
             : null
+    const transferId = cell(row, at.transferId)
     return {
       line: position + 2,
       date,
       amount,
       currency,
-      transfer: type === 'transfer',
+      kind: type,
+      transferId,
+      transfer: type === 'transfer' || transferId !== '',
       payee: cell(row, at.payee),
       note: cell(row, at.note),
       wallet: cell(row, at.wallet),
