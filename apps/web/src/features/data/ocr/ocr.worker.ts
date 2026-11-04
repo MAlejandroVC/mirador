@@ -1,5 +1,5 @@
 // Runs first: it points ONNX Runtime at the app's own copy of its WebAssembly.
-import './ort-setup'
+import { heapLimit } from './ort-setup'
 import type { TextPage } from '@repo/import'
 import { expose } from 'comlink'
 import detection from 'paddle-ocr-onnx-models/models/ch_PP-OCRv4_det_infer.onnx?url'
@@ -12,8 +12,9 @@ import dictionary from './dictionary.txt?url'
 // from the app's own server (MODELS.md) and are cached like the rest of the app.
 
 // Very big photos are scaled down first. The limit stays high: the recognition model
-// loses the spaces between words when letters are only a few pixels tall.
-const maxSide = 4096
+// loses the spaces between words when letters are only a few pixels tall. Where the
+// browser granted a smaller heap (an iPhone), the limit is lower so the picture fits.
+const maxSide = () => (heapLimit !== null && heapLimit < 32768 ? 2048 : 4096)
 
 let service: Promise<PaddleOcrService> | null = null
 
@@ -45,7 +46,7 @@ const reader: TextReader = {
       picture.close()
       return null
     }
-    const scale = Math.min(1, maxSide / Math.max(picture.width, picture.height))
+    const scale = Math.min(1, maxSide() / Math.max(picture.width, picture.height))
     const width = Math.max(1, Math.round(picture.width * scale))
     const height = Math.max(1, Math.round(picture.height * scale))
     const canvas = new OffscreenCanvas(width, height)
