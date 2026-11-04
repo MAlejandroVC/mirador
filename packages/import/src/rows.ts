@@ -1,7 +1,9 @@
 import type { ColumnSettings } from './columns.ts'
 import { typeOf } from './columns.ts'
 import type { Table } from './csv.ts'
-import type { UnsureField } from './statement.ts'
+import type { InstallmentMark } from './classifier/index.ts'
+import type { RowSource } from './statement.ts'
+import { creditMark } from './statement-columns.ts'
 import { readAmount, readDate, readTags } from './values.ts'
 
 // IMP-08, IMP-10: each line of the file read with the column settings. A line that
@@ -28,11 +30,13 @@ export interface ImportRow {
   /** The line as written, to show a row that couldn't be read (IMP-33). */
   text: string
   /** IMP-10: fields a picture or scan made hard to read, for the person to check. */
-  unsure?: UnsureField[]
+  unsure?: RowSource['unsure']
+  /** TXN-30: month N of an M-month plan, from the statement's mark. */
+  installment?: InstallmentMark
 }
 
 export function readRows(
-  table: Table & { sources?: readonly { unsure: readonly UnsureField[] }[] },
+  table: Table & { sources?: readonly Pick<RowSource, 'unsure' | 'installment' | 'reference'>[] },
   settings: ColumnSettings,
   defaultCurrency: string,
 ) {
@@ -55,12 +59,21 @@ export function readRows(
     column < 0 ? '' : (row[column] ?? '').trim()
 
   return table.rows.map((row, position): ImportRow => {
-    const unsure = table.sources?.[position]?.unsure
+    const source = table.sources?.[position]
+    const unsure = source?.unsure
     const currencyText = cell(row, at.currency).toUpperCase()
     const currency = currencyText === '' ? defaultCurrency : currencyText
     const validCurrency = /^[A-Z]{3}$/.test(currency)
-    const read = (column: number) =>
-      validCurrency ? readAmount(cell(row, column), settings.decimalMark, currency) : null
+    const read = (column: number) => {
+      if (!validCurrency) return null
+      const text = cell(row, column)
+      const value = readAmount(text.replace(creditMark, ''), settings.decimalMark, currency)
+      // IMP-04: "CR" marks a credit, which goes the other way from the column's charges.
+      if (value === null || !creditMark.test(text)) return value
+      return settings.amountSign === 'positiveIsExpense' || column === at.outflow
+        ? -Math.abs(value)
+        : Math.abs(value)
+    }
 
     const type = at.type < 0 ? null : typeOf(cell(row, at.type))
     let amount: number | null = null
@@ -95,7 +108,7 @@ export function readRows(
       currency,
       transfer: type === 'transfer',
       payee: cell(row, at.payee),
-      note: cell(row, at.note),
+      note: cell(row, at.note) || (source?.reference ?? ''),
       wallet: cell(row, at.wallet),
       category: cell(row, at.category),
       group: cell(row, at.group),
@@ -107,6 +120,9 @@ export function readRows(
         .join(' · ')
         .slice(0, 300),
       ...(unsure && unsure.length > 0 ? { unsure: [...unsure] } : {}),
+      ...(source?.installment && settings.installments !== false
+        ? { installment: source.installment }
+        : {}),
     }
   })
 }

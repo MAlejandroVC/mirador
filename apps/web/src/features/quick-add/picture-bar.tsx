@@ -14,6 +14,8 @@ export interface PictureState {
   thumb: string | null
   /** The shop as written on the picture, matched to a payee by the form. */
   payeeName?: string
+  /** IMP-42: the picture's name, for the receipt under Imports. */
+  fileName?: string
   /** Changes each time a picture fills the form in, so it starts again from it. */
   version: number
   onPick: (file: File) => void

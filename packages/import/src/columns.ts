@@ -35,6 +35,8 @@ export interface ColumnSettings {
   dateOrder: DateOrder
   decimalMark: DecimalMark
   amountSign: AmountSign
+  /** TXN-30: read installment marks such as "MSI 03/12" on a statement (default yes). */
+  installments?: boolean
 }
 
 // Header words, compared as nameKey(). The first field whose words match wins.

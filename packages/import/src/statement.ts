@@ -1,5 +1,7 @@
+import { type InstallmentMark, labelWords, readMark } from './classifier/index.ts'
 import type { Table } from './csv.ts'
-import { nameKey } from './values.ts'
+import { type DateOrder, guessDateOrder, nameKey, readDate } from './values.ts'
+import type { ColumnField, ColumnSettings } from './columns.ts'
 
 // IMP-04, IMP-05, IMP-08: a statement read from text with positions, from a text PDF
 // (pdf.js in the browser) or from the server's OCR of a picture or a scanned page. The
@@ -26,12 +28,50 @@ export interface TextPage {
 /** A field of a row that was hard to read (IMP-10). */
 export type UnsureField = 'date' | 'amount'
 
+/** A part of a page, in fractions of its width and height. */
+export interface Box {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+/** The parts of a row the review draws boxes around. */
+export type RowField = 'date' | 'payee' | 'amount' | 'installment'
+
 /** Where a row came from, so the review can show its part of the page. */
 export interface RowSource {
   page: number
-  /** Fractions of the page's width and height. */
-  box: { x: number; y: number; width: number; height: number }
+  /** The whole row, across the table. */
+  box: Box
   unsure: UnsureField[]
+  /** Where each field was read, for the boxes over the statement. */
+  fields?: Partial<Record<RowField, Box>>
+  /** Where each amount cell was read, by the table's column; null where it is empty. */
+  cells?: (Box | null)[]
+  /** TXN-30: "MSI 03/12" in the description: month 3 of a 12-month plan. */
+  installment?: InstallmentMark
+  /** Reference and authorization numbers the description carried, kept as the note. */
+  reference?: string
+}
+
+/** Something the statement says about the wallet, where it says it (WAL-16). */
+export interface StatementFact {
+  /** A calendar date for the dates; the amount as written for the others. */
+  value: string
+  page: number
+  box: Box
+}
+
+export interface StatementFacts {
+  /** The day the statement closed (its cut-off). */
+  closing: StatementFact | null
+  /** The day the payment is due. */
+  due: StatementFact | null
+  limit: StatementFact | null
+  minimum: StatementFact | null
+  /** IMP-37: where the closing balance is, for the statement view. */
+  balance: StatementFact | null
 }
 
 export interface StatementTable extends Table {
@@ -40,6 +80,7 @@ export interface StatementTable extends Table {
   /** IMP-37: the balances the statement shows, as written. */
   opening: string | null
   closing: string | null
+  facts?: StatementFacts
 }
 
 /** Below this, a field is flagged instead of trusted (IMP-10; SYS-08 may make it a setting). */
@@ -373,17 +414,42 @@ export function readStatement(
       cells[index] = cells[index] ? `${cells[index]} ${word.text}` : word.text
       amountConfidence = Math.min(amountConfidence, word.confidence)
     }
-    const description = [
-      row.description.map((word) => word.text).join(' '),
-      ...(extra.get(row) ?? []),
-    ]
-      .join(' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-    rows.push([row.date, description, ...cells])
+    // IMP-08, TXN-30: the model splits the description into who was paid, an
+    // installment mark and reference numbers; a mark that doesn't read as one stays
+    // part of the payee.
+    const read = readDescription([
+      ...row.description,
+      ...(extra.get(row) ?? []).flatMap((text) =>
+        text.split(/\s+/).map((part) => ({ ...noWord, text: part })),
+      ),
+    ])
+    rows.push([row.date, read.payee, ...cells])
     const page = pages[row.line.page]
     const width = page?.width ?? 1
     const height = page?.height ?? 1
+    const boxOf = (words: readonly TextWord[]) => {
+      const placed = words.filter((word) => word.width > 0)
+      if (placed.length === 0) return undefined
+      const left = Math.min(...placed.map((word) => word.x))
+      const top = Math.min(...placed.map((word) => word.y))
+      return {
+        x: left / width,
+        y: top / height,
+        width: (Math.max(...placed.map((word) => word.x + word.width)) - left) / width,
+        height: (Math.max(...placed.map((word) => word.y + word.height)) - top) / height,
+      }
+    }
+    const cellWords = centers.map(() => [] as TextWord[])
+    for (const { word, right } of row.amounts) cellWords[columnOf(right)]?.push(word)
+    const fields: Partial<Record<RowField, Box>> = {}
+    const dateBox = boxOf(row.dateWords)
+    const payeeBox = boxOf(read.payeeWords)
+    const amountBox = boxOf(row.amounts.map((amount) => amount.word))
+    const markBox = boxOf(read.markWords)
+    if (dateBox) fields.date = dateBox
+    if (payeeBox) fields.payee = payeeBox
+    if (amountBox) fields.amount = amountBox
+    if (markBox && read.installment) fields.installment = markBox
     // The whole width of the table, so a row shows the date or amount it is missing.
     const onPage = found.filter((other) => other.line.page === row.line.page)
     const left = Math.min(...onPage.flatMap((other) => other.line.words.map((word) => word.x)))
@@ -409,9 +475,192 @@ export function readStatement(
         height: (bottom - top) / height,
       },
       unsure,
+      fields,
+      // Date and description come first in the table, then one cell per amount column.
+      cells: [null, null, ...cellWords.map((words) => boxOf(words) ?? null)],
+      ...(read.installment ? { installment: read.installment } : {}),
+      ...(read.reference ? { reference: read.reference } : {}),
     })
   }
-  return { delimiter: '', header, rows, sources, opening, closing }
+  const order = guessDateOrder(rows.map((row) => row[0] ?? ''))
+  return {
+    delimiter: '',
+    header,
+    rows,
+    sources,
+    opening,
+    closing,
+    facts: readFacts(all, pages, year, order),
+  }
+}
+
+const noWord: TextWord = { text: '', x: 0, y: 0, width: 0, height: 0, confidence: 1 }
+
+/** A row's description split by the word model (IMP-08, TXN-30). */
+export function readDescription(words: readonly TextWord[]) {
+  const labels = labelWords(words.map((word) => word.text))
+  const markWords = words.filter((_, index) => labels[index] === 'installment')
+  const installment = readMark(markWords.map((word) => word.text))
+  const payeeWords = words.filter(
+    (_, index) => labels[index] === 'payee' || (labels[index] === 'installment' && !installment),
+  )
+  const reference = words
+    .filter((_, index) => labels[index] === 'reference')
+    .map((word) => word.text)
+    .join(' ')
+  const join = (list: readonly TextWord[]) =>
+    list
+      .map((word) => word.text)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  return {
+    // A description that is nothing but numbers keeps them, so the row has a name.
+    payee: join(payeeWords) || join(words),
+    payeeWords: payeeWords.length > 0 ? payeeWords : [...words],
+    installment,
+    markWords: installment ? markWords : [],
+    reference,
+  }
+}
+
+// WAL-16: the labels statements put next to these, in English and Spanish. Like the
+// balance labels above, they name what a statement says, never a particular bank.
+const factWords = {
+  due: /fecha limite de pago|fecha limite|pagar antes de|limite de pago|payment due date|due date|pay by/,
+  closing:
+    /fecha de corte|fecha corte|dia de corte|closing date|statement closing date|statement date/,
+  limit: /limite de credito|linea de credito|credit limit|credit line/,
+  minimum: /pago minimo|minimum payment|minimum due|minimum amount due/,
+} as const
+
+/** WAL-16, IMP-37: the dates and amounts a statement gives about its wallet. */
+function readFacts(
+  all: readonly { page: TextPage; lines: Line[] }[],
+  pages: readonly TextPage[],
+  year: number,
+  order: DateOrder,
+): StatementFacts {
+  const facts: StatementFacts = {
+    closing: null,
+    due: null,
+    limit: null,
+    minimum: null,
+    balance: null,
+  }
+  const fact = (line: Line, words: readonly TextWord[], value: string): StatementFact => {
+    const page = pages[line.page]
+    const width = page?.width ?? 1
+    const height = page?.height ?? 1
+    const left = Math.min(...words.map((word) => word.x))
+    const top = Math.min(...words.map((word) => word.y))
+    return {
+      value,
+      page: line.page,
+      box: {
+        x: left / width,
+        y: top / height,
+        width: (Math.max(...words.map((word) => word.x + word.width)) - left) / width,
+        height: (Math.max(...words.map((word) => word.y + word.height)) - top) / height,
+      },
+    }
+  }
+  for (const { lines } of all)
+    for (const [position, line] of lines.entries()) {
+      const text = nameKey(line.words.map((word) => word.text).join(' '))
+      // The value sits after its label on the line, or right under it.
+      const candidates = [line.words, lines[position + 1]?.words ?? []]
+      for (const key of ['due', 'closing'] as const) {
+        if (facts[key] || !factWords[key].test(text)) continue
+        for (const words of candidates) {
+          const found = dateIn(words, year, order)
+          if (found) {
+            facts[key] = fact(line, line.words, found)
+            break
+          }
+        }
+      }
+      for (const key of ['limit', 'minimum'] as const) {
+        if (facts[key] || !factWords[key].test(text)) continue
+        const amount = line.words.find((word) => isAmount(word.text))
+        if (amount) facts[key] = fact(line, line.words, amount.text)
+      }
+      if (!facts.balance && closingWords.test(text)) {
+        const amount = line.words.findLast((word) => isAmount(word.text))
+        if (amount) facts.balance = fact(line, line.words, amount.text)
+      }
+      // "28 SEP – 27 OCT 2026": a statement's period ends on the day it closed.
+      if (!facts.closing) {
+        const dash = line.words.findIndex((word) => /^[-–—]$|^al$|^to$|^a$/i.test(word.text))
+        if (dash > 0) {
+          const after = dateIn(line.words.slice(dash + 1, dash + 4), year, order)
+          const before = dateIn(line.words.slice(Math.max(0, dash - 3), dash), year, order)
+          if (after && before && before < after) facts.closing = fact(line, line.words, after)
+        }
+      }
+    }
+  return facts
+}
+
+/** The first date in a run of words, as a calendar date. */
+function dateIn(words: readonly TextWord[], year: number, order: DateOrder): string | null {
+  for (let start = 0; start < words.length; start += 1)
+    for (let used = Math.min(3, words.length - start); used >= 1; used -= 1) {
+      const text = words
+        .slice(start, start + used)
+        .map((word) => word.text)
+        .join(' ')
+      const cell = readDateText(text, year)
+      const date = cell === null ? null : /^\d{4}-/.test(cell) ? cell : readDate(cell, order)
+      if (date) return date
+    }
+  return null
+}
+
+/**
+ * IMP-04: a row the reader missed, from the words inside a box the person drew around
+ * it on the page. Dates and amounts are found wherever they are in the box.
+ */
+export function readBox(
+  page: TextPage,
+  box: Box,
+  options: { year: number; order?: DateOrder },
+): {
+  date: string | null
+  payee: string
+  amount: string | null
+  installment: InstallmentMark | null
+} {
+  const inside = page.words
+    .flatMap((word) => splitWords(word))
+    .filter((word) => {
+      const x = (word.x + word.width / 2) / page.width
+      const y = (word.y + word.height / 2) / page.height
+      return x >= box.x && x <= box.x + box.width && y >= box.y && y <= box.y + box.height
+    })
+    .sort((a, b) => a.y - b.y || a.x - b.x)
+  const order = options.order ?? 'dmy'
+  let date: string | null = null
+  let used = new Set<TextWord>()
+  for (let start = 0; start < inside.length && date === null; start += 1)
+    for (let count = Math.min(3, inside.length - start); count >= 1; count -= 1) {
+      const words = inside.slice(start, start + count)
+      const found = dateIn(words, options.year, order)
+      if (found && readDateText(words.map((word) => word.text).join(' '), options.year)) {
+        date = found
+        used = new Set(words)
+        break
+      }
+    }
+  const amount = inside.findLast((word) => isAmount(word.text)) ?? null
+  const rest = inside.filter((word) => !used.has(word) && !isAmount(word.text))
+  const read = readDescription(rest)
+  return {
+    date,
+    payee: read.payee,
+    amount: amount?.text ?? null,
+    installment: read.installment,
+  }
 }
 
 /** The header line over the first row, its words matched to the columns under them. */
@@ -485,8 +734,20 @@ export function joinStatements(
   if (files.some((file) => file.table.header.length !== first.table.header.length)) return null
   let offset = 0
   const sources: RowSource[] = []
+  const facts: StatementFacts = {
+    closing: null,
+    due: null,
+    limit: null,
+    minimum: null,
+    balance: null,
+  }
   for (const file of files) {
     for (const source of file.table.sources) sources.push({ ...source, page: source.page + offset })
+    // WAL-16: what any of the files says, on its own page of the whole.
+    for (const key of Object.keys(facts) as (keyof StatementFacts)[]) {
+      const found = file.table.facts?.[key]
+      if (!facts[key] && found) facts[key] = { ...found, page: found.page + offset }
+    }
     offset += file.pages
   }
   return {
@@ -496,5 +757,36 @@ export function joinStatements(
     sources,
     opening: files.length === 1 ? first.table.opening : null,
     closing: files.length === 1 ? first.table.closing : null,
+    facts,
+  }
+}
+
+const amountFields: readonly ColumnField[] = ['amount', 'inflow', 'outflow']
+
+/**
+ * IMP-40: where each field of a row was read, with the amount boxed only over the
+ * columns that hold one, so a running balance beside it is left out.
+ */
+export function fieldsOf(source: RowSource, settings: ColumnSettings) {
+  const fields = { ...source.fields }
+  if (source.cells) {
+    const boxes = source.cells.filter(
+      (box, index): box is Box =>
+        box !== null && amountFields.includes(settings.columns[index] ?? 'skip'),
+    )
+    if (boxes.length > 0) fields.amount = unionOf(boxes)
+    else delete fields.amount
+  }
+  return fields
+}
+
+function unionOf(boxes: readonly Box[]): Box {
+  const x = Math.min(...boxes.map((box) => box.x))
+  const y = Math.min(...boxes.map((box) => box.y))
+  return {
+    x,
+    y,
+    width: Math.max(...boxes.map((box) => box.x + box.width)) - x,
+    height: Math.max(...boxes.map((box) => box.y + box.height)) - y,
   }
 }

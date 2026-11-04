@@ -1,4 +1,4 @@
-import { walletPresets } from '@repo/api'
+import { importProfileRecordType, transactionRecordType, walletPresets } from '@repo/api'
 import { fractionDigits, parseAmount } from '@repo/core'
 import {
   type CategoryLink,
@@ -7,10 +7,12 @@ import {
   columnFields,
   defaultDecisions,
   type Decisions,
+  guessStatementColumns,
   missingFields,
   type PlannedRow,
   summarize,
   type WalletLink,
+  type WalletUpdate,
 } from '@repo/import'
 import { useNavigate } from '@tanstack/react-router'
 import { type ReactNode, use, useEffect, useMemo, useState } from 'react'
@@ -38,6 +40,7 @@ import { CategoryTile } from '../categories/category-tile'
 import { newId, type Ledger, useSaveRecords } from '../wallets/use-ledger'
 import { walletIconComponents } from '../wallets/wallet-look'
 import {
+  addRow,
   buildChanges,
   currencyOf,
   fallbackWallet,
@@ -48,9 +51,11 @@ import {
   owes,
   plan,
   startingSettings,
+  updatesFor,
 } from './import-model'
 import { ReadingStep } from './reading-step'
 import { BalanceCheck, CheckSection } from './review-check'
+import { StatementReview } from './statement-review'
 
 // IMP-01 to IMP-34, DAT-12: importing a CSV in three steps in one sheet: what each
 // column holds, where its wallets and categories go, then a review that asks only about
@@ -68,6 +73,14 @@ export interface ImportDone {
   wallets: number
 }
 
+/** IMP-40: a statement's import, done: where it went and what it added. */
+export interface StatementDone {
+  batchId: string
+  walletId: string | null
+  imported: number
+  transactionIds: string[]
+}
+
 export function ImportSheet({
   file,
   reading = null,
@@ -75,6 +88,8 @@ export function ImportSheet({
   onRead,
   onClose,
   onUndo,
+  onReceipt,
+  onImported,
 }: {
   file: ImportFile | null
   /** IMP-04, IMP-05: PDFs and pictures to read first. */
@@ -83,20 +98,51 @@ export function ImportSheet({
   onRead?: (file: ImportFile) => void
   onClose: () => void
   onUndo: (batchId: string) => void
+  /** IMP-41: a receipt among a statement's files, to add with quick add. */
+  onReceipt?: (file: File) => void
+  /** IMP-40: a statement imported; the wallet it went into shows what came in. */
+  onImported?: (done: StatementDone) => void
 }) {
   const { t } = useTranslation()
   const [step, setStep] = useState<Step>('columns')
   const [back, setBack] = useState<(() => void) | null>(null)
+  const [walletId, setWalletId] = useState(() => fallbackWallet(ledger, null))
+  const statement = file !== null && isStatement(file)
   return (
     <Sheet
       open={file !== null || reading !== null}
-      title={t(`data.steps.${file === null && reading ? 'reading' : step}`)}
+      title={file === null && reading ? t('data.steps.statement') : t(`data.steps.${step}`)}
       cancelLabel={t('nav.cancel')}
       {...(back ? { back: { label: t('nav.back'), onClick: back } } : {})}
+      // DL-LAY-06: the statement review shows the list beside the statement.
+      wide={statement && step === 'review'}
       onClose={onClose}
     >
       {file === null && reading && onRead && (
-        <ReadingStep files={reading.files} fingerprint={reading.fingerprint} onRead={onRead} />
+        <>
+          <p className="-mt-2.5 text-center text-xs text-text-muted">
+            {t('data.steps.statementCount', { step: 1 })}
+          </p>
+          <ReadingStep
+            files={reading.files}
+            fingerprint={reading.fingerprint}
+            ledger={ledger}
+            walletId={walletId}
+            onWallet={setWalletId}
+            onRead={(read) => {
+              onRead({ ...read, ...(walletId ? { walletId } : {}) })
+            }}
+            {...(onReceipt
+              ? {
+                  onReceipt,
+                  onOnlyReceipt: (picture: File) => {
+                    onClose()
+                    onReceipt(picture)
+                  },
+                }
+              : {})}
+          />
+        </>
       )}
       {file && (
         <ImportFlow
@@ -109,6 +155,7 @@ export function ImportSheet({
           }}
           onClose={onClose}
           onUndo={onUndo}
+          {...(onImported ? { onImported } : {})}
         />
       )}
     </Sheet>
@@ -116,34 +163,48 @@ export function ImportSheet({
 }
 
 function ImportFlow({
-  file,
+  file: opened,
   ledger,
   onStep,
   onClose,
   onUndo,
+  onImported,
 }: {
   file: ImportFile
   ledger: Ledger
   onStep: (step: Step, back: (() => void) | null) => void
   onClose: () => void
   onUndo: (batchId: string) => void
+  onImported?: (done: StatementDone) => void
 }) {
   const { t } = useTranslation()
+  // IMP-40: rows drawn on the statement join the file as it is reviewed.
+  const [file, setFile] = useState(opened)
+  const statement = isStatement(file)
   // The ledger changes while saving; the flow keeps the settings it started with.
-  const [start] = useState(() => startingSettings(file, ledger))
+  const [start] = useState(() => startingSettings(opened, ledger))
   const [settings, setSettings] = useState<ColumnSettings>(start.settings)
   const [remember, setRemember] = useState(true)
-  const [step, setStepState] = useState<Step>(start.profileId ? 'match' : 'columns')
+  const [remembered, setRemembered] = useState(start.profileId !== null)
+  const [walletId] = useState(() => fallbackWallet(ledger, opened.walletId ?? start.walletId))
+  const [linked, setLinked] = useState(() =>
+    start.profileId || statement ? links(opened, start.settings, ledger, walletId) : null,
+  )
+  // IMP-01, IMP-40: a statement goes straight to its review once its wallet is known.
+  const allKnown = linked?.wallets.every((link) => link.target.kind === 'existing') ?? false
+  const [step, setStepState] = useState<Step>(
+    statement ? (allKnown ? 'review' : 'match') : start.profileId ? 'match' : 'columns',
+  )
   const setStep = (next: Step) => {
     setStepState(next)
     onStep(next, backFrom(next))
   }
   const backFrom = (from: Step): (() => void) | null =>
-    from === 'match'
+    from === 'match' && !statement
       ? () => {
           setStep('columns')
         }
-      : from === 'review'
+      : from === 'review' && !(statement && allKnown)
         ? () => {
             setStep('match')
           }
@@ -154,19 +215,32 @@ function ImportFlow({
     // Once, for the step the flow opens on; later steps report themselves.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const [walletId] = useState(() => fallbackWallet(ledger, start.walletId))
-  const [linked, setLinked] = useState(() =>
-    start.profileId ? links(file, start.settings, ledger, walletId) : null,
-  )
-  const [decisions, setDecisions] = useState<Decisions | null>(null)
   const [fixes, setFixes] = useState<Fixes>(new Map())
+  const [decisions, setDecisions] = useState<Decisions | null>(() =>
+    statement && linked && allKnown
+      ? defaultDecisions(plan(opened, start.settings, ledger, linked.wallets))
+      : null,
+  )
   const [missing, setMissing] = useState<string[]>([])
   const [done, setDone] = useState<ImportDone | null>(null)
+  // IMP-39: the wallet changes the person turned off, by what they change.
+  const [kept, setKept] = useState<ReadonlySet<string>>(new Set())
   const save = useSaveRecords()
 
   const planned = useMemo(
     () => (linked ? plan(file, settings, ledger, linked.wallets, fixes) : []),
     [file, settings, ledger, linked, fixes],
+  )
+  const reviewWallet =
+    linked?.wallets[0]?.target.kind === 'existing' ? linked.wallets[0].target.id : walletId
+  const updates = useMemo(
+    () => updatesFor(file, ledger, reviewWallet, planned, settings),
+    [file, ledger, reviewWallet, planned, settings],
+  )
+  const keyOf = (update: WalletUpdate) =>
+    update.kind === 'recurring' ? update.recurringId : update.kind
+  const chosen = new Set(
+    updates.flatMap((update, index) => (kept.has(keyOf(update)) ? [] : [index])),
   )
 
   const toMatch = () => {
@@ -182,6 +256,7 @@ function ImportFlow({
   }
   const commit = () => {
     if (!linked || !decisions) return
+    const existing = linked.wallets.find((w) => w.name === '')?.target
     const { changes, batch, batchId } = buildChanges({
       planned,
       wallets: linked.wallets,
@@ -191,19 +266,24 @@ function ImportFlow({
       file: {
         name: file.name,
         fingerprint: file.fingerprint,
-        source: isStatement(file) ? 'statement' : 'csv',
+        source: statement ? 'statement' : 'csv',
       },
       names: { wallet: t('data.match.importedName'), group: t('data.match.importedName') },
       ...(remember
         ? {
             profile: {
-              id: start.profileId,
+              id: start.profileId && remembered ? start.profileId : null,
               header: file.table.header,
               settings,
-              walletId:
-                linked.wallets.find((w) => w.name === '')?.target.kind === 'existing'
-                  ? (linked.wallets.find((w) => w.name === '')?.target as { id: string }).id
-                  : null,
+              walletId: existing?.kind === 'existing' ? existing.id : null,
+            },
+          }
+        : {}),
+      ...(statement && reviewWallet
+        ? {
+            updates: {
+              list: updates.filter((_, index) => chosen.has(index)),
+              walletId: reviewWallet,
             },
           }
         : {}),
@@ -211,6 +291,17 @@ function ImportFlow({
     })
     save.mutate(changes, {
       onSuccess: () => {
+        if (statement && onImported) {
+          onImported({
+            batchId,
+            walletId: reviewWallet,
+            imported: batch.imported,
+            transactionIds: changes
+              .filter((change) => change.body.type === transactionRecordType)
+              .map((change) => change.id),
+          })
+          return
+        }
         setDone({
           batchId,
           imported: batch.imported,
@@ -225,10 +316,18 @@ function ImportFlow({
       },
     })
   }
+  const setCategory = (line: number, categoryId: string | null) => {
+    if (!decisions || !categoryId) return
+    setDecisions({
+      ...decisions,
+      categories: new Map([...decisions.categories, [line, categoryId]]),
+    })
+  }
 
   return (
     <StepBar
       step={step}
+      statement={statement}
       onNext={step === 'columns' ? toMatch : step === 'match' ? toReview : undefined}
     >
       {step === 'columns' && (
@@ -257,7 +356,58 @@ function ImportFlow({
           }}
         />
       )}
-      {step === 'review' && linked && decisions && (
+      {step === 'review' && linked && decisions && isStatement(file) && (
+        <StatementReview
+          ledger={ledger}
+          file={file}
+          settings={settings}
+          remembered={remembered}
+          planned={planned}
+          wallets={linked.wallets}
+          categories={linked.categories}
+          walletId={reviewWallet}
+          decisions={decisions}
+          fixes={fixes}
+          updates={updates}
+          chosen={chosen}
+          saving={save.isPending}
+          failed={save.isError}
+          onDecisions={setDecisions}
+          onFix={(line, fix, categoryId) => {
+            setFixes(new Map([...fixes, [line, fix]]))
+            setCategory(line, categoryId)
+          }}
+          onAddRow={(page, box, fix, categoryId) => {
+            if (!isStatement(file)) return
+            const added = addRow(file, page, box, {
+              date: fix.date,
+              payee: fix.payee ?? '',
+              amount: String(Math.abs(fix.amount)),
+            })
+            setFile(added.file)
+            setFixes(new Map([...fixes, [added.line, fix]]))
+            setCategory(added.line, categoryId)
+          }}
+          onSettings={setSettings}
+          onForget={() => {
+            // IMP-14: forgotten here and on every device; this import reads it afresh.
+            if (start.profileId && remembered)
+              save.mutate([
+                { id: start.profileId, body: { deleted: true, type: importProfileRecordType } },
+              ])
+            setRemembered(false)
+            setRemember(false)
+            if (isStatement(file)) setSettings(guessStatementColumns(file.table))
+          }}
+          onChosen={(next) => {
+            setKept(
+              new Set(updates.flatMap((update, index) => (next.has(index) ? [] : [keyOf(update)]))),
+            )
+          }}
+          onImport={commit}
+        />
+      )}
+      {step === 'review' && linked && decisions && !isStatement(file) && (
         <ReviewStep
           ledger={ledger}
           file={file}
@@ -294,16 +444,21 @@ function ImportFlow({
  */
 function StepBar({
   step,
+  statement,
   onNext,
   children,
 }: {
   step: Step
+  /** IMP-40: a statement has two steps: its files, then its review. */
+  statement: boolean
   onNext: (() => void) | undefined
   children: ReactNode
 }) {
   const { t } = useTranslation()
   const slot = use(SheetActionSlot)
-  const number = { columns: 1, match: 2, review: 3, done: 3 }[step]
+  const number = statement
+    ? { columns: 1, match: 1, review: 2, done: 2 }[step]
+    : { columns: 1, match: 2, review: 3, done: 3 }[step]
   return (
     <>
       {slot &&
@@ -321,7 +476,9 @@ function StepBar({
         )}
       {step !== 'done' && (
         <p className="-mt-2.5 text-center text-xs text-text-muted">
-          {t('data.steps.count', { step: number })}
+          {statement
+            ? t('data.steps.statementCount', { step: number })
+            : t('data.steps.count', { step: number })}
         </p>
       )}
       {children}

@@ -641,12 +641,40 @@ function EntryForm({
             : entryFields(entry, mode.kind === 'new' ? mode.source : 'manual', now)
         const fromImport = mode.kind === 'new' ? mode.fromImport : undefined
         const batch = fromImport && ledger.batches.find((item) => item.id === fromImport.batchId)
+        // IMP-42: an expense read from a picture is listed under Imports as a receipt.
+        // Its batch adds nothing but this transaction, so undoing it removes just that.
+        const receipt =
+          mode.kind === 'new' && !batch && picture?.phase === 'filled' && picture.fileName
+            ? { id: newId(), fileName: picture.fileName }
+            : null
+        const batchId = batch?.id ?? receipt?.id
         changes = [
           ...extras(fields),
+          ...(receipt
+            ? [
+                {
+                  id: receipt.id,
+                  body: recordBody(
+                    importBatchRecordType,
+                    importBatchRecord.parse({
+                      source: 'receipt',
+                      fileName: receipt.fileName.slice(0, 255),
+                      importedAt: now,
+                      rows: 1,
+                      imported: 1,
+                      skipped: 0,
+                      created: [],
+                      merged: [],
+                      waiting: [],
+                    }),
+                  ),
+                },
+              ]
+            : []),
           {
             id,
             body: transactionBody(
-              transactionRecord.parse(batch ? { ...fields, importBatchId: batch.id } : fields),
+              transactionRecord.parse(batchId ? { ...fields, importBatchId: batchId } : fields),
             ),
           },
           // IMP-33, IMP-35: the row is no longer waiting, and undoing the import

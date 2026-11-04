@@ -1,8 +1,10 @@
 import {
+  addMonths,
   type Category,
   type CategoryGroup,
   changeTo,
   daysBetween,
+  installmentShares,
   type Payee,
   payeeMemory,
   type Transaction,
@@ -193,6 +195,10 @@ export type RowStatus =
   | { kind: 'noCategory' }
   /** IMP-10: read from a picture or scan, with a date or amount to check first. */
   | { kind: 'check'; fields: NonNullable<ImportRow['unsure']> }
+  /** IMP-28: a month of an installment purchase already in the wallet; skipped. */
+  | { kind: 'installment'; planId: string; month: number; months: number }
+  /** IMP-28: the first sight of a purchase in installments; comes in as one. */
+  | { kind: 'plan'; month: number; months: number }
 
 export interface PlannedRow {
   row: ImportRow
@@ -242,6 +248,37 @@ export function planRows(
       return { ...base, status: { kind: 'check', fields: row.unsure } }
     // IMP-20, IMP-21: the closest unmatched transaction in the same wallet with the
     // same amount, within three days.
+    // IMP-28: a month of a plan matches the purchase it belongs to, by its share and
+    // the month it should be billed (statements bill a few weeks after the date).
+    const mark = row.installment
+    if (mark && row.amount !== null && row.amount < 0) {
+      const amount = row.amount
+      const walletId = link?.target.kind === 'existing' ? link.target.id : null
+      const plan = ledger.transactions.find(
+        (transaction) =>
+          walletId !== null &&
+          !used.has(transaction.id) &&
+          transaction.walletId === walletId &&
+          transaction.installments?.months === mark.months &&
+          installmentShares(transaction.amount, mark.months).some(
+            (share) => Math.abs(share - amount) <= 1,
+          ) &&
+          Math.abs(
+            daysBetween(
+              addMonths(
+                transaction.date,
+                mark.month - 1 + (transaction.installments.deferred ?? 0),
+              ),
+              row.date ?? transaction.date,
+            ),
+          ) <= 45,
+      )
+      if (plan) {
+        used.add(plan.id)
+        return { ...base, status: { kind: 'installment', planId: plan.id, ...mark } }
+      }
+      return { ...base, status: { kind: 'plan', ...mark } }
+    }
     if (link?.target.kind === 'existing') {
       const walletId = link.target.id
       let best: Transaction | null = null
@@ -341,7 +378,7 @@ export function summarize(planned: readonly PlannedRow[]): PlanSummary {
       const date = row.date ?? ''
       if (from === null || date < from) from = date
       if (to === null || date > to) to = date
-    } else if (status.kind === 'merge') merged += 1
+    } else if (status.kind === 'merge' || status.kind === 'installment') merged += 1
     else flagged += 1
   }
   return { ready, merged, flagged, spent, earned, from, to }

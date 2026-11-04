@@ -310,6 +310,8 @@ The pipeline runs in a fixed order: upload, extract, normalize, match duplicates
 | IMP-10 | If extraction fails or a field's confidence is below the threshold, then the app shall flag that row instead of guessing silently. | Must |
 | IMP-11 | The app shall run all extraction on the user's device; no file or picture is sent to the server, a third party or a remote AI service. | Must |
 | ~~IMP-12~~ | Dropped: extraction never uses a third-party or remote service. | Won't |
+| IMP-13 | The app shall tell a statement's amount columns apart, and split each description into payee, installment mark and reference numbers, with small pre-trained models that run on the device, are trained only on synthetic statements and have no rules for particular banks. | Must |
+| IMP-14 | When the user corrects how a statement is read, the app shall read later statements with the same layout the same way, and let the user forget that layout. | Must |
 
 **Matching and categorization**
 
@@ -323,6 +325,8 @@ The pipeline runs in a fixed order: upload, extract, normalize, match duplicates
 | IMP-25 | The app shall let the user create rules: if the description contains or matches a pattern (and optionally the amount is in a range), then set category, tags, note or the exclude flag. | Should |
 | IMP-26 | When the user changes a suggested category or tag on an imported row, the app shall offer to create a rule from that correction. | Should |
 | IMP-27 | The app shall turn raw bank descriptors into clean names ("OXXO 1234 GDL MX" becomes "OXXO") and remember the mapping. | Should |
+| IMP-28 | When a statement row carries an installment mark (month N of M), the app shall match it to the wallet's purchase in installments and skip it, or else offer it as a new purchase in M installments dated N−1 months earlier (TXN-30). | Must |
+| IMP-29 | When a statement row matches a recurring transaction, the app shall say so; when it matches one that has ended, the app shall offer to turn it back on. | Should |
 
 **Confirm and commit**
 
@@ -337,6 +341,10 @@ The pipeline runs in a fixed order: upload, extract, normalize, match duplicates
 | IMP-36 | If a file with the same fingerprint was imported before, then the app shall warn the user before extracting. | Must |
 | IMP-37 | Where the statement shows opening and closing balances, the app shall compare them with the wallet's computed balances and show any difference. | Should |
 | IMP-38 | Where the user enables it, the app shall keep the original uploaded files on the server, linked to their batch, and let the user delete them. | Could |
+| IMP-39 | Where a statement shows its closing day, payment due day or credit limit and they differ from the wallet's settings, the app shall offer to update each one, on by default, and remember what it was before. | Should |
+| IMP-40 | The review shall show one example row with its fields boxed on the statement, switch between the list and the statement with every row boxed and tagged, let the user check a row's fields on the page, and add a row the reader missed by drawing a box around it. | Must |
+| IMP-41 | If the files of a statement include a receipt, then the app shall set it aside and offer to add it as a quick-add expense. | Should |
+| IMP-42 | The app shall list imports by type (statements, receipts, files) with what each added, skipped and changed, and let the user undo only its transactions, keeping its wallet changes, or everything. | Must |
 
 **Acceptance example (IMP-21)**: *Given* the user logged "Coffee, 85, Cash, tag work" with quick add on 3 June, *when* they import a statement with a row "STARBUCKS GDL, 85.00" dated 4 June on the same wallet, *then* the import merges them into one transaction with the user's category and tag and the statement's date, without asking.
 

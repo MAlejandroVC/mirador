@@ -4,6 +4,7 @@ import { linkWallets, planRows } from './plan.ts'
 import { readReceipt } from './receipt.ts'
 import { readRows } from './rows.ts'
 import {
+  fieldsOf,
   isAmount,
   joinStatements,
   readDateText,
@@ -70,9 +71,9 @@ describe('readStatement', () => {
     const table = readStatement([october, octoberTwo], { year: 2020 })
     expect(table.header).toEqual(['Fecha', 'Descripción', 'Cargos', 'Abonos', 'Saldo'])
     expect(table.rows).toEqual([
-      ['2026-10-02', 'OXXO 1234 GDL', '85.00', '', '10,165.00'],
+      ['2026-10-02', 'OXXO GDL', '85.00', '', '10,165.00'],
       ['2026-10-03', 'NOMINA EMPRESA', '', '15,000.00', '25,165.00'],
-      ['2026-10-05', 'SPEI ENVIADO A JUAN REF 99812 RENTA OCTUBRE', '1,200.00', '', '23,965.00'],
+      ['2026-10-05', 'SPEI ENVIADO A JUAN RENTA OCTUBRE', '1,200.00', '', '23,965.00'],
       ['2026-10-14', 'FARMACIA GUADALAJARA', '348.00', '', '23,617.00'],
     ])
   })
@@ -89,11 +90,22 @@ describe('readStatement', () => {
     expect(settings.columns).toEqual(['date', 'payee', 'outflow', 'inflow', 'skip'])
     const rows = readRows(table, settings, 'MXN')
     expect(rows.map((row) => [row.date, row.amount, row.payee])).toEqual([
-      ['2026-10-02', -8500, 'OXXO 1234 GDL'],
+      ['2026-10-02', -8500, 'OXXO GDL'],
       ['2026-10-03', 1_500_000, 'NOMINA EMPRESA'],
-      ['2026-10-05', -120_000, 'SPEI ENVIADO A JUAN REF 99812 RENTA OCTUBRE'],
+      ['2026-10-05', -120_000, 'SPEI ENVIADO A JUAN RENTA OCTUBRE'],
       ['2026-10-14', -34_800, 'FARMACIA GUADALAJARA'],
     ])
+  })
+
+  it('IMP-40: boxes the amount over its own column, leaving out the running balance', () => {
+    const table = readStatement([october, octoberTwo], { year: 2026 })
+    const settings = guessColumns(table.header, table.rows)
+    const [first] = table.sources
+    if (!first) throw new Error('no row')
+    const amount = fieldsOf(first, settings).amount
+    // "85.00" ends at 420 on a 600 px page; the balance, ending at 580, is not in the box.
+    expect(amount?.x).toBeCloseTo((420 - 5 * 7) / 600)
+    expect((amount?.x ?? 0) + (amount?.width ?? 0)).toBeCloseTo(420 / 600)
   })
 
   it('IMP-10: flags a date or an amount that was hard to read instead of trusting it', () => {
@@ -151,7 +163,7 @@ describe('photos', () => {
       },
     )
     expect(table.rows).toEqual([
-      ['2026-10-02', 'OXXO 1234 GDL', '85.00', '', '10,165.00'],
+      ['2026-10-02', 'OXXO GDL', '85.00', '', '10,165.00'],
       ['2026-10-03', 'NOMINA EMPRESA', '', '15,000.00', '25,165.00'],
       ['2026-10-05', 'SPEI ENVIADO', '1,200.00', '', '23,965.00'],
     ])

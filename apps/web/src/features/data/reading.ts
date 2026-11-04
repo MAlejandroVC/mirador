@@ -1,7 +1,9 @@
 import type { TextPage } from '@repo/import'
 import { transfer, wrap } from 'comlink'
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+// The legacy build carries polyfills (such as Math.sumPrecise) that phone browsers
+// a year or two old still need to draw a page.
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs'
+import pdfWorker from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'
 import type { TextReader } from './ocr/ocr.worker'
 
 // IMP-04, IMP-05, IMP-07, IMP-11: turning PDFs and pictures into words with their
@@ -19,7 +21,7 @@ export class ReadingError extends Error {
 }
 
 export interface ReadPage extends TextPage {
-  /** A picture of the page, to show the part of a row that was hard to read. */
+  /** A picture of the page, for the boxes over the statement (IMP-40). */
   image: string | null
 }
 
@@ -67,6 +69,22 @@ export async function readPicture(file: Blob): Promise<ReadPage> {
   return { ...page, image: URL.createObjectURL(file) }
 }
 
+type PdfPage = Awaited<ReturnType<Awaited<ReturnType<typeof getDocument>['promise']>['getPage']>>
+
+/** A page of a PDF as a JPEG, drawn here on the device. */
+async function drawPage(page: PdfPage, scale: number) {
+  const scaled = page.getViewport({ scale })
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(scaled.width)
+  canvas.height = Math.round(scaled.height)
+  const context = canvas.getContext('2d')
+  if (!context) throw new ReadingError('unreadable')
+  await page.render({ canvas, canvasContext: context, viewport: scaled }).promise
+  const picture = await toJpeg(canvas)
+  canvas.width = 0
+  return picture
+}
+
 function toJpeg(canvas: HTMLCanvasElement) {
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
@@ -104,18 +122,17 @@ export async function readPdf(file: Blob, onPage?: (done: number, total: number)
         return [{ text: item.str, x, y: y - height, width: item.width, height, confidence: 1 }]
       })
       if (words.length >= 5) {
-        pages.push({ width: viewport.width, height: viewport.height, words, image: null })
+        // IMP-40: drawn too, so the review can box each row on the page itself.
+        const picture = await drawPage(page, 1.5)
+        pages.push({
+          width: viewport.width,
+          height: viewport.height,
+          words,
+          image: URL.createObjectURL(picture),
+        })
       } else {
         // A scanned page: drawn at twice its size so small print stays readable.
-        const scaled = page.getViewport({ scale: 2 })
-        const canvas = document.createElement('canvas')
-        canvas.width = Math.round(scaled.width)
-        canvas.height = Math.round(scaled.height)
-        const context = canvas.getContext('2d')
-        if (!context) throw new ReadingError('unreadable')
-        await page.render({ canvas, canvasContext: context, viewport: scaled }).promise
-        pages.push(await readPicture(await toJpeg(canvas)))
-        canvas.width = 0
+        pages.push(await readPicture(await drawPage(page, 2)))
       }
       onPage?.(number, pdf.numPages)
     }
