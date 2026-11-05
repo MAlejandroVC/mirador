@@ -12,7 +12,7 @@ import { hashToken, randomToken } from '../auth/secrets.ts'
 import { requireUser, type SessionStore, type SessionVariables } from '../auth/sessions.ts'
 import { newCode, normalizeCode } from '../settings.ts'
 import { type Database, schema } from '../store/db.ts'
-import { jsonBody } from './json-body.ts'
+import { idParam, jsonBody } from './json-body.ts'
 
 export interface InviteRoutesOptions {
   db: Database
@@ -92,7 +92,7 @@ export function inviteRoutes({ db, sessions, now = Date.now }: InviteRoutesOptio
   })
 
   // SYS-21: ends a link early. Whoever already joined keeps their account.
-  routes.post('/invites/:id/end', async (c) => {
+  routes.post('/invites/:id/end', idParam, async (c) => {
     const ended = await db
       .update(schema.invites)
       .set({ endedAt: new Date(now()) })

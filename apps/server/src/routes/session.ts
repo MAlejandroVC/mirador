@@ -1,7 +1,12 @@
 import { type SessionError, type SessionResponse, signInRequest } from '@repo/api'
 import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
-import { type AttemptLimits, limitAddress, tooManyAttempts, usernameKey } from '../auth/guard.ts'
+import {
+  type AttemptLimits,
+  limitAddress,
+  passwordGuesses,
+  tooManyAttempts,
+} from '../auth/guard.ts'
 import { verifyAgainstDecoy, verifySecret } from '../auth/secrets.ts'
 import { removedAccess, type SessionStore } from '../auth/sessions.ts'
 import { type Database, schema } from '../store/db.ts'
@@ -40,15 +45,20 @@ export function sessionRoutes({ db, sessions, limits }: SessionRoutesOptions) {
   // SEC-03: the browser sends the login secret it derived, never the password.
   routes.post('/session', limitAddress(limits), jsonBody(signInRequest), async (c) => {
     const { username, loginSecret } = c.req.valid('json')
-    const key = usernameKey(c, limits, username)
-    if (limits.perUsername.blocked(key)) return tooManyAttempts(c)
-    // Counted before the slow check, so guesses sent all at once still count.
-    limits.perUsername.hit(key)
-
     const [user] = await db
       .select({ id: schema.users.id, loginSecretHash: schema.users.loginSecretHash })
       .from(schema.users)
       .where(eq(schema.users.username, username))
+    const guesses = passwordGuesses(
+      c,
+      limits,
+      username,
+      user ? sessions.knownDevice(c, user.id) : null,
+    )
+    if (guesses.blocked()) return tooManyAttempts(c)
+    // Counted before the slow check, so guesses sent all at once still count.
+    guesses.hit()
+
     // An unknown username takes as long and gets the same answer as a wrong secret.
     const valid = user
       ? await verifySecret(loginSecret, user.loginSecretHash)
@@ -57,7 +67,7 @@ export function sessionRoutes({ db, sessions, limits }: SessionRoutesOptions) {
       return c.json({ error: 'wrong-credentials' } satisfies SessionError, 401)
     }
 
-    limits.perUsername.clear(key)
+    guesses.clear()
     await sessions.start(c, user.id)
     return c.body(null, 204)
   })
