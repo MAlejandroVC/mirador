@@ -94,7 +94,7 @@ export function buildHome(budget: Budget): Home {
     today,
     wallets: ledger.wallets,
     currency: ledger.defaultCurrency,
-    rates: ledger.rates,
+    keepCurrencyOver: ledger.preferences?.keepCurrencyOver,
     transactions,
     recurrings: ledger.recurring,
     month: has ? budget.month : null,

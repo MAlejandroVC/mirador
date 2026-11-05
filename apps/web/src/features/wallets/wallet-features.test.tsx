@@ -99,6 +99,12 @@ describe('wallet features, exchange rates and order', () => {
     await user.click(await screen.findByRole('radio', { name: 'US Dollar (USD)' }))
     await user.click(screen.getByRole('button', { name: 'Save' }))
 
+    // SYS-01: three choices: the rate, a new default currency, or later.
+    const choice = await screen.findByRole('dialog', { name: "USD isn't your default currency" })
+    expect(
+      within(choice).getByRole('button', { name: 'Make USD your default currency' }),
+    ).toBeVisible()
+    await user.click(within(choice).getByRole('button', { name: 'Add an exchange rate' }))
     const prompt = await screen.findByRole('dialog', { name: 'Exchange rate' })
     await user.type(within(prompt).getByRole('textbox', { name: '1 USD =' }), '18.45')
     await user.click(within(prompt).getByRole('button', { name: 'Save rate' }))
@@ -126,8 +132,12 @@ describe('wallet features, exchange rates and order', () => {
     await user.click(screen.getByRole('button', { name: /Currency/ }))
     await user.click(await screen.findByRole('radio', { name: 'Euro (EUR)' }))
     await user.click(screen.getByRole('button', { name: 'Save' }))
-    const prompt = await screen.findByRole('dialog', { name: 'Exchange rate' })
-    await user.click(within(prompt).getByRole('button', { name: 'Later' }))
+    const choice = await screen.findByRole('dialog', { name: "EUR isn't your default currency" })
+    // Later says what it means for the totals.
+    expect(choice).toHaveAccessibleDescription(
+      'Totals are in MXN. Until EUR has an exchange rate, its amounts are left out of your net worth and budget.',
+    )
+    await user.click(within(choice).getByRole('button', { name: 'Later' }))
 
     expect(await screen.findByText(/No exchange rate/)).toBeVisible()
     await user.click(screen.getByRole('link', { name: /Euros/ }))
@@ -430,28 +440,14 @@ describe('wallet features, exchange rates and order', () => {
     expect(screen.getAllByRole('button', { name: /Balance adjustment/ })).toHaveLength(6)
   })
 
-  it('SYS-01, SYS-04: peso wallets under dollar totals say so, and one tap shows totals in pesos', async () => {
-    const user = userEvent.setup()
+  it('SYS-04: net worth says how many wallets it leaves out for lacking a rate', async () => {
     // An English device guesses dollars; the imported wallets are all in pesos.
     vi.spyOn(globalThis.navigator, 'language', 'get').mockReturnValue('en-US')
     const cash = wallet('Cash')
     const card = wallet('Nu', { preset: 'creditCard' })
-    const { server } = start(
-      [cash, card, opening(cash.id, 200_000), opening(card.id, -50_000)],
-      '/wallets',
-    )
+    start([cash, card, opening(cash.id, 200_000), opening(card.id, -50_000)], '/wallets')
 
     // Never a quiet "Across 0 wallets".
     expect(await screen.findByText('Across 0 wallets · 2 without an exchange rate')).toBeVisible()
-    await user.click(screen.getByRole('button', { name: /Show totals in MXN/ }))
-
-    await waitFor(() => {
-      expect(saved(server, 'preferences').map((body) => body.data)).toEqual([
-        { defaultCurrency: 'MXN' },
-      ])
-    })
-    expect(await screen.findByText('Across 2 wallets')).toBeVisible()
-    expect(screen.getAllByText('$1,500.00').length).toBeGreaterThan(0)
-    expect(screen.queryByRole('button', { name: /Show totals in/ })).toBeNull()
   })
 })

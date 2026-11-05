@@ -161,28 +161,6 @@ describe('spending analysis', () => {
     expect(screen.getByRole('link', { name: /When do I spend\?/ })).toBeVisible()
   })
 
-  it('SYS-04, ANA-01: peso data under dollar totals is named, and showing totals in pesos brings the analysis back', async () => {
-    const user = userEvent.setup()
-    // An English device guesses dollars; every wallet and transaction is in pesos.
-    vi.spyOn(globalThis.navigator, 'language', 'get').mockReturnValue('en-US')
-    const cash = wallet('Cash')
-    const set = categories()
-    const server: FakeServer = {
-      signedIn: 'ana',
-      records: [cash, ...set.records, ...history(cash, set)],
-    }
-    stubServer(server)
-    renderApp('/budget?view=spending', unlockedVault(server))
-
-    const show = await screen.findByRole('button', { name: /Show totals in MXN/ })
-    // Without a rate the peso transactions count nowhere, so there is no analysis yet.
-    expect(screen.queryByText('Spent so far')).toBeNull()
-    await user.click(show)
-    expect(await screen.findByText('Spent so far')).toBeVisible()
-    expect(screen.getByText('$250.00 more than usual by Mar 15')).toBeVisible()
-    expect(screen.queryByRole('button', { name: /Show totals in/ })).toBeNull()
-  })
-
   it('BUD-78: with a budget, the pace chart says how far spending is from the budget’s pace', async () => {
     const cash = wallet('Cash')
     const set = categories()

@@ -13,7 +13,6 @@ import { List, ListButtonRow, ListLinkRow, ListRow } from '../../components/ui/l
 import { Page } from '../../components/ui/page'
 import { SegmentedControl } from '../../components/ui/segmented-control'
 import { formatShare, useMoney } from '../../lib/format'
-import { MissingRatesRow } from './missing-rates-row'
 import { WalletReorderSheet } from './reorder-sheet'
 import { balanceEntries, type LedgerWallet, useLedger } from './use-ledger'
 import { presetLooks, walletIconComponents } from './wallet-look'
@@ -146,7 +145,7 @@ export function WalletsScreen() {
   const context = [
     t('wallets.across', { count: worth.counted }),
     // SYS-04: never a quiet "Across 0 wallets" when wallets are left out.
-    ...(missing ? [t('wallets.withoutRate', { count: missing.wallets.length })] : []),
+    ...(missing.length > 0 ? [t('wallets.withoutRate', { count: missing.length })] : []),
     ...(worth.liquid > 0 ? [t('wallets.liquid', { amount: total(worth.liquid) })] : []),
   ].join(' · ')
   const net = { minor: worth.netWorth, currency: defaultCurrency }
@@ -158,14 +157,6 @@ export function WalletsScreen() {
         amount={<Amount parts={money.parts(net)} label={money.text(net)} size="hero" tone="hero" />}
         context={context}
       />
-      {missing && (
-        <List>
-          <MissingRatesRow
-            missing={{ switchTo: missing.switchTo, count: missing.wallets.length }}
-            ledger={ledger}
-          />
-        </List>
-      )}
       <SegmentedControl<View>
         label={t('wallets.view')}
         options={[

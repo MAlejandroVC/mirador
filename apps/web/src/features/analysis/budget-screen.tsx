@@ -14,7 +14,6 @@ import { SegmentedControl } from '../../components/ui/segmented-control'
 import { ToolbarButton } from '../../components/ui/toolbar-button'
 import { useQuickAdd } from '../quick-add'
 import { FilterSheet } from '../transactions/filter-sheet'
-import { MissingRatesNotice } from '../wallets/missing-rates-row'
 import { analysisFilters, setAnalysisState } from './analysis-state'
 import { PeriodHeader } from './period-header'
 import { SpendingView } from './spending-view'
@@ -108,7 +107,6 @@ export function BudgetScreen({ search }: { search: BudgetSearch }) {
           })
         }}
       />
-      {budget && <MissingRatesNotice ledger={budget.ledger} />}
       {view === 'plan'
         ? budget && month && <PlanView budget={budget} view={month} find={search.find === true} />
         : analysis && <Spending analysis={analysis} budget={budget} filters={filters} />}

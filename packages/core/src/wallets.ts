@@ -338,7 +338,7 @@ function spread<W extends Wallet>(shares: WalletShare<W>[]): Spread<W> {
 
 /**
  * SYS-01: the currency most of the wallets use (the first wallet's on a tie), or null
- * without wallets: the one to offer when totals are in a currency no wallet uses.
+ * without wallets.
  */
 export function mainCurrency(wallets: readonly Pick<Wallet, 'currency'>[]): string | null {
   const counts = new Map<string, number>()
@@ -349,32 +349,36 @@ export function mainCurrency(wallets: readonly Pick<Wallet, 'currency'>[]): stri
   return best
 }
 
-/** SYS-04: wallets net worth leaves out for lacking an exchange rate, and what helps. */
-export interface MissingRates<W extends Wallet = Wallet> {
-  wallets: W[]
-  /**
-   * When no wallet in net worth uses the default currency, the one most of them use:
-   * showing totals in it fixes more than adding rates. Null when rates are the fix.
-   */
-  switchTo: string | null
+/**
+ * SYS-01: the currency more than half of the wallets in net worth use, when it isn't
+ * the default one; null otherwise. Totals in a currency few wallets use is most likely
+ * a default nobody chose (guessed from the device's language), so Home offers to switch.
+ */
+export function mostlyOtherCurrency(
+  wallets: readonly Pick<Wallet, 'currency' | 'inNetWorth' | 'active'>[],
+  currency: string,
+): string | null {
+  const counted = wallets.filter((wallet) => wallet.inNetWorth && wallet.active)
+  const main = mainCurrency(counted)
+  if (main === null || main === currency) return null
+  const count = counted.filter((wallet) => wallet.currency === main).length
+  return count * 2 > counted.length ? main : null
 }
 
 /**
- * SYS-01, SYS-04: a wallet without a rate to the default currency can't be added to net
- * worth or totals, so the person is told instead of seeing it silently left out. Null
- * when every wallet in net worth counts.
+ * SYS-04: the wallets in net worth that have no rate to the default currency, so they
+ * are left out of every total. Screens say how many, rather than quietly leave them out.
  */
 export function missingRates<W extends Wallet>(
   wallets: readonly W[],
   currency: string,
   rates: readonly ExchangeRate[] = [],
   today = '9999-12-31',
-): MissingRates<W> | null {
-  const counted = wallets.filter((wallet) => wallet.inNetWorth)
-  const missing = counted.filter(
-    (wallet) => wallet.currency !== currency && !rateInUse(wallet.currency, currency, rates, today),
+): W[] {
+  return wallets.filter(
+    (wallet) =>
+      wallet.inNetWorth &&
+      wallet.currency !== currency &&
+      !rateInUse(wallet.currency, currency, rates, today),
   )
-  if (missing.length === 0) return null
-  const inDefault = counted.some((wallet) => wallet.currency === currency)
-  return { wallets: missing, switchTo: inDefault ? null : mainCurrency(counted) }
 }

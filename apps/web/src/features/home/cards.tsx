@@ -62,7 +62,7 @@ export function WorthCard({ home, words }: { home: Home; words: BudgetWords }) {
   // SYS-04: wallets without a rate aren't in the figure, so they aren't counted in it
   // and the card says how many were left out (Needs attention offers the fix).
   const left = missingRates(ledger.wallets, ledger.defaultCurrency, ledger.rates, budget.today)
-  const leftOut = new Set(left?.wallets.map((wallet) => wallet.id))
+  const leftOut = new Set(left.map((wallet) => wallet.id))
   const wallets = ledger.wallets.filter((wallet) => wallet.active && !leftOut.has(wallet.id)).length
   const owing = now.owe > 0 || (compare?.owe ?? 0) > 0
 
@@ -82,7 +82,7 @@ export function WorthCard({ home, words }: { home: Home; words: BudgetWords }) {
                     })
                 : [
                     t('home.worth.across', { count: wallets }),
-                    ...(left ? [t('wallets.withoutRate', { count: left.wallets.length })] : []),
+                    ...(left.length > 0 ? [t('wallets.withoutRate', { count: left.length })] : []),
                   ].join(' · ')}
             </span>
           </span>

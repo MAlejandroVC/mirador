@@ -1,9 +1,11 @@
+import { useTranslation } from 'react-i18next'
 import { type Attention, daysBetween } from '@repo/core'
 import { useState } from 'react'
 import { Amount } from '../../components/ui/amount'
 import { IconTile } from '../../components/ui/icon-tile'
 import {
   ArrowsClockwiseIcon,
+  CurrencyCircleDollarIcon,
   CalendarCheckIcon,
   CalendarDotsIcon,
   CheckCircleIcon,
@@ -11,7 +13,7 @@ import {
   TagIcon,
   UploadSimpleIcon,
 } from '../../components/ui/icons'
-import { List, ListLinkRow, ListRow } from '../../components/ui/list'
+import { List, ListButtonRow, ListLinkRow, ListRow } from '../../components/ui/list'
 import { ShowMoreRow } from '../../components/ui/show-more-row'
 import { useMoney } from '../../lib/format'
 import { CategoryTile } from '../categories/category-tile'
@@ -19,7 +21,8 @@ import type { BudgetWords } from '../budget/budget-words'
 import { lineLook, lineName } from '../budget/lines'
 import { Over } from '../budget/parts'
 import { periodOf } from '../budget/use-budget'
-import { MissingRatesRow } from '../wallets/missing-rates-row'
+import { CurrencyChoice } from '../wallets/currency-choice'
+import { preferencesChange, useSaveRecords } from '../wallets/use-ledger'
 import { walletIconComponents } from '../wallets/wallet-look'
 import type { LedgerWallet } from '../wallets/use-ledger'
 import { recurringName, sentence } from './text'
@@ -105,8 +108,8 @@ function AttentionRow({ item, home, words }: { item: Attention; home: Home; word
     new Intl.ListFormat(words.locale, { type: 'conjunction' }).format(names)
 
   switch (item.kind) {
-    case 'rates':
-      return <MissingRatesRow missing={item} ledger={ledger} />
+    case 'currency':
+      return <CurrencyRow currency={item.currency} home={home} />
     case 'card':
       return (
         <ListLinkRow
@@ -264,4 +267,40 @@ function AttentionRow({ item, home, words }: { item: Attention; home: Home; word
       )
     }
   }
+}
+
+/**
+ * SYS-01: most wallets are in another currency than the totals, likely because the
+ * default was never chosen (it starts from the device's language). The row opens the
+ * choice; keeping the default stops Home suggesting that currency again.
+ */
+function CurrencyRow({ currency, home }: { currency: string; home: Home }) {
+  const { t } = useTranslation()
+  const { ledger } = home.budget
+  const save = useSaveRecords()
+  const [open, setOpen] = useState(false)
+  const values = { currency, main: ledger.defaultCurrency }
+  return (
+    <>
+      <ListButtonRow
+        tone="text"
+        leading={<IconTile icon={CurrencyCircleDollarIcon} />}
+        title={t('rates.choice.attention', values)}
+        subtitle={t('rates.choice.attentionBody', values)}
+        onClick={() => {
+          setOpen(true)
+        }}
+      />
+      <CurrencyChoice
+        currency={open ? currency : null}
+        ledger={ledger}
+        onKeep={() => {
+          save.mutate([preferencesChange(ledger, { keepCurrencyOver: currency })])
+        }}
+        onClose={() => {
+          setOpen(false)
+        }}
+      />
+    </>
+  )
 }

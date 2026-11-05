@@ -173,7 +173,6 @@ describe('home', () => {
       today,
       wallets: [card, checking],
       currency: 'MXN',
-      rates: [],
       transactions: history,
       recurrings: [recurring('rent', { ask: true, start: '2026-10-15', amount: -1_200_000 })],
       month: {
@@ -221,7 +220,6 @@ describe('home', () => {
       today,
       wallets: [],
       currency: 'MXN',
-      rates: [],
       transactions: [],
       recurrings: [],
       month: null,
@@ -234,7 +232,7 @@ describe('home', () => {
     expect(items).toEqual([{ kind: 'budget', start: '2026-10-01' }])
   })
 
-  it('SYS-04: wallets left out for lacking a rate come first, with the currency to switch to', () => {
+  it('SYS-01: wallets mostly in another currency come first, until the person dismisses it', () => {
     const base = {
       today,
       transactions: [],
@@ -245,21 +243,15 @@ describe('home', () => {
       next: null,
       uncategorized: 0,
       waiting: 0,
-      rates: [],
     }
-    // Peso wallets under a dollar default: show totals in pesos.
-    expect(attention({ ...base, wallets: [checking], currency: 'USD' })[0]).toEqual({
-      kind: 'rates',
-      count: 1,
-      switchTo: 'MXN',
+    const wallets = [checking, card]
+    expect(attention({ ...base, wallets, currency: 'USD' })[0]).toEqual({
+      kind: 'currency',
+      currency: 'MXN',
     })
-    // One dollar wallet among peso ones: it needs a rate.
-    const dollars = wallet('dollars', 'savings', { currency: 'USD' })
-    expect(attention({ ...base, wallets: [checking, dollars], currency: 'MXN' })[0]).toEqual({
-      kind: 'rates',
-      count: 1,
-      switchTo: null,
-    })
+    expect(attention({ ...base, wallets, currency: 'MXN' })[0]?.kind).not.toBe('currency')
+    const kept = attention({ ...base, wallets, currency: 'USD', keepCurrencyOver: 'MXN' })
+    expect(kept.map((item) => item.kind)).not.toContain('currency')
   })
 
   it('DSH-11: lists what comes on its own in the next two weeks, soonest first', () => {

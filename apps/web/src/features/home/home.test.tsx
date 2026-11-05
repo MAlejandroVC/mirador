@@ -350,25 +350,47 @@ describe('Home', () => {
     })
   })
 
-  it('SYS-04, DSH-04: peso wallets under dollar totals need attention, and net worth says they are left out', async () => {
+  it('SYS-01, DSH-04: wallets mostly in another currency need attention, and net worth says they are left out', async () => {
     const user = userEvent.setup()
     vi.spyOn(globalThis.navigator, 'language', 'get').mockReturnValue('en-US')
     const server: FakeServer = { signedIn: 'ana', records: [wallet('Cash'), wallet('Savings')] }
     stubServer(server)
     renderApp('/', unlockedVault(server))
 
-    const attention = await waitFor(() => section('Needs attention'))
-    expect(attention.getByRole('button', { name: /Show totals in MXN/ })).toBeVisible()
+    const row = /Most of your wallets are in MXN/
+    await user.click(await screen.findByRole('button', { name: row }))
     expect(
       section('Net worth').getByText('Across 0 wallets · 2 without an exchange rate'),
     ).toBeVisible()
-
-    await user.click(attention.getByRole('button', { name: /Show totals in MXN/ }))
+    const choice = screen.getByRole('dialog', { name: "MXN isn't your default currency" })
+    await user.click(within(choice).getByRole('button', { name: 'Make MXN your default currency' }))
     await waitFor(() => {
       expect(saved<PreferencesRecord>(server, preferencesRecordType)).toEqual([
         { defaultCurrency: 'MXN' },
       ])
     })
     expect(await screen.findByText('Across 2 wallets')).toBeVisible()
+    expect(screen.queryByRole('button', { name: row })).toBeNull()
+  })
+
+  it('SYS-01: keeping the default currency stops Home suggesting the other one', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(globalThis.navigator, 'language', 'get').mockReturnValue('en-US')
+    const server: FakeServer = { signedIn: 'ana', records: [wallet('Cash'), wallet('Savings')] }
+    stubServer(server)
+    renderApp('/', unlockedVault(server))
+
+    const row = /Most of your wallets are in MXN/
+    await user.click(await screen.findByRole('button', { name: row }))
+    const choice = screen.getByRole('dialog', { name: "MXN isn't your default currency" })
+    await user.click(within(choice).getByRole('button', { name: 'Keep totals in USD' }))
+    await waitFor(() => {
+      expect(saved<PreferencesRecord>(server, preferencesRecordType)).toEqual([
+        { defaultCurrency: 'USD', keepCurrencyOver: 'MXN' },
+      ])
+    })
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: row })).toBeNull()
+    })
   })
 })
