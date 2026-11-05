@@ -60,6 +60,9 @@ export function TextField({
         }}
       >
         <input
+          // A new input each time it is shown or hidden: Safari keeps a password it filled
+          // in (the yellow one) masked on the same input even once its type is text (#304).
+          key={isPassword && revealed ? 'shown' : 'hidden'}
           id={id}
           type={isPassword && revealed ? 'text' : type}
           aria-invalid={error ? true : undefined}

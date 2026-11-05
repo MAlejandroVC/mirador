@@ -270,7 +270,7 @@ describe('sign-in', () => {
     const field = await screen.findByLabelText('Password')
     expect(field).toHaveAttribute('type', 'password')
     await user.click(screen.getByRole('button', { name: 'Show password' }))
-    expect(field).toHaveAttribute('type', 'text')
+    expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'text')
   })
 })
 

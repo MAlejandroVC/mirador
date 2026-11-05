@@ -99,4 +99,27 @@ describe('choice row', () => {
     fireEvent.click(toggle)
     expect(toggle).toHaveAttribute('aria-checked', 'true')
   })
+
+  it('DL-CMP-08: a sheet sits above the keyboard and fits the screen left above it (#305)', () => {
+    // iOS Safari slides the visible part of the page up for the keyboard instead of
+    // making the page shorter: 844 px tall, a 336 px keyboard, slid up by 100 px.
+    const viewport = Object.assign(new EventTarget(), { height: 508, offsetTop: 100 })
+    const before = Object.getOwnPropertyDescriptor(window, 'visualViewport')
+    Object.defineProperty(window, 'visualViewport', { configurable: true, value: viewport })
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 844 })
+    try {
+      render(<Editor />)
+      const sheet = screen.getByRole('dialog', { name: 'New expense' })
+      expect(sheet.style.getPropertyValue('--keyboard-inset')).toBe('236px')
+      expect(sheet.style.getPropertyValue('--visible-height')).toBe('508px')
+
+      // The keyboard closes.
+      Object.assign(viewport, { height: 844, offsetTop: 0 })
+      viewport.dispatchEvent(new Event('resize'))
+      expect(sheet.style.getPropertyValue('--keyboard-inset')).toBe('0px')
+    } finally {
+      if (before) Object.defineProperty(window, 'visualViewport', before)
+      else Reflect.deleteProperty(window, 'visualViewport')
+    }
+  })
 })
