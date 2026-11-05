@@ -4,6 +4,9 @@ import {
   applyPreset,
   balanceAdjustment,
   canChangeCurrency,
+  mainCurrency,
+  missingRates,
+  mostlyOtherCurrency,
   reorderedWallets,
   netWorth,
   newWallet,
@@ -269,5 +272,41 @@ describe('wallets', () => {
     // A rate dated after today is not in use yet.
     const early = netWorth([dollars], balances, 'MXN', rates, '2026-09-30')
     expect(early.otherCurrency).toEqual([dollars])
+  })
+
+  it('SYS-01: the currency most wallets use', () => {
+    const dollars = wallet('b', 'savings', { currency: 'USD' })
+    expect(mainCurrency([])).toBeNull()
+    expect(mainCurrency([dollars, wallet('a', 'cash'), wallet('c', 'savings')])).toBe('MXN')
+    // On a tie, the first wallet's.
+    expect(mainCurrency([dollars, wallet('a', 'cash')])).toBe('USD')
+  })
+
+  it('SYS-01: imported peso wallets under a dollar default are mostly in another currency', () => {
+    const pesos = [wallet('a', 'cash'), wallet('b', 'savings'), wallet('c', 'creditCard')]
+    const dollars = wallet('d', 'savings', { currency: 'USD' })
+    expect(mostlyOtherCurrency(pesos, 'USD')).toBe('MXN')
+    expect(mostlyOtherCurrency([...pesos, dollars], 'USD')).toBe('MXN')
+    expect(mostlyOtherCurrency(pesos, 'MXN')).toBeNull()
+    // Half isn't most; wallets out of net worth or closed don't count.
+    expect(mostlyOtherCurrency([pesos[0]!, dollars], 'USD')).toBeNull()
+    expect(
+      mostlyOtherCurrency(
+        [
+          wallet('e', 'cash', { inNetWorth: false }),
+          wallet('f', 'cash', { active: false }),
+          dollars,
+        ],
+        'USD',
+      ),
+    ).toBeNull()
+  })
+
+  it('SYS-04: wallets without a rate to the default currency are named, until a rate exists', () => {
+    const dollars = wallet('b', 'savings', { currency: 'USD' })
+    const hidden = wallet('c', 'savings', { currency: 'EUR', inNetWorth: false })
+    expect(missingRates([wallet('a', 'cash'), dollars, hidden], 'MXN')).toEqual([dollars])
+    const rates = [{ id: 'r', from: 'USD', to: 'MXN', rate: 18_450_000, date: '2026-10-01' }]
+    expect(missingRates([wallet('a', 'cash'), dollars], 'MXN', rates, '2026-10-15')).toEqual([])
   })
 })

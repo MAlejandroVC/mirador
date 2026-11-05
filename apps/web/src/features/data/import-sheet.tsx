@@ -1,5 +1,5 @@
 import { walletPresets } from '@repo/api'
-import { fractionDigits, parseAmount } from '@repo/core'
+import { fractionDigits, mainCurrency, parseAmount, rateInUse, toCalendarDate } from '@repo/core'
 import {
   type CategoryLink,
   type ColumnField,
@@ -29,6 +29,7 @@ import { roundButton, SheetActionSlot } from '../../components/ui/sheet-action'
 import { formatShortDate, useMoney } from '../../lib/format'
 import { CategoryPicker } from '../categories/category-picker'
 import { CategoryTile } from '../categories/category-tile'
+import { CurrencyChoice } from '../wallets/currency-choice'
 import { newId, type Ledger, useSaveRecords } from '../wallets/use-ledger'
 import { walletIconComponents } from '../wallets/wallet-look'
 import {
@@ -143,6 +144,8 @@ function ImportFlow({
   const [decisions, setDecisions] = useState<Decisions | null>(null)
   const [missing, setMissing] = useState<string[]>([])
   const [done, setDone] = useState<ImportDone | null>(null)
+  // SYS-01, SYS-04: the currency of imported wallets that totals can't count yet.
+  const [otherCurrency, setOtherCurrency] = useState<string | null>(null)
   const save = useSaveRecords()
 
   const planned = useMemo(
@@ -199,6 +202,21 @@ function ImportFlow({
           ).size,
         })
         setStep('done')
+        const today = toCalendarDate(new Date())
+        const uncounted = linked.wallets
+          .map((link) =>
+            link.target.kind === 'new'
+              ? link.target.currency
+              : ledger.wallets.find((wallet) => wallet.id === (link.target as { id: string }).id)
+                  ?.currency,
+          )
+          .filter(
+            (currency): currency is string =>
+              currency !== undefined &&
+              currency !== ledger.defaultCurrency &&
+              !rateInUse(currency, ledger.defaultCurrency, ledger.rates, today),
+          )
+        setOtherCurrency(mainCurrency(uncounted.map((currency) => ({ currency }))))
       },
     })
   }
@@ -255,6 +273,13 @@ function ImportFlow({
           }}
         />
       )}
+      <CurrencyChoice
+        currency={step === 'done' ? otherCurrency : null}
+        ledger={ledger}
+        onClose={() => {
+          setOtherCurrency(null)
+        }}
+      />
     </StepBar>
   )
 }

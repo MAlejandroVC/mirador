@@ -705,7 +705,9 @@
       "note": "Note",
       "notePlaceholder": "Like: waived if I use the card every month"
     },
-    "default": "Default"
+    "default": "Default",
+    "withoutRate_one": "{{count}} without an exchange rate",
+    "withoutRate_other": "{{count}} without an exchange rate"
   },
   "transactions": {
     "types": {
@@ -792,7 +794,6 @@
   "rates": {
     "title": "Exchange rate",
     "later": "Later",
-    "prompt": "To count this wallet in your net worth, Mirador needs the exchange rate. You can also add it later on the wallet's page or in Settings > Currency.",
     "intro": "The rate your bank or exchange office gives for {{currency}}. Each one is kept with its date.",
     "one": "1 {{currency}} =",
     "hint": "Totals use the newest rate up to today.",
@@ -810,7 +811,16 @@
     "add": "Add",
     "worth": "About {{amount}}",
     "missingWallet": "No exchange rate yet, so it isn't in your net worth.",
-    "addRate": "Add exchange rate"
+    "addRate": "Add exchange rate",
+    "choice": {
+      "title": "{{currency}} isn't your default currency",
+      "message": "Totals are in {{main}}. Until {{currency}} has an exchange rate, its amounts are left out of your net worth and budget.",
+      "rate": "Add an exchange rate",
+      "makeDefault": "Make {{currency}} your default currency",
+      "keep": "Keep totals in {{main}}",
+      "attention": "Most of your wallets are in {{currency}}",
+      "attentionBody": "Totals are in {{main}}. Choose how to count them."
+    }
   },
   "pickers": {
     "choose": "Choose",

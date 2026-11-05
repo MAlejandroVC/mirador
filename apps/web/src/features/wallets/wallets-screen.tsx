@@ -1,5 +1,5 @@
 import type { WalletPreset } from '@repo/api'
-import { netWorth, toCalendarDate, walletBalances } from '@repo/core'
+import { missingRates, netWorth, toCalendarDate, walletBalances } from '@repo/core'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AccountButton } from '../../components/shell'
@@ -76,6 +76,7 @@ export function WalletsScreen() {
   const today = toCalendarDate(new Date())
   const balances = walletBalances(ledger.wallets, balanceEntries(ledger, today))
   const worth = netWorth(ledger.wallets, balances, defaultCurrency, ledger.rates, today)
+  const missing = missingRates(ledger.wallets, defaultCurrency, ledger.rates, today)
   const amount = (wallet: LedgerWallet) => balances.get(wallet.id) ?? 0
   const shares = new Map(
     [...worth.haveSpread.byWallet, ...worth.oweSpread.byWallet].map((share) => [
@@ -91,13 +92,14 @@ export function WalletsScreen() {
   const walletRow = (wallet: LedgerWallet) => {
     const balance = { minor: amount(wallet), currency: wallet.currency }
     const share = shares.get(wallet.id)
+    const noRate = share === undefined && wallet.inNetWorth
     const notes = [
       t(`wallets.presets.${wallet.preset}`),
-      share === undefined
-        ? wallet.inNetWorth
-          ? t('wallets.noRate')
-          : t('wallets.notInNetWorth')
-        : formatShare(share, money.locale),
+      ...(share === undefined
+        ? noRate
+          ? []
+          : [t('wallets.notInNetWorth')]
+        : [formatShare(share, money.locale)]),
       // WAL-24: where new transactions start.
       ...(ledger.defaultWalletId === wallet.id && wallet.active ? [t('wallets.default')] : []),
       ...(wallet.active ? [] : [t('wallets.inactive')]),
@@ -110,7 +112,14 @@ export function WalletsScreen() {
         params={{ walletId: wallet.id }}
         leading={<IconTile icon={walletIconComponents[wallet.icon]} color={wallet.color} />}
         title={wallet.name}
-        subtitle={notes.join(' · ')}
+        subtitle={
+          <>
+            {notes.join(' · ')}
+            {/* SYS-04, DL-COL-05: a gentle caution on its own line, since none of this
+                wallet's money counts in a total yet. */}
+            {noRate && <span className="block text-warning">{t('wallets.noRate')}</span>}
+          </>
+        }
         trailing={<Amount parts={money.parts(balance)} label={money.text(balance)} />}
       />
     )
@@ -143,6 +152,8 @@ export function WalletsScreen() {
 
   const context = [
     t('wallets.across', { count: worth.counted }),
+    // SYS-04: never a quiet "Across 0 wallets" when wallets are left out.
+    ...(missing.length > 0 ? [t('wallets.withoutRate', { count: missing.length })] : []),
     ...(worth.liquid > 0 ? [t('wallets.liquid', { amount: total(worth.liquid) })] : []),
   ].join(' · ')
   const net = { minor: worth.netWorth, currency: defaultCurrency }

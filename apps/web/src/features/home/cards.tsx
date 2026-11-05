@@ -1,4 +1,4 @@
-import type { CategoryChange } from '@repo/core'
+import { type CategoryChange, missingRates } from '@repo/core'
 import { Link } from '@tanstack/react-router'
 import { List } from '../../components/ui/list'
 import { formatShare } from '../../lib/format'
@@ -58,7 +58,12 @@ export function WorthCard({ home, words }: { home: Home; words: BudgetWords }) {
   const compare = before && history.length > 1 ? before : null
   const month = compare ? words.monthName(compare.period) : ''
   const change = compare ? now.netWorth - compare.netWorth : 0
-  const wallets = budget.ledger.wallets.filter((wallet) => wallet.active).length
+  const { ledger } = budget
+  // SYS-04: wallets without a rate aren't in the figure, so they aren't counted in it
+  // and the card says how many were left out (Needs attention offers the fix).
+  const left = missingRates(ledger.wallets, ledger.defaultCurrency, ledger.rates, budget.today)
+  const leftOut = new Set(left.map((wallet) => wallet.id))
+  const wallets = ledger.wallets.filter((wallet) => wallet.active && !leftOut.has(wallet.id)).length
   const owing = now.owe > 0 || (compare?.owe ?? 0) > 0
 
   return (
@@ -75,7 +80,10 @@ export function WorthCard({ home, words }: { home: Home; words: BudgetWords }) {
                       amount: words.text(Math.abs(change)),
                       month,
                     })
-                : t('home.worth.across', { count: wallets })}
+                : [
+                    t('home.worth.across', { count: wallets }),
+                    ...(left.length > 0 ? [t('wallets.withoutRate', { count: left.length })] : []),
+                  ].join(' · ')}
             </span>
           </span>
           {history.length > 1 && (

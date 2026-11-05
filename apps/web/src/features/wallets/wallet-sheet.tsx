@@ -36,7 +36,7 @@ import { useSubmit } from '../../components/ui/use-submit'
 import { useLocale } from '../../lib/format'
 import { markNew } from '../../lib/motion'
 import { CurrencyList } from './currency-list'
-import { RateSheet } from './rate-sheet'
+import { CurrencyChoice } from './currency-choice'
 import {
   type LedgerWallet,
   newId,
@@ -105,16 +105,15 @@ export function WalletSheet({
           />
         )}
       </Sheet>
-      <RateSheet
-        open={rateFor !== null}
-        currency={rateFor ?? defaultCurrency}
-        defaultCurrency={defaultCurrency}
-        rates={ledger?.rates ?? []}
-        prompt
-        onClose={() => {
-          setRateFor(null)
-        }}
-      />
+      {ledger && (
+        <CurrencyChoice
+          currency={rateFor}
+          ledger={ledger}
+          onClose={() => {
+            setRateFor(null)
+          }}
+        />
+      )}
     </>
   )
 }
