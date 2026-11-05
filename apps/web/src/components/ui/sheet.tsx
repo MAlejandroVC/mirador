@@ -1,6 +1,7 @@
 import { type ReactNode, useId, useState } from 'react'
 import { CaretLeftIcon, CheckIcon, XIcon } from './icons'
 import { roundButton, SheetActionSlot } from './sheet-action'
+import { useKeyboardInset } from './use-keyboard-inset'
 import { useModal } from './use-modal'
 import { useSwipeDown } from './use-swipe-down'
 
@@ -8,8 +9,9 @@ import { useSwipeDown } from './use-swipe-down'
 // grabber, a round close button (X) at the top left, the title in the middle and the
 // main action as a round check at the top right, as in iOS. The bar stays in view above
 // the keyboard and while a long form scrolls. On a phone, swiping it down closes it
-// too. From 768 px it is a centered dialog (DL-LAY-06). A native <dialog> keeps focus
-// inside it and closes on Escape.
+// too, and above the keyboard it shrinks to fit what is left of the screen, so its bar
+// stays below the status bar (useKeyboardInset). From 768 px it is a centered dialog
+// (DL-LAY-06). A native <dialog> keeps focus inside it and closes on Escape.
 export function Sheet(props: {
   open: boolean
   title: string
@@ -27,6 +29,7 @@ export function Sheet(props: {
   // While it leaves, it keeps its title and content (DL-MOT-06).
   const [ref, shown, handleClose] = useModal(open, props)
   useSwipeDown(ref, onClose)
+  useKeyboardInset(ref, open)
   const [slot, setSlot] = useState<HTMLElement | null>(null)
 
   return (
@@ -47,7 +50,7 @@ export function Sheet(props: {
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
-      className="sheet m-0 mt-auto max-h-[92dvh] w-full max-w-none rounded-t-[1.375rem] bg-surface p-0 text-text shadow-[0_-8px_32px_rgb(0_0_0/18%)] md:m-auto md:max-w-[33.75rem] md:rounded-[1.375rem]"
+      className="sheet m-0 mt-auto mb-[var(--keyboard-inset,0px)] max-h-[min(92dvh,calc(var(--visible-height,100dvh)_-_env(safe-area-inset-top)_-_0.5rem))] w-full max-w-none rounded-t-[1.375rem] bg-surface p-0 text-text shadow-[0_-8px_32px_rgb(0_0_0/18%)] md:m-auto md:max-h-[92dvh] md:max-w-[33.75rem] md:rounded-[1.375rem]"
     >
       <div className="flex flex-col pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {/* The bar stays put while a long form scrolls, and a swipe down can start on
