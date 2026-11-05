@@ -93,6 +93,8 @@ export function buildHome(budget: Budget): Home {
   const items = attention({
     today,
     wallets: ledger.wallets,
+    currency: ledger.defaultCurrency,
+    rates: ledger.rates,
     transactions,
     recurrings: ledger.recurring,
     month: has ? budget.month : null,

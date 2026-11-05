@@ -349,4 +349,26 @@ describe('Home', () => {
       ).toBe('2026-03-15')
     })
   })
+
+  it('SYS-04, DSH-04: peso wallets under dollar totals need attention, and net worth says they are left out', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(globalThis.navigator, 'language', 'get').mockReturnValue('en-US')
+    const server: FakeServer = { signedIn: 'ana', records: [wallet('Cash'), wallet('Savings')] }
+    stubServer(server)
+    renderApp('/', unlockedVault(server))
+
+    const attention = await waitFor(() => section('Needs attention'))
+    expect(attention.getByRole('button', { name: /Show totals in MXN/ })).toBeVisible()
+    expect(
+      section('Net worth').getByText('Across 0 wallets · 2 without an exchange rate'),
+    ).toBeVisible()
+
+    await user.click(attention.getByRole('button', { name: /Show totals in MXN/ }))
+    await waitFor(() => {
+      expect(saved<PreferencesRecord>(server, preferencesRecordType)).toEqual([
+        { defaultCurrency: 'MXN' },
+      ])
+    })
+    expect(await screen.findByText('Across 2 wallets')).toBeVisible()
+  })
 })

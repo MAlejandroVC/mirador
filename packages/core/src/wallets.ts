@@ -335,3 +335,46 @@ function spread<W extends Wallet>(shares: WalletShare<W>[]): Spread<W> {
     byPreset: [...byPreset.values()].sort((a, b) => b.total - a.total),
   }
 }
+
+/**
+ * SYS-01: the currency most of the wallets use (the first wallet's on a tie), or null
+ * without wallets: the one to offer when totals are in a currency no wallet uses.
+ */
+export function mainCurrency(wallets: readonly Pick<Wallet, 'currency'>[]): string | null {
+  const counts = new Map<string, number>()
+  for (const wallet of wallets) counts.set(wallet.currency, (counts.get(wallet.currency) ?? 0) + 1)
+  let best: string | null = null
+  for (const [currency, count] of counts)
+    if (best === null || count > (counts.get(best) ?? 0)) best = currency
+  return best
+}
+
+/** SYS-04: wallets net worth leaves out for lacking an exchange rate, and what helps. */
+export interface MissingRates<W extends Wallet = Wallet> {
+  wallets: W[]
+  /**
+   * When no wallet in net worth uses the default currency, the one most of them use:
+   * showing totals in it fixes more than adding rates. Null when rates are the fix.
+   */
+  switchTo: string | null
+}
+
+/**
+ * SYS-01, SYS-04: a wallet without a rate to the default currency can't be added to net
+ * worth or totals, so the person is told instead of seeing it silently left out. Null
+ * when every wallet in net worth counts.
+ */
+export function missingRates<W extends Wallet>(
+  wallets: readonly W[],
+  currency: string,
+  rates: readonly ExchangeRate[] = [],
+  today = '9999-12-31',
+): MissingRates<W> | null {
+  const counted = wallets.filter((wallet) => wallet.inNetWorth)
+  const missing = counted.filter(
+    (wallet) => wallet.currency !== currency && !rateInUse(wallet.currency, currency, rates, today),
+  )
+  if (missing.length === 0) return null
+  const inDefault = counted.some((wallet) => wallet.currency === currency)
+  return { wallets: missing, switchTo: inDefault ? null : mainCurrency(counted) }
+}

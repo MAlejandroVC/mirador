@@ -429,4 +429,29 @@ describe('wallet features, exchange rates and order', () => {
     expect(await screen.findByRole('button', { name: /Opening balance/ })).toBeVisible()
     expect(screen.getAllByRole('button', { name: /Balance adjustment/ })).toHaveLength(6)
   })
+
+  it('SYS-01, SYS-04: peso wallets under dollar totals say so, and one tap shows totals in pesos', async () => {
+    const user = userEvent.setup()
+    // An English device guesses dollars; the imported wallets are all in pesos.
+    vi.spyOn(globalThis.navigator, 'language', 'get').mockReturnValue('en-US')
+    const cash = wallet('Cash')
+    const card = wallet('Nu', { preset: 'creditCard' })
+    const { server } = start(
+      [cash, card, opening(cash.id, 200_000), opening(card.id, -50_000)],
+      '/wallets',
+    )
+
+    // Never a quiet "Across 0 wallets".
+    expect(await screen.findByText('Across 0 wallets · 2 without an exchange rate')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: /Show totals in MXN/ }))
+
+    await waitFor(() => {
+      expect(saved(server, 'preferences').map((body) => body.data)).toEqual([
+        { defaultCurrency: 'MXN' },
+      ])
+    })
+    expect(await screen.findByText('Across 2 wallets')).toBeVisible()
+    expect(screen.getAllByText('$1,500.00').length).toBeGreaterThan(0)
+    expect(screen.queryByRole('button', { name: /Show totals in/ })).toBeNull()
+  })
 })

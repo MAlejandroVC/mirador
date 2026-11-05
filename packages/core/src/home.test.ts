@@ -172,6 +172,8 @@ describe('home', () => {
     const input: AttentionInput = {
       today,
       wallets: [card, checking],
+      currency: 'MXN',
+      rates: [],
       transactions: history,
       recurrings: [recurring('rent', { ask: true, start: '2026-10-15', amount: -1_200_000 })],
       month: {
@@ -218,6 +220,8 @@ describe('home', () => {
     const items = attention({
       today,
       wallets: [],
+      currency: 'MXN',
+      rates: [],
       transactions: [],
       recurrings: [],
       month: null,
@@ -228,6 +232,34 @@ describe('home', () => {
       waiting: 0,
     })
     expect(items).toEqual([{ kind: 'budget', start: '2026-10-01' }])
+  })
+
+  it('SYS-04: wallets left out for lacking a rate come first, with the currency to switch to', () => {
+    const base = {
+      today,
+      transactions: [],
+      recurrings: [],
+      month: null,
+      review: null,
+      budget: null,
+      next: null,
+      uncategorized: 0,
+      waiting: 0,
+      rates: [],
+    }
+    // Peso wallets under a dollar default: show totals in pesos.
+    expect(attention({ ...base, wallets: [checking], currency: 'USD' })[0]).toEqual({
+      kind: 'rates',
+      count: 1,
+      switchTo: 'MXN',
+    })
+    // One dollar wallet among peso ones: it needs a rate.
+    const dollars = wallet('dollars', 'savings', { currency: 'USD' })
+    expect(attention({ ...base, wallets: [checking, dollars], currency: 'MXN' })[0]).toEqual({
+      kind: 'rates',
+      count: 1,
+      switchTo: null,
+    })
   })
 
   it('DSH-11: lists what comes on its own in the next two weeks, soonest first', () => {

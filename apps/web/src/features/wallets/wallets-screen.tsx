@@ -1,5 +1,5 @@
 import type { WalletPreset } from '@repo/api'
-import { netWorth, toCalendarDate, walletBalances } from '@repo/core'
+import { missingRates, netWorth, toCalendarDate, walletBalances } from '@repo/core'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AccountButton } from '../../components/shell'
@@ -13,6 +13,7 @@ import { List, ListButtonRow, ListLinkRow, ListRow } from '../../components/ui/l
 import { Page } from '../../components/ui/page'
 import { SegmentedControl } from '../../components/ui/segmented-control'
 import { formatShare, useMoney } from '../../lib/format'
+import { MissingRatesRow } from './missing-rates-row'
 import { WalletReorderSheet } from './reorder-sheet'
 import { balanceEntries, type LedgerWallet, useLedger } from './use-ledger'
 import { presetLooks, walletIconComponents } from './wallet-look'
@@ -76,6 +77,7 @@ export function WalletsScreen() {
   const today = toCalendarDate(new Date())
   const balances = walletBalances(ledger.wallets, balanceEntries(ledger, today))
   const worth = netWorth(ledger.wallets, balances, defaultCurrency, ledger.rates, today)
+  const missing = missingRates(ledger.wallets, defaultCurrency, ledger.rates, today)
   const amount = (wallet: LedgerWallet) => balances.get(wallet.id) ?? 0
   const shares = new Map(
     [...worth.haveSpread.byWallet, ...worth.oweSpread.byWallet].map((share) => [
@@ -143,6 +145,8 @@ export function WalletsScreen() {
 
   const context = [
     t('wallets.across', { count: worth.counted }),
+    // SYS-04: never a quiet "Across 0 wallets" when wallets are left out.
+    ...(missing ? [t('wallets.withoutRate', { count: missing.wallets.length })] : []),
     ...(worth.liquid > 0 ? [t('wallets.liquid', { amount: total(worth.liquid) })] : []),
   ].join(' · ')
   const net = { minor: worth.netWorth, currency: defaultCurrency }
@@ -154,6 +158,14 @@ export function WalletsScreen() {
         amount={<Amount parts={money.parts(net)} label={money.text(net)} size="hero" tone="hero" />}
         context={context}
       />
+      {missing && (
+        <List>
+          <MissingRatesRow
+            missing={{ switchTo: missing.switchTo, count: missing.wallets.length }}
+            ledger={ledger}
+          />
+        </List>
+      )}
       <SegmentedControl<View>
         label={t('wallets.view')}
         options={[

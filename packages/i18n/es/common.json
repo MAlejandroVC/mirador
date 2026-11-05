@@ -705,7 +705,9 @@
       "note": "Nota",
       "notePlaceholder": "Como: no la cobran si uso la tarjeta cada mes"
     },
-    "default": "Predeterminada"
+    "default": "Predeterminada",
+    "withoutRate_one": "{{count}} sin tipo de cambio",
+    "withoutRate_other": "{{count}} sin tipo de cambio"
   },
   "transactions": {
     "types": {
@@ -810,7 +812,13 @@
     "add": "Agregar",
     "worth": "Unos {{amount}}",
     "missingWallet": "Aún sin tipo de cambio, así que no cuenta en tu patrimonio.",
-    "addRate": "Agregar tipo de cambio"
+    "addRate": "Agregar tipo de cambio",
+    "switch": "Ver totales en {{currency}}",
+    "switchBody": "Tus carteras están en {{currency}}, así que los totales en {{current}} las dejan fuera.",
+    "addMany_one": "Agrega un tipo de cambio",
+    "addMany_other": "Agrega tipos de cambio",
+    "leftOut_one": "{{count}} cartera no está en tu patrimonio hasta que tenga uno.",
+    "leftOut_other": "{{count}} carteras no están en tu patrimonio hasta que tengan uno."
   },
   "pickers": {
     "choose": "Elegir",

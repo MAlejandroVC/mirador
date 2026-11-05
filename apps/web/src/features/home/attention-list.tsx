@@ -19,6 +19,7 @@ import type { BudgetWords } from '../budget/budget-words'
 import { lineLook, lineName } from '../budget/lines'
 import { Over } from '../budget/parts'
 import { periodOf } from '../budget/use-budget'
+import { MissingRatesRow } from '../wallets/missing-rates-row'
 import { walletIconComponents } from '../wallets/wallet-look'
 import type { LedgerWallet } from '../wallets/use-ledger'
 import { recurringName, sentence } from './text'
@@ -104,6 +105,8 @@ function AttentionRow({ item, home, words }: { item: Attention; home: Home; word
     new Intl.ListFormat(words.locale, { type: 'conjunction' }).format(names)
 
   switch (item.kind) {
+    case 'rates':
+      return <MissingRatesRow missing={item} ledger={ledger} />
     case 'card':
       return (
         <ListLinkRow

@@ -705,7 +705,9 @@
       "note": "Note",
       "notePlaceholder": "Like: waived if I use the card every month"
     },
-    "default": "Default"
+    "default": "Default",
+    "withoutRate_one": "{{count}} without an exchange rate",
+    "withoutRate_other": "{{count}} without an exchange rate"
   },
   "transactions": {
     "types": {
@@ -810,7 +812,13 @@
     "add": "Add",
     "worth": "About {{amount}}",
     "missingWallet": "No exchange rate yet, so it isn't in your net worth.",
-    "addRate": "Add exchange rate"
+    "addRate": "Add exchange rate",
+    "switch": "Show totals in {{currency}}",
+    "switchBody": "Your wallets are in {{currency}}, so totals in {{current}} leave them out.",
+    "addMany_one": "Add an exchange rate",
+    "addMany_other": "Add exchange rates",
+    "leftOut_one": "{{count}} wallet isn't in your net worth until it has one.",
+    "leftOut_other": "{{count}} wallets aren't in your net worth until they have one."
   },
   "pickers": {
     "choose": "Choose",

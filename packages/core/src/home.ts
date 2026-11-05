@@ -5,7 +5,7 @@ import { cardStatement, type SpendingEntry, spreadInstallments } from './install
 import { occurrenceFields, type Recurring, upcoming } from './recurring.ts'
 import { amountIn, type Transaction } from './transactions.ts'
 import { dueFees, type Fee, nextFeeDate } from './wallet-features.ts'
-import type { Wallet } from './wallets.ts'
+import { missingRates, type Wallet } from './wallets.ts'
 import type { ExchangeRate } from './exchange.ts'
 
 // Epic 7: what Home works out from the records, all in the browser (SEC-01). Pure
@@ -132,6 +132,8 @@ export function balancesToCheck(
 
 /** DSH-05: one thing that needs a tap from the person. */
 export type Attention =
+  /** SYS-01, SYS-04: wallets left out of every total for lacking an exchange rate. */
+  | { kind: 'rates'; count: number; switchTo: string | null }
   | ({ kind: 'card' } & CardDue)
   /** BUD-43, BUD-45: a line over its target, or heading there by the month's end. */
   | { kind: 'over' | 'atRisk'; line: string; amount: number; end: string }
@@ -154,6 +156,9 @@ export type Attention =
 export interface AttentionInput {
   today: string
   wallets: readonly Wallet[]
+  /** The default currency every total is shown in, and the rates to it. */
+  currency: string
+  rates: readonly ExchangeRate[]
   transactions: readonly Transaction[]
   recurrings: readonly Recurring[]
   /** This month against its budget, only when it has one. */
@@ -172,10 +177,13 @@ export interface AttentionInput {
  */
 export function attention(input: AttentionInput): Attention[] {
   const { today, wallets } = input
-  const items: Attention[] = cardsDue(wallets, input.transactions, today).map((card) => ({
-    kind: 'card',
-    ...card,
-  }))
+  const items: Attention[] = []
+  // SYS-04: first, since every total on Home is short until it is fixed.
+  const missing = missingRates(wallets, input.currency, input.rates, today)
+  if (missing)
+    items.push({ kind: 'rates', count: missing.wallets.length, switchTo: missing.switchTo })
+  for (const card of cardsDue(wallets, input.transactions, today))
+    items.push({ kind: 'card', ...card })
 
   // BUD-43, BUD-45: Commitments land on their date, so only Needs and Wants can be
   // over or heading over. A month that ended is for its review instead.

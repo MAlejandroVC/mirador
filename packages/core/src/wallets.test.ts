@@ -4,6 +4,8 @@ import {
   applyPreset,
   balanceAdjustment,
   canChangeCurrency,
+  mainCurrency,
+  missingRates,
   reorderedWallets,
   netWorth,
   newWallet,
@@ -269,5 +271,33 @@ describe('wallets', () => {
     // A rate dated after today is not in use yet.
     const early = netWorth([dollars], balances, 'MXN', rates, '2026-09-30')
     expect(early.otherCurrency).toEqual([dollars])
+  })
+
+  it('SYS-01: the currency most wallets use is the one to offer for totals', () => {
+    const pesos = wallet('a', 'cash')
+    const dollars = wallet('b', 'savings', { currency: 'USD' })
+    expect(mainCurrency([])).toBeNull()
+    expect(mainCurrency([dollars, pesos, wallet('c', 'savings')])).toBe('MXN')
+    // On a tie, the first wallet's.
+    expect(mainCurrency([dollars, pesos])).toBe('USD')
+  })
+
+  it('SYS-04: imported wallets in pesos under a dollar default are flagged, with pesos to switch to', () => {
+    const wallets = [wallet('a', 'cash'), wallet('b', 'savings'), wallet('c', 'creditCard')]
+    // Every wallet left out of a dollar net worth, and none in dollars: switch.
+    expect(missingRates(wallets, 'USD')).toEqual({ wallets, switchTo: 'MXN' })
+    // In their own currency nothing is missing.
+    expect(missingRates(wallets, 'MXN')).toBeNull()
+  })
+
+  it('SYS-04: a few foreign wallets need rates, not a new default currency', () => {
+    const dollars = wallet('b', 'savings', { currency: 'USD' })
+    const hidden = wallet('c', 'savings', { currency: 'EUR', inNetWorth: false })
+    expect(missingRates([wallet('a', 'cash'), dollars, hidden], 'MXN')).toEqual({
+      wallets: [dollars],
+      switchTo: null,
+    })
+    const rates = [{ id: 'r', from: 'USD', to: 'MXN', rate: 18_450_000, date: '2026-10-01' }]
+    expect(missingRates([wallet('a', 'cash'), dollars], 'MXN', rates, '2026-10-15')).toBeNull()
   })
 })
