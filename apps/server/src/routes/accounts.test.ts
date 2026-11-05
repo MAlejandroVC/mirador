@@ -140,7 +140,11 @@ describe('sign-up', () => {
   it('refuses a form post, so another site cannot submit to the API', async () => {
     const response = await server.app.request('/api/accounts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: {
+        Host: testHost,
+        Origin: testOrigin,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
       body: 'username=ana',
     })
 
@@ -221,7 +225,7 @@ describe('sign-in', () => {
 
   it('SEC-04: the database keeps only a hash of each session token', async () => {
     const response = await signIn(server, 'ana', ana.loginSecret)
-    const token = cookieOf(response).split('=')[1]!
+    const token = /__Host-mirador_session=([^;]+)/.exec(cookieOf(response))![1]!
 
     const dump = JSON.stringify(await server.db.select().from(schema.sessions))
     expect(dump).not.toContain(token)
@@ -289,6 +293,99 @@ describe('sign-in', () => {
     expect(statuses.at(-1)).toBe(429)
   })
 
+  it('SEC-03: guesses at one account from many addresses are capped for the whole account', async () => {
+    const statuses = []
+    for (let guess = 0; guess < 21; guess += 1) {
+      const address = { 'X-Forwarded-For': `198.51.${guess}.1` }
+      statuses.push((await signIn(server, 'ana', base64Url(43, `guess ${guess}`), address)).status)
+    }
+
+    expect(statuses.slice(0, 20)).toEqual(Array(20).fill(401))
+    expect(statuses[20]).toBe(429)
+    // A new browser has to wait too, even with the right password.
+    const newBrowser = await signIn(server, 'ana', ana.loginSecret, {
+      'X-Forwarded-For': '203.0.113.50',
+    })
+    expect(newBrowser.status).toBe(429)
+  })
+
+  it('SEC-03: a browser that signed in before keeps its own allowance while others guess', async () => {
+    const anasPhone = cookieOf(await signIn(server, 'ana', ana.loginSecret))
+    expect(anasPhone).toContain('__Host-mirador_device=')
+    for (let guess = 0; guess < 21; guess += 1) {
+      const address = { 'X-Forwarded-For': `198.51.${guess}.1` }
+      await signIn(server, 'ana', base64Url(43, `guess ${guess}`), address)
+    }
+
+    const own = await signIn(server, 'ana', ana.loginSecret, {
+      Cookie: anasPhone,
+      'X-Forwarded-For': '203.0.113.51',
+    })
+    expect(own.status).toBe(204)
+  })
+
+  it("SEC-03: another account's device cookie, or a made-up one, gets no allowance of its own", async () => {
+    server = await createTestApp({ trustProxy: true, openSignUp: true })
+    await signUp(server, ana)
+    const bensPhone = await signUp(server, newAccount('ben'))
+    for (let guess = 0; guess < 20; guess += 1) {
+      const address = { 'X-Forwarded-For': `198.51.${guess}.1` }
+      await signIn(server, 'ana', base64Url(43, `guess ${guess}`), address)
+    }
+
+    for (const cookie of [bensPhone, '__Host-mirador_device=made.up']) {
+      const response = await signIn(server, 'ana', ana.loginSecret, {
+        Cookie: cookie,
+        'X-Forwarded-For': '203.0.113.52',
+      })
+      expect(response.status).toBe(429)
+    }
+  })
+
+  it('SEC-03: a browser that signed in before still gets only ten wrong guesses', async () => {
+    const anasPhone = cookieOf(await signIn(server, 'ana', ana.loginSecret))
+    const statuses = []
+    for (let guess = 0; guess < 11; guess += 1) {
+      const headers = { Cookie: anasPhone, 'X-Forwarded-For': `198.51.${guess}.1` }
+      statuses.push((await signIn(server, 'ana', base64Url(43, `guess ${guess}`), headers)).status)
+    }
+
+    expect(statuses.slice(0, 10)).toEqual(Array(10).fill(401))
+    expect(statuses[10]).toBe(429)
+  })
+
+  it('SEC-03: an IPv4 address written as IPv6 counts as that IPv4 address', async () => {
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      const mapped = { 'X-Forwarded-For': '::ffff:203.0.113.9' }
+      await post(server, '/api/accounts/prelogin', { username: 'ana' }, mapped)
+    }
+
+    const plain = await post(
+      server,
+      '/api/accounts/prelogin',
+      { username: 'ana' },
+      { 'X-Forwarded-For': '203.0.113.9' },
+    )
+    expect(plain.status).toBe(429)
+  })
+
+  it('SEC-03: a whole IPv6 /48 gets a limited number of attempts a minute', async () => {
+    const statuses = []
+    for (let attempt = 0; attempt < 121; attempt += 1) {
+      const address = { 'X-Forwarded-For': `2001:db8:1:${attempt.toString(16)}::1` }
+      statuses.push(
+        (await post(server, '/api/accounts/prelogin', { username: 'ana' }, address)).status,
+      )
+    }
+
+    expect(statuses.slice(0, 120)).toEqual(Array(120).fill(200))
+    expect(statuses[120]).toBe(429)
+    const elsewhere = { 'X-Forwarded-For': '2001:db8:2::1' }
+    expect(
+      (await post(server, '/api/accounts/prelogin', { username: 'ana' }, elsewhere)).status,
+    ).toBe(200)
+  })
+
   it('refuses a request body far larger than any real one', async () => {
     const response = await post(server, '/api/session', {
       username: 'ana',
@@ -321,6 +418,37 @@ describe('sign-in', () => {
 
     expect(response.status).toBe(403)
     expect(response.headers.get('set-cookie')).toBeNull()
+  })
+
+  it('SEC-09: refuses a request that changes something without saying where it comes from', async () => {
+    const response = await server.app.request('/api/session', {
+      method: 'POST',
+      headers: { Host: testHost, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'ana', loginSecret: ana.loginSecret }),
+    })
+    const fromTheApp = await server.app.request('/api/session', {
+      method: 'POST',
+      headers: {
+        Host: testHost,
+        'Content-Type': 'application/json',
+        'Sec-Fetch-Site': 'same-origin',
+      },
+      body: JSON.stringify({ username: 'ana', loginSecret: ana.loginSecret }),
+    })
+
+    expect(response.status).toBe(403)
+    expect(fromTheApp.status).toBe(204)
+  })
+
+  it('SEC-09: X-Forwarded-Host counts only when a proxy is said to be in front', async () => {
+    server = await createTestApp()
+    await signUp(server, ana)
+    const response = await signIn(server, 'ana', ana.loginSecret, {
+      Origin: 'https://evil.example',
+      'X-Forwarded-Host': 'evil.example',
+    })
+
+    expect(response.status).toBe(403)
   })
 
   it('SEC-02: prelogin returns the salt and cost the account was made with', async () => {

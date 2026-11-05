@@ -211,6 +211,68 @@ describe('matching', () => {
       data: { walletId, amount: -500000, toAmount: 500000 },
     })
   })
+
+  it('IMP-22: an expense the same day as a transfer leg is not paired in its place', () => {
+    // The expense comes first in the file, with the same amount as the transfer.
+    const csv = [
+      'Date,Account,Category,Amount',
+      '2026-12-20,BBVA Debit,Groceries,-1500.00',
+      '2026-12-20,BBVA Debit,Transfer,-1500.00',
+      '2026-12-20,Nu Savings,Transfer,1500.00',
+    ].join('\n')
+    const { planned } = prepare(csv)
+    expect(planned[0]?.status).toEqual({ kind: 'ready' })
+    expect(planned[1]?.status).toMatchObject({ kind: 'transfer', pairLine: 4, likely: true })
+    expect(planned[2]?.status).toMatchObject({ kind: 'transfer', pairLine: 3, outgoing: false })
+  })
+
+  it('IMP-22: a type column marks both legs of a transfer and keeps their direction', () => {
+    const csv = [
+      'Date,Account,Type,Category,Amount',
+      '2026-12-20,BBVA Debit,expense,Groceries,-1500.00',
+      '2026-12-20,BBVA Debit,transfer,,-1500.00',
+      '2026-12-20,Nu Savings,transfer,,1500.00',
+    ].join('\n')
+    const { planned } = prepare(csv)
+    expect(planned[2]?.row.amount).toBe(150000)
+    expect(planned[0]?.status).toEqual({ kind: 'ready' })
+    expect(planned[1]?.status).toMatchObject({ kind: 'transfer', pairLine: 4, likely: true })
+    const transfers = build(csv).changes.filter(
+      (c) => !c.body.deleted && (c.body.data as { kind?: string }).kind === 'transfer',
+    )
+    expect(transfers).toHaveLength(1)
+  })
+
+  it('IMP-22: rows the type column calls an expense or income are never paired', () => {
+    const csv = [
+      'Date,Account,Type,Category,Amount',
+      '2026-12-20,BBVA Debit,expense,Groceries,-1500.00',
+      '2026-12-21,Nu Savings,income,Salary,1500.00',
+    ].join('\n')
+    const { planned } = prepare(csv)
+    expect(planned.map((item) => item.status.kind)).toEqual(['ready', 'ready'])
+  })
+
+  it('IMP-22: a transfer id pairs exactly the rows that share it', () => {
+    const csv = [
+      'Date,Account,Transfer ID,Category,Amount',
+      '2026-12-20,BBVA Debit,,Groceries,-1500.00',
+      '2026-12-20,Nu Savings,,Refund,1500.00',
+      '2026-12-20,BBVA Debit,T-1,,-1500.00',
+      '2026-12-22,Nu Savings,T-1,,1500.00',
+      '2026-12-23,BBVA Debit,T-2,,-90.00',
+    ].join('\n')
+    const { settings, planned } = prepare(csv)
+    expect(settings.columns[2]).toBe('transferId')
+    // The expense and the refund stay apart: neither says it is a transfer, and the
+    // rows with an id are spoken for.
+    expect(planned[0]?.status).toEqual({ kind: 'ready' })
+    expect(planned[1]?.status).toEqual({ kind: 'ready' })
+    expect(planned[2]?.status).toMatchObject({ kind: 'transfer', pairLine: 5, likely: true })
+    expect(planned[3]?.status).toMatchObject({ kind: 'transfer', pairLine: 4, outgoing: false })
+    // An id with no other side in the file is put to the person.
+    expect(planned[4]?.status).toEqual({ kind: 'noCategory' })
+  })
 })
 
 describe('importing', () => {

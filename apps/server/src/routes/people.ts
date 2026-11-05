@@ -7,6 +7,7 @@ import {
   type SessionStore,
   type SessionVariables,
 } from '../auth/sessions.ts'
+import { idParam } from './json-body.ts'
 import { type Database, schema } from '../store/db.ts'
 import { operatorOnly } from './invites.ts'
 
@@ -48,7 +49,7 @@ export function peopleRoutes({ db, sessions, now = Date.now }: PeopleRoutesOptio
     } satisfies PeopleResponse)
   })
 
-  routes.post('/people/:id/remove', async (c) => {
+  routes.post('/people/:id/remove', idParam, async (c) => {
     const id = c.req.param('id')
     // Someone has to run the server, so the operator can't remove themselves.
     if (id === c.var.userId) {
@@ -68,7 +69,7 @@ export function peopleRoutes({ db, sessions, now = Date.now }: PeopleRoutesOptio
     return removed.length > 0 ? c.body(null, 204) : c.notFound()
   })
 
-  routes.post('/people/:id/restore', async (c) => {
+  routes.post('/people/:id/restore', idParam, async (c) => {
     const restored = await db
       .update(schema.users)
       .set({ removedAt: null })

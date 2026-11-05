@@ -4,6 +4,7 @@ import type { Context } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import { createMiddleware } from 'hono/factory'
 import { type Database, schema } from '../store/db.ts'
+import { deviceCookies } from './devices.ts'
 import { hashToken, randomToken } from './secrets.ts'
 
 const day = 24 * 60 * 60 * 1000
@@ -31,7 +32,10 @@ export interface SignedIn {
 
 export type SessionVariables = SignedIn
 
-export function sessionStore(db: Database, now: () => number = Date.now) {
+// The server's secret signs device cookies (see devices.ts).
+export function sessionStore(db: Database, secret: string, now: () => number = Date.now) {
+  const devices = deviceCookies(secret)
+
   function writeCookie(c: Context, token: string) {
     setCookie(c, sessionCookie, token, {
       path: '/',
@@ -62,6 +66,12 @@ export function sessionStore(db: Database, now: () => number = Date.now) {
         expiresAt: new Date(now() + sessionLifetime),
       })
       writeCookie(c, token)
+      devices.remember(c, userId)
+    },
+
+    // This browser's id when it signed in to this account before (see devices.ts).
+    knownDevice(c: Context, userId: string) {
+      return devices.known(c, userId)
     },
 
     async read(c: Context): Promise<SignedIn | null> {
