@@ -8,7 +8,7 @@ This spec is a lean Software Requirements Specification. It follows the ISO/IEC/
 
 - **ID**: `AREA-NN` (WAL wallets, TXN transactions, IMP import, CAT categories and tags, ANA analysis, BUD budget, DSH dashboard, WID quick add, DAT data, SYS settings, SEC security, NFR non-functional). IDs are never reused; a dropped requirement is struck through, not renumbered.
 - **EARS patterns**: *The app shall…* (always) · *When \<event\>, the app shall…* · *While \<state\>, the app shall…* · *Where \<feature is enabled\>, the app shall…* · *If \<unwanted situation\>, then the app shall…*
-- **Priority (MoSCoW)**: **Must** = needed for the first usable release (MVP) · **Should** = v1, but MVP can ship without it · **Could** = nice to have · **Won't** = explicitly not now · **TBD** = waiting on an open question.
+- **Priority (MoSCoW)**: **Must** = needed for the first usable release (MVP) · **Should** = v1, but MVP can ship without it · **Could** = nice to have · **Later** = planned after v1.0 · **Won't** = explicitly not now · **TBD** = waiting on an open question.
 - **"The app"** means Mirador: the web application the user opens in a browser on their phone or computer, together with the self-hosted server it syncs with, including quick add.
 - **Acceptance criteria** are given as Given/When/Then where behaviour is subtle (import, budget). For the rest, the EARS sentence is the test.
 
@@ -243,7 +243,7 @@ A transaction records one money movement: an expense, an income or a transfer be
 | TXN-04 | When a transfer goes to a wallet with a negative balance (a credit card or loan), the app shall reduce what is owed and not count it as an expense. | Must |
 | TXN-05 | Where the two wallets of a transfer use different currencies, the app shall require either the exchange rate or the amount received, calculate the other, and store both amounts and the rate. | Should |
 | TXN-06 | The app shall let the user mark any transaction as excluded from the budget. | Must |
-| TXN-07 | The app shall let the user split one transaction across several categories, and block saving unless the parts add up to the total. | Should |
+| TXN-07 | The app shall let the user split one transaction across several categories, and block saving unless the parts add up to the total. | Later |
 | TXN-08 | When the user picks a payee, the app shall pre-fill the category, tags and wallet last used with that payee. | Should |
 | TXN-09 | The app shall let the user define recurring transactions (daily, weekly, every two weeks, monthly, yearly or custom) that generate scheduled entries, shown ahead of time in the periods to come. | Should |
 | TXN-10 | When a scheduled entry comes due, the app shall, the next time the user unlocks it (the server cannot create encrypted entries), either post it automatically or wait for the user's confirmation, per the template's setting. | Should |
@@ -275,8 +275,8 @@ A purchase paid in installments ("meses sin intereses" or "meses con intereses" 
 | TXN-22 | The app shall let the user filter by date range (this period, last period, last 3 and 12 months, year to date, custom), type, wallets, categories, category groups, tags, payee, amount range and note text. | Must |
 | TXN-23 | The app shall let the user filter by source and by the exclude-from-budget flag. | Should |
 | TXN-24 | While filters are applied, the app shall show the count, total income, total expenses and net for the filtered set. Without filters, the totals shall also count what recurring transactions will add in the rest of the period. | Must |
-| TXN-25 | The app shall let the user save a combination of filters as a named view. | Should |
-| TXN-26 | The app shall let the user select several transactions and change their category, wallet or tags, exclude them from the budget, or delete them in one action. | Should |
+| TXN-25 | The app shall let the user save a combination of filters as a named view. | Later |
+| TXN-26 | The app shall let the user select several transactions and change their category, wallet or tags, exclude them from the budget, or delete them in one action. | Later |
 | TXN-27 | The app shall let the user edit category, tags, note and amount directly in the table. | Could |
 | TXN-28 | The app shall offer a list view of a whole period grouped by day, with a subtotal per day, as an alternative to the table. | Could |
 | ~~TXN-29~~ | ~~The app shall let the user choose which columns are visible.~~ Dropped: not user-configurable. | Won't |
@@ -298,17 +298,18 @@ The pipeline runs in a fixed order: upload, extract, normalize, match duplicates
 
 | ID | Requirement | Priority |
 |---|---|---|
-| IMP-01 | The app shall let the user upload one or more files per import and choose the target wallet. | Must |
+| IMP-01 | The app shall let the user upload a file per import and choose the target wallet. | Must |
+| IMP-43 | The app shall let the user upload more than one file in the same import. | Later |
 | IMP-02 | The app shall import CSV files through a column-mapping step, and save the mapping as a reusable profile per bank and wallet. | Must |
 | IMP-03 | When a file matches a saved profile, the app shall apply that profile without asking. | Must |
-| IMP-04 | The app shall extract transactions from text-based PDF statements, including multi-page statements. | Must |
-| IMP-05 | The app shall extract transactions from images (JPG, PNG, HEIC) and scanned PDFs of statements or screenshots. | Must |
-| IMP-06 | The app shall import OFX and QFX files. | Should |
-| IMP-07 | The app shall extract a single transaction (amount, date, merchant text) from a photo of a purchase ticket or a screenshot of a bank notification, and pre-fill a new transaction. | Must |
-| IMP-08 | The app shall extract, per row: date, description, amount, direction, and running balance when present, with a confidence score per field. | Must |
-| IMP-09 | Where the wallet has a credit limit, the app shall treat charges as expenses and payments as transfers into the wallet. | Must |
-| IMP-10 | If extraction fails or a field's confidence is below the threshold, then the app shall flag that row instead of guessing silently. | Must |
-| IMP-11 | The app shall run all extraction on the user's own server; no file is sent to any third-party or remote AI service. | Must |
+| IMP-04 | The app shall extract transactions from text-based PDF statements, including multi-page statements. | Later |
+| IMP-05 | The app shall extract transactions from images (JPG, PNG, HEIC) and scanned PDFs of statements or screenshots. | Later |
+| IMP-06 | The app shall import OFX and QFX files. | Later |
+| IMP-07 | The app shall extract a single transaction (amount, date, merchant text) from a photo of a purchase ticket or a screenshot of a bank notification, and pre-fill a new transaction. | Later |
+| IMP-08 | The app shall extract, per row: date, description, amount, direction, and running balance when present, with a confidence score per field. | Later |
+| IMP-09 | Where the wallet has a credit limit, the app shall treat charges as expenses and payments as transfers into the wallet. | Later |
+| IMP-10 | If extraction fails or a field's confidence is below the threshold, then the app shall flag that row instead of guessing silently. | Later |
+| IMP-11 | The app shall run all extraction on the user's own server; no file is sent to any third-party or remote AI service. | Later |
 | ~~IMP-12~~ | Dropped: extraction never uses a third-party or remote service. | Won't |
 
 **Matching and categorization**
@@ -320,9 +321,9 @@ The pipeline runs in a fixed order: upload, extract, normalize, match duplicates
 | IMP-22 | When an extracted row matches an opposite row in another wallet (same amount, ±3 days), the app shall flag it as a possible transfer. | Should |
 | IMP-23 | The app shall suggest a category and tags for each row from, in order: the user's rules, then the history of similar descriptions. | Must |
 | IMP-24 | Where a local model is enabled, the app shall suggest categories for rows that no rule or history covers, using a pre-trained model that is never trained on the device or the server and that runs in the browser, since the server cannot read past transactions (SEC-01). | Could |
-| IMP-25 | The app shall let the user create rules: if the description contains or matches a pattern (and optionally the amount is in a range), then set category, tags, note or the exclude flag. | Should |
-| IMP-26 | When the user changes a suggested category or tag on an imported row, the app shall offer to create a rule from that correction. | Should |
-| IMP-27 | The app shall turn raw bank descriptors into clean names ("OXXO 1234 GDL MX" becomes "OXXO") and remember the mapping. | Should |
+| IMP-25 | The app shall let the user create rules: if the description contains or matches a pattern (and optionally the amount is in a range), then set category, tags, note or the exclude flag. | Later |
+| IMP-26 | When the user changes a suggested category or tag on an imported row, the app shall offer to create a rule from that correction. | Later |
+| IMP-27 | The app shall turn raw bank descriptors into clean names ("OXXO 1234 GDL MX" becomes "OXXO") and remember the mapping. | Later |
 
 **Confirm and commit**
 
@@ -335,7 +336,7 @@ The pipeline runs in a fixed order: upload, extract, normalize, match duplicates
 | IMP-34 | When the user commits, the app shall save the transactions as one import batch recording file name, file fingerprint, wallet, date and row counts. | Must |
 | IMP-35 | The app shall let the user undo an entire import batch. | Must |
 | IMP-36 | If a file with the same fingerprint was imported before, then the app shall warn the user before extracting. | Must |
-| IMP-37 | Where the statement shows opening and closing balances, the app shall compare them with the wallet's computed balances and show any difference. | Should |
+| IMP-37 | Where the statement shows opening and closing balances, the app shall compare them with the wallet's computed balances and show any difference. | Later |
 | IMP-38 | Where the user enables it, the app shall keep the original uploaded files on the server, linked to their batch, and let the user delete them. | Could |
 
 **Acceptance example (IMP-21)**: *Given* the user logged "Coffee, 85, Cash, tag work" with quick add on 3 June, *when* they import a statement with a row "STARBUCKS GDL, 85.00" dated 4 June on the same wallet, *then* the import merges them into one transaction with the user's category and tag and the statement's date, without asking.
@@ -365,11 +366,11 @@ Every expense and income has exactly one category, each category belongs to exac
 | CAT-06 | If the user deletes a category that has transactions, then the app shall require moving them to another category or archiving the category instead. | Must |
 | CAT-07 | While a category is archived, the app shall hide it from pickers and keep it in history and reports, and let the user restore it. | Must |
 | CAT-08 | When the user moves a category to another category group, the app shall show its past transactions under the new category group in all reports. | Must |
-| CAT-09 | The app shall let the user merge two categories into one, moving all transactions, rules and budget history. | Should |
+| CAT-09 | The app shall let the user merge two categories into one, moving all transactions, rules and budget history. | Later |
 | CAT-10 | The app shall build every filter, chart, budget line and picker from the current category groups, categories and tags, with no hard-coded category or tag in application logic. | Must |
 | CAT-11 | The app shall let any report switch between category group, category and tag level, and drill from a category group into its categories. | Must |
 | CAT-12 | The app shall order category pickers by how often the user uses each category, with a search box. | Should |
-| CAT-13 | The app shall let the user export and import the category set and tags on their own, so taxonomies can be shared. | Should |
+| CAT-13 | The app shall let the user export and import the category set and tags on their own, so taxonomies can be shared. | Later |
 | CAT-14 | The app shall let the user choose a color for each category group from the curated color palette, and an icon for each category from the curated icon set. | Should |
 
 **Tags**
@@ -377,10 +378,11 @@ Every expense and income has exactly one category, each category belongs to exac
 | ID | Requirement | Priority |
 |---|---|---|
 | CAT-20 | The app shall let a transaction carry any number of tags, including none. | Must |
-| CAT-21 | The app shall let the user create tags on the fly while entering a transaction, and rename, merge, archive and delete tags in settings. | Must |
+| CAT-21 | The app shall let the user create tags on the fly while entering a transaction, and rename, archive and delete tags in settings. | Must |
+| CAT-27 | The app shall let the user merge two tags into one, moving every transaction, rule and budget line that uses them. | Later |
 | CAT-22 | If the user deletes a tag in use, then the app shall remove it from its transactions after a confirmation that states how many are affected. | Must |
 | CAT-23 | The app shall suggest tags from those most used with the chosen category. | Should |
-| CAT-24 | The app shall let rules and recurring templates set tags. | Should |
+| CAT-24 | The app shall let rules and recurring templates set tags. | Later |
 | CAT-25 | The app shall let the user choose a color for each tag from the curated color palette. | Should |
 | CAT-26 | The app shall list every expense category under commitments, needs and wants on one screen, opened from the category settings and from the spending split (ANA-13), and let the user move a category to another flexibility with one choice. | Should |
 
@@ -534,7 +536,7 @@ A one-off only stays out of the baseline, so one big purchase doesn't raise ever
 | BUD-11 | The app shall let the user change a category's flexibility globally. | Should |
 | BUD-12 | The app shall show left over as baseline income minus total baseline expenses, and free left over as left over minus the contributions already committed to goals. | Must |
 | BUD-13 | The app shall show the baseline split into commitments, needs and wants, so the user sees how much of their spending is actually negotiable. | Must |
-| BUD-14 | The app shall spread known yearly expenses (insurance, subscriptions, gifts) into a set-aside amount per period and track it. | Should |
+| BUD-14 | The app shall spread known yearly expenses (insurance, subscriptions, gifts) into a set-aside amount per period and track it. | Later |
 
 **3. Goals and the funding gap**
 
@@ -561,7 +563,7 @@ This goal type runs the other way: instead of saving toward a known price, the u
 | BUD-62 | The app shall compute the largest affordable payment per period as the free left over after other goals' contributions, both with the active plan and with the cuts Find money for your goals would suggest (BUD-35). | Should |
 | BUD-63 | Where the user enters financing terms (interest rate and number of payments), the app shall compute the largest affordable price as the down payment plus the loan principal that payment can repay over that term. | Should |
 | BUD-64 | The app shall show the result as two levels, comfortable (keeping 10% of the free left over unspent) and maximum, with the effect of each on other goals' dates. | Should |
-| BUD-65 | When the user records the purchase, the app shall add the loan as a wallet with a loan schedule, offer to add its payment as a Need expense to the budgets from its first payment on, and update every goal's projected date. | Should |
+| BUD-65 | When the user records the purchase, the app shall add the loan as a wallet with a loan schedule, offer to add its payment as a Need expense to the budgets from its first payment on, and update every goal's projected date. | Later |
 | BUD-66 | If the maximum payment is zero or negative, then the app shall say so and show which cuts or goal changes would make room. | Should |
 
 **Acceptance example (BUD-61 to BUD-63)**: *Given* 100,126 in savings, a 30,000 safety buffer, no other goals using that savings, a free left over of 8,372 per period, and financing at 1% per period over 48 periods, *when* the user asks what car they can afford in 6 weeks, *then* the app shows a maximum down payment of 70,126, a maximum payment of 8,372 per period and a maximum price of about 388,000 (ignoring contributions made in those 6 weeks).
@@ -649,16 +651,16 @@ Quick add lets the user log an expense in under 10 seconds from a button that is
 | ID | Requirement | Priority |
 |---|---|---|
 | WID-01 | The app shall show a quick-add button on every screen that opens a quick-add form with three options: take a picture, choose an image from the device's photos, or enter manually. | Must |
-| WID-02 | When the user takes or chooses a picture of a purchase ticket or a bank notification, the app shall extract the transaction and show it pre-filled, so the user only confirms or fixes it. | Must |
+| WID-02 | When the user takes or chooses a picture of a purchase ticket or a bank notification, the app shall extract the transaction and show it pre-filled, so the user only confirms or fixes it. | Later |
 | WID-03 | When the user chooses manual entry, the app shall need only amount and category, defaulting the wallet to the default wallet (WAL-24), or else the last one used, the type to expense and the date to now, with optional tags, payee and note. | Must |
-| WID-04 | The app shall use the device camera where the browser allows it, and a file picker otherwise. | Must |
-| WID-05 | The app shall show the user's most used categories first, and one-tap suggestions for frequent category, tag and amount combinations. | Should |
-| WID-06 | When an entry is saved, the app shall confirm it and show the period's amount left to spend. | Should |
+| WID-04 | The app shall use the device camera where the browser allows it, and a file picker otherwise. | Later |
+| WID-05 | The app shall show the user's most used categories first, and one-tap suggestions for frequent category, tag and amount combinations. | Later |
+| WID-06 | When an entry is saved, the app shall confirm it and show the period's amount left to spend. | Later |
 | WID-07 | The app shall let the user switch manual entry to income or transfer. | Should |
 | ~~WID-08~~ | Dropped: native home-screen widgets need native apps, which are not in V1 (see Out of scope). | Won't |
-| WID-09 | While the device has no connection to the server, the app shall keep quick-add entries in a queue on the device, show them as pending, and send them when the connection returns. | Must |
+| WID-09 | While the device has no connection to the server, the app shall keep quick-add entries in a queue on the device, show them as pending, and send them when the connection returns. | Later |
 | WID-10 | When queued entries are sent, the server shall save each one exactly once, even if sending is retried. | Must |
-| WID-11 | Where a queued entry is a picture, the app shall run extraction once it reaches the server and then ask the user to confirm the result. | Should |
+| WID-11 | Where a queued entry is a picture, the app shall run extraction once it reaches the server and then ask the user to confirm the result. | Later |
 
 ## Epic 9: Data export, import and backup
 
@@ -668,14 +670,14 @@ Users can take all of their data out and put it back with nothing lost: one comp
 |---|---|---|
 | DAT-01 | The app shall export everything into one archive: wallets and their settings, category groups, categories, tags, payees, rules, transactions and splits, recurring templates, import batch records, goals, period budgets and drafts, budget period snapshots and settings. | Must |
 | DAT-02 | The app shall export transactions as one denormalized CSV, one row per transaction or split, with wallet, category, category group, tag and payee names written out. | Must |
-| DAT-03 | The app shall export wallets, categories, tags and budget history as separate CSV files. | Should |
+| DAT-03 | The app shall export wallets, categories, tags and budget history as separate CSV files. | Later |
 | DAT-04 | When the user imports a full archive into an empty installation, the app shall restore exactly the exported state. | Must |
 | DAT-05 | The app shall let the user import a full archive into an installation that already has data, merging and skipping records that already exist. | Should |
 | DAT-06 | The app shall include a schema version in every archive, and upgrade archives from older versions on import. | Must |
 | DAT-07 | If an import file is invalid, then the app shall report each error with its location and change nothing. | Must |
 | DAT-08 | The app shall publish the archive schema in its documentation. | Must |
 | DAT-09 | The server shall make scheduled backups (default daily, keeping the last 14) of the encrypted data to a location the person running it chooses. Users can still download the full archive at any time (DAT-01). | Should |
-| DAT-10 | The server shall make a backup automatically before every update that changes stored data. Because the server cannot read user data, changes to its format are applied by the client the next time the user unlocks it. | Must |
+| DAT-10 | The server shall make a backup automatically before every update that changes stored data. Because the server cannot read user data, changes to its format are applied by the client the next time the user unlocks it. | Later |
 | DAT-11 | The app shall let the user erase all data after a typed confirmation. | Should |
 | DAT-12 | The app shall import transaction history exported from other finance apps through the CSV mapping of IMP-02. | Could |
 
@@ -689,18 +691,19 @@ Settings cover what makes one installation fit one person: currencies, budget pe
 |---|---|---|
 | SYS-01 | The app shall let the user set a default currency, which new wallets start with and all totals are shown in. | Must |
 | SYS-02 | The app shall let the user set the day of the month on which budget periods start (default the 1st). | Must |
-| SYS-03 | The app shall let the user set number and date formats and the first day of the week. | Must |
+| SYS-03 | The app shall let the user set number and date formats and the first day of the week. | Later |
 | SYS-04 | The app shall let each wallet have its own currency, and let the user enter the exchange rate between each wallet currency and the default currency, used to show other-currency wallets in the default currency. | Should |
 | SYS-05 | The app shall keep a dated history of the exchange rates the user enters, and show the date of the rate in use. | Should |
 | SYS-06 | The app shall require each person to sign in to the server with their own account and password, with passkeys as an option, and keep them signed in on their own devices until they sign out. | Must |
-| SYS-07 | The app shall guide a new user through setup: language, default currency, budget period start, wallets, category groups, categories and tags, history import, baseline, first goal. | Must |
-| SYS-08 | The app shall let the user set the extraction confidence threshold below which imported rows are flagged. | Should |
-| SYS-09 | The app shall let the user set budget defaults: baseline lookback (default 6 periods), maximum cut per step (default 15%), at-risk threshold and anomaly threshold. | Must |
+| SYS-07 | The app shall guide a new user through setup with steps on the dashboard (DSH-09): wallets, history import, categories, the first budget and the first goal, taking the language and default currency from the device until the user changes them. | Must |
+| SYS-08 | The app shall let the user set the extraction confidence threshold below which imported rows are flagged. | Later |
+| SYS-09 | The app shall let the user set budget defaults: baseline lookback (default 6 periods), maximum cut per step (default 15%) and at-risk threshold. | Must |
+| SYS-24 | The app shall let the user set the anomaly threshold: how far above its usual amount a category's spending has to be for the analysis to call it unusual. | Later |
 | SYS-10 | The app shall ship in English and Spanish, with all UI text in language files so more languages can be added. Spanish is written for Mexico first (es-MX, addressing the user as tú), then checked for the rest of Latin America, then Spain, keeping Mexican words. | Must |
-| SYS-11 | The app shall show notifications inside the app. | Must |
+| SYS-11 | The app shall show notifications inside the app. | Later |
 | SYS-12 | Where the browser supports it, the app shall send push reminders for due bills and budget check-ins that carry no financial details (SEC-14); budget alerts themselves appear inside the app. | Could |
 | SYS-13 | The server shall let its operator create accounts or send invites, with open sign-up off by default, so having the app's link is not enough to get an account. | Must |
-| SYS-14 | The app shall let the user turn all animations off with one setting, which defaults to the device's Reduce Motion preference. | Must |
+| SYS-14 | The app shall let the user turn all animations off with one setting, which defaults to the device's Reduce Motion preference. | Later |
 | SYS-15 | Where the browser supports it, the app shall let the user choose the app icon from a few curated options. | Could |
 | SYS-16 | The app shall let the user choose the appearance mode in Settings > Appearance: Automatic (follows the device), Light or Dark, with Automatic as the default. The mode and the palette (SYS-17) are kept per device, like the device's own appearance, so they apply before unlocking. | Must |
 | SYS-17 | The app shall let the user choose one of eight curated palettes under Settings > Appearance > Palette, next to the appearance mode: Paper (plain black and white), Sage Grove (the default), Cami, Coronado, Glacier, Mesa, Jacaranda and Sierra, each with a light and a dark version. A palette shall change only the app colors (background, surface, text, brand, and the hero and its glow); the 12 category colors and the warning, danger and goal colors shall stay the same in every palette. | Should |
@@ -721,16 +724,16 @@ Every user's financial data is end-to-end encrypted. The client encrypts it befo
 | SEC-02 | The app shall derive the user's encryption key on the client from their password, and shall never send the password or the key to the server. | Must |
 | SEC-03 | The app shall sign users in without the server learning their password. | Must |
 | SEC-04 | Anyone with full access to the server, its database or its backups shall see only ciphertext plus the metadata listed in SEC-10. | Must |
-| SEC-05 | When the user sends a picture, screenshot or statement for extraction, the server shall read it only in memory, return the extracted rows to the client over HTTPS, and keep nothing readable afterwards, on disk or in logs. | Must |
-| SEC-06 | Where the user chooses to keep original files (IMP epic), the app shall encrypt them on the client before they are stored. | Must |
+| SEC-05 | When the user sends a picture, screenshot or statement for extraction, the server shall read it only in memory, return the extracted rows to the client over HTTPS, and keep nothing readable afterwards, on disk or in logs. | Later |
+| SEC-06 | Where the user chooses to keep original files (IMP epic), the app shall encrypt them on the client before they are stored. | Later |
 | SEC-07 | When an account is created, the app shall generate a recovery key on the client, show it once and ask the user to save it. If the user forgets their password, the app shall let them regain access with that recovery key and set a new password, without the server ever being able to decrypt their data. Recovering shall remove every passkey on the account, since someone who knew the password could have added one. If the user loses both the password and the recovery key, the data cannot be recovered by anyone, and the app shall say so when the key is shown. | Must |
 | SEC-08 | The app shall let the user change their password, replace their recovery key and sign out other devices without losing data. | Must |
 | SEC-09 | Each user's data shall be encrypted with that user's own key, and the server shall refuse any request for another user's records. | Must |
 | SEC-10 | The project shall document exactly what the server can see: username, sign-in times, the number, size and sync times of encrypted records, and notification send times. | Must |
-| SEC-11 | The app shall keep queued offline entries (WID-09) encrypted on the device. | Must |
+| SEC-11 | The app shall keep queued offline entries (WID-09) encrypted on the device. | Later |
 | SEC-12 | The app shall lock after a period of inactivity the user sets, removing the key from memory, and unlock with the password or a passkey. | Must |
 | SEC-13 | The app shall use standard, well-reviewed algorithms and open source cryptography libraries, never custom cryptography. | Must |
-| SEC-14 | Push notifications shall carry only a generic reminder with no amounts, names or categories; the details appear when the user opens the app. | Must |
+| SEC-14 | Push notifications shall carry only a generic reminder with no amounts, names or categories; the details appear when the user opens the app. | Later |
 
 ## Non-functional requirements and constraints
 
@@ -743,8 +746,8 @@ These constrain how the features above are built without choosing a technology s
 | NFR-03 | The app shall store money as exact decimal or integer minor units, never as floating point. | Must |
 | NFR-04 | The app shall be a responsive web app that works fully in phone and desktop browsers, designed first for heavy use on a phone. Native iOS and Android apps may follow later if there is interest. | Must |
 | NFR-05 | V1 shall be a web client plus a self-hosted server that syncs every device, so all of a user's devices show the same data. Whoever runs the server chooses how to host and reach it (a cheap web host, a VPS, or a home server behind a VPN). | Must |
-| NFR-06 | The app shall sort or filter 100,000 transactions in under 1 second and open the dashboard in under 2 seconds in a mid-range phone's browser. | Should |
-| NFR-07 | The app shall meet WCAG 2.2 level AA. | Should |
+| NFR-06 | The app shall sort or filter 100,000 transactions in under 1 second and open the dashboard in under 2 seconds in a mid-range phone's browser. | Later |
+| NFR-07 | The app shall meet WCAG 2.2 level AA. | Later |
 | NFR-08 | The app shall never leave data half-written: every save, import commit and restore either completes fully or changes nothing. | Must |
 | NFR-09 | The app shall encrypt all client-server traffic over HTTPS; stored data is end-to-end encrypted as set out in the Security and encryption epic (SEC-01 to SEC-14). | Must |
 | NFR-10 | The app shall keep its core logic (ledger, analysis, budget) separate from the user interface, so native apps can be added later without rewriting it. | Should |
