@@ -35,5 +35,8 @@ export const preferencesRecord = z.object({
   // DSH-09: the day the person first looked over their needs and wants, which ticks
   // that step of Get started.
   categoriesReviewedOn: calendarDate.optional(),
+  // SYS-01: a currency most wallets use that Home no longer suggests as the default,
+  // because the person dismissed it. Another currency taking over asks again.
+  keepCurrencyOver: currencyCode.optional(),
 })
 export type PreferencesRecord = z.infer<typeof preferencesRecord>

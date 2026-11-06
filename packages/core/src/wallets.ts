@@ -335,3 +335,50 @@ function spread<W extends Wallet>(shares: WalletShare<W>[]): Spread<W> {
     byPreset: [...byPreset.values()].sort((a, b) => b.total - a.total),
   }
 }
+
+/**
+ * SYS-01: the currency most of the wallets use (the first wallet's on a tie), or null
+ * without wallets.
+ */
+export function mainCurrency(wallets: readonly Pick<Wallet, 'currency'>[]): string | null {
+  const counts = new Map<string, number>()
+  for (const wallet of wallets) counts.set(wallet.currency, (counts.get(wallet.currency) ?? 0) + 1)
+  let best: string | null = null
+  for (const [currency, count] of counts)
+    if (best === null || count > (counts.get(best) ?? 0)) best = currency
+  return best
+}
+
+/**
+ * SYS-01: the currency more than half of the wallets in net worth use, when it isn't
+ * the default one; null otherwise. Totals in a currency few wallets use is most likely
+ * a default nobody chose (guessed from the device's language), so Home offers to switch.
+ */
+export function mostlyOtherCurrency(
+  wallets: readonly Pick<Wallet, 'currency' | 'inNetWorth' | 'active'>[],
+  currency: string,
+): string | null {
+  const counted = wallets.filter((wallet) => wallet.inNetWorth && wallet.active)
+  const main = mainCurrency(counted)
+  if (main === null || main === currency) return null
+  const count = counted.filter((wallet) => wallet.currency === main).length
+  return count * 2 > counted.length ? main : null
+}
+
+/**
+ * SYS-04: the wallets in net worth that have no rate to the default currency, so they
+ * are left out of every total. Screens say how many, rather than quietly leave them out.
+ */
+export function missingRates<W extends Wallet>(
+  wallets: readonly W[],
+  currency: string,
+  rates: readonly ExchangeRate[] = [],
+  today = '9999-12-31',
+): W[] {
+  return wallets.filter(
+    (wallet) =>
+      wallet.inNetWorth &&
+      wallet.currency !== currency &&
+      !rateInUse(wallet.currency, currency, rates, today),
+  )
+}

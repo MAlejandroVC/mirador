@@ -705,7 +705,9 @@
       "note": "Nota",
       "notePlaceholder": "Como: no la cobran si uso la tarjeta cada mes"
     },
-    "default": "Predeterminada"
+    "default": "Predeterminada",
+    "withoutRate_one": "{{count}} sin tipo de cambio",
+    "withoutRate_other": "{{count}} sin tipo de cambio"
   },
   "transactions": {
     "types": {
@@ -792,7 +794,6 @@
   "rates": {
     "title": "Tipo de cambio",
     "later": "Después",
-    "prompt": "Para contar esta cartera en tu patrimonio, Mirador necesita el tipo de cambio. También puedes agregarlo después en la página de la cartera o en Configuración > Moneda.",
     "intro": "El tipo de cambio que te da tu banco o casa de cambio para {{currency}}. Cada uno se guarda con su fecha.",
     "one": "1 {{currency}} =",
     "hint": "Los totales usan el tipo de cambio más reciente hasta hoy.",
@@ -810,7 +811,16 @@
     "add": "Agregar",
     "worth": "Unos {{amount}}",
     "missingWallet": "Aún sin tipo de cambio, así que no cuenta en tu patrimonio.",
-    "addRate": "Agregar tipo de cambio"
+    "addRate": "Agregar tipo de cambio",
+    "choice": {
+      "title": "{{currency}} no es tu moneda principal",
+      "message": "Los totales están en {{main}}. Mientras {{currency}} no tenga tipo de cambio, sus montos quedan fuera de tu patrimonio y tu presupuesto.",
+      "rate": "Agregar tipo de cambio",
+      "makeDefault": "Usar {{currency}} como moneda principal",
+      "keep": "Seguir con totales en {{main}}",
+      "attention": "La mayoría de tus carteras está en {{currency}}",
+      "attentionBody": "Los totales están en {{main}}. Elige cómo contarlas."
+    }
   },
   "pickers": {
     "choose": "Elegir",

@@ -26,37 +26,28 @@ import { exchangeRateBody, newId, useSaveRecords } from './use-ledger'
 // SYS-04, SYS-05: the rate between a wallet's currency and the default one, as the
 // person sees it at their bank or exchange office: "1 USD = 18.45 MXN", with a date.
 // Each save adds to the history rather than replacing, so older totals keep the rate
-// of their day. Opened right after adding a wallet in another currency (`prompt`),
-// it offers "Add later" instead of Cancel, since the wallet is already saved.
+// of their day.
 export function RateSheet({
   open,
   currency,
   defaultCurrency,
   rates,
-  prompt = false,
   onClose,
 }: {
   open: boolean
   currency: string
   defaultCurrency: string
   rates: readonly ExchangeRate[]
-  prompt?: boolean
   onClose: () => void
 }) {
   const { t } = useTranslation()
   return (
-    <Sheet
-      open={open}
-      title={t('rates.title')}
-      cancelLabel={prompt ? t('rates.later') : t('nav.cancel')}
-      onClose={onClose}
-    >
+    <Sheet open={open} title={t('rates.title')} cancelLabel={t('nav.cancel')} onClose={onClose}>
       {open && (
         <RateForm
           currency={currency}
           defaultCurrency={defaultCurrency}
           rates={rates}
-          prompt={prompt}
           onClose={onClose}
         />
       )}
@@ -68,13 +59,11 @@ function RateForm({
   currency,
   defaultCurrency,
   rates,
-  prompt,
   onClose,
 }: {
   currency: string
   defaultCurrency: string
   rates: readonly ExchangeRate[]
-  prompt: boolean
   onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -102,9 +91,7 @@ function RateForm({
   return (
     <>
       <p className="px-2 text-center text-[0.9375rem] text-text-muted">
-        {prompt
-          ? t('rates.prompt')
-          : t('rates.intro', { currency: currencyName(currency, locale) })}
+        {t('rates.intro', { currency: currencyName(currency, locale) })}
       </p>
       <FieldRows
         note={

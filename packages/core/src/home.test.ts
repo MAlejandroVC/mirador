@@ -172,6 +172,7 @@ describe('home', () => {
     const input: AttentionInput = {
       today,
       wallets: [card, checking],
+      currency: 'MXN',
       transactions: history,
       recurrings: [recurring('rent', { ask: true, start: '2026-10-15', amount: -1_200_000 })],
       month: {
@@ -218,6 +219,7 @@ describe('home', () => {
     const items = attention({
       today,
       wallets: [],
+      currency: 'MXN',
       transactions: [],
       recurrings: [],
       month: null,
@@ -228,6 +230,28 @@ describe('home', () => {
       waiting: 0,
     })
     expect(items).toEqual([{ kind: 'budget', start: '2026-10-01' }])
+  })
+
+  it('SYS-01: wallets mostly in another currency come first, until the person dismisses it', () => {
+    const base = {
+      today,
+      transactions: [],
+      recurrings: [],
+      month: null,
+      review: null,
+      budget: null,
+      next: null,
+      uncategorized: 0,
+      waiting: 0,
+    }
+    const wallets = [checking, card]
+    expect(attention({ ...base, wallets, currency: 'USD' })[0]).toEqual({
+      kind: 'currency',
+      currency: 'MXN',
+    })
+    expect(attention({ ...base, wallets, currency: 'MXN' })[0]?.kind).not.toBe('currency')
+    const kept = attention({ ...base, wallets, currency: 'USD', keepCurrencyOver: 'MXN' })
+    expect(kept.map((item) => item.kind)).not.toContain('currency')
   })
 
   it('DSH-11: lists what comes on its own in the next two weeks, soonest first', () => {
