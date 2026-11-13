@@ -256,7 +256,7 @@ Security:
 - HTTPS always (NFR-09). Compose includes Caddy, which gets a Let's Encrypt certificate; renewing it is Caddy's only outbound connection. Hosts that provide HTTPS can skip Caddy.
 - The served code is the trust anchor: whoever controls the server could ship a changed app that captures passwords. Mitigations are a strict CSP, Subresource Integrity on every asset, reproducible builds and published hashes per release, so a user can check what they run.
 - No plaintext in logs: request bodies are never logged, and a test searches logs for known test strings.
-- Crypto code is limited to packages/crypto, covered by published test vectors, and gets an outside review before 1.0.
+- Crypto code is limited to packages/crypto, covered by published test vectors, and gets an outside review after 1.0.
 - Uploaded files are checked by type and size before OCR.
 - Supply chain: committed lockfile, Dependabot, secret scanning, CodeQL, signed images, SECURITY.md with private reporting.
 
@@ -332,7 +332,7 @@ CI checks every installed package's license; model files list theirs in MODELS.m
 |---|---|---|
 | User loses password and recovery key | Data gone for good | Clear warning when the key is shown, a download option, a reminder to store it, archive export |
 | Tampered app served by a compromised server | Passwords or keys captured | CSP, SRI, reproducible builds, published hashes, signed images |
-| Bug in our crypto code | Data exposed or unreadable | Standard primitives only, test vectors, zero-knowledge tests, outside review before 1.0 |
+| Bug in our crypto code | Data exposed or unreadable | Standard primitives only, test vectors, zero-knowledge tests, outside review after 1.0 |
 | Slow unlock or memory pressure on older phones with 100,000 transactions | Long waits, browser kills the tab | Encrypted snapshot for one-step unlock; measure early; Argon2 parameters tuned per device class |
 | Cheap hosts sleep, wipe disks or change terms | Lost data on the server | Persistent volume required; off-host backups; the devices' encrypted caches can re-seed a new server |
 | Phone browser quirks, mainly Safari | Broken screens | Playwright WebKit at phone sizes in CI, manual iPhone check per release |
