@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.0.0](https://github.com/MAlejandroVC/mirador/compare/v0.5.0...v1.0.0) (2026-11-13)
+
+
+### Features
+
+* **import:** import statements and receipts from PDFs and pictures ([#323](https://github.com/MAlejandroVC/mirador/issues/323)) ([402d773](https://github.com/MAlejandroVC/mirador/commit/402d773260d7e63874098f98ad94d40bdf7134cd))
+
+
+### Bug fixes
+
+* **auth:** harden sign-in against guessing and injected scripts ([#303](https://github.com/MAlejandroVC/mirador/issues/303)) ([336e5ed](https://github.com/MAlejandroVC/mirador/commit/336e5ed0b2938f8ef0a27178fb6099c4b73cbc76))
+* **import:** pair CSV transfer rows by what the file says first ([#325](https://github.com/MAlejandroVC/mirador/issues/325)) ([3c4970f](https://github.com/MAlejandroVC/mirador/commit/3c4970f214ae18e2ea22d1847f01a3c711d673e6))
+* **wallets:** let people choose how to count wallets in another currency ([#345](https://github.com/MAlejandroVC/mirador/issues/345)) ([a535e9c](https://github.com/MAlejandroVC/mirador/commit/a535e9ca7d96cfef662cf7e8e692b2e2271b2e39))
+* **web:** keep sheets above the iPhone keyboard and reveal autofilled passwords ([#338](https://github.com/MAlejandroVC/mirador/issues/338)) ([ecafbc9](https://github.com/MAlejandroVC/mirador/commit/ecafbc9c7a1963fd16c5f7cae95d09d65e3817b2))
+
+
+### Reverts
+
+* undo the statement and receipt import merge ([#337](https://github.com/MAlejandroVC/mirador/issues/337)) ([eeea8b5](https://github.com/MAlejandroVC/mirador/commit/eeea8b5f63dbfad33776010ce16599c5a7b21e83))
+
+
+### Chores
+
+* make the next release 1.0.0 ([#347](https://github.com/MAlejandroVC/mirador/issues/347)) ([fc1f24d](https://github.com/MAlejandroVC/mirador/commit/fc1f24dd6a72d7ee085e539230e000e9a2c968a4))
+
 ## [0.5.0](https://github.com/MAlejandroVC/mirador/compare/v0.4.0...v0.5.0) (2026-10-21)
 
 
